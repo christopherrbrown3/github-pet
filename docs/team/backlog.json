@@ -1,0 +1,137 @@
+[
+  {
+    "title": "Epic: Native desktop companion prototype",
+    "owner": "developer",
+    "priority": "P0",
+    "kind": "epic",
+    "milestone": "M1",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/1",
+    "number": 1
+  },
+  {
+    "title": "Build native SwiftUI/AppKit fixture prototype",
+    "owner": "developer",
+    "priority": "P0",
+    "kind": "feature",
+    "milestone": "M1",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/2",
+    "number": 2
+  },
+  {
+    "title": "Create original Mona mascot pack and UI specifications",
+    "owner": "graphic-designer",
+    "priority": "P0",
+    "kind": "feature",
+    "milestone": "M1",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/3",
+    "number": 3
+  },
+  {
+    "title": "Prepare acceptance suite and independently verify prototype PR",
+    "owner": "qa-engineer",
+    "priority": "P0",
+    "kind": "task",
+    "milestone": "M1",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/4",
+    "number": 4
+  },
+  {
+    "title": "Bootstrap role instructions, templates and durable management loop",
+    "owner": "product-manager",
+    "priority": "P0",
+    "kind": "task",
+    "milestone": "M1",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/5",
+    "number": 5
+  },
+  {
+    "title": "Epic: Read-only GitHub monitoring through gh",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "epic",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/6",
+    "number": 6
+  },
+  {
+    "title": "Harden gh discovery, identity and safe subprocess transport",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/7",
+    "number": 7
+  },
+  {
+    "title": "Monitor configurable Entitlements PR approval workflows",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/8",
+    "number": 8
+  },
+  {
+    "title": "Monitor review requests, assigned issues and authored PR attention",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/9",
+    "number": 9
+  },
+  {
+    "title": "Monitor Actions failures and eligible deployment approvals",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/10",
+    "number": 10
+  },
+  {
+    "title": "Monitor verified GitHub service incidents",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/11",
+    "number": 11
+  },
+  {
+    "title": "Persist source quality and event baseline across restarts",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M2",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/12",
+    "number": 12
+  },
+  {
+    "title": "Epic: Accessible companion and installation",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "epic",
+    "milestone": "M3",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/13",
+    "number": 13
+  },
+  {
+    "title": "Load modular mascot packs with validated animation metadata",
+    "owner": "developer",
+    "priority": "P1",
+    "kind": "feature",
+    "milestone": "M3",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/14",
+    "number": 14
+  },
+  {
+    "title": "Finish login launch, accessibility and install documentation",
+    "owner": "developer",
+    "priority": "P2",
+    "kind": "feature",
+    "milestone": "M3",
+    "url": "https://github.com/christopherrbrown3/github-pet/issues/15",
+    "number": 15
+  }
+]

@@ -1,0 +1,2 @@
+# Review instructions
+Review for native macOS correctness, process timeouts, argument-array safety, gh-only authentication, no credential ownership, trustworthy source quality, stable-event deduplication, privacy and accessible reduced motion. Check first-sync and reconnect do not replay events. Flag missing tests or GUI evidence honestly. Fixtures must be clearly labeled. Do not approve a merge on behalf of the owner.
