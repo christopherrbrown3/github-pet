@@ -122,7 +122,7 @@ private let searchJSON = """
     }
 }
 
-@Suite struct ProcessRunnerTests {
+@Suite(.serialized, .timeLimit(.minutes(1))) struct ProcessRunnerTests {
     @Test func argumentsAreNeverInterpretedByAShell() throws {
         let tricky = "a; echo injected $(whoami) `id` > /dev/null | cat"
         let result = try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/echo"),

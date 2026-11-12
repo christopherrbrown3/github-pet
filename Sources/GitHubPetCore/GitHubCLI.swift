@@ -48,34 +48,44 @@ public struct ProcessCommandRunner: CommandRunner {
         process.standardError = stderr
         process.standardInput = FileHandle.nullDevice
 
+        // Every wait below is bounded: a hung child, or a grandchild holding a pipe open,
+        // can never block the caller past the timeout plus a short grace period.
+        let exited = DispatchSemaphore(value: 0)
+        process.terminationHandler = { _ in exited.signal() }
         do {
             try process.run()
         } catch {
             throw CommandError.launchFailed(error.localizedDescription)
         }
 
-        // Drain both pipes concurrently so a chatty child cannot block on a full pipe.
-        let group = DispatchGroup()
-        var errData = Data()
-        group.enter()
-        DispatchQueue.global().async {
-            errData = stderr.fileHandleForReading.readDataToEndOfFile()
-            group.leave()
+        let output = PipeCollector(stdout.fileHandleForReading)
+        let errors = PipeCollector(stderr.fileHandleForReading)
+        if exited.wait(timeout: .now() + timeout) == .timedOut {
+            process.terminate()
+            if exited.wait(timeout: .now() + 2) == .timedOut { kill(process.processIdentifier, SIGKILL) }
+            throw CommandError.timedOut
         }
-        var timedOut = false
-        let killer = DispatchWorkItem {
-            if process.isRunning {
-                timedOut = true
-                process.terminate()
-            }
-        }
-        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
-        let outData = stdout.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        killer.cancel()
-        group.wait()
-        if timedOut { throw CommandError.timedOut }
+        let outData = output.finish(within: 2)
+        let errData = errors.finish(within: 2)
         return CommandResult(exitCode: process.terminationStatus, stdout: outData, stderr: errData)
+    }
+}
+
+/// Drains a pipe on a background queue so a chatty child never blocks on a full pipe.
+private final class PipeCollector: @unchecked Sendable {
+    private let done = DispatchSemaphore(value: 0)
+    private var data = Data()
+
+    init(_ handle: FileHandle) {
+        DispatchQueue.global(qos: .utility).async {
+            self.data = handle.readDataToEndOfFile()
+            self.done.signal()
+        }
+    }
+
+    /// Collected bytes, or nothing if the pipe stays open past `seconds`.
+    func finish(within seconds: TimeInterval) -> Data {
+        done.wait(timeout: .now() + seconds) == .success ? data : Data()
     }
 }
 

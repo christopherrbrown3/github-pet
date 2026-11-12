@@ -25,7 +25,9 @@ jobs:
       - name: Build
         run: swift build
       - name: Test
-        run: scripts/test.sh
+        timeout-minutes: 10
+        # The suite is swift-testing only; skip the empty XCTest pass.
+        run: scripts/test.sh --disable-xctest
       - name: Bundle app
         run: scripts/build-app.sh release
       - name: Verify bundle
