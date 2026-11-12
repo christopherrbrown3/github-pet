@@ -17,14 +17,14 @@
     {
       "name": "graphic-designer",
       "model": "gpt-6.1-sol",
-      "terminal": "t10",
+      "terminal": "t17",
       "runtime": "codex",
       "assignment": "#3"
     },
     {
       "name": "qa-engineer",
       "model": "gpt-6-luna",
-      "terminal": "t11",
+      "terminal": "t18",
       "runtime": "codex",
       "assignment": "#4"
     }

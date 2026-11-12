@@ -48,3 +48,11 @@ Verify launch argv, displayed model and an actual response before reporting oper
 ## Environment limits
 
 Swift 6.2.3 and Command Line Tools are present. Full Xcode is absent, so xcodebuild is unavailable. SwiftPM build/test and locally assembled .app are the prototype route; signing/notarization is not claimed. GitHub Projects requires project scope on gh; keep its authorization blocker visible until verified resolved.
+
+## Recovery checkpoint
+
+Codex usage limits interrupted Designer and QA. On user request both original conversations were resumed with the same models, in dedicated worktrees: graphic-designer t17 and qa-engineer t18. Both returned verified readiness messages. PM t8 and Developer t9 remained live.
+
+Project authorization succeeded. Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . All 15 issues imported; all requested statuses configured. GitHub reserves the name Type, so the custom classification field is Work Type. Owner Agent, Priority and built-in Milestone are present.
+
+PR #18 at 63ce7edc197c56ce391f7b88f9bfb207d8f22881 passed developer CI; independent QA is underway. QA plan is PR #17. Designer assets remain in progress. No PR merge authorized.

@@ -34,7 +34,7 @@ if [o['name'] for o in status['options']] != statuses:
         if old: option['id'] = old['id']
         opts.append(option)
     graphql('mutation($id:ID!,$opts:[ProjectV2SingleSelectFieldOptionInput!]) { updateProjectV2Field(input:{fieldId:$id,singleSelectOptions:$opts}) { projectV2Field { ... on ProjectV2SingleSelectField { id } } } }', id=status['id'], opts=opts)
-for name, options in [('Owner Agent', ['product-manager','developer','graphic-designer','qa-engineer']), ('Priority',['P0','P1','P2']), ('Type',['epic','feature','task'])]:
+for name, options in [('Owner Agent', ['product-manager','developer','graphic-designer','qa-engineer']), ('Priority',['P0','P1','P2']), ('Work Type',['epic','feature','task'])]:
     if not any(f['name'] == name for f in fields):
         gh('project', 'field-create', number, '--owner', OWNER, '--name', name, '--data-type', 'SINGLE_SELECT', '--single-select-options', ','.join(options), '--format', 'json')
 # Milestone is GitHub's built-in issue milestone field, populated on every issue below.
@@ -46,14 +46,14 @@ prior_status = {i.get('content', {}).get('url'): i.get('status') for i in prior_
 for row in rows:
     item = gh('project', 'item-add', number, '--owner', OWNER, '--url', row['url'], '--format', 'json')
     state = prior_status.get(row['url']) or ('In Progress' if row['number'] in [1,2,3,4,5] else 'Backlog')
-    for name, value in [('Status',state),('Owner Agent',row['owner']),('Priority',row['priority']),('Type',row['kind'])]:
+    for name, value in [('Status',state),('Owner Agent',row['owner']),('Priority',row['priority']),('Work Type',row['kind'])]:
         field = by_name[name]
         option = next(o for o in field['options'] if o['name'] == value)
         gh('project','item-edit','--id',item['id'],'--project-id',project_id,'--field-id',field['id'],'--single-select-option-id',option['id'],'--format','json')
     print(row['number'], state, flush=True)
 views = graphql('query($id:ID!) { node(id:$id) { ... on ProjectV2 { views(first:100) { nodes { id name layout number } } } } }', id=project_id)['node']['views']['nodes']
 view = next((v for v in views if v['name'] == 'Development Board'), None)
-visible = [by_name[n]['id'] for n in ['Title','Owner Agent','Priority','Type','Milestone'] if n in by_name]
+visible = [by_name[n]['id'] for n in ['Title','Owner Agent','Priority','Work Type','Milestone'] if n in by_name]
 if view:
     graphql('mutation($id:ID!,$fields:[ID!]) { updateProjectV2View(input:{viewId:$id,name:"Development Board",layout:BOARD_LAYOUT,configuration:{visibleFieldIds:$fields}}) { projectV2View { id } } }', id=view['id'], fields=visible)
 elif views:
