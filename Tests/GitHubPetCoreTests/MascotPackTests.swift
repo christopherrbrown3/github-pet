@@ -147,3 +147,21 @@ private struct PackFixture {
         #expect(fixture.errors() == [.checksumMismatch("frames/idle_1.png")])
     }
 }
+
+@Suite struct BundledPackTests {
+    /// The repository's shipped pack must pass the same validation the app runs at launch.
+    @Test func repositoryPackIsValid() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let directory = root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)", isDirectory: true)
+        let pack = try MascotPack.load(from: directory).get()
+        #expect(pack.manifest.id == MascotPack.defaultPackID)
+        for state in MascotState.allCases {
+            #expect(!pack.frameURLs(for: state).isEmpty)
+            #expect(pack.staticFallbackURL(for: state) != nil)
+        }
+        #expect(pack.manifest.states["idle"]?.loop == true)
+        #expect(pack.manifest.states["attention"]?.loop == false)
+        #expect(pack.manifest.frameSha256?.count == 12)
+    }
+}

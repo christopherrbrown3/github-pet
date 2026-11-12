@@ -121,7 +121,8 @@ struct PlaceholderFigure: View {
     }
 }
 
-/// Renders frames from a validated pack, nearest-neighbour, anchored bottom-centre.
+/// Renders frames from a validated pack. The art is continuous-tone, so it is scaled
+/// smoothly and uniformly; the square canvas fills the square panel, keeping the anchor fixed.
 struct PackFigure: View {
     let pack: MascotPack
     let state: MascotState
@@ -132,7 +133,8 @@ struct PackFigure: View {
     var body: some View {
         if let image = currentImage() {
             Image(nsImage: image)
-                .interpolation(.none)
+                .interpolation(.high)
+                .antialiased(true)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
         }

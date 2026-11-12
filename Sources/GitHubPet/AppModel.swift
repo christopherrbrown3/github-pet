@@ -49,7 +49,7 @@ final class AppModel: ObservableObject {
         }
         settings = loaded
 
-        if let dir = options.packDirectory {
+        if let dir = options.resolvedPackDirectory() {
             switch MascotPack.load(from: dir) {
             case .success(let pack): self.pack = pack; packErrors = []
             case .failure(let failure): pack = nil; packErrors = failure.errors
@@ -58,6 +58,11 @@ final class AppModel: ObservableObject {
             pack = nil
             packErrors = []
         }
+        // One launch line on stderr so QA can confirm which mascot is in use.
+        let packStatus = pack.map { "mascot pack \($0.manifest.id) loaded from \($0.directory.path)" }
+            ?? (packErrors.isEmpty ? "mascot placeholder (no pack)"
+                : "mascot placeholder (pack rejected: \(packErrors.map(\.description).joined(separator: "; ")))")
+        FileHandle.standardError.write(Data("GitHubPet: \(packStatus)\n".utf8))
 
         tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }

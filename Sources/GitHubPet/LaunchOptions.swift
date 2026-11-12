@@ -1,4 +1,5 @@
 import Foundation
+import GitHubPetCore
 
 /// Command-line and environment hooks for development and QA.
 ///
@@ -9,13 +10,15 @@ import Foundation
 ///   --start-time <ISO8601>        app clock starts at this instant (or GITHUB_PET_START_TIME)
 ///   --clock-offset <secs>         shift the app clock (or GITHUB_PET_CLOCK_OFFSET)
 ///   GITHUB_PET_GH_PATH=<path>     use this gh executable (missing/fake gh testing)
-///   GITHUB_PET_PACK_DIR=<dir>     load a mascot pack instead of the placeholder
+///   --placeholder                 draw the native placeholder instead of the bundled pack
+///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
 struct LaunchOptions {
     var defaultsSuite: String?
     var resetSettings = false
     var forcedSource: String?
     var injectEventAfter: TimeInterval?
     var packDirectory: URL?
+    var forcePlaceholder = false
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
 
@@ -37,6 +40,7 @@ struct LaunchOptions {
             switch argument {
             case "--defaults-suite": options.defaultsSuite = iterator.next()
             case "--reset-settings": options.resetSettings = true
+            case "--placeholder": options.forcePlaceholder = true
             case "--fixtures": options.forcedSource = "fixtures"
             case "--gh": options.forcedSource = "gh"
             case "--inject-event-after":
@@ -49,6 +53,28 @@ struct LaunchOptions {
             }
         }
         return options
+    }
+
+    /// Pack to load: explicit override, else the copy bundled in the .app, else (for
+    /// `swift run`) the repository's pack found above the `.build` directory.
+    func resolvedPackDirectory(bundle: Bundle = .main,
+                               executable: URL = URL(fileURLWithPath: CommandLine.arguments[0])) -> URL? {
+        if forcePlaceholder { return nil }
+        if let packDirectory { return packDirectory }
+        let id = MascotPack.defaultPackID
+        if let bundled = bundle.resourceURL?.appendingPathComponent("MascotPacks/\(id)", isDirectory: true),
+           FileManager.default.fileExists(atPath: bundled.appendingPathComponent("manifest.json").path) {
+            return bundled
+        }
+        var dir = executable.resolvingSymlinksInPath().deletingLastPathComponent()
+        while dir.path != "/" {
+            if dir.lastPathComponent == ".build" {
+                let pack = dir.deletingLastPathComponent().appendingPathComponent("assets/mascots/\(id)", isDirectory: true)
+                return FileManager.default.fileExists(atPath: pack.appendingPathComponent("manifest.json").path) ? pack : nil
+            }
+            dir.deleteLastPathComponent()
+        }
+        return nil
     }
 
     var userDefaults: UserDefaults {

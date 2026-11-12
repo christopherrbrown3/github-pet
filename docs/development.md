@@ -112,7 +112,8 @@ Launch arguments and environment variables:
 | `--clock-offset <seconds>` / `GITHUB_PET_CLOCK_OFFSET` | Shift the app clock |
 | `TZ=<zone>` | Time zone for quiet hours |
 | `GITHUB_PET_GH_PATH=<path>` | Use this `gh` (point at a missing path or a fake script) |
-| `GITHUB_PET_PACK_DIR=<dir>` | Load a mascot pack. If validation fails, the placeholder is used and Settings explains why. |
+| `GITHUB_PET_PACK_DIR=<dir>` | Load this mascot pack instead of the bundled one. If validation fails, the placeholder is used and Settings explains why. |
+| `--placeholder` | Draw the native vector placeholder instead of the bundled pack |
 
 Example:
 
@@ -129,8 +130,16 @@ Agreed with design: `<pack>/manifest.json` contains `schemaVersion: 1`, `id`, `n
 Each state has `frames[]`, `durationMs[]` (125–2000 ms, one per frame, 1–12 frames), `loop` and
 `staticFallback`. There's also an optional `frameSha256 {path: hex}`. Paths must be relative `.png`
 files inside the pack (no `..`, and no symlinks that escape the pack). Every PNG must be exactly
-256×256. The pack is drawn nearest-neighbour, and reduced motion uses `staticFallback`. Until a
-valid pack is supplied, the app draws a native vector placeholder.
+256×256. The art is continuous-tone, so the whole canvas is scaled smoothly and uniformly into the
+square mascot panel, which keeps the anchor fixed. Reduced motion uses `staticFallback`.
+
+The default pack is the designer's `assets/mascots/mona-pet-v1` (see `docs/design/`).
+`scripts/build-app.sh` copies only its `manifest.json` and `frames/` into
+`GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1`. Under `swift run`, the app finds the
+repository copy above `.build`. At launch the pack is validated (including SHA-256), and one line
+goes to stderr: `GitHubPet: mascot pack mona-pet-v1 loaded from …`, or
+`mascot placeholder (…reason…)`. If the pack is missing or invalid, the app still launches with
+the placeholder.
 
 ## Known limitations (M1)
 - The app is ad-hoc signed only, so it isn't notarized. Gatekeeper may need a right-click → Open

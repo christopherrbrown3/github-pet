@@ -67,6 +67,8 @@ public struct MascotPackErrors: Error, Equatable {
 /// A validated pack: every referenced path resolved to a file inside the pack directory.
 public struct MascotPack: Equatable, Sendable {
     public static let schemaVersion = 1
+    /// Pack bundled with the app (`assets/mascots/<id>` in the repository).
+    public static let defaultPackID = "mona-pet-v1"
     public static let canvasSize = 256
     public static let maxFrames = 12
     public static let durationRange = 125...2000

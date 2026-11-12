@@ -35,3 +35,5 @@ jobs:
           plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
           codesign --verify --strict .build/app/GitHubPet.app
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true
+          test -f .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/manifest.json
+          test "$(ls .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/frames/*.png | wc -l)" -eq 12

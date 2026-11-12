@@ -23,6 +23,14 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin_dir/$app_name" "$app/Contents/MacOS/$app_name"
 
+# Runtime mascot pack: manifest and frames only (sheets, sources and UI specs stay in the repo).
+pack_id=mona-pet-v1
+pack_src=assets/mascots/$pack_id
+pack_dst="$app/Contents/Resources/MascotPacks/$pack_id"
+mkdir -p "$pack_dst/frames"
+cp "$pack_src/manifest.json" "$pack_dst/"
+cp "$pack_src"/frames/*.png "$pack_dst/frames/"
+
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
