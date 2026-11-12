@@ -1,0 +1,106 @@
+- generic [active] [ref=e1]:
+  - heading "GitHub Pet design review" [level=1] [ref=e2]
+  - paragraph [ref=e3]: Original companion pack and native macOS specifications. All inbox content below is invented demo data. This page is a design artifact, not the native app.
+  - heading "Three states, one ground anchor" [level=2] [ref=e4]
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - heading "Idle" [level=3] [ref=e7]
+      - img "Friendly black mascot, idle" [ref=e9]
+      - paragraph [ref=e10]: 4.4 s blink loop. Idle alone makes no all-clear claim.
+      - button "Play idle loop" [ref=e11] [cursor=pointer]
+    - generic [ref=e12]:
+      - heading "Attention" [level=3] [ref=e13]
+      - img "Mascot giving a polite wave" [ref=e15]
+      - paragraph [ref=e16]: 1.9 s wave, once for a verified new actionable item.
+      - button "Play once" [ref=e17] [cursor=pointer]
+    - generic [ref=e18]:
+      - heading "Urgent" [level=3] [ref=e19]
+      - img "Mascot with a calm concerned expression" [ref=e21]
+      - paragraph [ref=e22]: 1.9 s concerned gesture. No flashing or alarm loop.
+      - button "Play once" [ref=e23] [cursor=pointer]
+  - paragraph [ref=e24]:
+    - button "Stop motion / show static fallbacks" [ref=e25] [cursor=pointer]
+    - text: System Reduce Motion keeps all previews static.
+  - heading "Desktop sizes" [level=2] [ref=e26]
+  - generic [ref=e27]:
+    - img "64 point mascot" [ref=e28]
+    - img "128 point mascot" [ref=e29]
+    - generic [ref=e30]: 64 pt minimum · 128 pt default · 256 px sourceUniform canvas scaling; smooth interpolation.
+  - heading "One shared inbox" [level=2] [ref=e31]
+  - generic [ref=e32]:
+    - region "Illustrative inbox design" [ref=e33]:
+      - img "Unknown source quality" [ref=e35]
+      - generic [ref=e36]:
+        - heading "GitHub Pet · Demo" [level=3] [ref=e37]
+        - strong [ref=e38]: At least 2 items need attention
+        - paragraph [ref=e39]: Privacy is on · details hidden
+      - generic [ref=e40]: Some sources unavailable. This is not an exact total.
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - strong [ref=e43]: Workflow failed
+          - paragraph [ref=e44]: Verified failure · repository hidden
+        - link "Open inbox" [ref=e45] [cursor=pointer]:
+          - /url: native-ui.md
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - strong [ref=e48]: Review requested
+          - paragraph [ref=e49]: Action for you · repository hidden
+        - link "Open inbox" [ref=e50] [cursor=pointer]:
+          - /url: native-ui.md
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - strong [ref=e53]: Actions unavailable
+          - paragraph [ref=e54]: Last checked 12 minutes ago · count unknown
+        - button "Retry" [disabled] [ref=e55] [cursor=pointer]
+      - generic [ref=e56]:
+        - button "Show details" [disabled] [ref=e57] [cursor=pointer]
+        - link "Settings specification" [ref=e58] [cursor=pointer]:
+          - /url: native-ui.md
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - heading "Review requested" [level=3] [ref=e61]
+        - paragraph [ref=e62]: A new item needs your attention. Open your inbox to see details.
+        - link "Open inbox" [ref=e63] [cursor=pointer]:
+          - /url: native-ui.md
+        - generic [ref=e64]: Dismiss ×
+      - img "Attention fallback beside speech bubble" [ref=e65]
+      - generic [ref=e66]:
+        - strong [ref=e67]: 2 items need attention
+        - paragraph [ref=e68]: Some sources unavailable.Click to open inbox.
+      - generic [ref=e69]:
+        - heading "Dark appearance" [level=3] [ref=e70]
+        - generic [ref=e71]:
+          - strong [ref=e72]: Couldn’t check Actions
+          - paragraph [ref=e73]: Last known data may be out of date.
+          - link "Open inbox" [ref=e74] [cursor=pointer]:
+            - /url: native-ui.md
+        - img "Concerned mascot on dark surface" [ref=e75]
+        - paragraph [ref=e76]: Use native semantic colors. Offer a contrast backing when the black silhouette needs it.
+  - heading "Monochrome menu-bar symbols" [level=2] [ref=e77]
+  - generic [ref=e78]:
+    - generic [ref=e79]:
+      - img "neutral" [ref=e80]
+      - text: neutral
+    - generic [ref=e81]:
+      - img "attention" [ref=e82]
+      - text: attention
+    - generic [ref=e83]:
+      - img "urgent" [ref=e84]
+      - text: urgent
+    - generic [ref=e85]:
+      - img "unknown" [ref=e86]
+      - text: unknown
+    - generic [ref=e87]:
+      - img "paused" [ref=e88]
+      - text: paused
+  - paragraph [ref=e89]: Quality has words and shape cues. Unknown never displays 0. No official GitHub logo is used for the menu-bar identity.
+  - contentinfo [ref=e90]:
+    - link "Native behavior and accessibility specification" [ref=e91] [cursor=pointer]:
+      - /url: native-ui.md
+    - text: ·
+    - link "Generation provenance" [ref=e92] [cursor=pointer]:
+      - /url: provenance.md
+    - text: ·
+    - link "File validation evidence" [ref=e93] [cursor=pointer]:
+      - /url: validation.json
+    - paragraph [ref=e94]: Generated companion concept; no GitHub affiliation or endorsement. Native app, VoiceOver and physical-display acceptance remain integration QA work.
