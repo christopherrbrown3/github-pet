@@ -149,7 +149,7 @@ Each state has `frames[]`, `durationMs[]` (125–2000 ms, one per frame, 1–12 
 `staticFallback`. There's also an optional `frameSha256 {path: hex}`. Paths must be relative `.png`
 files inside the pack (no `..`, and no symlinks that escape the pack). Every PNG must be exactly
 256×256 and decodable by ImageIO with an alpha channel. The manifest is capped at 256 KB and each
-image at 4 MB, and both limits are enforced before decoding or hashing. The art is continuous-tone, so the whole canvas is scaled smoothly and uniformly into the
+image at 4 MB, and both limits are enforced before decoding or hashing. The mascot panel is the art square plus a fixed 22 pt lane above it for the DEMO and count tags, so adornments never cover the artwork and the panel doesn't change size between states. The art is continuous-tone, so the whole canvas is scaled smoothly and uniformly into the
 square mascot panel, which keeps the anchor fixed. Reduced motion uses `staticFallback`.
 
 The default pack is the designer's `assets/mascots/mona-pet-v1` (see `docs/design/`).

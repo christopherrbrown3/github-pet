@@ -20,15 +20,17 @@ enum SnapshotRenderer {
             report.append("state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
                           + "demo=\(model.isDemo) mood=\(model.mascotState.rawValue)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
+            let panel = MascotView.panelSize(side: model.settings.mascotSize)
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
-                report += await render(InboxView(model: model, showsWindowButton: false),
-                                       name: "\(name)-inbox\(suffix)", directory: directory,
-                                       appearance: appearance, asWindow: true)
+                report += await render(MascotView(model: model).frame(width: panel.width, height: panel.height),
+                                       name: "\(name)-mascot\(suffix)", directory: directory, appearance: appearance)
                 report += await render(HoverSummaryView(model: model), name: "\(name)-hover\(suffix)",
                                        directory: directory, appearance: appearance)
-                report += await render(MascotView(model: model)
-                                        .frame(width: model.settings.mascotSize, height: model.settings.mascotSize),
-                                       name: "\(name)-mascot\(suffix)", directory: directory, appearance: appearance)
+            }
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+                                       name: "\(name)-inbox\(suffix)", directory: directory,
+                                       appearance: appearance, asWindow: true)
             }
             report.append("")
         }
@@ -41,6 +43,7 @@ enum SnapshotRenderer {
         await capture("02-injected")
         model.replaySnapshot()
         await capture("03-replayed")
+        model.markAllSeen()   // as when the user opens the inbox
         model.setPartialPolls(true)
         await capture("04-partial")
         model.setPartialPolls(false)
@@ -53,8 +56,12 @@ enum SnapshotRenderer {
         model.settings.privacyMode = true
         await capture("08-privacy")
         model.settings.privacyMode = false
+        // Attention needs an unseen event while alerts are allowed; with reduced motion the
+        // mascot holds the attention state's static fallback pose (no clip plays).
         model.settings.reducedMotion = true
+        model.injectEntitlementEvent()
         await capture("09-attention-static")
+        model.markAllSeen()
         model.injectWorkflowFailure()
         await capture("10-urgent-static")
         // Only with an explicit gh path (e.g. /nonexistent), so the result is deterministic.

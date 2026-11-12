@@ -31,10 +31,12 @@ final class MascotWindowController {
         }
         let panel = self.panel ?? makePanel()
         self.panel = panel
-        let side = CGFloat(size)
-        let frameOrigin = origin.flatMap { onScreen(CGRect(origin: $0, size: CGSize(width: side, height: side))) }
-            ?? defaultOrigin(side: side)
-        panel.setFrame(CGRect(origin: frameOrigin, size: CGSize(width: side, height: side)), display: true)
+        // The art square sits at the bottom of the panel (origin = ground side), with the tag
+        // lane above it; resizing keeps the bottom-left origin, so the art stays put.
+        let panelSize = MascotView.panelSize(side: CGFloat(size))
+        let frameOrigin = origin.flatMap { onScreen(CGRect(origin: $0, size: panelSize)) }
+            ?? defaultOrigin(size: panelSize)
+        panel.setFrame(CGRect(origin: frameOrigin, size: panelSize), display: true)
         panel.orderFrontRegardless()
     }
 
@@ -100,9 +102,9 @@ final class MascotWindowController {
         return visible ? frame.origin : nil
     }
 
-    private func defaultOrigin(side: CGFloat) -> CGPoint {
+    private func defaultOrigin(size: CGSize) -> CGPoint {
         let screen = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
-        return CGPoint(x: screen.maxX - side - 24, y: screen.minY + 24)
+        return CGPoint(x: screen.maxX - size.width - 24, y: screen.minY + 24)
     }
 }
 

@@ -36,7 +36,7 @@ for step rows in 01-baseline 3 02-injected 4; do
 done
 check "baseline count"            '^state=Up to date badge=3 rows=3 demo=true'
 check "injected adds one row"     '^state=Up to date badge=4 rows=4 demo=true mood=attention'
-check "replay adds nothing"       '^state=Up to date badge=4 rows=4 demo=true mood=idle'
+check "replay adds nothing"       '^state=Up to date badge=4 rows=4 demo=true mood=attention'
 check "partial is labelled"       '^state=Partial data badge=3\+ rows=3'
 check "stale count unknown"       '^state=Stale badge=\? rows=4'
 check "disconnect count unknown"  '^state=Error: simulated disconnect badge=\?'
@@ -44,6 +44,8 @@ check "menu-bar names Demo"       '^menu-bar AX: GitHub Pet, Demo data, '
 check "partial AX quality"        'at least 3 items, some sources unavailable'
 check "loading count unknown"     '^state=Loading… badge=\? rows=0'
 check "urgent fixture"            'mood=urgent'
+check "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
+check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x150 pt'
 check "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
 check "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \

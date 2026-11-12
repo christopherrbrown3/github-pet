@@ -5,6 +5,8 @@ import SwiftUI
 struct InboxView: View {
     @ObservedObject var model: AppModel
     var showsWindowButton = true
+    /// Closing a real inbox marks its items seen; offscreen render copies must not.
+    var marksSeenOnClose = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -19,7 +21,7 @@ struct InboxView: View {
         }
         .padding(12)
         .frame(minWidth: 360, idealWidth: 360)
-        .onDisappear { model.markAllSeen() }
+        .onDisappear { if marksSeenOnClose { model.markAllSeen() } }
     }
 
     private var header: some View {

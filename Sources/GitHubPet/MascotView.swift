@@ -6,34 +6,44 @@ import SwiftUI
 /// native placeholder. Timing comes from `MascotAnimator` on the app clock, so QA clock
 /// hooks drive animation too. Reduced motion pins a static pose; text and badge never move.
 struct MascotView: View {
+    /// Height of the adornment lane above the artwork square. Fixed, so the panel's size and
+    /// the art's ground anchor never change with state, badge or Demo.
+    static let laneHeight: CGFloat = 22
+
+    /// Panel size for a given artwork side: the art square plus the lane above it.
+    static func panelSize(side: CGFloat) -> CGSize {
+        CGSize(width: side, height: side + laneHeight)
+    }
+
     @ObservedObject var model: AppModel
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
-        ZStack {
-            if reduced {
-                figure(at: model.clock(), reduced: true)
-            } else {
-                TimelineView(.animation(minimumInterval: 1.0 / 8.0)) { context in
-                    figure(at: context.date.addingTimeInterval(model.clockOffset), reduced: false)
+        VStack(spacing: 0) {
+            // Adornment lane: DEMO and count tags live here, outside the artwork rectangle.
+            HStack(spacing: 4) {
+                if model.isDemo {
+                    Tag(text: PrivacyText.demoLabel.uppercased(), fill: Color(white: 0.32))
+                }
+                Spacer(minLength: 0)
+                if let badge = model.badge {
+                    Tag(text: badge, fill: model.mascotState == .urgent ? .red : .accentColor)
                 }
             }
-            // Tags share the top lane, clear of the body and the ground anchor at y≈232/256.
-            VStack {
-                HStack(alignment: .top) {
-                    if model.isDemo {
-                        Tag(text: PrivacyText.demoLabel.uppercased(), fill: Color(white: 0.32))
-                    }
-                    Spacer()
-                    if let badge = model.badge {
-                        Tag(text: badge, fill: model.mascotState == .urgent ? .red : .accentColor)
+            .frame(height: Self.laneHeight)
+            .padding(.horizontal, 2)
+            Group {
+                if reduced {
+                    figure(at: model.clock(), reduced: true)
+                } else {
+                    TimelineView(.animation(minimumInterval: 1.0 / 8.0)) { context in
+                        figure(at: context.date.addingTimeInterval(model.clockOffset), reduced: false)
                     }
                 }
-                Spacer()
             }
-            .padding(4)
+            .aspectRatio(1, contentMode: .fit)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(([model.statusAccessibilityLabel] + model.summaryLines.dropFirst(model.isDemo ? 1 : 0))
             .joined(separator: ". "))
