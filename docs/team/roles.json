@@ -1,0 +1,34 @@
+{
+  "roles": [
+    {
+      "name": "product-manager",
+      "model": "gpt-6-astra",
+      "terminal": "t8",
+      "runtime": "codex",
+      "assignment": "#5"
+    },
+    {
+      "name": "developer",
+      "model": "claude-opus-5-5",
+      "terminal": "t9",
+      "runtime": "claude",
+      "assignment": "#2"
+    },
+    {
+      "name": "graphic-designer",
+      "model": "gpt-6.1-sol",
+      "terminal": "t10",
+      "runtime": "codex",
+      "assignment": "#3"
+    },
+    {
+      "name": "qa-engineer",
+      "model": "gpt-6-luna",
+      "terminal": "t11",
+      "runtime": "codex",
+      "assignment": "#4"
+    }
+  ],
+  "observedDate": "2026-11-12",
+  "noMergeWithoutUserAuthorization": true
+}
