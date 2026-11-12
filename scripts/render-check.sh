@@ -12,7 +12,7 @@ out=${2:-.build/render-check}
 suite=dev.github-pet.render-check.$$
 rm -rf "$out"
 
-"$binary" --defaults-suite "$suite" --reset-settings --fixtures --render-snapshots "$out" &
+GITHUB_PET_GH_PATH=/nonexistent/gh "$binary" --defaults-suite "$suite" --reset-settings --fixtures --render-snapshots "$out" &
 pid=$!
 for _ in {1..90}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
@@ -42,7 +42,12 @@ check "stale count unknown"       '^state=Stale badge=\? rows=4'
 check "disconnect count unknown"  '^state=Error: simulated disconnect badge=\?'
 check "menu-bar names Demo"       '^menu-bar AX: GitHub Pet, Demo data, '
 check "partial AX quality"        'at least 3 items, some sources unavailable'
-for png in 02-injected-inbox 04-partial-inbox 08-privacy-hover 05-stale-mascot; do
+check "loading count unknown"     '^state=Loading… badge=\? rows=0'
+check "urgent fixture"            'mood=urgent'
+check "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
+check "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
+for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
+           05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox; do
   [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
 done
 

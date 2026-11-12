@@ -47,9 +47,17 @@ struct InboxView: View {
                 Text("Demo data (fixtures): invented items, not from GitHub.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
+                // Meaning is carried by primary-label words plus a symbol, never by colour
+                // alone (coloured caption text failed 4.5:1 contrast in light mode).
+                if let symbol = statusSymbol {
+                    Image(systemName: symbol)
+                        .symbolRenderingMode(.multicolor)
+                        .accessibilityHidden(true)
+                }
                 Text(model.dataState.statusText)
-                    .foregroundStyle(statusColor)
+                    .foregroundStyle(statusIsDegraded ? .primary : .secondary)
+                    .fontWeight(statusIsDegraded ? .semibold : .regular)
                     .accessibilityIdentifier("inbox.status")
                 if let last = model.lastSuccess, model.dataState != .ready, model.dataState != .empty {
                     Text("· last updated \(last.formatted(date: .omitted, time: .shortened))")
@@ -69,12 +77,13 @@ struct InboxView: View {
         }
     }
 
-    private var statusColor: Color {
+    private var statusIsDegraded: Bool { statusSymbol != nil }
+
+    private var statusSymbol: String? {
         switch model.dataState {
-        case .ready, .empty: return .secondary
-        case .loading: return .secondary
-        case .partial, .stale: return .orange
-        case .ghMissing, .unauthenticated, .error: return .red
+        case .ready, .empty, .loading: return nil
+        case .partial, .stale: return "exclamationmark.triangle.fill"
+        case .ghMissing, .unauthenticated, .error: return "xmark.octagon.fill"
         }
     }
 
@@ -209,6 +218,7 @@ struct SimulatorMenu: View {
     var body: some View {
         Menu("Simulator") {
             Button("Inject entitlement event") { model.injectEntitlementEvent() }
+            Button("Inject workflow failure (urgent)") { model.injectWorkflowFailure() }
             Button("Replay current snapshot") { model.replaySnapshot() }
             Toggle("Partial data", isOn: Binding(get: { model.partialPolls },
                                                  set: { model.setPartialPolls($0) }))

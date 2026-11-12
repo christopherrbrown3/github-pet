@@ -18,17 +18,18 @@ struct MascotView: View {
                     figure(at: context.date.addingTimeInterval(model.clockOffset), reduced: false)
                 }
             }
+            // Tags share the top lane, clear of the body and the ground anchor at y≈232/256.
             VStack {
-                HStack {
+                HStack(alignment: .top) {
+                    if model.isDemo {
+                        Tag(text: PrivacyText.demoLabel.uppercased(), fill: Color(white: 0.32))
+                    }
                     Spacer()
                     if let badge = model.badge {
                         Tag(text: badge, fill: model.mascotState == .urgent ? .red : .accentColor)
                     }
                 }
                 Spacer()
-                if model.isDemo {
-                    Tag(text: PrivacyText.demoLabel.uppercased(), fill: .gray)
-                }
             }
             .padding(4)
         }

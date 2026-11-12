@@ -207,6 +207,12 @@ final class AppModel: ObservableObject {
         refresh()
     }
 
+    func injectWorkflowFailure() {
+        guard usingFixtures else { return }
+        simulator.injectWorkflowFailure(now: clock())
+        refresh()
+    }
+
     func replaySnapshot() {
         guard usingFixtures else { return }
         refresh()
@@ -248,4 +254,12 @@ final class AppModel: ObservableObject {
     }
 
     var simulatorConnected: Bool { simulator.connected }
+
+    /// Render hook only: show the Loading state of a fresh source without polling.
+    func showLoadingForSnapshot() {
+        engine.reset()
+        unseenIDs.removeAll()
+        clips.clear()
+        sync(now: clock())
+    }
 }

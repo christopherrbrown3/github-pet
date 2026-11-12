@@ -40,6 +40,19 @@ public final class FixtureSimulator {
         return item
     }
 
+    /// Add one workflow-failure item (critical severity → urgent mood) with a unique stable ID.
+    @discardableResult
+    public func injectWorkflowFailure(now: Date = Date()) -> InboxItem {
+        let token = makeID()
+        let item = InboxItem(id: "ciFailure:fixture-\(token)", kind: .ciFailure,
+                             repository: "example/pet-demo",
+                             title: "Fixture workflow failed (\(token.prefix(8)))",
+                             url: URL(string: "https://github.com/example/pet-demo/actions"),
+                             updatedAt: now, isDemo: true)
+        injected.append(item)
+        return item
+    }
+
     public func disconnect() { connected = false }
     public func reconnect() { connected = true }
 

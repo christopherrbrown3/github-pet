@@ -4,7 +4,9 @@ import SwiftUI
 
 /// QA/dev hook: `--render-snapshots <dir>` drives a fixture scenario, renders the real Inbox
 /// window, hover summary and mascot offscreen with AppKit, dumps each window's accessibility
-/// tree, then quits. Needs no screen-recording or accessibility permission.
+/// tree, then quits. Each surface is rendered in light (`<name>.png`) and dark (`<name>-dark.png`)
+/// appearance. Needs no screen-recording or accessibility permission. Stills only: they say
+/// nothing about interaction or animation.
 @MainActor
 enum SnapshotRenderer {
     static func run(model: AppModel, directory: URL) async {
@@ -18,15 +20,22 @@ enum SnapshotRenderer {
             report.append("state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
                           + "demo=\(model.isDemo) mood=\(model.mascotState.rawValue)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
-            report += await render(InboxView(model: model, showsWindowButton: false), name: "\(name)-inbox",
-                                   directory: directory, asWindow: true)
-            report += await render(HoverSummaryView(model: model), name: "\(name)-hover", directory: directory)
-            report += await render(MascotView(model: model)
-                                    .frame(width: model.settings.mascotSize, height: model.settings.mascotSize),
-                                   name: "\(name)-mascot", directory: directory)
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(InboxView(model: model, showsWindowButton: false),
+                                       name: "\(name)-inbox\(suffix)", directory: directory,
+                                       appearance: appearance, asWindow: true)
+                report += await render(HoverSummaryView(model: model), name: "\(name)-hover\(suffix)",
+                                       directory: directory, appearance: appearance)
+                report += await render(MascotView(model: model)
+                                        .frame(width: model.settings.mascotSize, height: model.settings.mascotSize),
+                                       name: "\(name)-mascot\(suffix)", directory: directory, appearance: appearance)
+            }
             report.append("")
         }
 
+        model.showLoadingForSnapshot()
+        await capture("00-loading")
+        model.refresh()
         await capture("01-baseline")
         model.injectEntitlementEvent()
         await capture("02-injected")
@@ -43,6 +52,17 @@ enum SnapshotRenderer {
         await capture("07-reconnected")
         model.settings.privacyMode = true
         await capture("08-privacy")
+        model.settings.privacyMode = false
+        model.settings.reducedMotion = true
+        await capture("09-attention-static")
+        model.injectWorkflowFailure()
+        await capture("10-urgent-static")
+        // Only with an explicit gh path (e.g. /nonexistent), so the result is deterministic.
+        if ProcessInfo.processInfo.environment[GhLocator.overrideVariable] != nil {
+            model.settings.dataSource = .githubCLI
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await capture("11-gh-override")
+        }
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
@@ -51,7 +71,8 @@ enum SnapshotRenderer {
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
-    private static func render<V: View>(_ view: V, name: String, directory: URL, asWindow: Bool = false) async -> [String] {
+    private static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
+                                        asWindow: Bool = false) async -> [String] {
         let window: NSWindow
         if asWindow {
             window = NSWindow(contentViewController: NSHostingController(rootView: view))
@@ -62,6 +83,7 @@ enum SnapshotRenderer {
             window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
             window.contentView = hosting
         }
+        window.appearance = NSAppearance(named: appearance)
         window.isReleasedWhenClosed = false
         window.setFrameOrigin(CGPoint(x: -10_000, y: -10_000))
         window.orderFrontRegardless()
@@ -88,7 +110,11 @@ enum SnapshotRenderer {
               let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                                       space: CGColorSpaceCreateDeviceRGB(),
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-        context.setFillColor(NSColor.windowBackgroundColor.cgColor)
+        var background = NSColor.windowBackgroundColor.cgColor
+        (view.window?.appearance ?? view.effectiveAppearance).performAsCurrentDrawingAppearance {
+            background = NSColor.windowBackgroundColor.cgColor
+        }
+        context.setFillColor(background)
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         context.scaleBy(x: scale, y: scale)
         if view.isFlipped {

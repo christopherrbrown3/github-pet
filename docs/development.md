@@ -110,6 +110,7 @@ In Fixtures mode the inbox footer has a **Simulator** menu:
 | Action | Expected result |
 |---|---|
 | Inject entitlement event | One new row with a unique ID. Fires exactly one event: attention mood, one hop clip, filled menu-bar icon. |
+| Inject workflow failure (urgent) | One new critical row with a unique ID. Mood becomes urgent, with a red count badge and the concerned pose. |
 | Replay current snapshot | No change, no event |
 | Partial data (toggle) | While it's on, every poll is partial: "Partial data", badge `N+`, assigned-issue fixture missing, no events. It stays on across the 30-second fixture poll until you turn it off. |
 | Mark data stale | "Stale · last updated …", rows dimmed |
@@ -128,7 +129,7 @@ Launch arguments and environment variables:
 | `--clock-offset <seconds>` / `GITHUB_PET_CLOCK_OFFSET` | Shift the app clock |
 | `TZ=<zone>` | Time zone for quiet hours |
 | `GITHUB_PET_GH_PATH=<path>` | Use this `gh` (point at a missing path or a fake script) |
-| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs, and write `report.txt` (state, badge, rows, accessibility label, window sizes). Then quit. No screen-recording permission needed. |
+| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs in light (`name.png`) and dark (`name-dark.png`) appearance, including loading, urgent and reduced-motion static states (and a missing-`gh` state when `GITHUB_PET_GH_PATH` is set), and write `report.txt` (state, badge, rows, accessibility label, window sizes). Then quit. No screen-recording permission needed. |
 | `GITHUB_PET_PACK_DIR=<dir>` | Load this mascot pack instead of the bundled one. If validation fails, the placeholder is used and Settings explains why. |
 | `--placeholder` | Draw the native vector placeholder instead of the bundled pack |
 

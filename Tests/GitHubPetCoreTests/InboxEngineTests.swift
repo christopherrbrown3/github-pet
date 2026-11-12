@@ -303,3 +303,21 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(engine.state == .loading)
     }
 }
+
+@Suite struct WorkflowFailureFixtureTests {
+    @Test func injectedWorkflowFailureIsUniqueDemoAndUrgent() {
+        var counter = 0
+        let simulator = FixtureSimulator(makeID: { counter += 1; return "w\(counter)" })
+        let engine = InboxEngine()
+        engine.apply(simulator.poll(), now: t0)
+        let failure = simulator.injectWorkflowFailure(now: t0)
+        let events = engine.apply(simulator.poll(), now: t0 + 1)
+        #expect(events.map(\.item.id) == [failure.id])
+        #expect(events.first?.severity == .critical)
+        #expect(failure.isDemo)
+        #expect(SafeLink.validated(failure.url) != nil)
+        #expect(MascotPolicy.state(dataState: engine.state, items: engine.items, unseenCount: 0,
+                                   alertsAllowed: false) == .urgent)
+        #expect(simulator.injectWorkflowFailure(now: t0).id != failure.id)
+    }
+}
