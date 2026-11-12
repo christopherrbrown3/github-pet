@@ -97,6 +97,41 @@ private let searchJSON = """
         #expect(items.count == 2)
     }
 
+    private func rows(_ count: Int) -> Data {
+        let row = { (n: Int) in
+            #"{"number":\#(n),"title":"t\#(n)","url":"https://github.com/example/repo/pull/\#(n)","repository":{"nameWithOwner":"example/repo"},"updatedAt":"2026-11-12T10:00:00Z"}"#
+        }
+        return Data("[\((1...max(1, count)).map(row).joined(separator: ","))]".utf8)
+    }
+
+    @Test func queryAtTheResultCapIsPartial() {
+        let runner = FakeRunner()
+        runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: rows(GhClient.searchLimit))
+        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
+        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
+        guard case .snapshot(let items, let complete) = client.fetch() else {
+            Issue.record("expected snapshot")
+            return
+        }
+        #expect(items.count == GhClient.searchLimit)
+        #expect(!complete, "a full page may hide more matches")
+        let limitArgument = runner.calls.first { $0.1.starts(with: ["search", "prs"]) }?.1.drop { $0 != "--limit" }.dropFirst().first
+        #expect(limitArgument == "\(GhClient.searchLimit)")
+    }
+
+    @Test func queryBelowTheCapIsComplete() {
+        let runner = FakeRunner()
+        runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: rows(GhClient.searchLimit - 1))
+        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
+        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
+        guard case .snapshot(_, true) = client.fetch() else {
+            Issue.record("expected complete snapshot")
+            return
+        }
+    }
+
     @Test func malformedOutputCountsAsFailure() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)

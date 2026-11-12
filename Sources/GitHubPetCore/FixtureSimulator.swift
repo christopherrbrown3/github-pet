@@ -3,12 +3,12 @@ import Foundation
 /// Offline data source for development and QA. Produces deterministic fixture snapshots
 /// and lets the user inject events and simulate disconnects, partial data and recovery.
 public final class FixtureSimulator {
-    public enum NextPoll: Equatable { case complete, partial }
-
     public private(set) var baseItems: [InboxItem]
     public private(set) var injected: [InboxItem] = []
     public private(set) var connected = true
-    public var nextPoll: NextPoll = .complete
+    /// While on, every poll is partial (assigned-issue fixtures "unavailable"). Sticky, so the
+    /// periodic fixture poll cannot silently flip the state back to complete.
+    public var partialPolls = false
     private let makeID: () -> String
 
     public init(baseItems: [InboxItem] = FixtureSimulator.defaultItems(),
@@ -17,13 +17,11 @@ public final class FixtureSimulator {
         self.makeID = makeID
     }
 
-    /// The next poll result. A partial poll drops the assigned-issue fixtures and resets
-    /// back to complete afterwards.
+    /// The next poll result. Partial polls drop the assigned-issue fixtures.
     public func poll() -> FetchOutcome {
         guard connected else { return .failure(.failed("simulated disconnect")) }
         let all = baseItems + injected
-        if nextPoll == .partial {
-            nextPoll = .complete
+        if partialPolls {
             return .snapshot(items: all.filter { $0.kind != .assignedIssue }, complete: false)
         }
         return .snapshot(items: all, complete: true)
@@ -37,7 +35,7 @@ public final class FixtureSimulator {
                              repository: "example/pet-demo",
                              title: "Fixture entitlement granted (\(token.prefix(8)))",
                              url: URL(string: "https://github.com/settings/copilot"),
-                             updatedAt: now)
+                             updatedAt: now, isDemo: true)
         injected.append(item)
         return item
     }
@@ -50,7 +48,7 @@ public final class FixtureSimulator {
             let path = kind == .assignedIssue ? "issues" : "pull"
             return InboxItem(id: "\(kind.rawValue):\(repo)#\(number)", kind: kind, repository: repo,
                              title: title, url: URL(string: "https://github.com/\(repo)/\(path)/\(number)"),
-                             updatedAt: reference.addingTimeInterval(-hoursAgo * 3600))
+                             updatedAt: reference.addingTimeInterval(-hoursAgo * 3600), isDemo: true)
         }
         return [
             item(.reviewRequest, "example/pet-demo", 42, "Add hover summary to mascot", 1),

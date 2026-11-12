@@ -72,8 +72,11 @@ struct SettingsView: View {
     /// Bridges a minutes-since-midnight field to a time-only `Date` in the local time zone.
     private func minuteBinding(_ keyPath: WritableKeyPath<QuietHours, Int>) -> Binding<Date> {
         Binding {
-            let start = Calendar.current.startOfDay(for: Date())
-            return start.addingTimeInterval(TimeInterval(model.settings.quietHours[keyPath: keyPath] * 60))
+            // Set the wall-clock hour and minute directly; adding seconds to midnight would be
+            // off by an hour on daylight-saving transition days.
+            let minute = model.settings.quietHours[keyPath: keyPath]
+            return Calendar.current.date(bySettingHour: minute / 60, minute: minute % 60, second: 0,
+                                         of: model.now) ?? model.now
         } set: { date in
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
             model.settings.quietHours[keyPath: keyPath] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)

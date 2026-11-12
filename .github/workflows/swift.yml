@@ -37,3 +37,13 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true
           test -f .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/manifest.json
           test "$(ls .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/frames/*.png | wc -l)" -eq 12
+      - name: GUI render check
+        timeout-minutes: 5
+        run: scripts/render-check.sh
+      - name: Upload render evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-check
+          path: .build/render-check
+          if-no-files-found: ignore

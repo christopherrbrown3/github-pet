@@ -44,12 +44,21 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
 
 @Suite struct MascotPolicyTests {
     @Test func unknownDataIsNeverAllClearOrZero() {
-        for state in [DataState.loading, .error("x"), .ghMissing, .unauthenticated] {
-            #expect(MascotPolicy.badge(dataState: state, count: 0) == nil)
+        for state in [DataState.loading, .stale, .error("x"), .ghMissing, .unauthenticated] {
+            #expect(MascotPolicy.badge(dataState: state, count: 0) == "?")
+            #expect(MascotPolicy.badge(dataState: state, count: 5) == "?", "no exact-looking count for \(state)")
+            #expect(MascotPolicy.countDescription(dataState: state, count: 5).hasPrefix("count unknown"))
         }
         #expect(MascotPolicy.badge(dataState: .partial, count: 0) == "0+")
         #expect(MascotPolicy.badge(dataState: .partial, count: 2) == "2+")
         #expect(MascotPolicy.badge(dataState: .ready, count: 3) == "3")
+        #expect(MascotPolicy.badge(dataState: .empty, count: 0) == nil, "only a verified empty inbox has no badge")
+    }
+
+    @Test func countDescriptionsMatchQuality() {
+        #expect(MascotPolicy.countDescription(dataState: .ready, count: 1) == "1 item")
+        #expect(MascotPolicy.countDescription(dataState: .empty, count: 0) == "all clear")
+        #expect(MascotPolicy.countDescription(dataState: .partial, count: 2) == "at least 2 items, some sources unavailable")
     }
 
     @Test func authProblemsAreUrgent() {
@@ -153,5 +162,112 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
     @Test func durationsBelowMinimumAreRaised() {
         // 10ms frames are treated as 125ms (8 fps cap).
         #expect(FrameClock.frameIndex(durationsMs: [10, 10], loop: true, elapsedMs: 100, reducedMotion: false) == 0)
+    }
+}
+
+@Suite struct DemoLabelTests {
+    private func demoItem() -> InboxItem {
+        var demo = item("d")
+        demo.isDemo = true
+        return demo
+    }
+
+    @Test func fixtureItemsAreDemo() {
+        #expect(FixtureSimulator.defaultItems().allSatisfy { $0.isDemo })
+        #expect(FixtureSimulator().injectEntitlementEvent().isDemo)
+    }
+
+    @Test func demoSurvivesPrivacyModeInRowsAndHover() {
+        let demo = demoItem()
+        #expect(PrivacyText.subtitle(demo, privacy: true) == "Demo · Review request")
+        #expect(PrivacyText.subtitle(demo, privacy: false) == "Demo · Review request · secret-org/secret-repo")
+        #expect(PrivacyText.subtitle(item("live"), privacy: true) == "Review request")
+        let lines = PrivacyText.summary(dataState: .ready, items: [demo], unseenCount: 0, privacy: true, demo: true)
+        #expect(lines.first == "Demo data (fixtures)")
+        #expect(lines.contains("Demo · Review request"))
+        #expect(!lines.joined().contains("secret"))
+    }
+
+    @Test func accessibilityLabelNamesDemoAndQuality() {
+        let label = AccessibilityText.statusLabel(dataState: .partial, count: 2, demo: true, needsAttention: false)
+        #expect(label == "GitHub Pet, Demo data, at least 2 items, some sources unavailable")
+        let live = AccessibilityText.statusLabel(dataState: .stale, count: 4, demo: false, needsAttention: true)
+        #expect(live == "GitHub Pet, count unknown, data is stale, needs attention")
+    }
+}
+
+@Suite struct MascotAnimatorTests {
+    private let durations: (MascotState) -> [Int] = { $0 == .idle ? [2000, 200, 200, 2000] : [300, 400, 400, 800] }
+
+    private func clip(_ id: String, at start: Date, _ kind: ItemKind = .entitlement) -> EventClipQueue.Clip {
+        var queue = EventClipQueue()
+        queue.enqueue([InboxEvent(item: item(id, kind))], now: start, playable: true)
+        return queue.active!
+    }
+
+    @Test func clipLastsTwoSecondsFromItsStart() {
+        let c = clip("a", at: t0)
+        #expect(c.startedAt == t0)
+        #expect(c.endsAt == t0 + 2.0)
+        #expect(c.state == .attention)
+        #expect(clip("b", at: t0, .ciFailure).state == .urgent)
+    }
+
+    @Test func everyNewClipReplaysFromFirstFrameEvenInAttentionMood() {
+        let first = clip("a", at: t0)
+        let p1 = MascotAnimator.pose(mood: .attention, clip: first, now: t0 + 0.1, reducedMotion: false,
+                                     idleEpoch: t0, durationsMs: durations)
+        #expect(p1.state == .attention && p1.frame == 0)
+        #expect(abs((p1.clipElapsed ?? -1) - 0.1) < 0.001)
+        // Clip over: attention mood holds its static pose (no re-animation from mood alone).
+        let settled = MascotAnimator.pose(mood: .attention, clip: nil, now: t0 + 5, reducedMotion: false,
+                                          idleEpoch: t0, durationsMs: durations)
+        #expect(settled.frame == nil)
+        // A second event while still in attention plays again from frame 0.
+        let second = clip("b", at: t0 + 10)
+        let p2 = MascotAnimator.pose(mood: .attention, clip: second, now: t0 + 10.05, reducedMotion: false,
+                                     idleEpoch: t0, durationsMs: durations)
+        #expect(p2.frame == 0)
+        let late = MascotAnimator.pose(mood: .attention, clip: second, now: t0 + 11.5, reducedMotion: false,
+                                       idleEpoch: t0, durationsMs: durations)
+        #expect(late.frame == 3)
+    }
+
+    @Test func suppressedClipsMeanStaticMoodPoses() {
+        for mood in [MascotState.attention, .urgent] {
+            let pose = MascotAnimator.pose(mood: mood, clip: nil, now: t0, reducedMotion: false,
+                                           idleEpoch: t0, durationsMs: durations)
+            #expect(pose == MascotPose(state: mood, frame: nil, clipElapsed: nil))
+        }
+    }
+
+    @Test func reducedMotionIgnoresClipAndIdleLoop() {
+        let pose = MascotAnimator.pose(mood: .idle, clip: clip("a", at: t0), now: t0 + 0.5, reducedMotion: true,
+                                       idleEpoch: t0, durationsMs: durations)
+        #expect(pose == MascotPose(state: .idle, frame: nil, clipElapsed: nil))
+    }
+
+    @Test func idleLoopsOnTheSuppliedClock() {
+        func frame(_ seconds: Double) -> Int? {
+            MascotAnimator.pose(mood: .idle, clip: nil, now: t0 + seconds, reducedMotion: false,
+                                idleEpoch: t0, durationsMs: durations).frame
+        }
+        #expect(frame(0) == 0)
+        #expect(frame(2.1) == 1)
+        #expect(frame(2.3) == 2)
+        #expect(frame(4.5) == 0, "loop wraps after 4.4 s")
+    }
+
+    @Test func clipTimingUsesTheSameClockAsTheQueue() {
+        // A QA clock offset shifts both the clip and "now"; a clip is never seen as before
+        // its start or long finished just because of the offset.
+        let offset: TimeInterval = 3600
+        let c = clip("a", at: t0 + offset)
+        let pose = MascotAnimator.pose(mood: .attention, clip: c, now: t0 + offset + 0.2, reducedMotion: false,
+                                       idleEpoch: t0, durationsMs: durations)
+        #expect(abs((pose.clipElapsed ?? -1) - 0.2) < 0.001)
+        let unshifted = MascotAnimator.pose(mood: .attention, clip: c, now: t0 + 0.2, reducedMotion: false,
+                                            idleEpoch: t0, durationsMs: durations)
+        #expect(unshifted.clipElapsed == nil, "a mismatched clock does not produce negative clip time")
     }
 }

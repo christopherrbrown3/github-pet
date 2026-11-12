@@ -49,6 +49,21 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         #expect(!quiet.contains(utc(14, 0), calendar: utcCalendar()))
     }
 
+    @Test func wallClockIsPreservedAcrossDaylightSavingFallBack() {
+        // 2026-11-01 is the US fall-back day: 22:00 local must still be 22:00, not 21:00.
+        var la = Calendar(identifier: .gregorian)
+        la.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        let day = la.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 12))!
+        let quiet = QuietHours(enabled: true, startMinute: 22 * 60, endMinute: 7 * 60)
+        let tenPM = la.date(bySettingHour: 22, minute: 0, second: 0, of: day)!
+        #expect(la.component(.hour, from: tenPM) == 22)
+        #expect(quiet.contains(tenPM, calendar: la))
+        #expect(!quiet.contains(tenPM.addingTimeInterval(-60), calendar: la))
+        // The naive "midnight + seconds" approach is an hour off on this day.
+        let naive = la.startOfDay(for: day).addingTimeInterval(22 * 3600)
+        #expect(la.component(.hour, from: naive) == 21)
+    }
+
     @Test func minutesAreClamped() {
         let quiet = QuietHours(enabled: true, startMinute: -5, endMinute: 99_999)
         #expect(quiet.startMinute == 0)

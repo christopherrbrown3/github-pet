@@ -50,22 +50,38 @@ use only: it isn't notarized or Developer ID signed.
 - `gh auth status --hostname github.com`: exit 0 means signed in. Exit 1 or 4, or "not logged in"
   on stderr, means **Not signed in to GitHub CLI** (hint: `gh auth login`). No executable means
   **GitHub CLI not found** (hint: `brew install gh`).
-- Live data comes from `gh search prs --review-requested=@me` and `gh search issues --assignee=@me`.
-  If one query fails, the snapshot is *partial*. If both fail, it's an *error*.
+- Live data comes from `gh search prs --review-requested=@me` and `gh search issues --assignee=@me`,
+  each capped at 30 results. If one query fails, or a query returns a full page of 30 (there may be
+  more), the snapshot is *partial*. If both fail, it's an *error*.
 
 ### Data quality and events
 - States: Loading, Up to date, All clear, Partial data, Stale (no success for 10 min),
   GitHub CLI not found, Not signed in, Error. Only *Up to date* and *All clear* mean the count is
-  known. Unknown, partial, stale and failed data is never shown as an empty inbox. The badge is
-  hidden when the count is unknown and shows `N+` for partial data.
+  known. Unknown, partial, stale and failed data is never shown as an empty inbox.
+- Badge (mascot and inbox header): `N` only for a fresh, complete count; `N+` for partial data;
+  `?` whenever the count is unknown (loading, stale, error, CLI missing, signed out). There's no
+  badge only for a verified, fresh, empty inbox. The menu-bar accessibility label states the count
+  and its quality, for example "GitHub Pet, Demo data, at least 3 items, some sources unavailable".
+- **Demo**: fixture data is always identified as Demo. The menu bar shows `DEMO` next to the icon,
+  the inbox header shows a DEMO tag and an explanatory line, every row subtitle starts with
+  "Demo", the hover summary starts with "Demo data (fixtures)", the mascot shows a DEMO tag, and
+  the accessibility labels say "Demo data". Privacy mode never hides it.
+- Switching the data source clears the inbox to Loading. Rows, counts and baseline from the
+  previous source are never shown as the new source's data, and a slow fetch from an earlier
+  session is discarded.
 - Items are keyed by stable IDs such as `reviewRequest:owner/repo#12`.
 - The first complete snapshot sets the baseline and fires no events. Unchanged polls never fire
   again. An ID fires at most once, even if it disappears and comes back.
-- A snapshot only counts as comparable if the previous one was complete and fresh. Recovering
-  from an error, from stale data or from a partial snapshot records IDs silently, so nothing is
-  replayed on reconnect.
-- Event clips play once (1.6 s), with at most one active and four pending. Critical clips go
-  first. They're suppressed under reduced motion, snooze and quiet hours.
+- A snapshot only counts as comparable if the previous one was complete and is still fresh at
+  the time of the new poll (checked directly, not via a timer). Recovering from an error, from
+  stale data or from a partial snapshot records IDs silently, so nothing is replayed on reconnect.
+  New IDs are decided before the tracker records anything, so eviction can't make existing IDs
+  look new.
+- Event clips play once (2.0 s), with at most one active and four pending. Critical clips go
+  first. Each clip plays its state's one-shot sequence from its own start, so a second event
+  replays it even if the mascot is already in attention. Without a clip, idle loops, and attention
+  and urgent hold their static pose. Clips are suppressed under reduced motion, snooze and quiet
+  hours. All timing uses the app clock, so the QA clock hooks apply.
 
 ### Settings
 Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`). Missing or invalid
@@ -95,7 +111,7 @@ In Fixtures mode the inbox footer has a **Simulator** menu:
 |---|---|
 | Inject entitlement event | One new row with a unique ID. Fires exactly one event: attention mood, one hop clip, filled menu-bar icon. |
 | Replay current snapshot | No change, no event |
-| Next poll: partial | "Partial data", badge `N+`, assigned-issue fixture missing, no events |
+| Partial data (toggle) | While it's on, every poll is partial: "Partial data", badge `N+`, assigned-issue fixture missing, no events. It stays on across the 30-second fixture poll until you turn it off. |
 | Mark data stale | "Stale · last updated …", rows dimmed |
 | Simulate disconnect / Reconnect | "Error: simulated disconnect" with rows dimmed. Reconnecting replays nothing, even an entitlement injected while disconnected. |
 | Reset baseline | Next snapshot re-seeds silently |
@@ -112,6 +128,7 @@ Launch arguments and environment variables:
 | `--clock-offset <seconds>` / `GITHUB_PET_CLOCK_OFFSET` | Shift the app clock |
 | `TZ=<zone>` | Time zone for quiet hours |
 | `GITHUB_PET_GH_PATH=<path>` | Use this `gh` (point at a missing path or a fake script) |
+| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs, and write `report.txt` (state, badge, rows, accessibility label, window sizes). Then quit. No screen-recording permission needed. |
 | `GITHUB_PET_PACK_DIR=<dir>` | Load this mascot pack instead of the bundled one. If validation fails, the placeholder is used and Settings explains why. |
 | `--placeholder` | Draw the native vector placeholder instead of the bundled pack |
 
@@ -130,7 +147,8 @@ Agreed with design: `<pack>/manifest.json` contains `schemaVersion: 1`, `id`, `n
 Each state has `frames[]`, `durationMs[]` (125–2000 ms, one per frame, 1–12 frames), `loop` and
 `staticFallback`. There's also an optional `frameSha256 {path: hex}`. Paths must be relative `.png`
 files inside the pack (no `..`, and no symlinks that escape the pack). Every PNG must be exactly
-256×256. The art is continuous-tone, so the whole canvas is scaled smoothly and uniformly into the
+256×256 and decodable by ImageIO with an alpha channel. The manifest is capped at 256 KB and each
+image at 4 MB, and both limits are enforced before decoding or hashing. The art is continuous-tone, so the whole canvas is scaled smoothly and uniformly into the
 square mascot panel, which keeps the anchor fixed. Reduced motion uses `staticFallback`.
 
 The default pack is the designer's `assets/mascots/mona-pet-v1` (see `docs/design/`).

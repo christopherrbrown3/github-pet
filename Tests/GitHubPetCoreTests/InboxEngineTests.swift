@@ -147,6 +147,51 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(result.first?.title == "newer")
     }
 
+    @Test func pollsFurtherApartThanStaleAfterAreNotComparable() {
+        // Regression: no refreshFreshness() call in between (e.g. poll timer fires first after sleep).
+        let engine = InboxEngine(staleAfter: 600)
+        engine.apply(.snapshot(items: [item("a")], complete: true), now: t0)
+        #expect(engine.apply(.snapshot(items: [item("a"), item("b")], complete: true), now: t0 + 601).isEmpty)
+        #expect(engine.apply(.snapshot(items: [item("a"), item("b"), item("c")], complete: true), now: t0 + 660)
+            .map(\.item.id) == ["c"])
+    }
+
+    @Test func clockGoingBackwardsIsNotComparable() {
+        let engine = InboxEngine(staleAfter: 600)
+        engine.apply(.snapshot(items: [item("a")], complete: true), now: t0)
+        #expect(engine.apply(.snapshot(items: [item("a"), item("b")], complete: true), now: t0 - 60).isEmpty)
+    }
+
+    @Test func evictionDuringASnapshotNeverReportsExistingIDs() {
+        // Regression: capacity 3, baseline [a, b, c], then [d, a, b] used to report all three.
+        let engine = InboxEngine(trackerCapacity: 3)
+        engine.apply(.snapshot(items: [item("a"), item("b"), item("c")], complete: true), now: t0)
+        let events = engine.apply(.snapshot(items: [item("d"), item("a"), item("b")], complete: true), now: t0 + 60)
+        #expect(events.map(\.item.id) == ["d"])
+    }
+
+    @Test func snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() {
+        let engine = InboxEngine(trackerCapacity: 2)
+        let many = (1...5).map { item("i\($0)", minutesAgo: Double($0)) }
+        engine.apply(.snapshot(items: many, complete: true), now: t0)
+        for minute in 1...3 {
+            #expect(engine.apply(.snapshot(items: many, complete: true), now: t0 + Double(minute * 60)).isEmpty)
+        }
+    }
+
+    @Test func resetClearsItemsStateAndTimestamp() {
+        let engine = InboxEngine()
+        engine.apply(.snapshot(items: [item("a")], complete: true), now: t0)
+        engine.reset()
+        #expect(engine.items.isEmpty)
+        #expect(engine.state == .loading)
+        #expect(engine.lastSuccess == nil)
+        #expect(!engine.baselineEstablished)
+        // A failing first fetch from the new source shows no rows from the old one.
+        engine.apply(.failure(.unauthenticated), now: t0 + 1)
+        #expect(engine.items.isEmpty)
+    }
+
     @Test func resetBaselineReseedsSilently() {
         let engine = InboxEngine()
         engine.apply(.snapshot(items: [item("a")], complete: true), now: t0)
@@ -183,18 +228,25 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(engine.items.contains { $0.kind == .entitlement })
     }
 
-    @Test func partialPollIsOneShot() {
+    @Test func partialPollsStayPartialUntilTurnedOff() {
+        // Regression #21: the periodic fixture poll must not flip partial back to complete.
         let simulator = FixtureSimulator()
-        simulator.nextPoll = .partial
-        guard case .snapshot(let items, false) = simulator.poll() else {
-            Issue.record("expected partial snapshot")
-            return
+        let engine = InboxEngine()
+        engine.apply(simulator.poll(), now: t0)
+        simulator.partialPolls = true
+        for poll in 1...3 {
+            guard case .snapshot(let items, false) = simulator.poll() else {
+                Issue.record("expected partial snapshot")
+                return
+            }
+            #expect(!items.contains { $0.kind == .assignedIssue })
+            engine.apply(simulator.poll(), now: t0 + Double(poll * 30))
+            #expect(engine.state == .partial)
+            #expect(MascotPolicy.badge(dataState: engine.state, count: engine.items.count) == "2+")
         }
-        #expect(!items.contains { $0.kind == .assignedIssue })
-        guard case .snapshot(_, true) = simulator.poll() else {
-            Issue.record("expected complete snapshot")
-            return
-        }
+        simulator.partialPolls = false
+        engine.apply(simulator.poll(), now: t0 + 120)
+        #expect(engine.state == .ready)
     }
 
     @Test func fixtureLinksAreSafe() {
@@ -202,5 +254,52 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
             #expect(SafeLink.validated(item.url) != nil)
         }
         #expect(SafeLink.validated(FixtureSimulator().injectEntitlementEvent().url) != nil)
+    }
+}
+
+@Suite struct SourceGenerationTests {
+    @Test func staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() {
+        // GitHub CLI (fetch running) → Fixtures → GitHub CLI.
+        var generations = SourceGenerations()
+        generations.switchSource()
+        let first = generations.beginFetch()
+        #expect(first != nil)
+        let duplicate = generations.beginFetch()
+        #expect(duplicate == nil, "one fetch per session at a time")
+        generations.switchSource()
+        generations.switchSource()
+        let second = generations.beginFetch()
+        #expect(second != nil, "an obsolete in-flight fetch must not block the new session")
+        let applyOld = generations.finishFetch(first!)
+        #expect(applyOld == false, "old session's result is discarded")
+        let blocked = generations.beginFetch()
+        #expect(blocked == nil, "finishing the old fetch does not clear the new one")
+        let applyNew = generations.finishFetch(second!)
+        #expect(applyNew)
+        let next = generations.beginFetch()
+        #expect(next != nil)
+    }
+
+    @Test func switchingSourcesNeverLeaksRowsBetweenSessions() {
+        // Simulates the app: Demo fixtures, then a live session whose first fetch is slow,
+        // then another switch; the late result must not appear in the newest session.
+        var generations = SourceGenerations()
+        let engine = InboxEngine()
+        generations.switchSource()
+        engine.reset()
+        engine.apply(FixtureSimulator().poll(), now: t0)
+        #expect(engine.items.allSatisfy { $0.isDemo })
+
+        generations.switchSource()
+        engine.reset()
+        #expect(engine.items.isEmpty, "no Demo rows shown as live data")
+        let liveFetch = generations.beginFetch()!
+
+        generations.switchSource()
+        engine.reset()
+        let lateResult = FetchOutcome.snapshot(items: [item("other-account")], complete: true)
+        if generations.finishFetch(liveFetch) { engine.apply(lateResult, now: t0 + 5) }
+        #expect(engine.items.isEmpty)
+        #expect(engine.state == .loading)
     }
 }

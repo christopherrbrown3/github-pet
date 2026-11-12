@@ -169,12 +169,14 @@ public struct GhClient: Sendable {
     }
 
     static let searchFields = "number,title,url,repository,updatedAt"
+    /// Per-query result cap. A query that fills it may have more matches, so it is partial.
+    static let searchLimit = 30
 
     static let queries: [Query] = [
         Query(kind: .reviewRequest, arguments: ["search", "prs", "--review-requested=@me", "--state=open",
-                                                "--json", searchFields, "--limit", "30"]),
+                                                "--json", searchFields, "--limit", "\(searchLimit)"]),
         Query(kind: .assignedIssue, arguments: ["search", "issues", "--assignee=@me", "--state=open",
-                                                "--json", searchFields, "--limit", "30"]),
+                                                "--json", searchFields, "--limit", "\(searchLimit)"]),
     ]
 
     /// One poll: run each search and merge. Any sub-query failure makes the snapshot partial.
@@ -189,18 +191,21 @@ public struct GhClient: Sendable {
 
         var items: [InboxItem] = []
         var failures = 0
+        var capped = false
         for query in Self.queries {
             do {
                 let result = try runner.run(executable: gh, arguments: query.arguments, timeout: timeout)
                 if Self.isAuthFailure(result) { return .failure(.unauthenticated) }
                 guard result.exitCode == 0 else { failures += 1; continue }
-                items += try GhSearchParser.parse(result.stdout, kind: query.kind)
+                let page = try GhSearchParser.parsePage(result.stdout, kind: query.kind)
+                items += page.items
+                if page.rowCount >= Self.searchLimit { capped = true }
             } catch {
                 failures += 1
             }
         }
         if failures == Self.queries.count { return .failure(.failed("GitHub search failed")) }
-        return .snapshot(items: items, complete: failures == 0)
+        return .snapshot(items: items, complete: failures == 0 && !capped)
     }
 }
 
@@ -219,15 +224,21 @@ public enum GhSearchParser {
     /// Parse `gh search … --json number,title,url,repository,updatedAt` output.
     /// IDs are `<kind>:<owner/repo>#<number>`, stable across polls.
     public static func parse(_ data: Data, kind: ItemKind) throws -> [InboxItem] {
+        try parsePage(data, kind: kind).items
+    }
+
+    /// Items plus the raw row count (used to detect a query that hit its result cap).
+    public static func parsePage(_ data: Data, kind: ItemKind) throws -> (items: [InboxItem], rowCount: Int) {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         guard let rows = try? decoder.decode([Row].self, from: data) else { throw ParseError.malformed }
-        return rows.compactMap { row in
+        let items: [InboxItem] = rows.compactMap { row in
             let repo = row.repository.nameWithOwner
             guard !repo.isEmpty, row.number > 0 else { return nil }
             return InboxItem(id: "\(kind.rawValue):\(repo)#\(row.number)", kind: kind,
                              repository: repo, title: row.title,
                              url: SafeLink.validated(row.url), updatedAt: row.updatedAt)
         }
+        return (items, rows.count)
     }
 }

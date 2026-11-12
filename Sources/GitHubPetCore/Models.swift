@@ -42,15 +42,18 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
     public var title: String
     public var url: URL?
     public var updatedAt: Date
+    /// Invented fixture data. Always labelled "Demo", including in privacy mode.
+    public var isDemo: Bool
 
     public init(id: String, kind: ItemKind, repository: String, title: String,
-                url: URL?, updatedAt: Date) {
+                url: URL?, updatedAt: Date, isDemo: Bool = false) {
         self.id = id
         self.kind = kind
         self.repository = repository
         self.title = title
         self.url = url
         self.updatedAt = updatedAt
+        self.isDemo = isDemo
     }
 }
 

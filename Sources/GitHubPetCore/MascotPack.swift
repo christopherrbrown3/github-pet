@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import ImageIO
 
 /// Mascot pack manifest, schema v1 (agreed with design):
 /// `<pack>/manifest.json` with 256×256 RGBA PNG frames per state, anchor at the bottom-centre
@@ -40,6 +41,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case notPNG(String)
     case wrongSize(String, Int, Int)
     case checksumMismatch(String)
+    case tooLarge(String)
+    case undecodable(String)
 
     public var description: String {
         switch self {
@@ -56,6 +59,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .notPNG(let p): return "not a PNG '\(p)'"
         case .wrongSize(let p, let w, let h): return "'\(p)' is \(w)×\(h), expected canvas size"
         case .checksumMismatch(let p): return "SHA-256 mismatch for '\(p)'"
+        case .tooLarge(let p): return "'\(p)' exceeds the size limit"
+        case .undecodable(let p): return "'\(p)' is not a decodable RGBA PNG"
         }
     }
 }
@@ -72,6 +77,9 @@ public struct MascotPack: Equatable, Sendable {
     public static let canvasSize = 256
     public static let maxFrames = 12
     public static let durationRange = 125...2000
+    /// Read limits, enforced before decoding or hashing.
+    public static let maxManifestBytes = 256 * 1024
+    public static let maxImageBytes = 4 * 1024 * 1024
 
     public var directory: URL
     public var manifest: MascotPackManifest
@@ -87,7 +95,7 @@ public struct MascotPack: Equatable, Sendable {
     /// Load and validate; on any error the caller keeps the native placeholder.
     public static func load(from directory: URL) -> Result<MascotPack, MascotPackErrors> {
         let manifestURL = directory.appendingPathComponent("manifest.json")
-        guard let data = try? Data(contentsOf: manifestURL),
+        guard let data = try? readBounded(manifestURL, limit: maxManifestBytes),
               let manifest = try? JSONDecoder().decode(MascotPackManifest.self, from: data) else {
             return .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }
@@ -132,8 +140,16 @@ public struct MascotPack: Equatable, Sendable {
         let root = directory.standardizedFileURL.resolvingSymlinksInPath().path
         let fileURL = directory.appendingPathComponent(path).standardizedFileURL.resolvingSymlinksInPath()
         guard fileURL.path.hasPrefix(root + "/") else { return [.unsafePath(path)] }
-        guard let data = try? Data(contentsOf: fileURL) else { return [.missingFile(path)] }
+        let data: Data
+        do {
+            data = try readBounded(fileURL, limit: maxImageBytes)
+        } catch ReadError.tooLarge {
+            return [.tooLarge(path)]
+        } catch {
+            return [.missingFile(path)]
+        }
         guard let size = pngSize(data) else { return [.notPNG(path)] }
+        guard isDecodableRGBA(data) else { return [.undecodable(path)] }
         var errors: [MascotPackError] = []
         if size.width != canvasSize || size.height != canvasSize {
             errors.append(.wrongSize(path, size.width, size.height))
@@ -143,6 +159,29 @@ public struct MascotPack: Equatable, Sendable {
             if actual != expected.lowercased() { errors.append(.checksumMismatch(path)) }
         }
         return errors
+    }
+
+    enum ReadError: Error { case tooLarge, unreadable }
+
+    /// Reads at most `limit` bytes; files over the limit are rejected without reading them whole.
+    static func readBounded(_ url: URL, limit: Int) throws -> Data {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { throw ReadError.unreadable }
+        defer { try? handle.close() }
+        guard let data = try handle.read(upToCount: limit + 1) else { return Data() }
+        if data.count > limit { throw ReadError.tooLarge }
+        return data
+    }
+
+    /// True if ImageIO fully decodes the image as a PNG with an alpha channel.
+    static func isDecodableRGBA(_ data: Data) -> Bool {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              (CGImageSourceGetType(source) as String?) == "public.png",
+              let image = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
+        else { return false }
+        switch image.alphaInfo {
+        case .none, .noneSkipFirst, .noneSkipLast: return false
+        default: return true
+        }
     }
 
     /// Width and height from the PNG IHDR chunk, or nil if the data is not a PNG.

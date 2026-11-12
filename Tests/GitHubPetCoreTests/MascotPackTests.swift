@@ -1,10 +1,27 @@
+import CoreGraphics
 import CryptoKit
 import Foundation
+import ImageIO
 import Testing
 @testable import GitHubPetCore
 
-/// Minimal PNG header bytes; the validator only reads the signature and IHDR size.
-private func pngHeader(width: Int, height: Int) -> Data {
+/// A real, decodable PNG of the given size, with or without an alpha channel.
+func makePNG(width: Int, height: Int, alpha: Bool = true) -> Data {
+    let info: CGImageAlphaInfo = alpha ? .premultipliedLast : .noneSkipLast
+    let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: info.rawValue)!
+    context.setFillColor(CGColor(red: 0.2, green: 0.2, blue: 0.2, alpha: alpha ? 0.5 : 1))
+    context.fill(CGRect(x: 0, y: 0, width: width / 2, height: height / 2))
+    let image = context.makeImage()!
+    let data = NSMutableData()
+    let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil)!
+    CGImageDestinationAddImage(destination, image, nil)
+    CGImageDestinationFinalize(destination)
+    return data as Data
+}
+
+/// Signature and IHDR only: passes a header sniff but has no pixel data.
+private func pngHeaderOnly(width: Int, height: Int) -> Data {
     var bytes: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13]
     bytes += Array("IHDR".utf8)
     for value in [width, height] {
@@ -13,6 +30,8 @@ private func pngHeader(width: Int, height: Int) -> Data {
     bytes += [8, 6, 0, 0, 0]
     return Data(bytes)
 }
+
+private let validFrame = makePNG(width: 256, height: 256)
 
 private struct PackFixture {
     let directory: URL
@@ -24,8 +43,7 @@ private struct PackFixture {
                                                 withIntermediateDirectories: true)
         for state in MascotState.allCases {
             for index in 0..<2 {
-                try pngHeader(width: 256, height: 256)
-                    .write(to: directory.appendingPathComponent("frames/\(state.rawValue)_\(index).png"))
+                try validFrame.write(to: directory.appendingPathComponent("frames/\(state.rawValue)_\(index).png"))
             }
         }
     }
@@ -99,7 +117,7 @@ private struct PackFixture {
     @Test func symlinkEscapingPackIsRejected() throws {
         let fixture = try PackFixture()
         let outside = FileManager.default.temporaryDirectory.appendingPathComponent("outside-\(UUID().uuidString).png")
-        try pngHeader(width: 256, height: 256).write(to: outside)
+        try validFrame.write(to: outside)
         try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("frames/link.png"),
                                                    withDestinationURL: outside)
         try fixture.manifest { json in
@@ -131,7 +149,7 @@ private struct PackFixture {
 
     @Test func wrongFrameSizeAndNonPNGAreRejected() throws {
         let fixture = try PackFixture()
-        try pngHeader(width: 128, height: 256).write(to: fixture.directory.appendingPathComponent("frames/idle_1.png"))
+        try makePNG(width: 128, height: 256).write(to: fixture.directory.appendingPathComponent("frames/idle_1.png"))
         try Data("GIF89a".utf8).write(to: fixture.directory.appendingPathComponent("frames/attention_1.png"))
         try fixture.manifest()
         let errors = fixture.errors()
@@ -145,6 +163,45 @@ private struct PackFixture {
         let good = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         try fixture.manifest { $0["frameSha256"] = ["frames/idle_0.png": good, "frames/idle_1.png": String(repeating: "0", count: 64)] }
         #expect(fixture.errors() == [.checksumMismatch("frames/idle_1.png")])
+    }
+}
+
+@Suite struct MascotPackLimitTests {
+    @Test func headerOnlyPNGIsRejectedAsUndecodable() throws {
+        let fixture = try PackFixture()
+        try pngHeaderOnly(width: 256, height: 256).write(to: fixture.directory.appendingPathComponent("frames/idle_1.png"))
+        try fixture.manifest()
+        #expect(fixture.errors() == [.undecodable("frames/idle_1.png")])
+    }
+
+    @Test func opaquePNGWithoutAlphaIsRejected() throws {
+        let fixture = try PackFixture()
+        try makePNG(width: 256, height: 256, alpha: false)
+            .write(to: fixture.directory.appendingPathComponent("frames/urgent_0.png"))
+        try fixture.manifest()
+        #expect(fixture.errors() == [.undecodable("frames/urgent_0.png")])
+    }
+
+    @Test func oversizedImageIsRejectedBeforeDecoding() throws {
+        let fixture = try PackFixture()
+        var big = validFrame
+        big.append(Data(count: MascotPack.maxImageBytes))
+        try big.write(to: fixture.directory.appendingPathComponent("frames/attention_0.png"))
+        try fixture.manifest()
+        #expect(fixture.errors() == [.tooLarge("frames/attention_0.png")])
+    }
+
+    @Test func oversizedManifestIsRejected() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest { $0["padding"] = String(repeating: "x", count: MascotPack.maxManifestBytes) }
+        #expect(fixture.errors() == [.unreadableManifest])
+    }
+
+    @Test func boundedReadAcceptsExactlyTheLimit() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("bounded-\(UUID().uuidString)")
+        try Data(count: 10).write(to: url)
+        #expect(try MascotPack.readBounded(url, limit: 10).count == 10)
+        #expect(throws: MascotPack.ReadError.tooLarge) { try MascotPack.readBounded(url, limit: 9) }
     }
 }
 

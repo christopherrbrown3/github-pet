@@ -18,7 +18,7 @@ struct InboxView: View {
             footer
         }
         .padding(12)
-        .frame(minWidth: 340, idealWidth: 360)
+        .frame(minWidth: 360, idealWidth: 360)
         .onDisappear { model.markAllSeen() }
     }
 
@@ -26,14 +26,26 @@ struct InboxView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text("GitHub Pet").font(.headline)
+                if model.isDemo {
+                    Text("DEMO")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().strokeBorder(Color.secondary))
+                        .accessibilityLabel("Demo data, not from GitHub")
+                }
                 Spacer()
                 if let badge = model.badge {
                     Text(badge)
                         .font(.caption.bold())
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(Color.accentColor.opacity(0.2)))
-                        .accessibilityLabel("\(badge) items")
+                        .accessibilityLabel(MascotPolicy.countDescription(dataState: model.dataState,
+                                                                          count: model.items.count))
                 }
+            }
+            if model.isDemo {
+                Text("Demo data (fixtures): invented items, not from GitHub.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             HStack(spacing: 6) {
                 Text(model.dataState.statusText)
@@ -79,17 +91,30 @@ struct InboxView: View {
             if dimmed {
                 Text("Showing last known items").font(.caption).foregroundStyle(.secondary)
             }
+            // A ScrollView with only a max height collapses to zero inside auto-sized windows
+            // and popovers (#20), and a lazy stack then realizes no rows (empty AX list).
+            // Give it a real minimum height and realize every row.
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(model.items) { item in
                         InboxRow(item: item, privacy: model.settings.privacyMode,
                                  unseen: model.isUnseen(item)) { model.open(item) }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: 320)
+            .frame(minHeight: Self.listHeight(rows: model.items.count), maxHeight: Self.maxListHeight)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Inbox items")
             .opacity(dimmed ? 0.55 : 1)
         }
+    }
+
+    static let rowHeight: CGFloat = 52
+    static let maxListHeight: CGFloat = 360
+
+    static func listHeight(rows: Int) -> CGFloat {
+        min(CGFloat(rows) * rowHeight, maxListHeight)
     }
 
     private var emptyText: String {
@@ -161,12 +186,7 @@ struct InboxRow: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    private var subtitle: String {
-        if let repo = PrivacyText.repository(item, privacy: privacy) {
-            return "\(item.kind.genericLabel) · \(repo)"
-        }
-        return item.kind.genericLabel
-    }
+    private var subtitle: String { PrivacyText.subtitle(item, privacy: privacy) }
 
     private var accessibilityText: String {
         (unseen ? "New. " : "") + PrivacyText.title(item, privacy: privacy) + ". " + subtitle
@@ -190,7 +210,8 @@ struct SimulatorMenu: View {
         Menu("Simulator") {
             Button("Inject entitlement event") { model.injectEntitlementEvent() }
             Button("Replay current snapshot") { model.replaySnapshot() }
-            Button("Next poll: partial") { model.nextPollPartial() }
+            Toggle("Partial data", isOn: Binding(get: { model.partialPolls },
+                                                 set: { model.setPartialPolls($0) }))
             Button("Mark data stale") { model.markStale() }
             if model.simulatorConnected {
                 Button("Simulate disconnect") { model.simulateDisconnect() }

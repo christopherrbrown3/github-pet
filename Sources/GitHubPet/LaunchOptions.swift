@@ -10,6 +10,7 @@ import GitHubPetCore
 ///   --start-time <ISO8601>        app clock starts at this instant (or GITHUB_PET_START_TIME)
 ///   --clock-offset <secs>         shift the app clock (or GITHUB_PET_CLOCK_OFFSET)
 ///   GITHUB_PET_GH_PATH=<path>     use this gh executable (missing/fake gh testing)
+///   --render-snapshots <dir>      render a fixture scenario offscreen to PNG + AX report, then quit
 ///   --placeholder                 draw the native placeholder instead of the bundled pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
 struct LaunchOptions {
@@ -19,6 +20,7 @@ struct LaunchOptions {
     var injectEventAfter: TimeInterval?
     var packDirectory: URL?
     var forcePlaceholder = false
+    var snapshotDirectory: URL?
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
 
@@ -41,6 +43,8 @@ struct LaunchOptions {
             case "--defaults-suite": options.defaultsSuite = iterator.next()
             case "--reset-settings": options.resetSettings = true
             case "--placeholder": options.forcePlaceholder = true
+            case "--render-snapshots":
+                if let dir = iterator.next() { options.snapshotDirectory = URL(fileURLWithPath: dir, isDirectory: true) }
             case "--fixtures": options.forcedSource = "fixtures"
             case "--gh": options.forcedSource = "gh"
             case "--inject-event-after":

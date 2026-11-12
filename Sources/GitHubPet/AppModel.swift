@@ -28,14 +28,14 @@ final class AppModel: ObservableObject {
     let packErrors: [MascotPackError]
 
     private let store: SettingsStore
-    private let clockOffset: TimeInterval
+    let clockOffset: TimeInterval
     private let engine = InboxEngine()
     private let simulator = FixtureSimulator()
     private let ghClient = GhClient()
     private var clips = EventClipQueue()
     private var pollTimer: Timer?
     private var tickTimer: Timer?
-    private var fetchInFlight = false
+    private var generations = SourceGenerations()
 
     init(options: LaunchOptions) {
         store = SettingsStore(defaults: options.userDefaults)
@@ -92,9 +92,17 @@ final class AppModel: ObservableObject {
 
     var badge: String? { MascotPolicy.badge(dataState: dataState, count: items.count) }
 
+    /// Fixture data is always identified as Demo, in every surface and in privacy mode.
+    var isDemo: Bool { usingFixtures }
+
     var summaryLines: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount,
-                            privacy: settings.privacyMode)
+                            privacy: settings.privacyMode, demo: isDemo)
+    }
+
+    var statusAccessibilityLabel: String {
+        AccessibilityText.statusLabel(dataState: dataState, count: items.count, demo: isDemo,
+                                      needsAttention: showsAlertIcon)
     }
 
     var showsAlertIcon: Bool { alertsAllowed && (unseenCount > 0 || mascotState == .urgent) }
@@ -103,8 +111,11 @@ final class AppModel: ObservableObject {
 
     private var pollInterval: TimeInterval { settings.dataSource == .fixtures ? 30 : 120 }
 
+    /// A new source starts empty and Loading: rows, counts and baseline from the previous
+    /// source (e.g. Demo fixtures or another account) are never shown as this source's data.
     private func switchSource() {
-        engine.resetBaseline()
+        generations.switchSource()
+        engine.reset()
         unseenIDs.removeAll()
         clips.clear()
         activeClip = nil
@@ -112,6 +123,7 @@ final class AppModel: ObservableObject {
         pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
+        sync(now: clock())
         refresh()
     }
 
@@ -120,15 +132,13 @@ final class AppModel: ObservableObject {
         case .fixtures:
             apply(simulator.poll())
         case .githubCLI:
-            guard !fetchInFlight else { return }
-            fetchInFlight = true
+            guard let generation = generations.beginFetch() else { return }
             let client = ghClient
             Task.detached {
                 let outcome = client.fetch()
                 await MainActor.run {
-                    self.fetchInFlight = false
-                    // Ignore results that arrive after switching back to fixtures.
-                    if self.settings.dataSource == .githubCLI { self.apply(outcome) }
+                    // Results from a session that has since been switched away are dropped.
+                    if self.generations.finishFetch(generation) { self.apply(outcome) }
                 }
             }
         }
@@ -202,10 +212,14 @@ final class AppModel: ObservableObject {
         refresh()
     }
 
-    func nextPollPartial() {
+    var partialPolls: Bool { simulator.partialPolls }
+
+    /// Sticky: stays partial across the periodic fixture poll until turned off.
+    func setPartialPolls(_ on: Bool) {
         guard usingFixtures else { return }
-        simulator.nextPoll = .partial
+        simulator.partialPolls = on
         refresh()
+        objectWillChange.send()
     }
 
     func simulateDisconnect() {

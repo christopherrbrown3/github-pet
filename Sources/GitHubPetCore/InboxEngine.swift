@@ -41,14 +41,20 @@ public final class InboxEngine {
 
         case .snapshot(let rawItems, let complete):
             let deduped = Self.dedupe(rawItems)
-            let comparable = complete && previousWasComparable && tracker.baselineEstablished
+            // Comparable only against a fresh, complete previous success; checking the age here
+            // keeps stale recovery silent regardless of freshness-timer ordering (e.g. after sleep).
+            let fresh = lastSuccess.map { now.timeIntervalSince($0) < staleAfter && now >= $0 } ?? false
+            let comparable = complete && previousWasComparable && fresh && tracker.baselineEstablished
             var events: [InboxEvent] = []
             if !tracker.baselineEstablished && complete {
                 tracker.seed(deduped.map(\.id))
             } else {
-                for item in deduped where tracker.observe(item.id, comparableSnapshot: comparable) {
-                    events.append(InboxEvent(item: item))
-                }
+                // Decide newness before recording anything, so eviction while recording this
+                // snapshot can never make an existing or previously shown ID look new.
+                let previousIDs = Set(items.map(\.id))
+                let newItems = deduped.filter { !tracker.contains($0.id) && !previousIDs.contains($0.id) }
+                for item in deduped { _ = tracker.observe(item.id, comparableSnapshot: false) }
+                if comparable { events = newItems.map(InboxEvent.init(item:)) }
             }
             items = deduped
             lastSuccess = now
@@ -72,6 +78,15 @@ public final class InboxEngine {
         guard state.hasUsableItems else { return }
         state = .stale
         previousWasComparable = false
+    }
+
+    /// Forget everything from the current source: items, state, timestamps and baseline.
+    /// Used when the data source changes so old rows are never shown as the new source's data.
+    public func reset() {
+        items = []
+        state = .loading
+        lastSuccess = nil
+        resetBaseline()
     }
 
     /// Forget the baseline; the next complete snapshot re-seeds without events.
