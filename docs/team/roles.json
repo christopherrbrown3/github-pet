@@ -13,18 +13,18 @@
       "name": "developer",
       "terminal": "t9",
       "runtime": "claude",
-      "assignment": "#2",
+      "assignment": "#27, #28, then #29",
       "intendedModel": "claude-opus-5-5",
       "observedModel": "claude-opus-5-5",
       "sessionId": null
     },
     {
       "name": "graphic-designer",
-      "terminal": "t1h",
+      "terminal": "t1k",
       "runtime": "codex",
-      "assignment": "#3",
-      "intendedModel": "gpt-6.1-sol",
-      "observedModel": "gpt-6.1-sol",
+      "assignment": "#28, #29",
+      "intendedModel": "gpt-6.1-terra",
+      "observedModel": "gpt-6.1-terra",
       "sessionId": "01a1d082-9e39-7740-99d9-f9df99831e41"
     },
     {
@@ -39,5 +39,5 @@
   ],
   "observedDate": "2026-11-13",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Observed session snapshot only; inspect live Herdr before dispatch. PM actual Sol6.1 differs from originally requested Astra and was disclosed. Do not silently substitute models or create a duplicate PM."
+  "note": "Live snapshot; inspect Herdr before dispatch. Chris explicitly chose Terra for Designer. PM actual Sol differs from original Astra request and was disclosed. Chris authorizes merging ready PRs after Copilot findings are reviewed/handled; releases remain separate."
 }

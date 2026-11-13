@@ -29,7 +29,7 @@ Launch directories initially pointed at the coordinator checkout; scoped dispatc
 6. Request Copilot review if available. Route exact SHA to independent QA. Status In QA means verification is underway, not that it passed.
 7. QA posts pass/fail/blocked evidence and reproducible defects. Send defects to Developer; verify new SHA with QA again.
 8. Mark blocked with reason and recovery owner when external input is needed. Preserve ready work. Never bypass model usage limits.
-9. Done requires acceptance evidence and any required owner approval. Bootstrap PRs remain unmerged until Chris explicitly authorizes merge.
+9. Done requires acceptance evidence and any required owner approval. Chris now authorizes merging ready PRs after review findings are handled; validate the current SHA and required acceptance first.
 10. Dispatch next authorized ready task. On shutdown, post current role/session/PR/status snapshot on #5 and each active issue.
 
 ## Recovery
@@ -40,7 +40,7 @@ For a dead specialist, inspect its saved CLI session, worktree status and issue 
 
 Example runtime commands (append the saved role/task instructions):
 - Developer: `claude --model claude-opus-5-5 --name developer --permission-mode auto`
-- Designer: `codex --no-daemon -m gpt-6.1-sol`
+- Designer: `codex --no-daemon -m gpt-6.1-terra`
 - QA: `codex --no-daemon -m gpt-6-luna`
 
 Verify launch argv, displayed model and an actual response before reporting operational. Trust prompts may be resolved only within the user's authorized project. Read blocked/error screens; do not force past permission decisions. No service restarts or usage-limit workarounds.
@@ -51,11 +51,11 @@ Swift 6.2.3 and Command Line Tools are present. Full Xcode is absent, so xcodebu
 
 ## Current recovery checkpoint
 
-Read [CHECKPOINT.md](CHECKPOINT.md) and [roles.json](roles.json) before resuming. They supersede historical session addresses and old build SHAs above. After usage exhaustion, preserve work and stop retrying until reset or an authorized external change; restarting does not reset the allowance. All restarted agents must keep their intended models and prove a response. Never substitute a cheaper model to bypass limits.
+Read [CHECKPOINT.md](CHECKPOINT.md) and [roles.json](roles.json) before resuming. They supersede historical session addresses and old build SHAs above. After usage exhaustion, preserve work and stop retrying until reset or an authorized external change; restarting does not reset the allowance. All restarted agents must keep the latest user-authorized models and prove a response. Chris explicitly selected Terra for Designer. Never substitute a cheaper model to bypass limits.
 
 Use a fresh verification worktree pinned to the exact implementation SHA. Pushing a feature branch does not invalidate a detached old-SHA checkout or saved report. Keep one QA app version running at a time; never mix observed results across SHAs. Save a short checkpoint after each functional group so unfinished acceptance survives interruptions. Offscreen render checks validate rendered output, not menu-bar interactions, pointer behavior or animation timing.
 
-The first two PRs (#16 workflow, #17 QA plan) were already merged externally when inspected; this coordinator has not merged them. PR #18 implementation and #19 design remain open at the checkpoint. No further PR merges, releases or auto-merge are authorized.
+The first two PRs (#16 workflow, #17 QA plan) were already merged externally when inspected; this coordinator has not merged them. PR #18 implementation and #19 design remain open at the checkpoint. Chris subsequently authorized merges of ready PRs after Copilot findings are reviewed/handled. Releases remain unauthorized.
 
 ## Model-selection reminder hazard
 
