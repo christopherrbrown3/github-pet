@@ -12,7 +12,13 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.mascotVisible")
                 HStack {
                     Text("Size")
-                    Slider(value: $model.settings.mascotSize, in: PetSettings.mascotSizeRange, step: 16)
+                    // Labelled for VoiceOver: the sibling "Size" text doesn't label the control.
+                    Slider(value: $model.settings.mascotSize, in: PetSettings.mascotSizeRange, step: 16) {
+                        Text("Mascot size")
+                    }
+                    .labelsHidden()
+                    .accessibilityLabel("Mascot size")
+                    .accessibilityValue("\(Int(model.settings.mascotSize)) points")
                     Text("\(Int(model.settings.mascotSize)) pt").monospacedDigit().frame(width: 52)
                 }
                 Button("Reset position") {
