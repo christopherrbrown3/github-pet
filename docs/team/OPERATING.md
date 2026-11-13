@@ -56,3 +56,7 @@ Read [CHECKPOINT.md](CHECKPOINT.md) and [roles.json](roles.json) before resuming
 Use a fresh verification worktree pinned to the exact implementation SHA. Pushing a feature branch does not invalidate a detached old-SHA checkout or saved report. Keep one QA app version running at a time; never mix observed results across SHAs. Save a short checkpoint after each functional group so unfinished acceptance survives interruptions. Offscreen render checks validate rendered output, not menu-bar interactions, pointer behavior or animation timing.
 
 The first two PRs (#16 workflow, #17 QA plan) were already merged externally when inspected; this coordinator has not merged them. PR #18 implementation and #19 design remain open at the checkpoint. No further PR merges, releases or auto-merge are authorized.
+
+## Model-selection reminder hazard
+
+During low allowance, Codex showed an idle popup whose default action was to switch from Sol to Luna. A pasted prompt followed by Enter can accept that default before the task reaches the agent. This explains an observed Designer model mismatch. Inspect the visible screen when readiness or model identity is uncertain; dismiss the suggestion with Keep current model (never show again) rather than accepting the default. Verify the model after dismissal. This changes reminder behavior only; usage limits remain in force. Never use a model switch to bypass an allowance.
