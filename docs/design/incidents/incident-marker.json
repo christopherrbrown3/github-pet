@@ -440,7 +440,14 @@
       0.2,
       1
     ],
-    "burstPerTierReached": 1
+    "burstPerTierReached": 1,
+    "fadeIn": {
+      "property": "opacity",
+      "scalesFlameHeight": false,
+      "layers": "every marker layer (beacon sweep, smoke, flames, siren and glow) for a new incident; on a tier rise only layers not shown before the burst fade in, already-visible layers stay at full opacity",
+      "startOpacity": 0,
+      "endOpacity": 1
+    }
   },
   "static": {
     "beaconAngleDeg": -100,
@@ -543,7 +550,7 @@
         "alpha": 1.0
       }
     },
-    "alphaRule": "every drawn alpha = token alpha * layer alphaScale * burst envelope"
+    "alphaRule": "every drawn alpha = token alpha * layer alphaScale * burst envelope (fade-in opacity; 1 outside the fade-in)"
   },
   "accessibility": {
     "hoverTopLine": "GitHub incident: <name>",

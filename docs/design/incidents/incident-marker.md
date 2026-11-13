@@ -77,7 +77,7 @@ At 64 pt:
 ## Motion
 
 - **Burst:** about 6 s at 30 fps:
-  - 300 ms fade-in, eased with `cubic-bezier(0.2,0.8,0.2,1)`;
+  - 300 ms opacity fade-in from 0, eased with `cubic-bezier(0.2,0.8,0.2,1)`. Flame heights are not scaled. For a new incident every layer fades in, including the siren. On a tier rise only the newly added layers fade in, and layers already shown stay fully opaque, so the siren never blinks out;
   - full motion;
   - a 600 ms crossfade to the static frame, with no snap.
 - **What starts a burst:**
@@ -137,7 +137,7 @@ The `previews/` folder holds design previews. They are not native MascotView ren
 - **Sizes:** 64, 128 and 256 pt.
 - **Appearance:** light and dark.
 - **Scale:** 2× pixels.
-- **Columns:** static, then burst at 0.15, 1.2 and 2.6 s.
+- **Columns:** static, then burst at 0.05 s (mid fade-in of a new incident), 1.2 s and 2.6 s.
 - **Rows:** minor, major, critical.
 
 `incident-128-light-keepout.png` outlines the lane plus the y < 64 keep-out band in blue. These are still images, so they show neither motion quality nor timing. Live QA must judge both with Reduce Motion off.

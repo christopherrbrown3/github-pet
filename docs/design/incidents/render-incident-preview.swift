@@ -147,8 +147,11 @@ func drawMarker(_ ctx: CGContext, tier: String, appearance: String, size: Int, t
         }
     }
 
-    // Flames.
+    // Flames: the fade-in envelope is opacity of the whole flame layer; heights are not scaled.
     if let tierFlames = tierSpec["flames"] as? String {
+        ctx.saveGState()
+        ctx.setAlpha(envelope)
+        ctx.beginTransparencyLayer(auxiliaryInfo: nil)
         let flames = dict(spec["flames"])
         let baseY = num(flames["baseY"])
         let shape = dict(flames["shape"])
@@ -161,7 +164,7 @@ func drawMarker(_ ctx: CGContext, tier: String, appearance: String, size: Int, t
             let path = CGMutablePath()
             for t in tongues(tier, size: size) {
                 var (h, lean) = flicker(t, time: time)
-                h *= num(layer["height"]) * envelope
+                h *= num(layer["height"])
                 let w = t.halfWidth * num(layer["width"])
                 lean *= num(layer["height"])
                 let tip = CGPoint(x: t.cx + lean, y: baseY - h)
@@ -184,9 +187,14 @@ func drawMarker(_ ctx: CGContext, tier: String, appearance: String, size: Int, t
                 ctx.strokePath()
             }
         }
+        ctx.endTransparencyLayer()
+        ctx.restoreGState()
     }
 
-    // Siren (same geometry as assets/mascots/mona-pet-v1/ui/incident-siren.svg).
+    // Siren (same geometry as assets/mascots/mona-pet-v1/ui/incident-siren.svg), faded in as one layer.
+    ctx.saveGState()
+    ctx.setAlpha(envelope)
+    ctx.beginTransparencyLayer(auxiliaryInfo: nil)
     let siren = dict(spec["siren"])
     let glow = dict(siren["glow"])
     let gc = nums(glow["center"])
@@ -232,6 +240,8 @@ func drawMarker(_ ctx: CGContext, tier: String, appearance: String, size: Int, t
     ctx.fillPath()
     ctx.addPath(basePath)
     ctx.strokePath()
+    ctx.endTransparencyLayer()
+    ctx.restoreGState()
 }
 
 // Panel geometry from the merged near-touch layout: panel W x H, lane L above the S x S art square.
@@ -242,7 +252,7 @@ let backgrounds: [String: CGColor] = [
 ]
 let scale: CGFloat = 2
 let frameFor: [String: String] = ["minor": "attention-03", "major": "urgent-00", "critical": "urgent-00"]
-let columns: [(label: String, time: Double?)] = [("static", nil), ("burst 0.15 s", 0.15), ("burst 1.2 s", 1.2), ("burst 2.6 s", 2.6)]
+let columns: [(label: String, time: Double?)] = [("static", nil), ("burst 0.05 s", 0.05), ("burst 1.2 s", 1.2), ("burst 2.6 s", 2.6)]
 let tiers = ["minor", "major", "critical"]
 
 var keepOutReport: [String] = []
@@ -319,13 +329,33 @@ func checkKeepOut() {
     }
 }
 
+// Fade-in check: a new-incident burst starts fully transparent and reaches full opacity at fadeInMs.
+func checkFadeIn() {
+    let fadeIn = num(dict(spec["timing"])["fadeInMs"]) / 1000
+    for tier in tiers {
+        var coverage: [Int] = []
+        for time in [0.0, Double(fadeIn) / 2, Double(fadeIn)] {
+            let ctx = CGContext(data: nil, width: 256, height: 256, bitsPerComponent: 8, bytesPerRow: 256 * 4,
+                                space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            ctx.translateBy(x: 0, y: 256); ctx.scaleBy(x: 1, y: -1)
+            drawMarker(ctx, tier: tier, appearance: "light", size: 128, time: time, unitsPerPt: 2)
+            let data = ctx.data!.assumingMemoryBound(to: UInt8.self)
+            coverage.append((0..<(256 * 256)).reduce(0) { $0 + Int(data[$1 * 4 + 3]) })
+        }
+        let pass = coverage[0] == 0 && coverage[1] > 0 && coverage[1] < coverage[2]
+        keepOutReport.append("fade-in @128 \(tier): summed alpha at 0 / \(Int(fadeIn * 500)) / \(Int(fadeIn * 1000)) ms = \(coverage.map(String.init).joined(separator: " / ")) \(pass ? "PASS" : "FAIL")")
+    }
+}
+
 for size in [64, 128, 256] {
     for appearance in ["light", "dark"] { try renderSheet(size: size, appearance: appearance, annotate: false) }
 }
 try renderSheet(size: 128, appearance: "light", annotate: true)
 checkKeepOut()
+checkFadeIn()
 let report = (["Design previews of incident-marker.json drawn with CoreGraphics behind real mona-pet-v1 frames.",
-               "Not native MascotView renders; labels (DEMO/count) are not drawn. Columns: static, burst 0.15/1.2/2.6 s. Rows: minor, major, critical."]
+               "Not native MascotView renders; labels (DEMO/count) are not drawn. Columns: static, burst 0.05/1.2/2.6 s (0.05 s is mid fade-in of a new incident). Rows: minor, major, critical."]
               + keepOutReport).joined(separator: "\n") + "\n"
 try report.write(to: outDir.appendingPathComponent("preview-report.txt"), atomically: true, encoding: .utf8)
 print(report)
