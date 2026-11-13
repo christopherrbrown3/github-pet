@@ -1,0 +1,553 @@
+{
+  "designSchemaVersion": 1,
+  "id": "github-incident-marker",
+  "status": "implementation specification for #37; procedural, drawn natively; not a v1 pack manifest",
+  "canvas": {
+    "size": [
+      256,
+      256
+    ],
+    "units": "art-canvas units: origin at the top-left of the SxS art square, x right, y down; points = units * S / 256",
+    "worldSpace": "drawn in the panel, ground-anchored; never rotated with the #29 art-layer sway",
+    "clip": "existing mascot panel; no panel growth and no ground-anchor change"
+  },
+  "keepOut": {
+    "topBandMaxY": 64,
+    "labelMarginPt": 2,
+    "rule": "no marker pixel (alpha > 0) at y < 64, in the DEMO/count lane, or within 2 pt of the DEMO rect or the full reserved 99+ count slot"
+  },
+  "layers": [
+    "beaconSweep",
+    "smoke",
+    "flames",
+    "siren",
+    "mascotArt",
+    "labels"
+  ],
+  "tiers": {
+    "minor": {
+      "beaconSweep": true,
+      "siren": true,
+      "flames": null,
+      "smoke": false
+    },
+    "major": {
+      "beaconSweep": true,
+      "siren": true,
+      "flames": "flames.major",
+      "smoke": false
+    },
+    "critical": {
+      "beaconSweep": true,
+      "siren": true,
+      "flames": "flames.critical",
+      "smoke": true
+    }
+  },
+  "severityMapping": {
+    "none": "minor",
+    "minor": "minor",
+    "major": "major",
+    "critical": "critical",
+    "notShown": [
+      "no unresolved incident",
+      "component-only degraded_performance",
+      "scheduled maintenance",
+      "resolved",
+      "stale",
+      "error",
+      "loading"
+    ]
+  },
+  "siren": {
+    "base": {
+      "rect": [
+        10,
+        236,
+        36,
+        12
+      ],
+      "cornerRadius": 3,
+      "fill": "incident.siren.base"
+    },
+    "dome": {
+      "rect": [
+        14,
+        202,
+        28,
+        34
+      ],
+      "topRadius": 14,
+      "fillGradient": {
+        "axis": "vertical",
+        "stops": [
+          [
+            0,
+            "incident.siren.dome"
+          ],
+          [
+            1,
+            "incident.siren.domeShade"
+          ]
+        ]
+      },
+      "band": {
+        "rect": [
+          14,
+          226,
+          28,
+          4
+        ],
+        "fill": "incident.siren.domeShade"
+      }
+    },
+    "gloss": {
+      "ellipse": {
+        "cx": 22,
+        "cy": 214,
+        "rx": 3.5,
+        "ry": 7
+      },
+      "fill": "incident.siren.gloss"
+    },
+    "outline": {
+      "color": "incident.siren.outline",
+      "widthUnits": 2.5,
+      "minWidthPt": 1
+    },
+    "glow": {
+      "center": [
+        28,
+        214
+      ],
+      "radius": 34,
+      "color": "incident.beacon",
+      "alpha": 0.6
+    },
+    "svg": "assets/mascots/mona-pet-v1/ui/incident-siren.svg"
+  },
+  "beaconSweep": {
+    "center": [
+      28,
+      214
+    ],
+    "radius": 120,
+    "widthDeg": 36,
+    "periodMs": 1200,
+    "direction": "clockwise",
+    "angleConvention": "degrees in canvas space, 0 = +x, positive clockwise (y down)",
+    "edgeFeatherDeg": 8,
+    "color": "incident.beacon",
+    "alpha": 0.42,
+    "note": "radius 120 from y=214 never reaches the y<64 keep-out band"
+  },
+  "flames": {
+    "baseY": 246,
+    "nestedScales": [
+      {
+        "token": "incident.flame.outer",
+        "width": 1.0,
+        "height": 1.0
+      },
+      {
+        "token": "incident.flame.mid",
+        "width": 0.7,
+        "height": 0.72
+      },
+      {
+        "token": "incident.flame.core",
+        "width": 0.45,
+        "height": 0.45
+      }
+    ],
+    "rim": {
+      "token": "incident.flame.rim",
+      "widthPt": 1,
+      "appliesTo": "outer"
+    },
+    "shape": {
+      "kind": "teardrop",
+      "leftControl1": [
+        -1.0,
+        0.55
+      ],
+      "leftControl2": [
+        -0.15,
+        0.85
+      ],
+      "tipLeanFactor": 0.5,
+      "note": "control points as (x in halfWidth units from cx, y as fraction of height above baseY); the tip control x adds lean*tipLeanFactor; mirror for the right side"
+    },
+    "major": [
+      {
+        "cx": 24,
+        "halfWidth": 22,
+        "height": 96,
+        "phase": 0.0
+      },
+      {
+        "cx": 54,
+        "halfWidth": 18,
+        "height": 70,
+        "phase": 0.37
+      },
+      {
+        "cx": 98,
+        "halfWidth": 26,
+        "height": 60,
+        "phase": 0.71
+      },
+      {
+        "cx": 158,
+        "halfWidth": 26,
+        "height": 60,
+        "phase": 0.19
+      },
+      {
+        "cx": 202,
+        "halfWidth": 18,
+        "height": 74,
+        "phase": 0.58
+      },
+      {
+        "cx": 232,
+        "halfWidth": 22,
+        "height": 104,
+        "phase": 0.83
+      }
+    ],
+    "critical": [
+      {
+        "cx": 24,
+        "halfWidth": 24,
+        "height": 150,
+        "phase": 0.0
+      },
+      {
+        "cx": 54,
+        "halfWidth": 20,
+        "height": 110,
+        "phase": 0.37
+      },
+      {
+        "cx": 98,
+        "halfWidth": 28,
+        "height": 90,
+        "phase": 0.71
+      },
+      {
+        "cx": 158,
+        "halfWidth": 28,
+        "height": 90,
+        "phase": 0.19
+      },
+      {
+        "cx": 202,
+        "halfWidth": 20,
+        "height": 116,
+        "phase": 0.58
+      },
+      {
+        "cx": 232,
+        "halfWidth": 24,
+        "height": 158,
+        "phase": 0.83
+      }
+    ],
+    "flicker": {
+      "heightBase": 0.86,
+      "heightAmp": 0.14,
+      "waveOffset": 0.5,
+      "waves": [
+        {
+          "periodS": 0.42,
+          "amp": 0.35,
+          "phaseMul": 1
+        },
+        {
+          "periodS": 0.61,
+          "amp": 0.15,
+          "phaseMul": 2
+        }
+      ],
+      "leanUnits": 6,
+      "leanPeriodS": 0.9,
+      "note": "wave = waveOffset + sum(amp*sin(2pi*(t/periodS + phaseMul*phase))); height = h*(heightBase + heightAmp*wave); lean = leanUnits*sin(2pi*(t/leanPeriodS + phase)); shape motion only, no color or alpha change"
+    },
+    "maxTip": {
+      "majorMinY": 142,
+      "criticalMinY": 88
+    }
+  },
+  "smoke": {
+    "color": "incident.smoke",
+    "emitters": [
+      {
+        "x": 34,
+        "y": 160,
+        "dx": -10,
+        "dy": -66,
+        "phase": 0.0
+      },
+      {
+        "x": 222,
+        "y": 160,
+        "dx": 10,
+        "dy": -66,
+        "phase": 0.5
+      }
+    ],
+    "lifeMs": 2400,
+    "countPerEmitter": 4,
+    "staggerMs": 600,
+    "radius": [
+      10,
+      24
+    ],
+    "curve": {
+      "motion": [
+        0.2,
+        0.8,
+        0.2,
+        1
+      ],
+      "alpha": "linear"
+    },
+    "static": [
+      {
+        "cx": 34,
+        "cy": 130,
+        "r": 17
+      },
+      {
+        "cx": 24,
+        "cy": 100,
+        "r": 20
+      },
+      {
+        "cx": 222,
+        "cy": 130,
+        "r": 17
+      },
+      {
+        "cx": 232,
+        "cy": 100,
+        "r": 20
+      }
+    ],
+    "maxTopY": 70,
+    "puffCluster": [
+      {
+        "dx": 0,
+        "dy": 0,
+        "rScale": 1.0
+      },
+      {
+        "dx": -0.55,
+        "dy": 0.3,
+        "rScale": 0.72
+      },
+      {
+        "dx": 0.5,
+        "dy": 0.35,
+        "rScale": 0.66
+      }
+    ],
+    "puffClusterUnits": "dx, dy in multiples of the puff radius r; lobes never rise above cy - r",
+    "softEdgeStart": 0.55,
+    "softEdge": "each lobe is a radial gradient: full alpha to softEdgeStart*r, then to 0 at r",
+    "alphaScale": [
+      1.0,
+      0.0
+    ]
+  },
+  "sizeOverrides": {
+    "64": {
+      "minFeatureUnits": 8,
+      "flames.major": [
+        {
+          "cx": 18,
+          "halfWidth": 30,
+          "height": 100,
+          "phase": 0.0
+        },
+        {
+          "cx": 128,
+          "halfWidth": 44,
+          "height": 64,
+          "phase": 0.45
+        },
+        {
+          "cx": 238,
+          "halfWidth": 30,
+          "height": 108,
+          "phase": 0.83
+        }
+      ],
+      "flames.critical": [
+        {
+          "cx": 18,
+          "halfWidth": 32,
+          "height": 150,
+          "phase": 0.0
+        },
+        {
+          "cx": 128,
+          "halfWidth": 46,
+          "height": 92,
+          "phase": 0.45
+        },
+        {
+          "cx": 238,
+          "halfWidth": 32,
+          "height": 158,
+          "phase": 0.83
+        }
+      ],
+      "nestedScaleTokens": [
+        "incident.flame.outer",
+        "incident.flame.core"
+      ],
+      "smokeMinRadius": 12,
+      "smokeCountPerEmitter": 3,
+      "gutterUnits": 0
+    }
+  },
+  "timing": {
+    "burstMs": 6000,
+    "fadeInMs": 300,
+    "settleMs": 600,
+    "fps": 30,
+    "idleFps": "static marker needs no ticks; redraw only on state, size or appearance change",
+    "burstTriggers": [
+      "new unresolved incident id (fresh, confirmed)",
+      "upward tier change of a known open incident: minor->major, minor->critical, major->critical; once per tier reached per incident id"
+    ],
+    "silent": [
+      "tier drop",
+      "re-reaching a tier already reached for that incident id (e.g. critical->major->critical)",
+      "reopen",
+      "initial sync / account or scope change baseline",
+      "noncomparable reconnect",
+      "unchanged poll"
+    ],
+    "settle": "crossfade animated -> static over settleMs",
+    "suppression": "Reduce Motion (system or app), quiet hours, snooze: draw the static frame immediately; mid-burst they cancel the burst and switch to static without a crossfade; the marker stays visible",
+    "gestureInteraction": "the burst does not trigger the #29 mascot gesture and runs independently of it",
+    "fadeInCurve": [
+      0.2,
+      0.8,
+      0.2,
+      1
+    ],
+    "burstPerTierReached": 1
+  },
+  "static": {
+    "beaconAngleDeg": -100,
+    "beaconAlpha": 0.34,
+    "flameHeightFactor": 0.93,
+    "flameLean": 0,
+    "sirenGlow": true,
+    "smokeAlphaScale": 0.8
+  },
+  "palette": {
+    "light": {
+      "incident.flame.outer": {
+        "hex": "#E5482B",
+        "alpha": 1.0
+      },
+      "incident.flame.mid": {
+        "hex": "#FF8A00",
+        "alpha": 1.0
+      },
+      "incident.flame.core": {
+        "hex": "#FFD23F",
+        "alpha": 1.0
+      },
+      "incident.flame.rim": {
+        "hex": "#B3261E",
+        "alpha": 1.0
+      },
+      "incident.smoke": {
+        "hex": "#5B5F66",
+        "alpha": 0.7
+      },
+      "incident.siren.dome": {
+        "hex": "#FF5A4E",
+        "alpha": 1.0
+      },
+      "incident.siren.domeShade": {
+        "hex": "#B3261E",
+        "alpha": 1.0
+      },
+      "incident.siren.base": {
+        "hex": "#3A2A2A",
+        "alpha": 1.0
+      },
+      "incident.siren.outline": {
+        "hex": "#2B1B1B",
+        "alpha": 1.0
+      },
+      "incident.siren.gloss": {
+        "hex": "#FFFFFF",
+        "alpha": 0.8
+      },
+      "incident.beacon": {
+        "hex": "#FF3B30",
+        "alpha": 1.0
+      }
+    },
+    "dark": {
+      "incident.flame.outer": {
+        "hex": "#F05A3C",
+        "alpha": 1.0
+      },
+      "incident.flame.mid": {
+        "hex": "#FF9A1F",
+        "alpha": 1.0
+      },
+      "incident.flame.core": {
+        "hex": "#FFE066",
+        "alpha": 1.0
+      },
+      "incident.flame.rim": {
+        "hex": "#8F1D16",
+        "alpha": 1.0
+      },
+      "incident.smoke": {
+        "hex": "#C9CDD3",
+        "alpha": 0.55
+      },
+      "incident.siren.dome": {
+        "hex": "#FF6B5F",
+        "alpha": 1.0
+      },
+      "incident.siren.domeShade": {
+        "hex": "#C2352A",
+        "alpha": 1.0
+      },
+      "incident.siren.base": {
+        "hex": "#5A4646",
+        "alpha": 1.0
+      },
+      "incident.siren.outline": {
+        "hex": "#140B0B",
+        "alpha": 1.0
+      },
+      "incident.siren.gloss": {
+        "hex": "#FFFFFF",
+        "alpha": 0.85
+      },
+      "incident.beacon": {
+        "hex": "#FF5248",
+        "alpha": 1.0
+      }
+    },
+    "alphaRule": "every drawn alpha = token alpha * layer alphaScale * burst envelope"
+  },
+  "accessibility": {
+    "hoverTopLine": "GitHub incident: <name>",
+    "label": "N items, 1 active GitHub incident",
+    "countUnaffected": "badge counts actionable items only"
+  }
+}

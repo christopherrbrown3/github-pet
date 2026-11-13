@@ -1,0 +1,11 @@
+Design previews of incident-marker.json drawn with CoreGraphics behind real mona-pet-v1 frames.
+Not native MascotView renders; labels (DEMO/count) are not drawn. Columns: static, burst 0.15/1.2/2.6 s. Rows: minor, major, critical.
+keep-out @64 minor: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @64 major: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @64 critical: topmost marker row y=70 (band y<64) PASS over static + 180 burst frames
+keep-out @128 minor: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @128 major: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @128 critical: topmost marker row y=70 (band y<64) PASS over static + 180 burst frames
+keep-out @256 minor: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @256 major: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @256 critical: topmost marker row y=70 (band y<64) PASS over static + 180 burst frames
