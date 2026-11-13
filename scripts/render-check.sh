@@ -133,6 +133,8 @@ check_in 00-loading "loading count unknown"     '^state=Loading… badge=\? rows
 check_in 10-urgent-static "urgent fixture"            'mood=urgent'
 check_in 09-attention-static "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
 check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x[0-9]+ pt'
+check_in "count cap" "mascot caps at 99+, inbox and AX keep the full count" \
+  '^count cap: items=1[0-9][0-9] mascot-badge=99\+ inbox-badge=1[0-9][0-9] ax=.* 1[0-9][0-9] items'
 check_in 11-gh-override "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \

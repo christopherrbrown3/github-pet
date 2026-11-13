@@ -110,6 +110,16 @@ enum SnapshotRenderer {
         // Late in the scenario: the probe injects fixture events, which would change earlier counts.
         report.append("## attention gesture (#29, live model)")
         report += await gestureProbe(model: model, directory: directory)
+        // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
+        report.append("## count cap")
+        for _ in 0..<100 { model.injectEntitlementEvent() }
+        model.markAllSeen()
+        report.append("count cap: items=\(model.items.count) mascot-badge=\(model.mascotBadge ?? "none") "
+                      + "inbox-badge=\(model.badge ?? "none") ax=\(model.statusAccessibilityLabel)")
+        report += await render(MascotView(model: model)
+            .frame(width: model.layout(model.settings.mascotSize).panelSize.width,
+                   height: model.layout(model.settings.mascotSize).panelSize.height),
+                               name: "count-cap-mascot", directory: directory, appearance: .aqua)
         // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
         // is deterministic and can never contain live GitHub data.
         if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],

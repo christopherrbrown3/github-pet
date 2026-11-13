@@ -28,6 +28,17 @@ public enum MascotPolicy {
     /// Badge text. Unknown never looks like zero: `?` whenever the count is not known
     /// (loading, stale, error, CLI missing or signed out), `N+` for a partial lower bound,
     /// `N` for a fresh known count, and no badge only for a verified, fresh empty inbox.
+    /// Largest count the mascot's badge shows; its slot is sized for "99+".
+    public static let mascotBadgeCap = 99
+
+    /// The mascot's badge: like `badge`, but counts above 99 show as "99+" so the label always fits
+    /// its reserved slot. The inbox and accessibility text keep the full count.
+    public static func mascotBadge(dataState: DataState, count: Int) -> String? {
+        guard let full = badge(dataState: dataState, count: count) else { return nil }
+        let capped = (dataState == .ready || dataState == .partial) && count > mascotBadgeCap
+        return capped ? "\(mascotBadgeCap)+" : full
+    }
+
     public static func badge(dataState: DataState, count: Int) -> String? {
         switch dataState {
         case .ready: return "\(count)"

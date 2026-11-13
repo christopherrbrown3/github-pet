@@ -38,7 +38,7 @@ struct MascotView: View {
     /// so its capsule stays `MascotLayout.nearTouchGap` above this pose's art.
     private func scene(at date: Date, reduced: Bool, layout: MascotLayout) -> some View {
         let pose = poseOverride ?? pose(at: date, reduced: reduced)
-        let badge = badgeOverride ?? model.badge
+        let badge = badgeOverride ?? model.mascotBadge
         let countWidth = badge.map { layout.count.width(text: Tag.textWidth($0, role: .count, size: layout.count.fontSize)) }
         let offset = countWidth.flatMap { width in
             model.contour(for: pose).map {

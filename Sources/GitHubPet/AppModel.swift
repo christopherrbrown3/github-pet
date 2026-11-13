@@ -107,6 +107,9 @@ final class AppModel: ObservableObject {
 
     var badge: String? { MascotPolicy.badge(dataState: dataState, count: items.count) }
 
+    /// What the mascot's badge shows (capped at "99+"); `badge` and accessibility keep the full count.
+    var mascotBadge: String? { MascotPolicy.mascotBadge(dataState: dataState, count: items.count) }
+
     /// Fixture data is always identified as Demo, in every surface and in privacy mode.
     var isDemo: Bool { usingFixtures }
 
