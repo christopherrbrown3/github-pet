@@ -62,19 +62,32 @@ check "stale count unknown"       '^state=Stale badge=\? rows=4'
 check "disconnect count unknown"  '^state=Error: simulated disconnect badge=\?'
 check "mascot is one AX button"    '^mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, '
 check "mascot drag vs click"       '^mascot pointer: drop-without-drag-events=moved click=opens-inbox'
-# Hover summary sits just above the visible character: 0-12 pt from the highest visible art
-# pixel to the arrow tip, never overlapping (#27: 237 pt at 128 pt on 3db865e).
-for side in 64 128 256; do
-  gap=$(grep -E "^hover gap @$side: " "$report" | sed -E 's/^hover gap @[0-9]+: (-?[0-9]+) pt.*/\1/')
-  if [[ $gap == <-> ]] && (( gap <= 12 )); then echo "ok   hover gap @$side ${gap} pt"
-  else echo "FAIL hover gap @$side '${gap:-missing}' (want 0-12 pt above the character)"; failures=$((failures + 1)); fi
+# Hover summary beside the character (#27 with #28 metrics): every case shows the real panel and
+# popover on screen; worst gap to any frame <= 12 pt, no overlap, tags clear, on screen.
+hover_lines=$(grep -E '^hover [a-z]+-[0-9]+-' "$report" || true)
+hover_count=$(printf '%s\n' "$hover_lines" | grep -c . || true)
+if (( hover_count >= 9 )); then echo "ok   $hover_count hover placements measured"
+else echo "FAIL only $hover_count hover placements measured"; failures=$((failures + 1)); fi
+while IFS= read -r line; do
+  [[ -n $line ]] || continue
+  name=${${line#hover }%%:*}
+  worst=$(sed -E 's/.* gap-max=([0-9.]+|none) .*/\1/' <<< "$line")
+  if [[ $line == *" overlap=0 "* && $line == *" lane=clear "* && $line == *" on-screen=true "* \
+        && $worst != none ]] && (( $(printf '%.0f' "${worst%.*}") <= 12 )) && [[ ${worst%.*} -lt 12 || $worst == 12.0 ]]; then
+    echo "ok   hover $name: worst gap $worst pt, no overlap, tags clear"
+  else
+    echo "FAIL hover $name: $line"; failures=$((failures + 1))
+  fi
+done <<< "$hover_lines"
+for size in 64 128 256; do
+  check "labels fit at $size" "^tags @$size: .* fits=true"
 done
 check "menu-bar names Demo"       '^menu-bar AX: GitHub Pet, Demo data, '
 check "partial AX quality"        'at least 3 items, some sources unavailable'
 check "loading count unknown"     '^state=Loading… badge=\? rows=0'
 check "urgent fixture"            'mood=urgent'
 check "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
-check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x150 pt'
+check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x164 pt'
 check "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
 check "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \

@@ -10,6 +10,10 @@ final class MascotWindowController {
     private let model: AppModel
     private var panel: NSPanel?
     private var popover: NSPopover?
+    private lazy var hoverAnchor = Self.makeHoverAnchor()
+    private var summaryState: MascotState?
+    /// Art size the panel is currently laid out for.
+    private var shownSize: Double?
     private var cancellables: Set<AnyCancellable> = []
 
     init(model: AppModel) {
@@ -21,9 +25,14 @@ final class MascotWindowController {
                 self?.update(visible: visible, size: size, origin: x.flatMap { x in y.map { CGPoint(x: x, y: $0) } })
             }
             .store(in: &cancellables)
+        model.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in self?.repositionSummaryIfNeeded() }
+            .store(in: &cancellables)
     }
 
-    private func update(visible: Bool, size: Double, origin: CGPoint?) {
+    private func update(visible: Bool, size: Double, origin savedOrigin: CGPoint?) {
+        var origin = savedOrigin
         guard visible else {
             hideSummary()
             panel?.orderOut(nil)
@@ -31,8 +40,17 @@ final class MascotWindowController {
         }
         let panel = self.panel ?? makePanel()
         self.panel = panel
-        // The art square sits at the bottom of the panel (origin = ground side), with the tag
-        // lane above it; resizing keeps the bottom-left origin, so the art stays put.
+        // Resizing keeps the art's ground point where it is on screen (design spec #28): the
+        // panel's width and lane change with size, so its origin moves instead, and is saved.
+        if let previous = shownSize, previous != size, panel.isVisible {
+            let moved = MascotLayout(artSide: CGFloat(size))
+                .origin(resizedFrom: MascotLayout(artSide: CGFloat(previous)), at: panel.frame.origin)
+            origin = moved
+            shownSize = size
+            model.settings.mascotOriginX = Double(moved.x)   // re-enters with the size unchanged
+            model.settings.mascotOriginY = Double(moved.y)
+        }
+        shownSize = size
         let panelSize = MascotView.panelSize(side: CGFloat(size))
         let frameOrigin = origin.flatMap { onScreen(CGRect(origin: $0, size: panelSize)) }
             ?? defaultOrigin(size: panelSize)
@@ -82,9 +100,14 @@ final class MascotWindowController {
 
     private func showSummary(from view: NSView) {
         hideSummary()
+        guard let window = view.window else { return }
         let popover = Self.makeHoverPopover(model: model)
-        popover.show(relativeTo: Self.hoverAnchor(in: view.bounds, pack: model.pack), of: view, preferredEdge: .maxY)
+        let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
+        let placement = Self.hoverPlacement(panelFrame: window.frame, size: model.settings.mascotSize, pack: model.pack,
+                                            state: model.mascotState, popover: popover.contentSize, screen: screen)
+        Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
+        summaryState = model.mascotState
     }
 
     /// The hover summary popover, sized to its content before it is shown. Without that, the
@@ -100,17 +123,61 @@ final class MascotWindowController {
         return popover
     }
 
-    /// The popover points at the character's visible top, not the panel's top edge: the tag
-    /// lane and the art's transparent margin left a ~32 pt gap at 128 pt (#27).
-    static func hoverAnchor(in bounds: CGRect, pack: MascotPack?) -> CGRect {
-        // 2 pt of clearance so the arrow tip never touches anti-aliased edges of the art.
-        let top = MascotView.characterTop(side: bounds.width, pack: pack) + 2
-        return CGRect(x: bounds.minX, y: top - 1, width: bounds.width, height: 1)
+    /// Beside the visible character (#27): above it, the arrow either covered the DEMO/count
+    /// tags or sat more than 12 pt from the art. See `HoverPlacement`.
+    static func hoverPlacement(panelFrame: CGRect, size: Double, pack: MascotPack?, state: MascotState,
+                               popover: CGSize, screen: CGRect) -> HoverPlacement {
+        HoverPlacement.place(art: pack?.artProfiles[state] ?? .placeholder, poses: pack?.poseProfiles[state] ?? [],
+                             layout: MascotLayout(artSide: size), popover: popover,
+                             panelOrigin: panelFrame.origin, screen: screen)
+    }
+
+    /// A 1×1 pt invisible, click-through window the popover points at. The arrow tip can lie
+    /// outside the mascot panel (beside or just below a small character with a tall summary),
+    /// and NSPopover won't show for a rect outside its view.
+    static func makeHoverAnchor() -> NSPanel {
+        let anchor = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 1, height: 1),
+                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        anchor.isOpaque = false
+        anchor.backgroundColor = .clear
+        anchor.hasShadow = false
+        anchor.ignoresMouseEvents = true
+        anchor.level = .floating
+        anchor.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        anchor.isReleasedWhenClosed = false
+        return anchor
+    }
+
+    /// Moves `anchor` so its outer edge on the popover's side is the arrow tip, then shows or
+    /// re-aims `popover` at it.
+    static func show(_ popover: NSPopover, placement: HoverPlacement, panelFrame: CGRect, anchor: NSPanel) {
+        let tip = CGPoint(x: panelFrame.minX + placement.tip.x, y: panelFrame.minY + placement.tip.y)
+        let right = placement.side == .right
+        anchor.setFrame(CGRect(x: right ? tip.x - 1 : tip.x, y: tip.y - 0.5, width: 1, height: 1), display: false)
+        anchor.orderFrontRegardless()
+        guard let view = anchor.contentView else { return }
+        if popover.isShown {
+            popover.positioningRect = view.bounds
+        } else {
+            popover.show(relativeTo: view.bounds, of: view, preferredEdge: right ? .maxX : .minX)
+        }
     }
 
     private func hideSummary() {
         popover?.performClose(nil)
         popover = nil
+        summaryState = nil
+        hoverAnchor.orderOut(nil)
+    }
+
+    /// Each state's frames have their own outline: re-aim the open summary when the mood changes.
+    private func repositionSummaryIfNeeded() {
+        guard let popover, let state = summaryState, state != model.mascotState, let window = panel else { return }
+        let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
+        let placement = Self.hoverPlacement(panelFrame: window.frame, size: model.settings.mascotSize, pack: model.pack,
+                                            state: model.mascotState, popover: popover.contentSize, screen: screen)
+        summaryState = model.mascotState
+        Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
     }
 
     /// Returns `frame.origin` if the frame is mostly on some screen, else nil.

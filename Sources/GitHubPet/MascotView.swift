@@ -6,40 +6,31 @@ import SwiftUI
 /// native placeholder. Timing comes from `MascotAnimator` on the app clock, so QA clock
 /// hooks drive animation too. Reduced motion pins a static pose; text and badge never move.
 struct MascotView: View {
-    /// Height of the adornment lane above the artwork square. Fixed, so the panel's size and
-    /// the art's ground anchor never change with state, badge or Demo.
-    static let laneHeight: CGFloat = 22
-
-    /// Panel size for a given artwork side: the art square plus the lane above it.
+    /// Panel size for a given artwork side: the art square plus the tag lane above it (design
+    /// metrics in `MascotLayout`). Fixed per size, so the panel and the art's ground anchor never
+    /// change with state, badge or Demo.
     static func panelSize(side: CGFloat) -> CGSize {
-        CGSize(width: side, height: side + laneHeight)
-    }
-
-    /// Height above the panel's bottom edge where the character visibly starts: the art
-    /// square's top minus the pack's transparent margin (or the placeholder's).
-    static func characterTop(side: CGFloat, pack: MascotPack?) -> CGFloat {
-        let insetFraction = pack.map { CGFloat($0.artTopInset) / CGFloat(MascotPack.canvasSize) }
-            ?? PlaceholderFigure.topInsetFraction
-        return side * (1 - insetFraction)
+        MascotLayout(artSide: side).panelSize
     }
 
     @ObservedObject var model: AppModel
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
+        let layout = MascotLayout(artSide: model.settings.mascotSize)
         VStack(spacing: 0) {
             // Adornment lane: DEMO and count tags live here, outside the artwork rectangle.
-            HStack(spacing: 4) {
+            HStack(spacing: 0) {
                 if model.isDemo {
-                    Tag(text: PrivacyText.demoLabel.uppercased(), fill: Color(white: 0.32))
+                    Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
                 }
-                Spacer(minLength: 0)
+                Spacer(minLength: layout.minimumGap)
                 if let badge = model.badge {
-                    Tag(text: badge, fill: model.mascotState == .urgent ? .red : .accentColor)
+                    Tag(text: badge, role: model.mascotState == .urgent ? .urgentCount : .count, metrics: layout.count)
                 }
             }
-            .frame(height: Self.laneHeight)
-            .padding(.horizontal, 2)
+            .frame(height: layout.laneHeight)
+            .padding(.horizontal, layout.inset)
             Group {
                 if reduced {
                     figure(at: model.clock(), reduced: true)
@@ -49,7 +40,7 @@ struct MascotView: View {
                     }
                 }
             }
-            .aspectRatio(1, contentMode: .fit)
+            .frame(width: layout.artSide, height: layout.artSide)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         // VoiceOver sees the panel's container as one button (see MascotContainerView).
@@ -80,16 +71,37 @@ struct MascotView: View {
     }
 }
 
-private struct Tag: View {
+/// A lane capsule (design spec #28): DEMO in SF bold, the count in SF semibold with monospaced
+/// digits; width `max(height, text + 2 × padding)`, never truncated. Fills are appearance-aware
+/// with at least 4.5:1 text contrast; urgency is also stated in words elsewhere.
+struct Tag: View {
+    enum Role { case demo, count, urgentCount }
+
     let text: String
-    let fill: Color
+    let role: Role
+    let metrics: MascotLayout.Capsule
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let dark = colorScheme == .dark
         Text(text)
-            .font(.system(size: 11, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 5).padding(.vertical, 1)
-            .background(Capsule().fill(fill))
+            .font(role == .demo
+                  ? .system(size: metrics.fontSize, weight: .bold)
+                  : .system(size: metrics.fontSize, weight: .semibold).monospacedDigit())
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(dark ? Color.black : Color.white)
+            .padding(.horizontal, metrics.padding)
+            .frame(minWidth: metrics.height, minHeight: metrics.height, maxHeight: metrics.height)
+            .background(Capsule().fill(fill(dark: dark)))
+    }
+
+    private func fill(dark: Bool) -> Color {
+        switch role {
+        case .demo: return dark ? Color(white: 0.78) : Color(white: 0.32)
+        case .count: return dark ? Color(red: 0.61, green: 0.78, blue: 1.0) : Color(red: 0.0, green: 0.31, blue: 0.69)
+        case .urgentCount: return dark ? Color(red: 1.0, green: 0.71, blue: 0.67) : Color(red: 0.70, green: 0.15, blue: 0.12)
+        }
     }
 }
 
@@ -98,9 +110,6 @@ struct PlaceholderFigure: View {
     let pose: MascotPose
     let date: Date
     let reduced: Bool
-
-    /// Top of the drawing (the attention/urgent symbol) as a fraction of the square.
-    static let topInsetFraction: CGFloat = 0.1
 
     /// Frame timings mirroring the pack: idle blink loop, one-shot hop for event clips.
     static func durationsMs(_ state: MascotState) -> [Int] {

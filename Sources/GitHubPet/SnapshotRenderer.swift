@@ -47,6 +47,12 @@ enum SnapshotRenderer {
         // As if the user pressed "Show details": rows show titles, hover stays generic.
         model.detailsRevealed = true
         await capture("01b-details")
+        report.append("## lane labels (native text, widest count)")
+        for side in [CGFloat(64), 128, 256] { report.append(tagFit(side: side)) }
+        report.append("## hover placement (idle)")
+        for placementCase in HoverCase.all {
+            report.append(await hoverPlacement(model: model, placementCase, directory: directory))
+        }
         model.injectEntitlementEvent()
         await capture("02-injected")
         model.replaySnapshot()
@@ -72,6 +78,12 @@ enum SnapshotRenderer {
         model.markAllSeen()
         model.injectWorkflowFailure()
         await capture("10-urgent-static")
+        report.append("## hover placement (urgent, privacy off: names and titles)")
+        model.settings.privacyMode = false
+        for placementCase in HoverCase.urgent {
+            report.append(await hoverPlacement(model: model, placementCase, directory: directory))
+        }
+        model.settings.privacyMode = true
         // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
         // is deterministic and can never contain live GitHub data.
         if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
@@ -81,8 +93,6 @@ enum SnapshotRenderer {
             await capture("11-gh-override")
         }
 
-        report.append("## hover placement")
-        for side in [CGFloat(64), 128, 256] { report.append(await hoverGap(model: model, side: side)) }
 
         // Settings goes through the same window sizing as the real Settings window.
         report.append("## settings")
@@ -195,15 +205,60 @@ enum SnapshotRenderer {
             + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
     }
 
-    /// Shows a real mascot panel and hover popover on screen for a moment and measures the gap
-    /// between the popover's arrow tip (its window's bottom edge) and the character's visible top.
-    private static func hoverGap(model: AppModel, side: CGFloat) async -> String {
-        guard let screen = NSScreen.main?.visibleFrame else { return "hover gap @\(Int(side)): no screen" }
-        let size = MascotView.panelSize(side: side)
-        let panel = NSPanel(contentRect: CGRect(origin: CGPoint(x: screen.minX + 40, y: screen.minY + 40), size: size),
+    /// Full DEMO and the widest count ("99+") at their native sizes must fit the panel with the
+    /// minimum gap (design spec #28), so neither is ever truncated.
+    private static func tagFit(side: CGFloat) -> String {
+        let layout = MascotLayout(artSide: side)
+        func width<V: View>(_ view: V) -> CGFloat { NSHostingView(rootView: view).fittingSize.width.rounded(.up) }
+        let demo = width(Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo))
+        let count = width(Tag(text: "99+", role: .count, metrics: layout.count))
+        let gap = layout.panelWidth - 2 * layout.inset - demo - count
+        return "tags @\(Int(side)): demo=\(Int(demo)) count99=\(Int(count)) panel=\(Int(layout.panelWidth)) "
+            + "gap=\(Int(gap)) min-gap=\(Int(layout.minimumGap)) fits=\(gap >= layout.minimumGap)"
+    }
+
+    struct HoverCase {
+        enum Position: String { case center, leftEdge = "left-edge", rightEdge = "right-edge" }
+        var side: CGFloat
+        var position: Position
+        var name: String { "\(Int(side))-\(position.rawValue)" }
+        func name(_ state: MascotState) -> String { "\(state.rawValue)-\(name)" }
+
+        static let all = [HoverCase(side: 64, position: .leftEdge), HoverCase(side: 64, position: .center),
+                          HoverCase(side: 128, position: .center), HoverCase(side: 256, position: .center),
+                          HoverCase(side: 128, position: .rightEdge)]
+        /// Urgent with privacy off (four item lines: the tallest, widest summary).
+        static let urgent = [HoverCase(side: 64, position: .leftEdge), HoverCase(side: 64, position: .center),
+                             HoverCase(side: 128, position: .rightEdge), HoverCase(side: 256, position: .center)]
+
+        /// Panel origin, high enough above the screen bottom for a tall summary; the right-edge
+        /// case is the app's default horizontal spot (24 pt from the right).
+        func origin(size: CGSize, screen: CGRect) -> CGPoint {
+            switch position {
+            case .leftEdge: return CGPoint(x: screen.minX, y: screen.minY + 120)
+            case .center: return CGPoint(x: (screen.midX - size.width / 2).rounded(), y: screen.minY + 120)
+            case .rightEdge: return CGPoint(x: screen.maxX - size.width - 24, y: screen.minY + 120)
+            }
+        }
+    }
+
+    /// Shows the real mascot panel and hover popover on screen for a moment, measures the actual
+    /// windows against the visible art of every frame of the current state, and writes one
+    /// combined image (art, popover with its arrow, display edge) for visual review.
+    private static func hoverPlacement(model: AppModel, _ placementCase: HoverCase, directory: URL) async -> String {
+        let state = model.mascotState
+        let label = "hover \(placementCase.name(state))"
+        guard let screenFrame = NSScreen.main?.visibleFrame else { return "\(label): no screen" }
+        let savedSize = model.settings.mascotSize
+        model.settings.mascotSize = placementCase.side
+        defer { model.settings.mascotSize = savedSize }
+        let layout = MascotLayout(artSide: placementCase.side)
+        let size = layout.panelSize
+        let panel = NSPanel(contentRect: CGRect(origin: placementCase.origin(size: size, screen: screenFrame), size: size),
                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isOpaque = false
         panel.backgroundColor = .clear
+        panel.appearance = NSAppearance(named: .aqua)
         let container = MascotContainerView(frame: CGRect(origin: .zero, size: size))
         let hosting = PassthroughHostingView(rootView: MascotView(model: model))
         hosting.frame = container.bounds
@@ -211,25 +266,236 @@ enum SnapshotRenderer {
         panel.contentView = container
         panel.orderFrontRegardless()
         try? await Task.sleep(nanoseconds: 300_000_000)   // let the panel reach the screen first
+
         let popover = MascotWindowController.makeHoverPopover(model: model)
         popover.animates = false
-        popover.show(relativeTo: MascotWindowController.hoverAnchor(in: container.bounds, pack: model.pack),
-                     of: container, preferredEdge: .maxY)
-        try? await Task.sleep(nanoseconds: 400_000_000)
-        defer { popover.close(); panel.orderOut(nil) }
-        guard let popoverFrame = popover.contentViewController?.view.window?.frame else {
-            return "hover gap @\(Int(side)): popover not shown"
+        popover.appearance = NSAppearance(named: .aqua)
+        let anchor = MascotWindowController.makeHoverAnchor()
+        let placement = MascotWindowController.hoverPlacement(panelFrame: panel.frame, size: placementCase.side,
+                                                              pack: model.pack, state: state,
+                                                              popover: popover.contentSize, screen: screenFrame)
+        MascotWindowController.show(popover, placement: placement, panelFrame: panel.frame, anchor: anchor)
+        defer { popover.close(); panel.orderOut(nil); anchor.orderOut(nil) }
+        var shown: NSWindow?
+        for _ in 0..<8 where shown == nil {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            shown = popover.contentViewController?.view.window.flatMap { $0.isVisible ? $0 : nil }
         }
-        let characterTop = panel.frame.minY + MascotView.characterTop(side: side, pack: model.pack)
-        let gap = popoverFrame.minY - characterTop
-        let above = popoverFrame.minY >= panel.frame.minY
-        func describe(_ rect: CGRect) -> String {
-            "(\(Int(rect.minX)),\(Int(rect.minY)) \(Int(rect.width))x\(Int(rect.height)))"
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        guard let popoverWindow = shown else { return "\(label): popover not shown" }
+        let window = popoverWindow.frame
+
+        // Art of every frame the state can show (static pose first), measured independently of
+        // the placement code, as screen-space row rects.
+        let poses: [ArtProfile] = model.pack.map { pack in
+            ([pack.staticFallbackURL(for: state)].compactMap { $0 } + pack.frameURLs(for: state))
+                .compactMap { try? Data(contentsOf: $0) }.compactMap { ArtProfile(png: $0) }
+        } ?? [.placeholder]
+        let art = layout.artFrame.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY)
+        func pixels(_ pose: ArtProfile) -> [CGRect] {
+            let scale = art.width / CGFloat(pose.canvas)
+            return pose.rows.enumerated().compactMap { index, span in
+                span.map { CGRect(x: art.minX + CGFloat($0.lowerBound) * scale, y: art.maxY - CGFloat(index + 1) * scale,
+                                  width: CGFloat($0.count) * scale, height: scale) }
+            }
         }
-        // Gap from the highest visible art pixel (any static pose) to the popover's arrow tip,
-        // the popover's nearest visible point. Negative would mean overlap.
-        return "hover gap @\(Int(side)): \(Int(gap.rounded())) pt arrow-tip-to-character, popover \(above ? "above" : "below") "
-            + "panel=\(describe(panel.frame)) popover=\(describe(popoverFrame)) character-top-y=\(Int(characterTop))"
+        // The popover as drawn: its own window captured natively where the OS allows it (the
+        // real bubble and arrow), else the whole window rectangle (an upper bound).
+        let capture = captureWindows([popoverWindow])
+        let visible = capture.flatMap { visibleRects($0, frame: window) } ?? [window]
+        let source = capture == nil ? "window-bounds" : "native-capture"
+        func distance(_ a: CGRect, _ b: CGRect) -> CGFloat {
+            hypot(max(b.minX - a.maxX, 0, a.minX - b.maxX), max(b.minY - a.maxY, 0, a.minY - b.maxY))
+        }
+        let near = visible.filter { $0.insetBy(dx: -24, dy: -24).intersects(panel.frame) }
+        var gaps: [CGFloat] = []
+        var overlaps = 0
+        for pose in poses {
+            var nearest = CGFloat.infinity
+            for row in pixels(pose) {
+                for piece in near {
+                    let d = distance(row, piece)
+                    if row.intersects(piece) { overlaps += 1 }
+                    nearest = min(nearest, d)
+                }
+            }
+            gaps.append(nearest)
+        }
+        let tags = layout.tagBand.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY)
+        let laneClear = !visible.contains { $0.intersects(tags) }
+        let onScreen = screenFrame.insetBy(dx: -0.5, dy: -0.5).contains(window)
+        let tip = CGPoint(x: placement.side == .right ? window.minX : window.maxX, y: window.midY)
+        let sideName = placement.side == .right ? "right" : "left"
+        let worst = gaps.max(), best = gaps.min()
+
+        let caption = "\(Int(placementCase.side)) pt, \(placementCase.position.rawValue), \(state.rawValue): popover \(sideName); "
+            + "gap \(format(best))-\(format(worst)) pt over \(poses.count) frames; overlap \(overlaps == 0 ? "none" : "\(overlaps)"); "
+            + "tags \(laneClear ? "clear" : "COVERED"); popover from \(source)"
+        await writeHoverComposite(name: "hover-\(placementCase.name(state))", directory: directory, screen: screenFrame,
+                                  panel: panel, popoverWindow: popoverWindow, capture: capture, tip: tip, tags: tags,
+                                  caption: caption)
+        func rect(_ r: CGRect) -> String { "(\(Int(r.minX)),\(Int(r.minY)) \(Int(r.width))x\(Int(r.height)))" }
+        var line = "\(label): state=\(state.rawValue) side=\(sideName) gap-min=\(format(best)) gap-max=\(format(worst)) "
+        line += "frames=\(poses.count) overlap=\(overlaps) lane=\(laneClear ? "clear" : "covered") on-screen=\(onScreen) "
+        line += "popover-source=\(source) panel=\(rect(panel.frame)) art=\(rect(art)) popover=\(rect(window)) "
+        line += "screen=\(rect(screenFrame))"
+        return line
+    }
+
+    /// The listed windows composited by the window server (their real pixels, including the
+    /// popover's material and arrow), or nil where the OS doesn't allow it without Screen
+    /// Recording permission. Looked up at run time: the API is unavailable in newer SDKs.
+    private static func captureWindows(_ windows: [NSWindow]) -> CGImage? {
+        typealias Capture = @convention(c) (CGRect, CFArray, UInt32) -> Unmanaged<CGImage>?
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CGWindowListCreateImageFromArray"),
+              let primary = NSScreen.screens.first else { return nil }
+        let capture = unsafeBitCast(symbol, to: Capture.self)
+        let ids = windows.map { UnsafeRawPointer(bitPattern: UInt($0.windowNumber))! } as CFArray
+        let bounds = windows.map(\.frame).reduce(CGRect.null) { $0.union($1) }
+        // Window-server coordinates have a top-left origin on the primary display.
+        let rect = CGRect(x: bounds.minX, y: primary.frame.maxY - bounds.maxY, width: bounds.width, height: bounds.height)
+        // kCGWindowImageBoundsIgnoreFraming | kCGWindowImageBestResolution
+        guard let image = capture(rect, ids, 1 | 8)?.takeRetainedValue(), image.width > 0 else { return nil }
+        // An image without any visible pixel means capture was refused.
+        return visibleRects(image, frame: bounds)?.isEmpty == false ? image : nil
+    }
+
+    /// Screen-space rects (one per visible pixel run per row) of an image covering `frame`.
+    private static func visibleRects(_ image: CGImage, frame: CGRect) -> [CGRect]? {
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        let sx = frame.width / CGFloat(width), sy = frame.height / CGFloat(height)
+        var rects: [CGRect] = []
+        for row in 0..<height {
+            var run: Int?
+            for column in 0...width {
+                let on = column < width && pixels[(row * width + column) * 4 + 3] > 32
+                if on, run == nil { run = column }
+                if !on, let start = run {
+                    rects.append(CGRect(x: frame.minX + CGFloat(start) * sx, y: frame.maxY - CGFloat(row + 1) * sy,
+                                        width: CGFloat(column - start) * sx, height: sy))
+                    run = nil
+                }
+            }
+        }
+        return rects
+    }
+
+    private static func format(_ value: CGFloat?) -> String {
+        guard let value, value.isFinite else { return "none" }
+        return String(format: "%.1f", value)
+    }
+
+    /// One reviewable image per placement: the region around the mascot and popover in screen
+    /// space at 2x, the display edge and off-screen area when nearby, the real mascot drawing, the
+    /// popover (natively captured where the OS allows; otherwise its window bounds as a flat
+    /// outlined shape with its real content, labelled as such) and a caption.
+    private static func writeHoverComposite(name: String, directory: URL, screen: CGRect, panel: NSWindow,
+                                            popoverWindow: NSWindow, capture: CGImage?, tip: CGPoint, tags: CGRect,
+                                            caption: String) async {
+        var region = panel.frame.union(popoverWindow.frame).insetBy(dx: -24, dy: -24)
+        for edge in [screen.minX, screen.maxX] where abs(edge - region.minX) < 60 || abs(edge - region.maxX) < 60 {
+            region = region.union(CGRect(x: edge - 24, y: region.minY, width: 48, height: region.height))
+        }
+        region.size.height += 30   // caption strip
+        region.origin.y -= 30
+        let scale: CGFloat = 2
+        guard let context = CGContext(data: nil, width: Int(region.width * scale), height: Int(region.height * scale),
+                                      bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+        context.scaleBy(x: scale, y: scale)
+        context.translateBy(x: -region.minX, y: -region.minY)
+        // Desktop stand-in, then hatch everything outside the display's visible frame.
+        context.setFillColor(CGColor(gray: 0.86, alpha: 1))
+        context.fill(region)
+        context.saveGState()
+        context.addRect(region)
+        context.addRect(screen)
+        context.clip(using: .evenOdd)
+        context.setFillColor(CGColor(gray: 0.35, alpha: 1))
+        context.fill(region)
+        context.setStrokeColor(CGColor(gray: 0.5, alpha: 1))
+        context.setLineWidth(1)
+        var x = region.minX - region.height
+        while x < region.maxX {
+            context.move(to: CGPoint(x: x, y: region.minY))
+            context.addLine(to: CGPoint(x: x + region.height, y: region.maxY))
+            x += 8
+        }
+        context.strokePath()
+        context.restoreGState()
+        context.setStrokeColor(CGColor(red: 0.85, green: 0.1, blue: 0.1, alpha: 1))
+        context.setLineWidth(1)
+        context.stroke(screen)
+
+        // Mascot panel: real drawing plus thin outlines of the panel and its tag lane.
+        drawLayer(of: panel.contentView, at: panel.frame.origin, in: context)
+        context.setStrokeColor(CGColor(gray: 0.55, alpha: 1))
+        context.setLineDash(phase: 0, lengths: [3, 3])
+        context.setLineWidth(0.5)
+        context.stroke(panel.frame)
+        context.stroke(tags)
+        context.setLineDash(phase: 0, lengths: [])
+
+        // Popover: its natively captured pixels, else its window bounds (flat, outlined) and content.
+        if let capture {
+            context.draw(capture, in: popoverWindow.frame)
+        } else {
+            let rect = popoverWindow.frame.insetBy(dx: 0.5, dy: 0.5)
+            context.setFillColor(CGColor(gray: 0.98, alpha: 1))
+            context.fill(rect)
+            context.setStrokeColor(CGColor(gray: 0.45, alpha: 1))
+            context.setLineWidth(1)
+            context.stroke(rect)
+            if let content = popoverWindow.contentViewController?.view {
+                let frame = content.convert(content.bounds, to: nil)
+                drawLayer(of: content, at: CGPoint(x: popoverWindow.frame.minX + frame.minX,
+                                                   y: popoverWindow.frame.minY + frame.minY), in: context)
+            }
+        }
+        // Arrow-tip marker.
+        context.setStrokeColor(CGColor(red: 0.1, green: 0.4, blue: 0.95, alpha: 1))
+        context.setLineWidth(0.75)
+        context.move(to: CGPoint(x: tip.x - 4, y: tip.y)); context.addLine(to: CGPoint(x: tip.x + 4, y: tip.y))
+        context.move(to: CGPoint(x: tip.x, y: tip.y - 4)); context.addLine(to: CGPoint(x: tip.x, y: tip.y + 4))
+        context.strokePath()
+
+        // Caption.
+        let graphics = NSGraphicsContext(cgContext: context, flipped: false)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = graphics
+        let text = NSAttributedString(string: caption + " (display edge: red; dashed: panel and tag band)",
+                                      attributes: [.font: NSFont.systemFont(ofSize: 9), .foregroundColor: NSColor.black])
+        let strip = CGRect(x: region.minX, y: region.minY, width: region.width, height: 30)
+        NSColor.white.setFill()
+        strip.fill()
+        text.draw(with: strip.insetBy(dx: 6, dy: 3), options: [.usesLineFragmentOrigin])
+        NSGraphicsContext.restoreGraphicsState()
+
+        guard let image = context.makeImage(),
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return }
+        try? png.write(to: directory.appendingPathComponent("\(name).png"))
+    }
+
+    /// Renders a view's layer tree at its screen origin (bottom-left), unflipping if needed.
+    private static func drawLayer(of view: NSView?, at origin: CGPoint, in context: CGContext) {
+        guard let view, let layer = view.layer else { return }
+        context.saveGState()
+        context.translateBy(x: origin.x, y: origin.y)
+        if view.isFlipped || layer.isGeometryFlipped == false && view.isFlipped {
+            context.translateBy(x: 0, y: view.bounds.height)
+            context.scaleBy(x: 1, y: -1)
+        }
+        layer.render(in: context)
+        context.restoreGState()
     }
 
     private static func accessibilityDump(_ element: Any, depth: Int) -> [String] {

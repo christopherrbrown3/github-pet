@@ -121,10 +121,24 @@ summary; its press action opens the Inbox, the same as a click.
 ### Windows and pointer
 - Inbox and Settings windows always open at least as large as their content, even if an older,
   smaller frame was autosaved.
-- The hover summary is sized to its content before it is shown and points at the character's
-  visible top (the pack's highest opaque pixel across static poses, plus 2 pt), so it sits just
-  above the art at any mascot size; NSPopover still keeps it on screen near display edges.
-  render-check measures the real on-screen gap at 64, 128 and 256 pt (must be 0-12 pt).
+- Panel geometry follows design spec #28 (docs/design/notifications at a3c799b, `MascotLayout`):
+  art S×S centred at the bottom of a panel W = max(S, 96, labels) wide, under a lane L = count
+  height + 8 (64/128/256 pt → 96×92, 128×164, 256×304). DEMO (SF bold) and the count (SF
+  semibold, monospaced digits) are never truncated; fills keep at least 4.5:1 text contrast in
+  light and dark. Resizing keeps the art's ground point fixed on screen.
+- The hover summary sits beside the character (#27): right by default, left when the right
+  screen edge has no room; never above. It is sized to its content first, then anchored to an
+  invisible click-through 1×1 window at the arrow tip (the tip can lie just outside the panel).
+  Its window never overlaps any visible pixel of any frame of the current state (attention
+  includes its ±5° lean, swept pixel-exactly about [128, 232]), stays below the tags and on
+  screen; within that its height minimises the worst gap to any frame. If a small mascot sits so
+  low that a tall summary can't be both on screen and below the tags, staying on screen wins.
+  render-check shows the real windows on screen for 9 cases (64/128/256, left edge, centre,
+  right edge; idle, and urgent with privacy off) and requires a worst gap of at most 12 pt, no
+  overlap, tags clear and on screen. Each case writes `hover-<state>-<size>-<position>.png`
+  combining art, popover and display edge; the popover is natively captured where the OS
+  allows it without Screen Recording permission, otherwise drawn from its window bounds (the
+  caption and report say which).
 - On the mascot, a press that ends 3 pt or more from where it started is a drag (move and save
   position), even if no intermediate drag events arrived; otherwise it's a click (open Inbox).
 

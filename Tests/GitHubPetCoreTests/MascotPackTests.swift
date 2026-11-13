@@ -253,7 +253,9 @@ private struct PackFixture {
     @Test func loadedPackRecordsTheHighestStaticPose() throws {
         let fixture = try PackFixture()
         try fixture.manifest()
-        #expect(try fixture.load().get().artTopInset == 128)
+        let pack = try fixture.load().get()
+        #expect(pack.poseProfiles[.idle]?.first?.top == 128)
+        #expect(pack.artTopInset <= 128, "the attention sway can reach higher than the upright poses")
     }
 }
 
@@ -272,6 +274,6 @@ private struct PackFixture {
         #expect(pack.manifest.states["idle"]?.loop == true)
         #expect(pack.manifest.states["attention"]?.loop == false)
         #expect(pack.manifest.frameSha256?.count == 12)
-        #expect(pack.artTopInset == 20, "the urgent pose's head starts 20 px below the canvas top")
+        #expect(pack.artTopInset == 19, "the swept attention lean reaches 19 px below the canvas top")
     }
 }
