@@ -60,6 +60,8 @@ public struct IncidentMarkerSpec: Decodable, Equatable, Sendable {
             public var tipLeanFactor: Double
         }
         public struct Wave: Decodable, Equatable, Sendable { public var periodS, amp, phaseMul: Double }
+        /// Highest a flame tip may reach (smallest y) per tier, at any flicker.
+        public struct MaxTip: Decodable, Equatable, Sendable { public var majorMinY, criticalMinY: Double }
         public struct Flicker: Decodable, Equatable, Sendable {
             public var heightBase, heightAmp, waveOffset: Double
             public var waves: [Wave]
@@ -72,6 +74,7 @@ public struct IncidentMarkerSpec: Decodable, Equatable, Sendable {
         public var major: [Tongue]
         public var critical: [Tongue]
         public var flicker: Flicker
+        public var maxTip: MaxTip
     }
 
     public struct Smoke: Decodable, Equatable, Sendable {
@@ -162,7 +165,7 @@ public struct IncidentMarkerSpec: Decodable, Equatable, Sendable {
 }
 
 extension IncidentMarkerSpec {
-    // Transcribed from docs/design/incidents/incident-marker.json at 3004ba8 (PR #38).
+    // Transcribed from docs/design/incidents/incident-marker.json at e0ace80 (PR #38).
     public static let standard = IncidentMarkerSpec(
         keepOut: KeepOut(topBandMaxY: 64, labelMarginPt: 2),
         tiers: [
@@ -193,7 +196,8 @@ extension IncidentMarkerSpec {
                        .init(cx: 202, halfWidth: 20, height: 116, phase: 0.58), .init(cx: 232, halfWidth: 24, height: 158, phase: 0.83)],
             flicker: .init(heightBase: 0.86, heightAmp: 0.14, waveOffset: 0.5,
                            waves: [.init(periodS: 0.42, amp: 0.35, phaseMul: 1), .init(periodS: 0.61, amp: 0.15, phaseMul: 2)],
-                           leanUnits: 6, leanPeriodS: 0.9)),
+                           leanUnits: 6, leanPeriodS: 0.9),
+            maxTip: .init(majorMinY: 142, criticalMinY: 88)),
         smoke: Smoke(
             color: "incident.smoke",
             emitters: [.init(x: 34, y: 160, dx: -10, dy: -66, phase: 0.0), .init(x: 222, y: 160, dx: 10, dy: -66, phase: 0.5)],
@@ -208,7 +212,7 @@ extension IncidentMarkerSpec {
             "64": SizeOverride(
                 flamesMajor: [.init(cx: 18, halfWidth: 30, height: 100, phase: 0.0),
                               .init(cx: 128, halfWidth: 44, height: 64, phase: 0.45),
-                              .init(cx: 238, halfWidth: 30, height: 108, phase: 0.83)],
+                              .init(cx: 238, halfWidth: 30, height: 104, phase: 0.83)],
                 flamesCritical: [.init(cx: 18, halfWidth: 32, height: 150, phase: 0.0),
                                  .init(cx: 128, halfWidth: 46, height: 92, phase: 0.45),
                                  .init(cx: 238, halfWidth: 32, height: 158, phase: 0.83)],

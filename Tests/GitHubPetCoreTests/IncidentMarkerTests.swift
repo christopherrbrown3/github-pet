@@ -232,6 +232,8 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
                     let f = spec.flames.flicker
                     let tallest = tongue.height * (f.heightBase + f.heightAmp * (f.waveOffset + f.waves.map(\.amp).reduce(0, +)))
                     #expect(spec.flames.baseY - tallest >= top, "\(tier) \(tongue) at \(side)")
+                    let limit = tier == .critical ? spec.flames.maxTip.criticalMinY : spec.flames.maxTip.majorMinY
+                    #expect(spec.flames.baseY - tallest >= limit, "\(tier) tip above maxTip: \(tongue) at \(side)")
                 }
             }
         }
