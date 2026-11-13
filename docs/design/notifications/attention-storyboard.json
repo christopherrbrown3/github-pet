@@ -1,0 +1,22 @@
+{
+  "designSchemaVersion":1,
+  "status":"implementation specification; not a v1 pack manifest",
+  "id":"friendly-double-wave",
+  "durationMs":1900,
+  "loop":false,
+  "canvas":[256,256],
+  "pivot":[128,232],
+  "rotationInterpolation":"continuous, cubic Bezier (0.2,0.8,0.2,1), never snap",
+  "steps":[
+    {"startMs":0,"durationMs":150,"frame":"attention-00.png","angleDegrees":0,"action":"notice; start moving toward next pose"},
+    {"startMs":150,"durationMs":250,"frame":"attention-01.png","angleDegrees":-5,"action":"lift limb, lean left"},
+    {"startMs":400,"durationMs":200,"frame":"attention-02.png","angleDegrees":5,"action":"wave across, lean right"},
+    {"startMs":600,"durationMs":250,"frame":"attention-01.png","angleDegrees":-5,"action":"second wave outward"},
+    {"startMs":850,"durationMs":200,"frame":"attention-02.png","angleDegrees":5,"action":"second wave inward"},
+    {"startMs":1050,"durationMs":250,"frame":"attention-03.png","angleDegrees":0,"action":"settle upright"},
+    {"startMs":1300,"durationMs":600,"frame":"attention-03.png","angleDegrees":0,"action":"still hold; then finish"}
+  ],
+  "staticFallback":{"frame":"attention-03.png","angleDegrees":0},
+  "assetRevisionRequired":false,
+  "runtimeExtensionRequired":"bounded art-layer rotation; existing v1 loader ignores this design file"
+}

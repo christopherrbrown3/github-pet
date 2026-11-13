@@ -1,0 +1,54 @@
+{
+  "result": "pass",
+  "sourceFrameHashesVerified": 12,
+  "timelineDurationMs": 1900,
+  "loop": false,
+  "staticFallback": {
+    "frame": "attention-03.png",
+    "angleDegrees": 0
+  },
+  "badgeLabelsMeasured": 12,
+  "minimumMeasuredLabelGapPt": 13,
+  "rotatedFrameBounds": [
+    {
+      "frame": "attention-00.png",
+      "conservativeBoundsAcrossAngles": [
+        34.25,
+        18.55,
+        228.73,
+        239.23
+      ]
+    },
+    {
+      "frame": "attention-01.png",
+      "conservativeBoundsAcrossAngles": [
+        34.25,
+        17.94,
+        235.7,
+        239.84
+      ]
+    },
+    {
+      "frame": "attention-02.png",
+      "conservativeBoundsAcrossAngles": [
+        34.25,
+        18.47,
+        229.72,
+        239.32
+      ]
+    },
+    {
+      "frame": "attention-03.png",
+      "conservativeBoundsAcrossAngles": [
+        34.25,
+        18.73,
+        226.73,
+        239.06
+      ]
+    }
+  ],
+  "limitations": [
+    "Standalone AppKit design compositions and browser preview; not production native UI acceptance.",
+    "Source eligibility, quiet/snooze, system settings, hover edges and live display scaling require later runtime QA."
+  ]
+}

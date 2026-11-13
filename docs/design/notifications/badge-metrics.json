@@ -1,0 +1,10 @@
+{
+  "designSchemaVersion": 1,
+  "units": "macOS points",
+  "scales": [
+    {"size":64,"panelWidth":96,"laneHeight":28,"countHeight":20,"countFont":12,"countPadding":6,"demoHeight":16,"demoFont":9,"demoPadding":5,"inset":4,"minimumGap":6},
+    {"size":128,"panelWidth":128,"laneHeight":36,"countHeight":28,"countFont":16,"countPadding":8,"demoHeight":20,"demoFont":11,"demoPadding":6,"inset":6,"minimumGap":8},
+    {"size":256,"panelWidth":256,"laneHeight":48,"countHeight":40,"countFont":22,"countPadding":10,"demoHeight":24,"demoFont":13,"demoPadding":7,"inset":8,"minimumGap":12}
+  ],
+  "comparisonLabels": ["2","2+","?","99+"]
+}

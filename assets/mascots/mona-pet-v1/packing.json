@@ -1,0 +1,443 @@
+{
+  "canvas": [
+    256,
+    256
+  ],
+  "anchor": [
+    128,
+    232
+  ],
+  "faceWidthTarget": 112,
+  "resampling": "macOS sips; original generated artwork only",
+  "sourceAlphaCleanupThreshold": 8,
+  "transforms": {
+    "idle": [
+      {
+        "sourceCell": 0,
+        "sourceFaceBounds": [
+          180,
+          182,
+          454,
+          366
+        ],
+        "sourceAlphaBounds": [
+          130,
+          64,
+          519,
+          575
+        ],
+        "scaledCellSize": 256,
+        "translation": [
+          -1,
+          -3
+        ],
+        "alphaBounds": [
+          52,
+          23,
+          211,
+          232
+        ]
+      },
+      {
+        "sourceCell": 1,
+        "sourceFaceBounds": [
+          170,
+          182,
+          444,
+          366
+        ],
+        "sourceAlphaBounds": [
+          121,
+          64,
+          510,
+          575
+        ],
+        "scaledCellSize": 256,
+        "translation": [
+          3,
+          -3
+        ],
+        "alphaBounds": [
+          52,
+          23,
+          211,
+          232
+        ]
+      },
+      {
+        "sourceCell": 2,
+        "sourceFaceBounds": [
+          180,
+          166,
+          454,
+          349
+        ],
+        "sourceAlphaBounds": [
+          130,
+          47,
+          520,
+          561
+        ],
+        "scaledCellSize": 256,
+        "translation": [
+          -1,
+          3
+        ],
+        "alphaBounds": [
+          52,
+          22,
+          211,
+          232
+        ]
+      },
+      {
+        "sourceCell": 3,
+        "sourceFaceBounds": [
+          170,
+          165,
+          445,
+          349
+        ],
+        "sourceAlphaBounds": [
+          120,
+          47,
+          511,
+          561
+        ],
+        "scaledCellSize": 255,
+        "translation": [
+          3,
+          4
+        ],
+        "alphaBounds": [
+          52,
+          23,
+          211,
+          232
+        ]
+      }
+    ],
+    "attention": [
+      {
+        "sourceCell": 0,
+        "sourceFaceBounds": [
+          165,
+          175,
+          463,
+          371
+        ],
+        "sourceAlphaBounds": [
+          113,
+          45,
+          534,
+          594
+        ],
+        "scaledCellSize": 236,
+        "translation": [
+          10,
+          8
+        ],
+        "alphaBounds": [
+          52,
+          25,
+          211,
+          232
+        ]
+      },
+      {
+        "sourceCell": 1,
+        "sourceFaceBounds": [
+          165,
+          174,
+          463,
+          371
+        ],
+        "sourceAlphaBounds": [
+          113,
+          45,
+          553,
+          594
+        ],
+        "scaledCellSize": 236,
+        "translation": [
+          10,
+          8
+        ],
+        "alphaBounds": [
+          52,
+          25,
+          218,
+          232
+        ]
+      },
+      {
+        "sourceCell": 2,
+        "sourceFaceBounds": [
+          165,
+          174,
+          463,
+          371
+        ],
+        "sourceAlphaBounds": [
+          113,
+          45,
+          535,
+          594
+        ],
+        "scaledCellSize": 236,
+        "translation": [
+          10,
+          8
+        ],
+        "alphaBounds": [
+          52,
+          25,
+          212,
+          232
+        ]
+      },
+      {
+        "sourceCell": 3,
+        "sourceFaceBounds": [
+          165,
+          174,
+          463,
+          371
+        ],
+        "sourceAlphaBounds": [
+          113,
+          45,
+          529,
+          594
+        ],
+        "scaledCellSize": 236,
+        "translation": [
+          10,
+          8
+        ],
+        "alphaBounds": [
+          52,
+          25,
+          209,
+          232
+        ]
+      }
+    ],
+    "urgent": [
+      {
+        "sourceCell": 0,
+        "sourceFaceBounds": [
+          170,
+          173,
+          458,
+          363
+        ],
+        "sourceAlphaBounds": [
+          117,
+          39,
+          512,
+          583
+        ],
+        "scaledCellSize": 244,
+        "translation": [
+          6,
+          5
+        ],
+        "alphaBounds": [
+          51,
+          20,
+          205,
+          232
+        ]
+      },
+      {
+        "sourceCell": 1,
+        "sourceFaceBounds": [
+          170,
+          173,
+          458,
+          363
+        ],
+        "sourceAlphaBounds": [
+          111,
+          39,
+          517,
+          583
+        ],
+        "scaledCellSize": 244,
+        "translation": [
+          6,
+          5
+        ],
+        "alphaBounds": [
+          49,
+          20,
+          207,
+          232
+        ]
+      },
+      {
+        "sourceCell": 2,
+        "sourceFaceBounds": [
+          170,
+          172,
+          458,
+          363
+        ],
+        "sourceAlphaBounds": [
+          105,
+          39,
+          522,
+          583
+        ],
+        "scaledCellSize": 244,
+        "translation": [
+          6,
+          5
+        ],
+        "alphaBounds": [
+          47,
+          20,
+          209,
+          232
+        ]
+      },
+      {
+        "sourceCell": 0,
+        "sourceFaceBounds": [
+          170,
+          173,
+          458,
+          363
+        ],
+        "sourceAlphaBounds": [
+          117,
+          39,
+          512,
+          583
+        ],
+        "scaledCellSize": 244,
+        "translation": [
+          6,
+          5
+        ],
+        "alphaBounds": [
+          51,
+          20,
+          205,
+          232
+        ]
+      }
+    ]
+  },
+  "sheets": {
+    "idle": {
+      "path": "sheets/idle.png",
+      "size": [
+        1024,
+        256
+      ],
+      "rects": [
+        [
+          0,
+          0,
+          256,
+          256
+        ],
+        [
+          256,
+          0,
+          256,
+          256
+        ],
+        [
+          512,
+          0,
+          256,
+          256
+        ],
+        [
+          768,
+          0,
+          256,
+          256
+        ]
+      ],
+      "sha256": "b9f338b672ccfc27fc6186a21d7e3a0782cce98d32f622730e0898185cc81614"
+    },
+    "attention": {
+      "path": "sheets/attention.png",
+      "size": [
+        1024,
+        256
+      ],
+      "rects": [
+        [
+          0,
+          0,
+          256,
+          256
+        ],
+        [
+          256,
+          0,
+          256,
+          256
+        ],
+        [
+          512,
+          0,
+          256,
+          256
+        ],
+        [
+          768,
+          0,
+          256,
+          256
+        ]
+      ],
+      "sha256": "910f4775a39de007b06dc0d0bcbe8f2d7e8a8a0dbda4ba16b92ed9aac5a5d875"
+    },
+    "urgent": {
+      "path": "sheets/urgent.png",
+      "size": [
+        1024,
+        256
+      ],
+      "rects": [
+        [
+          0,
+          0,
+          256,
+          256
+        ],
+        [
+          256,
+          0,
+          256,
+          256
+        ],
+        [
+          512,
+          0,
+          256,
+          256
+        ],
+        [
+          768,
+          0,
+          256,
+          256
+        ]
+      ],
+      "sha256": "a45e0ba3e2ee618996e97a5aea9533b8b1b7d5ae0b422615a53d0079d4a59e1f"
+    }
+  },
+  "sourceSha256": {
+    "sources/attention-sheet.png": "689e710b3f2236f21103207c244ef6cd1bd7d77d4fb23d235f3f33f06e716488",
+    "sources/idle-sheet.png": "96ebf925dce53d37306708c80db42053709ea897582f84194ba0603b4b0d88bf",
+    "sources/probe.png": "62eba55c827cfc1fdf355069a2239fc41afec370995b6ec38933cf8fdadb9fe2",
+    "sources/urgent-sheet.png": "27ddac650d66bf1f7cae9a53a770a5091192dd53581bb7fa78d9e0e728000f5d"
+  }
+}

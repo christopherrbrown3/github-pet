@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "mona-pet-v1",
+  "name": "Mona-inspired Pet",
+  "canvas": {
+    "width": 256,
+    "height": 256
+  },
+  "anchor": [
+    128,
+    232
+  ],
+  "states": {
+    "idle": {
+      "frames": [
+        "frames/idle-00.png",
+        "frames/idle-01.png",
+        "frames/idle-02.png",
+        "frames/idle-03.png"
+      ],
+      "durationMs": [
+        2000,
+        200,
+        200,
+        2000
+      ],
+      "loop": true,
+      "staticFallback": "frames/idle-00.png"
+    },
+    "attention": {
+      "frames": [
+        "frames/attention-00.png",
+        "frames/attention-01.png",
+        "frames/attention-02.png",
+        "frames/attention-03.png"
+      ],
+      "durationMs": [
+        300,
+        400,
+        400,
+        800
+      ],
+      "loop": false,
+      "staticFallback": "frames/attention-03.png"
+    },
+    "urgent": {
+      "frames": [
+        "frames/urgent-00.png",
+        "frames/urgent-01.png",
+        "frames/urgent-02.png",
+        "frames/urgent-03.png"
+      ],
+      "durationMs": [
+        300,
+        400,
+        400,
+        800
+      ],
+      "loop": false,
+      "staticFallback": "frames/urgent-00.png"
+    }
+  },
+  "frameSha256": {
+    "frames/idle-00.png": "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb",
+    "frames/idle-01.png": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730",
+    "frames/idle-02.png": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409",
+    "frames/idle-03.png": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2",
+    "frames/attention-00.png": "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff",
+    "frames/attention-01.png": "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691",
+    "frames/attention-02.png": "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10",
+    "frames/attention-03.png": "271776fe5995ec0d9ce40f497f0ead6fcb742d617ddc55cbc6fb89c1ed14b5bd",
+    "frames/urgent-00.png": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4",
+    "frames/urgent-01.png": "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d",
+    "frames/urgent-02.png": "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d",
+    "frames/urgent-03.png": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
+  }
+}
