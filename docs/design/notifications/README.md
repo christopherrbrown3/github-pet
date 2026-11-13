@@ -1,5 +1,7 @@
 # Responsive badges and a clearer new-item gesture
 
+> **Compact revision:** Chris's newer #28 direction supersedes the lane heights and panel heights in the original comparison below. Use [compact-badge-spacing.md](compact-badge-spacing.md) and [compact-badge-metrics.json](compact-badge-metrics.json) for the current measured target. The previous PNG comparisons, JSON and table remain as historical evidence of label sizing and fit; they depict the older, taller lane.
+
 Design handoff for [#28](https://github.com/christopherrbrown3/github-pet/issues/28) and [#29](https://github.com/christopherrbrown3/github-pet/issues/29). The existing generated mascot identity and pack remain intact. These are reviewable implementation specifications; Developer owns the later application changes after PM handoff and #27 completion.
 
 PM approved the #28 runtime metrics below and chose **beside placement: right by default, flip left at the right screen edge**. Above-head placement is excluded because of the badge lane and the required 12-point gap. This decision supersedes the earlier placement-pending notes in the review history.
