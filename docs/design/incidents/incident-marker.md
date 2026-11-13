@@ -21,8 +21,8 @@ The marker is procedural (route B): flames, smoke and the beacon sweep are drawn
 ## Tiers
 
 - **minor:** the siren, its glow and a rotating beacon sweep.
-- **major:** the minor layers plus six flame tongues along the ground behind the mascot. The tallest tips stay at or below canvas y 142.
-- **critical:** taller flames (tips at or below y 88) plus smoke rising from both flanks (top edge at or below y 70).
+- **major:** the minor layers plus six flame tongues (three at 64 pt) along the ground behind the mascot. At every size the tallest tips stay at or below canvas y 142.
+- **critical:** taller flames (tips at or below y 88 at every size) plus smoke rising from both flanks (top edge at or below y 70).
 
 ## Geometry
 

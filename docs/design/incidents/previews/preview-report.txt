@@ -13,3 +13,9 @@ fade-in @128 minor: summed alpha at 0 / 150 / 300 ms = 0 / 606806 / 640052 PASS
 fade-in @128 major: summed alpha at 0 / 150 / 300 ms = 0 / 3304559 / 3326571 PASS
 fade-in @128 critical: summed alpha at 0 / 150 / 300 ms = 0 / 5659460 / 5852143 PASS
 siren svg vs json: 8/8 attributes agree PASS
+flame tips @64 major: analytic min y=142.00 sampled min y=142.00 (maxTip majorMinY 142) PASS
+flame tips @64 critical: analytic min y=88.00 sampled min y=88.00 (maxTip criticalMinY 88) PASS
+flame tips @128 major: analytic min y=142.00 sampled min y=142.00 (maxTip majorMinY 142) PASS
+flame tips @128 critical: analytic min y=88.00 sampled min y=88.00 (maxTip criticalMinY 88) PASS
+flame tips @256 major: analytic min y=142.00 sampled min y=142.00 (maxTip majorMinY 142) PASS
+flame tips @256 critical: analytic min y=88.00 sampled min y=88.00 (maxTip criticalMinY 88) PASS

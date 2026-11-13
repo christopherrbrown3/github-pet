@@ -371,6 +371,29 @@ func checkSirenSVG() {
     keepOutReport.append("siren svg vs json: \(expected.count - missing.count)/\(expected.count) attributes agree \(missing.isEmpty ? "PASS" : "FAIL missing \(missing)")")
 }
 
+// Flame tip bound check: every tongue at every size stays within flames.maxTip over the flicker.
+// Uses both the analytic maximum of the flicker formula and a 1 ms sample of 0-60 s.
+func checkFlameTips() {
+    let flames = dict(spec["flames"]), flickerSpec = dict(flames["flicker"]), maxTip = dict(flames["maxTip"])
+    let baseY = num(flames["baseY"])
+    let peakWave = num(flickerSpec["waveOffset"]) + (flickerSpec["waves"] as! [[String: Any]]).reduce(0) { $0 + abs(num($1["amp"])) }
+    let peakFactor = num(flickerSpec["heightBase"]) + num(flickerSpec["heightAmp"]) * peakWave
+    for size in [64, 128, 256] {
+        for (tier, boundKey) in [("major", "majorMinY"), ("critical", "criticalMinY")] {
+            let bound = num(maxTip[boundKey])
+            let list = tongues(tier, size: size)
+            let analytic = list.map { baseY - $0.height * peakFactor }.min()!
+            var sampled = CGFloat.greatestFiniteMagnitude
+            for ms in stride(from: 0, through: 60_000, by: 1) {
+                for t in list { sampled = min(sampled, baseY - flicker(t, time: Double(ms) / 1000).height) }
+            }
+            let pass = analytic >= bound && sampled >= bound
+            keepOutReport.append(String(format: "flame tips @%d %@: analytic min y=%.2f sampled min y=%.2f (maxTip %@ %.0f) %@",
+                                        size, tier, analytic, sampled, boundKey, bound, pass ? "PASS" : "FAIL"))
+        }
+    }
+}
+
 for size in [64, 128, 256] {
     for appearance in ["light", "dark"] { try renderSheet(size: size, appearance: appearance, annotate: false) }
 }
@@ -378,6 +401,7 @@ try renderSheet(size: 128, appearance: "light", annotate: true)
 checkKeepOut()
 checkFadeIn()
 checkSirenSVG()
+checkFlameTips()
 let report = (["Design previews of incident-marker.json drawn with CoreGraphics behind real mona-pet-v1 frames.",
                "Not native MascotView renders; labels (DEMO/count) are not drawn. Columns: static, burst 0.05/1.2/2.6 s (0.05 s is mid fade-in of a new incident). Rows: minor, major, critical."]
               + keepOutReport).joined(separator: "\n") + "\n"
