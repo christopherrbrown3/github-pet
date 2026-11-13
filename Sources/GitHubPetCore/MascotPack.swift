@@ -44,6 +44,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case tooLarge(String)
     case undecodable(String)
     case notRegularFile(String)
+    case clipTooLong(String, Int, Int)
 
     public var description: String {
         switch self {
@@ -63,6 +64,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .tooLarge(let p): return "'\(p)' exceeds the size limit"
         case .undecodable(let p): return "'\(p)' is not a decodable RGBA PNG"
         case .notRegularFile(let p): return "'\(p)' is not a regular file"
+        case .clipTooLong(let s, let total, let limit):
+            return "state '\(s)' plays \(total)ms once, longer than its \(limit)ms event clip"
         }
     }
 }
@@ -241,6 +244,13 @@ public struct MascotPack: Equatable, Sendable {
             if spec.frames.count != spec.durationMs.count { errors.append(.durationMismatch(state.rawValue)) }
             for duration in spec.durationMs where !durationRange.contains(duration) {
                 errors.append(.durationOutOfRange(state.rawValue, duration))
+            }
+            // Attention and urgent play once per event clip; a longer sequence would be cut off
+            // (its last frames never shown), so it is rejected rather than truncated.
+            if state != .idle {
+                let limit = Int((EventClipQueue.duration(of: state) * 1000).rounded())
+                let total = spec.durationMs.reduce(0, +)
+                if total > limit { errors.append(.clipTooLong(state.rawValue, total, limit)) }
             }
             for path in spec.frames + [spec.staticFallback] where checked.insert(path).inserted {
                 let (fileErrors, data) = validateFile(path, in: directory, checksums: manifest.frameSha256 ?? [:])

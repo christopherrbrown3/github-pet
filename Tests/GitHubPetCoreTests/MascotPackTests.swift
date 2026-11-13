@@ -104,6 +104,27 @@ private struct PackFixture {
         #expect(fixture.errors().contains(.missingState("urgent")))
     }
 
+    @Test func oneShotSequencesMustFitTheirEventClip() throws {
+        let fixture = try PackFixture()
+        func durations(_ state: String, _ values: [Int]) throws {
+            try fixture.manifest { json in
+                var states = json["states"] as! [String: Any]
+                var spec = states[state] as! [String: Any]
+                spec["durationMs"] = values
+                states[state] = spec
+                json["states"] = states
+            }
+        }
+        try durations("urgent", [2000, 2000])
+        #expect(fixture.errors() == [.clipTooLong("urgent", 4000, 2000)], "the second frame would never play")
+        try durations("attention", [1000, 1000])
+        #expect(fixture.errors() == [.clipTooLong("attention", 2000, 1900)])
+        try durations("urgent", [1000, 1000])
+        #expect(fixture.errors().isEmpty, "exactly the clip length fits")
+        try durations("idle", [2000, 2000])
+        #expect(fixture.errors().isEmpty, "idle loops, so it has no clip limit")
+    }
+
     @Test func onlyTheV1GroundAnchorIsAccepted() throws {
         let fixture = try PackFixture()
         for anchor in [[64, 128], [128, 231], [0, 0], [128]] {
