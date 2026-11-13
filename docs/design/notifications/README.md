@@ -2,6 +2,8 @@
 
 Design handoff for [#28](https://github.com/christopherrbrown3/github-pet/issues/28) and [#29](https://github.com/christopherrbrown3/github-pet/issues/29). The existing generated mascot identity and pack remain intact. These are reviewable implementation specifications; Developer owns the later application changes after PM handoff and #27 completion.
 
+PM approved the #28 runtime metrics below and chose **beside placement: right by default, flip left at the right screen edge**. Above-head placement is excluded because of the badge lane and the required 12-point gap. This decision supersedes the earlier placement-pending notes in the review history.
+
 - [Light badge comparison](badges-light.png) and [dark comparison](badges-dark.png): standalone native AppKit compositions, with actual SF font measurements and art at 64/128/256 points. Each row includes `2`, `2+`, `?`, `99+` and DEMO. Thin panel outlines are review guides only.
 - [Attention storyboard](attention-keyposes.png) and [playable size comparison](preview.html): seven key poses, finite 1900 ms timeline, existing generated frames with a bounded art-layer sway.
 - [Badge dimensions](badge-metrics.json), [attention timing](attention-storyboard.json), [native font measurements](native-measurements.json), [validation/provenance](validation.md).
@@ -22,7 +24,7 @@ For sizes between anchors, linearly interpolate metrics separately over 64–128
 
 The art remains S×S and centered horizontally below the lane; it is not stretched to the wider 96-point minimum panel. In top-left design coordinates the art origin is `[(W−S)/2,L]`; its common pack anchor is `[W/2,L + 232×S/256]`. In AppKit bottom-left coordinates the art origin is `[(W−S)/2,0]` and the ground point is `[W/2,24×S/256]`. When resizing a saved panel, preserve that world-space ground point; compute the new window origin from it. Window height is `H=S+L`. Thus the 64-point design adds label space without lifting, cropping or enlarging the character. All labels are outside the art square. Frame choice and the proposed attention transform do not affect these bounds.
 
-After Developer integrates this with #27, clamp the full revised panel to the display work area. Keep hover anchored to the art/visible-art geometry, not the enlarged label lane or window center. Re-evaluate arrow clearance and screen-edge behavior with the new dimensions; the previous hover geometry checks do not prove the revised panel works on screen. No hover-placement code or approval is supplied by these comps.
+After Developer integrates this with #27, clamp the full revised panel to the display work area. Keep hover anchored to the art/visible-art geometry, not the enlarged label lane or window center: at S64 the art square has a 16-point horizontal inset within its 96-point panel. Place the popover beside the character on the right by default, flipping left at the right display edge. Preserve the required 12-point art-to-arrow clearance using the active art envelope, and keep the popover clear of DEMO/count. Do not fall back above the head. Re-evaluate native arrow clearance and screen-edge behavior with the new dimensions; the previous hover geometry checks do not prove the revised panel works on screen. The placement direction is approved by PM; these comps supply no implementation or native placement acceptance.
 
 ### Truthful labels and privacy
 
