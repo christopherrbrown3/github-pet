@@ -141,8 +141,12 @@ use only: it isn't notarized or Developer ID signed.
 - Escalation parity: a known open incident rising to a tier it has never reached (minor → major,
   minor → critical, major → critical) emits one urgent event; returning to a tier already reached,
   downgrades, reopens and baseline/reconnect stay silent.
-- Each incident event starts a ~6 s burst; otherwise, and always under Reduce Motion, quiet hours or
-  snooze, the marker shows its static frame (it stays visible).
+- Each incident event starts a 6 s burst; otherwise, and always under Reduce Motion, quiet hours or
+  snooze, the marker shows its static frame (it stays visible). The first 300 ms fades in, by opacity
+  only, the layers that were not showing before the burst (all of them for a first incident; flames on
+  minor → major; smoke on major → critical), so nothing already visible blinks. The last 600 ms
+  crossfades the parameters (sweep angle and alpha, flame height and lean, smoke puffs) to the static
+  frame.
 - Every layer is clipped to `IncidentMarker.frame(in:)`: the art square below the design keep-out
   (top 64 of 256 units) and below the whole label zone (`MascotLayout.labelRects`, including the
   count's lowest tracking position) less the minimum gap. render-check rasterises every tier
@@ -151,8 +155,14 @@ use only: it isn't notarized or Developer ID signed.
   fixtures). The full hover previews one item fewer so its size, and placement, is unchanged; the
   compact hover stays at two lines. Menu-bar and mascot label: `…, N items, 1 active GitHub incident`.
   The badge counts actionable items only.
-- The current drawing is a placeholder in design's 256-unit canvas; design's spec
-  (docs/design/incidents/incident-marker.json, PR #38) replaces it.
+- Drawing: `IncidentMarkerView` ports design's spec (docs/design/incidents/incident-marker.json,
+  PR #38): beacon sweep, smoke (critical), flames (major/critical) and siren, in the 256-unit art canvas,
+  upright and ground-anchored, behind the art. Values live in `IncidentMarkerSpec.standard`; the
+  drift test decodes the canonical json into the same type and fails on any difference
+  (`GITHUB_PET_INCIDENT_SPEC=<path>` checks another copy; until PR #38 is merged into this branch the
+  test is skipped). The 64 pt size override applies to art below 96 pt.
+- render-check writes `incident-<size>-<tier>-<static|0.05s|1.2s|2.6s>[-dark].png` (72 files) for
+  comparison with design's previews, and checks that no marker pixel lands in the keep-out band.
 - Demo incident rows are shown but disabled ("No status page"); they open nothing.
 
 ### Settings

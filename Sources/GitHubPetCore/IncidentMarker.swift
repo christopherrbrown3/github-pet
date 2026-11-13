@@ -48,17 +48,81 @@ public struct IncidentMarker: Equatable, Sendable {
         return IncidentMarker(tier: Tier(lead.impact), count: active.count, lead: lead)
     }
 
-    /// Length of the animated burst; the rest of the time the marker holds its static frame.
-    public static let burstDuration: TimeInterval = 6
+    /// Marker layers, back to front (design spec), each faded in as one layer.
+    public enum Layer: String, CaseIterable, Sendable {
+        case beaconSweep, smoke, flames, siren
+    }
 
-    /// Seconds into the marker's burst, or nil to draw the static frame. A burst starts with a #11
-    /// incident event (a new incident, or escalation to major/critical), which baseline and
-    /// reconnect never produce, so those stay static. Reduce Motion, quiet hours and snooze always
-    /// draw the static frame; the marker itself stays visible.
-    public static func burstElapsed(now: Date, burstStart: Date?, reducedMotion: Bool, alertsAllowed: Bool) -> TimeInterval? {
-        guard let burstStart, !reducedMotion, alertsAllowed else { return nil }
-        let elapsed = now.timeIntervalSince(burstStart)
-        return elapsed >= 0 && elapsed < burstDuration ? elapsed : nil
+    /// One burst: when it started, and the tier the marker showed before it (nil: none), so only
+    /// layers that were not visible fade in and nothing already shown blinks out.
+    public struct Burst: Equatable, Sendable {
+        public var start: Date
+        public var fromTier: Tier?
+
+        public init(start: Date, fromTier: Tier?) {
+            self.start = start
+            self.fromTier = fromTier
+        }
+    }
+
+    /// What to draw at an instant: the burst time (nil for the static frame), how far the settle has
+    /// crossfaded toward the static frame (1 = static), and each layer's fade-in opacity.
+    public struct Phase: Equatable, Sendable {
+        public var time: TimeInterval?
+        public var staticWeight: Double
+        public var fading: Set<Layer>
+        public var envelope: Double
+
+        public static let still = Phase(time: nil, staticWeight: 1, fading: [], envelope: 1)
+
+        public func opacity(_ layer: Layer) -> Double { fading.contains(layer) ? envelope : 1 }
+    }
+
+    public static func layers(_ tier: Tier?, spec: IncidentMarkerSpec = .standard) -> Set<Layer> {
+        guard let tier else { return [] }
+        let tierLayers = spec.layers(tier)
+        var layers: Set<Layer> = []
+        if tierLayers.beaconSweep { layers.insert(.beaconSweep) }
+        if tierLayers.siren { layers.insert(.siren) }
+        if tierLayers.flames != nil { layers.insert(.flames) }
+        if tierLayers.smoke { layers.insert(.smoke) }
+        return layers
+    }
+
+    /// Length of the animated burst; the rest of the time the marker holds its static frame.
+    public static var burstDuration: TimeInterval { IncidentMarkerSpec.standard.timing.burstMs / 1000 }
+
+    /// The burst at `now`. A burst starts with a #11 incident event (a new incident, or a known one
+    /// reaching a higher tier), which baseline and reconnect never produce, so those stay static.
+    /// Reduce Motion, quiet hours and snooze draw the static frame at once (the marker stays
+    /// visible). The first `fadeInMs` fades in, by opacity only, the layers not shown before the
+    /// burst; the last `settleMs` crossfades to the static frame.
+    public func phase(now: Date, burst: Burst?, reducedMotion: Bool, alertsAllowed: Bool,
+                      spec: IncidentMarkerSpec = .standard) -> Phase {
+        guard let burst, !reducedMotion, alertsAllowed else { return .still }
+        let elapsed = now.timeIntervalSince(burst.start)
+        let duration = spec.timing.burstMs / 1000, fadeIn = spec.timing.fadeInMs / 1000, settle = spec.timing.settleMs / 1000
+        guard elapsed >= 0, elapsed < duration else { return .still }
+        let envelope = elapsed < fadeIn ? Self.ease(elapsed / fadeIn, spec.timing.fadeInCurve) : 1
+        let weight = elapsed > duration - settle ? (elapsed - (duration - settle)) / settle : 0
+        let fading = Self.layers(tier, spec: spec).subtracting(Self.layers(burst.fromTier, spec: spec))
+        return Phase(time: elapsed, staticWeight: min(max(weight, 0), 1), fading: fading, envelope: envelope)
+    }
+
+    /// CSS-style cubic Bezier ease (x1, y1, x2, y2): y for x in 0...1.
+    public static func ease(_ x: Double, _ c: [Double]) -> Double {
+        guard c.count == 4 else { return x }
+        if x <= 0 { return 0 }
+        if x >= 1 { return 1 }
+        func bezier(_ s: Double, _ p1: Double, _ p2: Double) -> Double {
+            3 * (1 - s) * (1 - s) * s * p1 + 3 * (1 - s) * s * s * p2 + s * s * s
+        }
+        var low = 0.0, high = 1.0
+        for _ in 0..<40 {
+            let mid = (low + high) / 2
+            if bezier(mid, c[0], c[2]) < x { low = mid } else { high = mid }
+        }
+        return bezier((low + high) / 2, c[1], c[3])
     }
 
     /// Hover top line. Incident names are public status-page text, so privacy mode keeps them.
@@ -99,8 +163,8 @@ public struct IncidentMarker: Equatable, Sendable {
         return label
     }
 
-    /// Design keep-out: the top 64 units of the 256-unit art canvas.
-    public static let keepOutCanvasTop: CGFloat = 64
+    /// Design keep-out: the top band of the 256-unit art canvas.
+    public static var keepOutCanvasTop: CGFloat { CGFloat(IncidentMarkerSpec.standard.keepOut.topBandMaxY) }
 
     /// The marker's slot in panel coordinates (origin bottom-left): the art square below the design
     /// keep-out and below every place a label can be (DEMO, and the count down to its lowest

@@ -48,20 +48,60 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
         #expect(mixed?.count == 2)
     }
 
+    private func phase(_ tier: IncidentMarker.Tier, at dt: TimeInterval, from: IncidentMarker.Tier? = nil,
+                       start: Date? = t0, reduced: Bool = false, alerts: Bool = true) -> IncidentMarker.Phase {
+        IncidentMarker(tier: tier, count: 1, lead: incident("a1")).phase(
+            now: t0 + dt, burst: start.map { IncidentMarker.Burst(start: $0, fromTier: from) },
+            reducedMotion: reduced, alertsAllowed: alerts)
+    }
+
     @Test func burstPlaysSixSecondsThenHoldsStatic() {
-        func elapsed(_ dt: TimeInterval, start: Date? = t0) -> TimeInterval? {
-            IncidentMarker.burstElapsed(now: t0 + dt, burstStart: start, reducedMotion: false, alertsAllowed: true)
-        }
-        #expect(elapsed(0) == 0)
-        #expect(elapsed(5.5) == 5.5)
-        #expect(elapsed(6) == nil)
-        #expect(elapsed(-1) == nil)
-        #expect(elapsed(1, start: nil) == nil)   // baseline or reconnect: no event, static
+        #expect(phase(.minor, at: 0).time == 0)
+        #expect(phase(.minor, at: 5).time == 5)
+        #expect(phase(.minor, at: 6) == .still)
+        #expect(phase(.minor, at: -1) == .still)
+        #expect(phase(.minor, at: 1, start: nil) == .still)   // baseline or reconnect: no event, static
+        #expect(IncidentMarker.burstDuration == 6)
     }
 
     @Test func staticUnderReduceMotionQuietOrSnooze() {
-        #expect(IncidentMarker.burstElapsed(now: t0 + 1, burstStart: t0, reducedMotion: true, alertsAllowed: true) == nil)
-        #expect(IncidentMarker.burstElapsed(now: t0 + 1, burstStart: t0, reducedMotion: false, alertsAllowed: false) == nil)
+        #expect(phase(.critical, at: 1, reduced: true) == .still)
+        #expect(phase(.critical, at: 1, alerts: false) == .still)
+    }
+
+    @Test func newIncidentFadesEveryLayerInByOpacity() {
+        let start = phase(.critical, at: 0)
+        #expect(start.fading == Set(IncidentMarker.Layer.allCases))
+        #expect(start.envelope == 0)
+        for layer in IncidentMarker.Layer.allCases { #expect(start.opacity(layer) == 0) }
+        let mid = phase(.critical, at: 0.15)
+        #expect(mid.envelope > 0 && mid.envelope < 1)
+        #expect(phase(.critical, at: 0.31).envelope == 1)
+        #expect(phase(.critical, at: 2).opacity(.flames) == 1)
+    }
+
+    @Test func tierRiseFadesOnlyNewLayers() {
+        let rise = phase(.major, at: 0.1, from: .minor)
+        #expect(rise.fading == [.flames])
+        #expect(rise.opacity(.siren) == 1 && rise.opacity(.beaconSweep) == 1)
+        #expect(rise.opacity(.flames) < 1)
+        #expect(phase(.critical, at: 0.1, from: .major).fading == [.smoke])
+        #expect(phase(.critical, at: 0.1, from: .minor).fading == [.flames, .smoke])
+        // A new incident while the same tier already shows: nothing blinks.
+        #expect(phase(.major, at: 0, from: .major).fading.isEmpty)
+    }
+
+    @Test func settleCrossfadesToStaticOverTheLastSixHundredMs() {
+        #expect(phase(.major, at: 5.3).staticWeight == 0)
+        #expect(abs(phase(.major, at: 5.7).staticWeight - 0.5) < 1e-6)
+        #expect(phase(.major, at: 5.99).staticWeight > 0.98)
+    }
+
+    @Test func layersPerTier() {
+        #expect(IncidentMarker.layers(.minor) == [.beaconSweep, .siren])
+        #expect(IncidentMarker.layers(.major) == [.beaconSweep, .siren, .flames])
+        #expect(IncidentMarker.layers(.critical) == Set(IncidentMarker.Layer.allCases))
+        #expect(IncidentMarker.layers(nil).isEmpty)
     }
 
     @Test func tiersAreOrdered() {
@@ -140,5 +180,82 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
                 #expect(label.minY - slot.maxY >= layout.minimumGap || slot.maxX <= label.minX || slot.minX >= label.maxX)
             }
         }
+    }
+}
+
+/// The transcribed spec must match design's canonical json (docs/design/incidents/incident-marker.json,
+/// PR #38). GITHUB_PET_INCIDENT_SPEC can point at another copy of it.
+@Suite struct IncidentMarkerSpecTests {
+    static let specURL: URL = {
+        if let path = ProcessInfo.processInfo.environment["GITHUB_PET_INCIDENT_SPEC"], !path.isEmpty {
+            return URL(fileURLWithPath: path)
+        }
+        return URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("docs/design/incidents/incident-marker.json")
+    }()
+
+    @Test(.enabled(if: FileManager.default.fileExists(atPath: specURL.path),
+                   "design's spec is not on this branch yet (PR #38)"))
+    func transcribedSpecMatchesDesignJSON() throws {
+        let decoded = try JSONDecoder().decode(IncidentMarkerSpec.self, from: Data(contentsOf: Self.specURL))
+        #expect(decoded == IncidentMarkerSpec.standard)
+        // Field by field too, so a drift names its section.
+        #expect(decoded.flames == IncidentMarkerSpec.standard.flames)
+        #expect(decoded.smoke == IncidentMarkerSpec.standard.smoke)
+        #expect(decoded.siren == IncidentMarkerSpec.standard.siren)
+        #expect(decoded.palette == IncidentMarkerSpec.standard.palette)
+        #expect(decoded.timing == IncidentMarkerSpec.standard.timing)
+        #expect(decoded.static == IncidentMarkerSpec.standard.static)
+        #expect(decoded.sizeOverrides == IncidentMarkerSpec.standard.sizeOverrides)
+    }
+
+    @Test func everyPaletteTokenIsUsableInBothAppearances() {
+        let spec = IncidentMarkerSpec.standard
+        #expect(Set(spec.palette.light.keys) == Set(spec.palette.dark.keys))
+        for token in Array(spec.palette.light.values) + Array(spec.palette.dark.values) {
+            #expect(token.rgb != nil, "\(token.hex)")
+            #expect((0...1).contains(token.alpha))
+        }
+        var used = Set(spec.flames.nestedScales.map(\.token))
+        used.formUnion([spec.flames.rim.token, spec.smoke.color, "incident.beacon", "incident.siren.dome",
+                        "incident.siren.domeShade", "incident.siren.base", "incident.siren.outline", "incident.siren.gloss"])
+        #expect(used.isSubset(of: Set(spec.palette.light.keys)))
+    }
+
+    @Test func geometryStaysBelowTheKeepOut() {
+        let spec = IncidentMarkerSpec.standard
+        let top = spec.keepOut.topBandMaxY
+        for side in [64.0, 128, 256] {
+            for tier in [IncidentMarker.Tier.major, .critical] {
+                for tongue in spec.tongues(tier, artSide: side) {
+                    // Tallest flicker: heightBase + heightAmp * (waveOffset + sum of amps).
+                    let f = spec.flames.flicker
+                    let tallest = tongue.height * (f.heightBase + f.heightAmp * (f.waveOffset + f.waves.map(\.amp).reduce(0, +)))
+                    #expect(spec.flames.baseY - tallest >= top, "\(tier) \(tongue) at \(side)")
+                }
+            }
+        }
+        let sweep = spec.beaconSweep
+        #expect(sweep.center[1] - sweep.radius >= top)
+        let smoke = spec.smoke
+        for emitter in smoke.emitters {
+            #expect(emitter.y + emitter.dy - smoke.radius[1] >= top)
+        }
+        for puff in smoke.static { #expect(puff.cy - puff.r >= top) }
+    }
+
+    @Test func sixtyFourOverrideAppliesBelowNinetySix() {
+        let spec = IncidentMarkerSpec.standard
+        #expect(spec.tongues(.major, artSide: 64).count == 3)
+        #expect(spec.tongues(.major, artSide: 80).count == 3)
+        #expect(spec.tongues(.major, artSide: 128).count == 6)
+        #expect(spec.tongues(.minor, artSide: 128).isEmpty)
+    }
+
+    @Test func easeMatchesTheCurveEnds() {
+        let curve = IncidentMarkerSpec.standard.timing.fadeInCurve
+        #expect(IncidentMarker.ease(0, curve) == 0)
+        #expect(IncidentMarker.ease(1, curve) == 1)
+        #expect(IncidentMarker.ease(0.5, curve) > 0.5)   // ease-out: front-loaded
     }
 }

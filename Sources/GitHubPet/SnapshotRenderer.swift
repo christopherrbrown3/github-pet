@@ -119,8 +119,8 @@ enum SnapshotRenderer {
         model.markAllSeen()
         model.injectServiceIncident(.major)
         await capture("10c-incident-major")
-        report.append("## incident marker (#37: rasterised marker vs labels, every tier and pose)")
-        report += await incidentMarkerProbe(model: model)
+        report.append("## incident marker (#37: rasterised marker vs labels and keep-out, every tier and pose)")
+        report += await incidentMarkerProbe(model: model, directory: directory)
         model.resolveServiceIncidents()
         await capture("10d-incidents-resolved")
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
@@ -447,7 +447,7 @@ enum SnapshotRenderer {
     /// The incident marker never touches the labels (#37): at 64/128/256 and 1×/2×, the union of
     /// every tier's marker (static and burst frames) against the union of the labels over every
     /// pose with the widest count. Reports the nearest gap and pixels visible in both.
-    private static func incidentMarkerProbe(model: AppModel) async -> [String] {
+    private static func incidentMarkerProbe(model: AppModel, directory: URL) async -> [String] {
         guard let lead = model.serviceIncidents.first else { return ["incident marker: no incident"] }
         let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -481,9 +481,9 @@ enum SnapshotRenderer {
                     labels = union(labels, await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale))
                 }
                 for tier in [IncidentMarker.Tier.minor, .major, .critical] {
-                    for elapsed in [nil, 0.0, 0.7, 1.9, 3.1, 5.3] as [TimeInterval?] {
+                    for elapsed in [nil, 0.0, 0.7, 1.9, 3.1, 5.3, 5.7] as [TimeInterval?] {
                         let view = IncidentMarkerView(marker: IncidentMarker(tier: tier, count: 1, lead: lead), layout: layout,
-                                                      elapsed: elapsed)
+                                                      phase: markerPhase(tier, elapsed, lead: lead))
                             .frame(width: layout.panelSize.width, height: layout.panelSize.height, alignment: .topLeading)
                             .environment(\.displayScale, scale)
                         marker = union(marker, await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale))
@@ -494,11 +494,50 @@ enum SnapshotRenderer {
                     continue
                 }
                 let (gap, overlap) = nearestGap(marker, labels, size: layout.panelSize, scale: scale)
+                // Design keep-out: no marker pixel in the top 64 canvas units of the art square.
+                let width = Int((layout.panelSize.width * scale).rounded(.up))
+                let keepOutRows = Int(((layout.laneHeight + layout.artSide * 64 / 256) * scale).rounded(.down))
+                let keepOutPixels = marker.prefix(width * keepOutRows).filter { $0 > 0 }.count
                 lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(format(gap)) overlapping-pixels=\(overlap) "
-                             + "slot=\(IncidentMarker.frame(in: layout).integral)")
+                             + "keep-out-pixels=\(keepOutPixels) slot=\(IncidentMarker.frame(in: layout).integral)")
             }
+            // Native renders for design to compare with docs/design/incidents/previews: the real
+            // mascot panel (labels, widest count) over the marker, design's preview columns.
+            let tierPoses: [IncidentMarker.Tier: MascotPose] = [
+                .minor: MascotPose(state: .attention, frame: 3, clipElapsed: nil),
+                .major: MascotPose(state: .urgent, frame: 0, clipElapsed: nil),
+                .critical: MascotPose(state: .urgent, frame: 0, clipElapsed: nil),
+            ]
+            let columns: [(String, TimeInterval?)] = [("static", nil), ("0.05s", 0.05), ("1.2s", 1.2), ("2.6s", 2.6)]
+            var rendered = 0
+            for tier in [IncidentMarker.Tier.minor, .major, .critical] {
+                for (column, elapsed) in columns {
+                    let scene = ZStack(alignment: .topLeading) {
+                        IncidentMarkerView(marker: IncidentMarker(tier: tier, count: 1, lead: lead), layout: layout,
+                                           phase: markerPhase(tier, elapsed, lead: lead))
+                        MascotView(model: model, poseOverride: tierPoses[tier], badgeOverride: "99+", drawsMarker: false)
+                    }
+                    .frame(width: layout.panelSize.width, height: layout.panelSize.height, alignment: .topLeading)
+                    for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                        let name = "incident-\(Int(side))-\(tier.rawValue)-\(column)\(suffix)"
+                        if !(await render(scene, name: name, directory: directory, appearance: appearance)).isEmpty { rendered += 1 }
+                    }
+                }
+            }
+            lines.append("incident renders @\(Int(side)): \(rendered) PNGs (tiers x static/0.05s/1.2s/2.6s x light/dark)")
         }
         return lines
+    }
+
+    /// The marker phase `elapsed` seconds into a burst for a new incident (every layer fading in),
+    /// or the static frame for nil.
+    private static func markerPhase(_ tier: IncidentMarker.Tier, _ elapsed: TimeInterval?,
+                                    lead: ServiceIncident) -> IncidentMarker.Phase {
+        guard let elapsed else { return .still }
+        let start = Date(timeIntervalSince1970: 0)
+        return IncidentMarker(tier: tier, count: 1, lead: lead)
+            .phase(now: start.addingTimeInterval(elapsed), burst: IncidentMarker.Burst(start: start, fromTier: nil),
+                   reducedMotion: false, alertsAllowed: true)
     }
 
     /// Drives the real AppModel: one injected event starts one attention gesture; a second event

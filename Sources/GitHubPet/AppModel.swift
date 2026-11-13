@@ -21,9 +21,9 @@ final class AppModel: ObservableObject {
     /// Incident IDs announced as new and not yet seen (separate from inbox markers, which are
     /// pruned against inbox snapshots).
     @Published private(set) var unseenIncidents: Set<String> = []
-    /// Start of the incident marker's ~6 s burst (#37): set by an incident event that may animate,
-    /// cleared when snooze, quiet hours or Reduce Motion stop gestures.
-    @Published private(set) var markerBurstStart: Date?
+    /// The incident marker's ~6 s burst (#37): set by an incident event that may animate, cleared
+    /// when snooze, quiet hours or Reduce Motion stop gestures.
+    @Published private(set) var markerBurst: IncidentMarker.Burst?
     @Published var settings: PetSettings {
         didSet {
             guard settings != oldValue else { return }
@@ -183,9 +183,10 @@ final class AppModel: ObservableObject {
     var incidentMarker: IncidentMarker? { IncidentMarker.current(state: serviceState, incidents: serviceIncidents) }
 
     /// Seconds into the marker burst at `date`, or nil for the static frame.
-    func markerBurstElapsed(at date: Date, reduced: Bool) -> TimeInterval? {
-        IncidentMarker.burstElapsed(now: date, burstStart: markerBurstStart, reducedMotion: reduced,
-                                    alertsAllowed: settings.alertsAllowed(at: date))
+    /// What the marker draws at `date`: static, or a point in its burst.
+    func markerPhase(at date: Date, reduced: Bool) -> IncidentMarker.Phase {
+        incidentMarker?.phase(now: date, burst: markerBurst, reducedMotion: reduced,
+                              alertsAllowed: settings.alertsAllowed(at: date)) ?? .still
     }
 
     var showsAlertIcon: Bool {
@@ -224,7 +225,7 @@ final class AppModel: ObservableObject {
     private func resetServiceStatus() {
         serviceMonitor.reset()
         unseenIncidents.removeAll()
-        markerBurstStart = nil
+        markerBurst = nil
     }
 
     func refresh() {
@@ -277,6 +278,7 @@ final class AppModel: ObservableObject {
 
     private func applyServiceStatus(_ outcome: ServiceStatusOutcome) {
         let date = clock()
+        let shownBefore = incidentMarker?.tier
         let events = serviceMonitor.apply(outcome, now: date)
         unseenIncidents.formUnion(events.map { $0.item.id })
         // Resolved incidents leave quietly, taking their markers with them.
@@ -286,14 +288,14 @@ final class AppModel: ObservableObject {
         let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date)
         clips.enqueue(events, now: date, playable: playable)
         // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
-        if playable && !events.isEmpty { markerBurstStart = date }
+        if playable && !events.isEmpty { markerBurst = IncidentMarker.Burst(start: date, fromTier: shownBefore) }
         sync(now: date)
     }
 
     private func cancelGesture() {
         clips.clear()
         activeClip = nil
-        markerBurstStart = nil
+        markerBurst = nil
     }
 
     /// System Reduce Motion: stop a playing gesture the moment it is switched on.
@@ -305,7 +307,7 @@ final class AppModel: ObservableObject {
         serviceMonitor.refreshFreshness(now: date)
         if effectiveReducedMotion || !settings.alertsAllowed(at: date) {
             clips.clear()
-            markerBurstStart = nil
+            markerBurst = nil
         }
         clips.tick(now: date)
         sync(now: date)

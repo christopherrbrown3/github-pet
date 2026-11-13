@@ -26,7 +26,7 @@ struct MascotView: View {
             } else {
                 // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
                 TimelineView(.animation(minimumInterval: model.activeClip == nil
-                                        && model.markerBurstElapsed(at: model.now, reduced: false) == nil
+                                        && model.markerPhase(at: model.now, reduced: false).time == nil
                                         ? 1.0 / 8.0 : 1.0 / 30.0)) { context in
                     scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
                 }
@@ -53,7 +53,7 @@ struct MascotView: View {
         return ZStack(alignment: .topLeading) {
             if let marker = model.incidentMarker, drawsMarker ?? (drawsArt && drawsLabels) {
                 IncidentMarkerView(marker: marker, layout: layout,
-                                   elapsed: model.markerBurstElapsed(at: date, reduced: reduced))
+                                   phase: model.markerPhase(at: date, reduced: reduced))
             }
             figure(pose: pose, date: date, reduced: reduced)
                 .frame(width: layout.artSide, height: layout.artSide)
