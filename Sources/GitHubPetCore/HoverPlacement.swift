@@ -92,6 +92,22 @@ public struct ArtProfile: Equatable, Sendable {
         return ArtProfile(canvas: canvas, rows: (0..<canvas).map { low[$0] <= high[$0] ? low[$0]...high[$0] : nil })
     }
 
+    /// Earliest canvas row the art's bounding rectangle reaches when rotated up to ±`degrees`
+    /// about `pivot`, sampled every 0.1° (design's conservative sway bound, rounded down).
+    public func rotatedBoundsTop(degrees: Double, pivot: CGPoint) -> Int? {
+        guard let top = top, let bottom = bottom else { return nil }
+        let left = rows.compactMap { $0?.lowerBound }.min()!, right = rows.compactMap { $0?.upperBound }.max()! + 1
+        let corners = [(Double(left), Double(top)), (Double(right), Double(top)),
+                       (Double(left), Double(bottom + 1)), (Double(right), Double(bottom + 1))]
+        let px = Double(pivot.x), py = Double(pivot.y)
+        var highest = Double(top)
+        for step in stride(from: -degrees, through: degrees + 0.0001, by: 0.1) {
+            let angle = step * .pi / 180
+            for (x, y) in corners { highest = min(highest, py + (x - px) * sin(angle) + (y - py) * cos(angle)) }
+        }
+        return Int(highest.rounded(.down))
+    }
+
     /// The native placeholder figure's outline, as fractions of its square.
     public static let placeholder: ArtProfile = {
         let canvas = 256
@@ -103,10 +119,13 @@ public struct ArtProfile: Equatable, Sendable {
     }()
 }
 
-/// Mascot panel geometry for an art size (design spec #28, docs/design/notifications at
-/// a3c799b): the art square sits at the bottom, centred in a panel at least 96 pt wide, under a
-/// lane holding DEMO (leading) and the count (trailing). Between the specified sizes (64, 128,
-/// 256 pt) each metric is interpolated linearly over 64–128 and 128–256 and rounded up.
+/// Mascot panel geometry for an art size: compact badge spacing (design #28 revision,
+/// docs/design/notifications/compact-badge-spacing.md at 05ea2cd). The S×S art sits at the
+/// bottom, centred in a panel at least 96 pt wide. The count capsule's top is the panel's top
+/// edge and DEMO is centred vertically on it; both may enter the art canvas's transparent
+/// margin but stay at least `labelClearance` above the earliest visible pixel any frame or pose
+/// can reach (`artTopFloor`, canvas pixels, pack-specific). Metrics between 64, 128 and 256 pt
+/// are interpolated linearly over 64–128 and 128–256 and rounded up.
 public struct MascotLayout: Equatable, Sendable {
     public struct Capsule: Equatable, Sendable {
         public var height: CGFloat
@@ -116,6 +135,9 @@ public struct MascotLayout: Equatable, Sendable {
     }
 
     public var artSide: CGFloat
+    /// Earliest canvas row (of 256) any frame or pose can draw a visible pixel in; 0 when
+    /// unknown, which keeps the labels entirely above the art canvas.
+    public var artTopFloor: Int
     public var count: Capsule
     public var demo: Capsule
     /// Horizontal inset of the capsules from the panel's sides.
@@ -124,6 +146,9 @@ public struct MascotLayout: Equatable, Sendable {
     /// Native SF widths measured by design for "DEMO" and the widest count, "99+".
     public var demoWidth: CGFloat
     public var widestCountWidth: CGFloat
+
+    /// Minimum vertical clearance between the labels and the visible art.
+    public static let labelClearance: CGFloat = 3
 
     private struct Stop {
         var side, countHeight, countFont, countPadding, demoHeight, demoFont, demoPadding, inset, gap, demoWidth,
@@ -138,7 +163,7 @@ public struct MascotLayout: Equatable, Sendable {
              inset: 8, gap: 12, demoWidth: 54, countWidth: 62),
     ]
 
-    public init(artSide: CGFloat) {
+    public init(artSide: CGFloat, artTopFloor: Int) {
         let side = min(max(artSide, 64), 256)
         let (a, b) = side <= 128 ? (Self.stops[0], Self.stops[1]) : (Self.stops[1], Self.stops[2])
         let t = (side - a.side) / (b.side - a.side)
@@ -147,6 +172,7 @@ public struct MascotLayout: Equatable, Sendable {
             return (value - 0.0001).rounded(.up)
         }
         self.artSide = artSide
+        self.artTopFloor = max(artTopFloor, 0)
         count = Capsule(height: mix(\.countHeight), fontSize: mix(\.countFont), padding: mix(\.countPadding))
         demo = Capsule(height: mix(\.demoHeight), fontSize: mix(\.demoFont), padding: mix(\.demoPadding))
         inset = mix(\.inset)
@@ -155,7 +181,10 @@ public struct MascotLayout: Equatable, Sendable {
         widestCountWidth = mix(\.countWidth)
     }
 
-    public var laneHeight: CGFloat { count.height + 8 }
+    /// Art top below the panel's top edge: `L = max(0, ceil(countHeight + 3 − floor × S/256))`.
+    public var laneHeight: CGFloat {
+        max(0, (count.height + Self.labelClearance - CGFloat(artTopFloor) * artSide / 256 - 0.0001).rounded(.up))
+    }
     /// Wide enough for DEMO, the widest count and the minimum gap, so the panel never changes
     /// with the count, Demo, privacy or mood.
     public var panelWidth: CGFloat {
@@ -166,9 +195,14 @@ public struct MascotLayout: Equatable, Sendable {
     public var artFrame: CGRect { CGRect(x: (panelWidth - artSide) / 2, y: 0, width: artSide, height: artSide) }
     /// The ground point (the pack's anchor [128, 232]) in panel coordinates.
     public var ground: CGPoint { CGPoint(x: panelWidth / 2, y: 24 * artSide / 256) }
-    /// Where the capsules can be: the lane's tallest-capsule band, inside the panel insets.
+    /// Where the capsules can be: from the panel's top edge down one count height, inside the
+    /// panel insets (panel coordinates, origin bottom-left).
     public var tagBand: CGRect {
-        CGRect(x: inset, y: artSide + (laneHeight - count.height) / 2, width: panelWidth - 2 * inset, height: count.height)
+        CGRect(x: inset, y: panelSize.height - count.height, width: panelWidth - 2 * inset, height: count.height)
+    }
+    /// Vertical distance from the labels' bottom to the earliest visible art (≥ 3 pt).
+    public var labelToArtClearance: CGFloat {
+        laneHeight + CGFloat(artTopFloor) * artSide / 256 - count.height
     }
 
     /// Panel origin after resizing to this layout from `previous` at `origin`, keeping the
@@ -196,6 +230,8 @@ public struct HoverPlacement: Equatable, Sendable {
 
     /// Clearance between the popover window and the nearest visible pixel.
     public static let clearance: CGFloat = 2
+    /// Largest allowed distance from the arrow tip to the character (design: 0–12 pt).
+    public static let maxGap: CGFloat = 12
     /// Size the popover window adds around its content for the arrow, edges and margins
     /// (measured: 144×51 content gives a 170×77 window, whichever edge the arrow is on).
     public static let chrome = CGSize(width: 26, height: 26)
@@ -231,9 +267,22 @@ public struct HoverPlacement: Equatable, Sendable {
             return right ? frame.minX + CGFloat(spans.map(\.upperBound).max()! + 1) * scale
                          : frame.minX + CGFloat(spans.map(\.lowerBound).min()!) * scale
         }
-        /// Best centre and tip x for one side: the smallest worst-case gap to any pose.
+        /// Distance from an arrow tip (panel coordinates) to the nearest visible pixel of `pose`.
+        func tipDistance(_ tip: CGPoint, _ pose: ArtProfile) -> CGFloat {
+            var nearest = CGFloat.infinity
+            for (index, span) in pose.rows.enumerated() {
+                guard let span else { continue }
+                let minX = frame.minX + CGFloat(span.lowerBound) * scale, maxX = frame.minX + CGFloat(span.upperBound + 1) * scale
+                let maxY = frame.maxY - CGFloat(index) * scale, minY = maxY - scale
+                nearest = min(nearest, hypot(max(minX - tip.x, 0, tip.x - maxX), max(minY - tip.y, 0, tip.y - maxY)))
+            }
+            return nearest
+        }
+        /// Best centre and tip x for one side: the height whose larger distance (arrow tip to the
+        /// static pose, or popover window to any pose) is smallest.
         func best(right: Bool) -> CGPoint {
-            var choice: (y: CGFloat, x: CGFloat, worst: CGFloat)?
+            typealias Candidate = (y: CGFloat, x: CGFloat, worst: CGFloat, tip: CGFloat)
+            var candidates: [Candidate] = []
             var y = high
             while y >= low - 0.001 {
                 if let range = rows(centerY: y), let outer = edge(art, range, right: right) {
@@ -241,12 +290,14 @@ public struct HoverPlacement: Equatable, Sendable {
                     let worst = poses.map { pose in
                         edge(pose, range, right: right).map { right ? x - $0 : $0 - x } ?? .infinity
                     }.max()!
-                    if choice == nil || worst < choice!.worst - 0.001
-                        || (abs(worst - choice!.worst) < 0.001 && abs(y - middle) < abs(choice!.y - middle)) {
-                        choice = (y, x, worst)
-                    }
+                    candidates.append((y, x, worst, tipDistance(CGPoint(x: x, y: y), poses[0])))
                 }
                 y -= 1
+            }
+            // Minimise the larger of the two distances (arrow to static art, window to any pose).
+            let choice = candidates.min {
+                let (a, b) = (max($0.tip, $0.worst), max($1.tip, $1.worst))
+                return a < b - 0.001 || (abs(a - b) < 0.001 && $0.worst < $1.worst)
             }
             return choice.map { CGPoint(x: $0.x, y: $0.y) }
                 ?? CGPoint(x: right ? frame.maxX + clearance : frame.minX - clearance, y: min(high, max(low, middle)))

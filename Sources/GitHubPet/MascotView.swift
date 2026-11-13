@@ -6,31 +6,13 @@ import SwiftUI
 /// native placeholder. Timing comes from `MascotAnimator` on the app clock, so QA clock
 /// hooks drive animation too. Reduced motion pins a static pose; text and badge never move.
 struct MascotView: View {
-    /// Panel size for a given artwork side: the art square plus the tag lane above it (design
-    /// metrics in `MascotLayout`). Fixed per size, so the panel and the art's ground anchor never
-    /// change with state, badge or Demo.
-    static func panelSize(side: CGFloat) -> CGSize {
-        MascotLayout(artSide: side).panelSize
-    }
 
     @ObservedObject var model: AppModel
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
-        let layout = MascotLayout(artSide: model.settings.mascotSize)
-        VStack(spacing: 0) {
-            // Adornment lane: DEMO and count tags live here, outside the artwork rectangle.
-            HStack(spacing: 0) {
-                if model.isDemo {
-                    Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
-                }
-                Spacer(minLength: layout.minimumGap)
-                if let badge = model.badge {
-                    Tag(text: badge, role: model.mascotState == .urgent ? .urgentCount : .count, metrics: layout.count)
-                }
-            }
-            .frame(height: layout.laneHeight)
-            .padding(.horizontal, layout.inset)
+        let layout = model.layout(model.settings.mascotSize)
+        ZStack(alignment: .top) {
             Group {
                 if reduced {
                     figure(at: model.clock(), reduced: true)
@@ -41,8 +23,22 @@ struct MascotView: View {
                 }
             }
             .frame(width: layout.artSide, height: layout.artSide)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+            // Labels (compact badge spacing): the count's top is the panel's top edge and DEMO is
+            // centred on it; they may overlap the art canvas's transparent margin, never its art.
+            HStack(spacing: 0) {
+                if model.isDemo {
+                    Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
+                }
+                Spacer(minLength: layout.minimumGap)
+                if let badge = model.badge {
+                    Tag(text: badge, role: model.mascotState == .urgent ? .urgentCount : .count, metrics: layout.count)
+                }
+            }
+            .frame(height: layout.count.height)
+            .padding(.horizontal, layout.inset)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .frame(width: layout.panelWidth, height: layout.panelSize.height)
         // VoiceOver sees the panel's container as one button (see MascotContainerView).
         .accessibilityHidden(true)
     }

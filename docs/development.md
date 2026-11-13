@@ -121,21 +121,29 @@ summary; its press action opens the Inbox, the same as a click.
 ### Windows and pointer
 - Inbox and Settings windows always open at least as large as their content, even if an older,
   smaller frame was autosaved.
-- Panel geometry follows design spec #28 (docs/design/notifications at a3c799b, `MascotLayout`):
-  art S×S centred at the bottom of a panel W = max(S, 96, labels) wide, under a lane L = count
-  height + 8 (64/128/256 pt → 96×92, 128×164, 256×304). DEMO (SF bold) and the count (SF
-  semibold, monospaced digits) are never truncated; fills keep at least 4.5:1 text contrast in
-  light and dark. Resizing keeps the art's ground point fixed on screen.
+- Panel geometry follows the compact badge spacing (#28 revision, docs/design/notifications/
+  compact-badge-spacing.md at 05ea2cd; `MascotLayout`): art S×S centred at the bottom of a panel
+  W = max(S, 96, labels) wide. The count capsule's top is the panel's top edge, DEMO is centred on
+  it, and both may enter the art canvas's transparent margin: L = ceil(count height + 3 − floor ×
+  S/256), where the floor (17 px for mona-pet-v1) is the earliest row any frame reaches, including
+  attention's ±5° lean as rotated bounding boxes, computed per pack at load (no pack: labels stay
+  above the canvas). 64/128/256 pt → 96×83, 128×151, 256×282. Labels are never truncated; fills
+  keep at least 4.5:1 text contrast. Resizing (including dragging the size slider) keeps the
+  art's ground point fixed on screen; the new origin is saved on the next run-loop turn because
+  `$settings` delivers before the new value is stored.
 - The hover summary sits beside the character (#27): right by default, left when the right
   screen edge has no room; never above. It is sized to its content first, then anchored to an
   invisible click-through 1×1 window at the arrow tip (the tip can lie just outside the panel).
   Its window never overlaps any visible pixel of any frame of the current state (attention
-  includes its ±5° lean, swept pixel-exactly about [128, 232]), stays below the tags and on
+  uses its upright frames until #29 adds the lean), stays below the tags and on
   screen; within that its height minimises the worst gap to any frame. If a small mascot sits so
   low that a tall summary can't be both on screen and below the tags, staying on screen wins.
-  render-check shows the real windows on screen for 9 cases (64/128/256, left edge, centre,
-  right edge; idle, and urgent with privacy off) and requires a worst gap of at most 12 pt, no
-  overlap, tags clear and on screen. Each case writes `hover-<state>-<size>-<position>.png`
+  The arrow tip is kept within 12 pt of the static pose. Below 80 pt the hover is a compact
+  two-line summary (Demo or count, plus the count's quality; details in the Inbox).
+  render-check shows the real windows on screen for 11 cases (64/128/256, left edge, centre,
+  right edge; idle, attention, and urgent with privacy off) and requires a worst window-boundary
+  gap and an arrow-to-art distance of at most 12 pt, no overlap, tags clear and on screen; it
+  also drives a real mascot window through resizes and slider sweeps. Each case writes `hover-<state>-<size>-<position>.png`
   combining art, popover and display edge; the popover is natively captured where the OS
   allows it without Screen Recording permission, otherwise drawn from its window bounds (the
   caption and report say which).

@@ -108,6 +108,24 @@ final class AppModel: ObservableObject {
                             privacy: settings.privacyMode, demo: isDemo)
     }
 
+    /// Panel geometry for an art size with the loaded pack's label floor (no pack: labels stay
+    /// above the art canvas, since the placeholder's hop isn't bounded).
+    func layout(_ size: Double) -> MascotLayout {
+        MascotLayout(artSide: CGFloat(size), artTopFloor: pack?.labelTopFloor ?? 0)
+    }
+
+    /// Mascots below this size get the compact two-line hover summary (#27).
+    static let compactHoverBelow: Double = 80
+
+    var hoverIsCompact: Bool { settings.mascotSize < Self.compactHoverBelow }
+
+    /// What the hover summary shows: the full summary, or two lines on a small mascot.
+    var hoverLines: [String] {
+        hoverIsCompact
+            ? PrivacyText.compactSummary(dataState: dataState, items: items, unseenCount: unseenCount, demo: isDemo)
+            : summaryLines
+    }
+
     var statusAccessibilityLabel: String {
         AccessibilityText.statusLabel(dataState: dataState, count: items.count, demo: isDemo,
                                       needsAttention: showsAlertIcon)

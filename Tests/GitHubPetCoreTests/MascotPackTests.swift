@@ -274,6 +274,6 @@ private struct PackFixture {
         #expect(pack.manifest.states["idle"]?.loop == true)
         #expect(pack.manifest.states["attention"]?.loop == false)
         #expect(pack.manifest.frameSha256?.count == 12)
-        #expect(pack.artTopInset == 19, "the swept attention lean reaches 19 px below the canvas top")
+        #expect(pack.artTopInset == 20, "the urgent pose's head starts 20 px below the canvas top")
     }
 }

@@ -71,6 +71,25 @@ public enum PrivacyText {
         privacy ? nil : item.repository
     }
 
+    /// At most two lines for small mascots (hover beside a small character, #27): Demo or the
+    /// count, and the count's quality. Unknown, partial, stale and failed data stay explicit;
+    /// item details are left to the Inbox.
+    public static func compactSummary(dataState: DataState, items: [InboxItem], unseenCount: Int,
+                                      demo: Bool = false) -> [String] {
+        let quality: String
+        switch dataState {
+        case .ready:
+            let noun = items.count == 1 ? "item" : "items"
+            quality = "\(items.count) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : "")
+        case .partial:
+            let badge = MascotPolicy.badge(dataState: dataState, count: items.count) ?? "?"
+            quality = "\(badge) items · \(dataState.statusText)"
+        default:
+            quality = dataState.statusText
+        }
+        return demo ? ["\(demoLabel) data (fixtures)", quality] : [quality, "Open the Inbox for details"]
+    }
+
     public static func summary(dataState: DataState, items: [InboxItem], unseenCount: Int,
                                privacy: Bool, demo: Bool = false, maxLines: Int = 3) -> [String] {
         var lines: [String] = demo ? ["\(demoLabel) data (fixtures)"] : []

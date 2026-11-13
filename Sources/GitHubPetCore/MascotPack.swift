@@ -93,6 +93,25 @@ public struct MascotPack: Equatable, Sendable {
     /// Visible outline of each state's static pose (what the mascot holds between clips),
     /// followed by each of its animation frames.
     public var poseProfiles: [MascotState: [ArtProfile]] = [:]
+    /// The same poses counting any coverage (alpha > 0).
+    public var poseOutlines: [MascotState: [ArtProfile]] = [:]
+
+    /// Attention's outline swept over its ±5° lean about the ground anchor (#29), for placing
+    /// UI while that clip plays.
+    public var sweptAttentionProfile: ArtProfile? {
+        artProfiles[.attention]?.swept(degrees: Self.attentionLeanDegrees, pivot: CGPoint(x: 128, y: 232))
+    }
+
+    /// Earliest canvas row any frame can draw in (alpha > 0), including attention's ±5° lean as
+    /// rotated bounding rectangles (design's conservative method): where labels may come down
+    /// to, less their clearance (compact badge spacing). Pack-specific: 17 for mona-pet-v1.
+    public var labelTopFloor: Int {
+        let upright = artProfiles.values.compactMap(\.top).min() ?? 0
+        let leaning = (poseOutlines[.attention] ?? []).compactMap {
+            $0.rotatedBoundsTop(degrees: Self.attentionLeanDegrees, pivot: CGPoint(x: 128, y: 232))
+        }.min() ?? upright
+        return max(0, min(upright, leaning))
+    }
 
     /// Outline across every state.
     public var artProfile: ArtProfile? { ArtProfile.union(MascotState.allCases.compactMap { artProfiles[$0] }) }
@@ -122,11 +141,10 @@ public struct MascotPack: Equatable, Sendable {
             let urls = [pack.staticFallbackURL(for: state)].compactMap { $0 } + pack.frameURLs(for: state)
             let images = urls.compactMap { try? readBounded($0, limit: maxImageBytes) }
             pack.poseProfiles[state] = images.compactMap { ArtProfile(png: $0) }
-            // The no-overlap outline counts any coverage, and attention may lean ±5° about the
-            // ground anchor (#29 storyboard): keep UI clear of the swept outline.
-            let outline = ArtProfile.union(images.compactMap { ArtProfile(png: $0, alphaThreshold: 0) })
-            pack.artProfiles[state] = state == .attention
-                ? outline?.swept(degrees: attentionLeanDegrees, pivot: CGPoint(x: 128, y: 232)) : outline
+            // The no-overlap outline counts any coverage. Upright frames only (PM decision for
+            // #27): the #29 lean will re-aim once at clip start/end using `sweptAttentionProfile`.
+            pack.poseOutlines[state] = images.compactMap { ArtProfile(png: $0, alphaThreshold: 0) }
+            pack.artProfiles[state] = ArtProfile.union(pack.poseOutlines[state] ?? [])
         }
         return .success(pack)
     }

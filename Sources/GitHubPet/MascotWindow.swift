@@ -14,6 +14,9 @@ final class MascotWindowController {
     private var summaryState: MascotState?
     /// Art size the panel is currently laid out for.
     private var shownSize: Double?
+    /// The art's ground point on screen, kept unrounded: resizes are computed from it, not from
+    /// the panel's pixel-rounded frame, so repeated resizes don't drift.
+    private var groundOnScreen: CGPoint?
     private var cancellables: Set<AnyCancellable> = []
 
     init(model: AppModel) {
@@ -42,18 +45,25 @@ final class MascotWindowController {
         self.panel = panel
         // Resizing keeps the art's ground point where it is on screen (design spec #28): the
         // panel's width and lane change with size, so its origin moves instead, and is saved.
-        if let previous = shownSize, previous != size, panel.isVisible {
-            let moved = MascotLayout(artSide: CGFloat(size))
-                .origin(resizedFrom: MascotLayout(artSide: CGFloat(previous)), at: panel.frame.origin)
-            origin = moved
-            shownSize = size
-            model.settings.mascotOriginX = Double(moved.x)   // re-enters with the size unchanged
-            model.settings.mascotOriginY = Double(moved.y)
+        let layout = model.layout(size)
+        if let previous = shownSize, previous != size, panel.isVisible, let ground = groundOnScreen {
+            origin = CGPoint(x: ground.x - layout.ground.x, y: ground.y - layout.ground.y)
+            // `$settings` delivers during willSet, before the new size is stored: writing settings
+            // here would modify the old value and the outer assignment would then drop the panel
+            // resize (QA on a3d7aa7: Settings 64, panel 128×164). Save on the next turn, for
+            // whatever size is shown by then (the slider may have moved again).
+            DispatchQueue.main.async { [weak self] in
+                guard let self, let ground = self.groundOnScreen, let shown = self.shownSize else { return }
+                let current = self.model.layout(shown).ground
+                self.saveOrigin(CGPoint(x: ground.x - current.x, y: ground.y - current.y))
+            }
+            _ = previous
         }
         shownSize = size
-        let panelSize = MascotView.panelSize(side: CGFloat(size))
+        let panelSize = layout.panelSize
         let frameOrigin = origin.flatMap { onScreen(CGRect(origin: $0, size: panelSize)) }
             ?? defaultOrigin(size: panelSize)
+        groundOnScreen = CGPoint(x: frameOrigin.x + layout.ground.x, y: frameOrigin.y + layout.ground.y)
         panel.setFrame(CGRect(origin: frameOrigin, size: panelSize), display: true)
         panel.orderFrontRegardless()
     }
@@ -87,10 +97,7 @@ final class MascotWindowController {
         ])
         container.onClick = openInbox
         container.accessibilityText = { [weak self] in self.map { MascotView.accessibilityLabel($0.model) } ?? "" }
-        container.onDragEnded = { [weak self] origin in
-            self?.model.settings.mascotOriginX = Double(origin.x)
-            self?.model.settings.mascotOriginY = Double(origin.y)
-        }
+        container.onDragEnded = { [weak self] origin in self?.saveOrigin(origin) }
         container.onHover = { [weak self] inside in
             if inside { self?.showSummary(from: container) } else { self?.hideSummary() }
         }
@@ -98,12 +105,24 @@ final class MascotWindowController {
         return panel
     }
 
+    /// Saves both coordinates in one settings change, so no half-updated origin is observed.
+    private func saveOrigin(_ origin: CGPoint) {
+        var settings = model.settings
+        settings.mascotOriginX = Double(origin.x)
+        settings.mascotOriginY = Double(origin.y)
+        model.settings = settings
+    }
+
+    /// The mascot panel's frame, if it is shown (render-check probe).
+    var panelFrame: CGRect? { panel?.isVisible == true ? panel?.frame : nil }
+    var panelContentView: NSView? { panel?.contentView }
+
     private func showSummary(from view: NSView) {
         hideSummary()
         guard let window = view.window else { return }
         let popover = Self.makeHoverPopover(model: model)
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
-        let placement = Self.hoverPlacement(panelFrame: window.frame, size: model.settings.mascotSize, pack: model.pack,
+        let placement = Self.hoverPlacement(panelFrame: window.frame, layout: model.layout(model.settings.mascotSize), pack: model.pack,
                                             state: model.mascotState, popover: popover.contentSize, screen: screen)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
@@ -125,10 +144,10 @@ final class MascotWindowController {
 
     /// Beside the visible character (#27): above it, the arrow either covered the DEMO/count
     /// tags or sat more than 12 pt from the art. See `HoverPlacement`.
-    static func hoverPlacement(panelFrame: CGRect, size: Double, pack: MascotPack?, state: MascotState,
+    static func hoverPlacement(panelFrame: CGRect, layout: MascotLayout, pack: MascotPack?, state: MascotState,
                                popover: CGSize, screen: CGRect) -> HoverPlacement {
         HoverPlacement.place(art: pack?.artProfiles[state] ?? .placeholder, poses: pack?.poseProfiles[state] ?? [],
-                             layout: MascotLayout(artSide: size), popover: popover,
+                             layout: layout, popover: popover,
                              panelOrigin: panelFrame.origin, screen: screen)
     }
 
@@ -174,7 +193,7 @@ final class MascotWindowController {
     private func repositionSummaryIfNeeded() {
         guard let popover, let state = summaryState, state != model.mascotState, let window = panel else { return }
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
-        let placement = Self.hoverPlacement(panelFrame: window.frame, size: model.settings.mascotSize, pack: model.pack,
+        let placement = Self.hoverPlacement(panelFrame: window.frame, layout: model.layout(model.settings.mascotSize), pack: model.pack,
                                             state: model.mascotState, popover: popover.contentSize, screen: screen)
         summaryState = model.mascotState
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
@@ -284,10 +303,12 @@ struct HoverSummaryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            ForEach(Array(model.summaryLines.enumerated()), id: \.offset) { index, line in
+            ForEach(Array(model.hoverLines.enumerated()), id: \.offset) { index, line in
                 Text(line).font(index == 0 ? .callout.bold() : .caption).lineLimit(1)
             }
-            Text("Click to open inbox").font(.caption2).foregroundStyle(.secondary)
+            if !model.hoverIsCompact {
+                Text("Click to open inbox").font(.caption2).foregroundStyle(.secondary)
+            }
         }
         .padding(10)
         .frame(maxWidth: 320, alignment: .leading)

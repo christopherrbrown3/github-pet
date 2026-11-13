@@ -24,7 +24,7 @@ enum SnapshotRenderer {
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
             report.append(mascotAccessibility(model))
             if name == "00-loading" { report.append(mascotPointer()) }
-            let panel = MascotView.panelSize(side: model.settings.mascotSize)
+            let panel = model.layout(model.settings.mascotSize).panelSize
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 report += await render(MascotView(model: model).frame(width: panel.width, height: panel.height),
                                        name: "\(name)-mascot\(suffix)", directory: directory, appearance: appearance)
@@ -48,7 +48,21 @@ enum SnapshotRenderer {
         model.detailsRevealed = true
         await capture("01b-details")
         report.append("## lane labels (native text, widest count)")
-        for side in [CGFloat(64), 128, 256] { report.append(tagFit(side: side)) }
+        for side in [CGFloat(64), 128, 256] {
+            report.append(tagFit(model: model, side: side))
+            let layout = model.layout(Double(side))
+            let lane = HStack(spacing: 0) {
+                Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
+                Spacer(minLength: layout.minimumGap)
+                Tag(text: "99+", role: .count, metrics: layout.count)
+            }
+            .padding(.horizontal, layout.inset)
+            .frame(width: layout.panelWidth, height: layout.laneHeight)
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(lane, name: "lane-\(Int(side))-99plus\(suffix)", directory: directory,
+                                       appearance: appearance)
+            }
+        }
         report.append("## hover placement (idle)")
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
@@ -75,6 +89,10 @@ enum SnapshotRenderer {
         model.settings.reducedMotion = true
         model.injectEntitlementEvent()
         await capture("09-attention-static")
+        report.append("## hover placement (attention, swept lean outline)")
+        for placementCase in HoverCase.attention {
+            report.append(await hoverPlacement(model: model, placementCase, directory: directory))
+        }
         model.markAllSeen()
         model.injectWorkflowFailure()
         await capture("10-urgent-static")
@@ -93,6 +111,9 @@ enum SnapshotRenderer {
             await capture("11-gh-override")
         }
 
+
+        report.append("## resize (real mascot window controller, as the Settings slider does)")
+        report += await resizeProbe(model: model, directory: directory)
 
         // Settings goes through the same window sizing as the real Settings window.
         report.append("## settings")
@@ -205,16 +226,76 @@ enum SnapshotRenderer {
             + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
     }
 
+    /// Drives a real MascotWindowController through size changes the way the Settings slider does
+    /// and checks that the panel follows the setting and the ground point stays put.
+    private static func resizeProbe(model: AppModel, directory: URL) async -> [String] {
+        let saved = model.settings
+        model.settings.mascotOriginX = nil
+        model.settings.mascotOriginY = nil
+        model.settings.mascotSize = 128
+        model.settings.mascotVisible = true
+        var controller: MascotWindowController? = MascotWindowController(model: model)
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        func ground(_ frame: CGRect, _ size: Double) -> CGPoint {
+            let g = model.layout(Double(size)).ground
+            return CGPoint(x: frame.minX + g.x, y: frame.minY + g.y)
+        }
+        var lines: [String] = []
+        var previous = (frame: controller?.panelFrame ?? .zero, size: 128.0)
+        for size in [64.0, 256, 128] {
+            model.settings.mascotSize = size
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            let frame = controller?.panelFrame ?? .zero
+            let expected = model.layout(Double(size)).panelSize
+            // What the real panel draws after the resize (its hosted SwiftUI content).
+            if let content = controller?.panelContentView, let png = renderPNG(content) {
+                try? png.write(to: directory.appendingPathComponent("resize-\(Int(previous.size))-to-\(Int(size)).png"))
+            }
+            let before = ground(previous.frame, previous.size), after = ground(frame, size)
+            let drift = hypot(after.x - before.x, after.y - before.y)
+            lines.append("resize \(Int(previous.size))->\(Int(size)): setting=\(Int(model.settings.mascotSize)) "
+                         + "panel=\(Int(frame.width))x\(Int(frame.height)) expected=\(Int(expected.width))x\(Int(expected.height)) "
+                         + "ground-drift=\(format(drift)) ok=\(frame.size == expected && model.settings.mascotSize == size && drift < 0.5)")
+            previous = (frame, size)
+        }
+        // Dragging the Settings slider: 16 pt steps in quick succession, up to 256 then down to 64.
+        for (from, to) in [(128.0, 256.0), (256.0, 64.0)] {
+            for size in stride(from: from, through: to, by: to > from ? 16 : -16) {
+                model.settings.mascotSize = size
+                try? await Task.sleep(nanoseconds: 30_000_000)
+            }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            let frame = controller?.panelFrame ?? .zero
+            let expected = model.layout(Double(to)).panelSize
+            if let content = controller?.panelContentView, let png = renderPNG(content) {
+                try? png.write(to: directory.appendingPathComponent("slider-\(Int(from))-to-\(Int(to)).png"))
+            }
+            let before = ground(previous.frame, previous.size), after = ground(frame, to)
+            let drift = hypot(after.x - before.x, after.y - before.y)
+            lines.append("slider \(Int(from))->\(Int(to)): setting=\(Int(model.settings.mascotSize)) "
+                         + "panel=\(Int(frame.width))x\(Int(frame.height)) expected=\(Int(expected.width))x\(Int(expected.height)) "
+                         + "ground-drift=\(format(drift)) ok=\(frame.size == expected && model.settings.mascotSize == to && drift < 0.5)")
+            previous = (frame, to)
+        }
+        model.settings.mascotVisible = false
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        controller = nil
+        model.settings = saved
+        return lines
+    }
+
     /// Full DEMO and the widest count ("99+") at their native sizes must fit the panel with the
     /// minimum gap (design spec #28), so neither is ever truncated.
-    private static func tagFit(side: CGFloat) -> String {
-        let layout = MascotLayout(artSide: side)
+    private static func tagFit(model: AppModel, side: CGFloat) -> String {
+        let layout = model.layout(Double(side))
         func width<V: View>(_ view: V) -> CGFloat { NSHostingView(rootView: view).fittingSize.width.rounded(.up) }
         let demo = width(Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo))
         let count = width(Tag(text: "99+", role: .count, metrics: layout.count))
         let gap = layout.panelWidth - 2 * layout.inset - demo - count
         return "tags @\(Int(side)): demo=\(Int(demo)) count99=\(Int(count)) panel=\(Int(layout.panelWidth)) "
-            + "gap=\(Int(gap)) min-gap=\(Int(layout.minimumGap)) fits=\(gap >= layout.minimumGap)"
+            + "gap=\(Int(gap)) min-gap=\(Int(layout.minimumGap)) fits=\(gap >= layout.minimumGap) "
+            + "lane=\(Int(layout.laneHeight)) panel-height=\(Int(layout.panelSize.height)) art-floor=\(layout.artTopFloor)px "
+            + "label-to-art=\(format(layout.labelToArtClearance))"
     }
 
     struct HoverCase {
@@ -228,6 +309,7 @@ enum SnapshotRenderer {
                           HoverCase(side: 128, position: .center), HoverCase(side: 256, position: .center),
                           HoverCase(side: 128, position: .rightEdge)]
         /// Urgent with privacy off (four item lines: the tallest, widest summary).
+        static let attention = [HoverCase(side: 64, position: .center), HoverCase(side: 256, position: .center)]
         static let urgent = [HoverCase(side: 64, position: .leftEdge), HoverCase(side: 64, position: .center),
                              HoverCase(side: 128, position: .rightEdge), HoverCase(side: 256, position: .center)]
 
@@ -252,7 +334,7 @@ enum SnapshotRenderer {
         let savedSize = model.settings.mascotSize
         model.settings.mascotSize = placementCase.side
         defer { model.settings.mascotSize = savedSize }
-        let layout = MascotLayout(artSide: placementCase.side)
+        let layout = model.layout(Double(placementCase.side))
         let size = layout.panelSize
         let panel = NSPanel(contentRect: CGRect(origin: placementCase.origin(size: size, screen: screenFrame), size: size),
                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -271,7 +353,7 @@ enum SnapshotRenderer {
         popover.animates = false
         popover.appearance = NSAppearance(named: .aqua)
         let anchor = MascotWindowController.makeHoverAnchor()
-        let placement = MascotWindowController.hoverPlacement(panelFrame: panel.frame, size: placementCase.side,
+        let placement = MascotWindowController.hoverPlacement(panelFrame: panel.frame, layout: layout,
                                                               pack: model.pack, state: state,
                                                               popover: popover.contentSize, screen: screenFrame)
         MascotWindowController.show(popover, placement: placement, panelFrame: panel.frame, anchor: anchor)
@@ -324,18 +406,23 @@ enum SnapshotRenderer {
         let tags = layout.tagBand.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY)
         let laneClear = !visible.contains { $0.intersects(tags) }
         let onScreen = screenFrame.insetBy(dx: -0.5, dy: -0.5).contains(window)
-        let tip = CGPoint(x: placement.side == .right ? window.minX : window.maxX, y: window.midY)
+        // Where the arrow points: the window's edge on the arrow side, at the anchor's height.
+        let tip = CGPoint(x: placement.side == .right ? window.minX : window.maxX, y: panel.frame.minY + placement.tip.y)
+        let tipGap = pixels(poses[0]).map { distance($0, CGRect(origin: tip, size: .zero)) }.min()
         let sideName = placement.side == .right ? "right" : "left"
         let worst = gaps.max(), best = gaps.min()
 
         let caption = "\(Int(placementCase.side)) pt, \(placementCase.position.rawValue), \(state.rawValue): popover \(sideName); "
-            + "gap \(format(best))-\(format(worst)) pt over \(poses.count) frames; overlap \(overlaps == 0 ? "none" : "\(overlaps)"); "
+            + "window-boundary gap \(format(best))-\(format(worst)) pt over \(poses.count) frames; arrow anchor to static art "
+            + "\(format(tipGap)) pt; overlap \(overlaps == 0 ? "none" : "\(overlaps)"); "
             + "tags \(laneClear ? "clear" : "COVERED"); popover from \(source)"
         await writeHoverComposite(name: "hover-\(placementCase.name(state))", directory: directory, screen: screenFrame,
                                   panel: panel, popoverWindow: popoverWindow, capture: capture, tip: tip, tags: tags,
                                   caption: caption)
         func rect(_ r: CGRect) -> String { "(\(Int(r.minX)),\(Int(r.minY)) \(Int(r.width))x\(Int(r.height)))" }
-        var line = "\(label): state=\(state.rawValue) side=\(sideName) gap-min=\(format(best)) gap-max=\(format(worst)) "
+        // Window-boundary measures: the popover window rectangle (not its drawn arrow/chrome).
+        var line = "\(label): state=\(state.rawValue) side=\(sideName) window-gap-min=\(format(best)) "
+        line += "window-gap-max=\(format(worst)) arrow-anchor-to-static-art=\(format(tipGap)) "
         line += "frames=\(poses.count) overlap=\(overlaps) lane=\(laneClear ? "clear" : "covered") on-screen=\(onScreen) "
         line += "popover-source=\(source) panel=\(rect(panel.frame)) art=\(rect(art)) popover=\(rect(window)) "
         line += "screen=\(rect(screenFrame))"

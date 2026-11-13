@@ -66,15 +66,17 @@ check "mascot drag vs click"       '^mascot pointer: drop-without-drag-events=mo
 # popover on screen; worst gap to any frame <= 12 pt, no overlap, tags clear, on screen.
 hover_lines=$(grep -E '^hover [a-z]+-[0-9]+-' "$report" || true)
 hover_count=$(printf '%s\n' "$hover_lines" | grep -c . || true)
-if (( hover_count >= 9 )); then echo "ok   $hover_count hover placements measured"
+if (( hover_count >= 11 )); then echo "ok   $hover_count hover placements measured"
 else echo "FAIL only $hover_count hover placements measured"; failures=$((failures + 1)); fi
 while IFS= read -r line; do
   [[ -n $line ]] || continue
   name=${${line#hover }%%:*}
-  worst=$(sed -E 's/.* gap-max=([0-9.]+|none) .*/\1/' <<< "$line")
+  worst=$(sed -E 's/.* window-gap-max=([0-9.]+|none) .*/\1/' <<< "$line")
+  arrow=$(sed -E 's/.* arrow-anchor-to-static-art=([0-9.]+|none) .*/\1/' <<< "$line")
   if [[ $line == *" overlap=0 "* && $line == *" lane=clear "* && $line == *" on-screen=true "* \
-        && $worst != none ]] && (( $(printf '%.0f' "${worst%.*}") <= 12 )) && [[ ${worst%.*} -lt 12 || $worst == 12.0 ]]; then
-    echo "ok   hover $name: worst gap $worst pt, no overlap, tags clear"
+        && $worst != none && $arrow != none ]] && (( ${worst%.*} < 12 || ${worst} == 12.0 )) \
+        && (( ${arrow%.*} < 12 || ${arrow} == 12.0 )); then
+    echo "ok   hover $name: worst window-boundary gap $worst pt, arrow anchor $arrow pt from art, no overlap, tags clear"
   else
     echo "FAIL hover $name: $line"; failures=$((failures + 1))
   fi
@@ -82,16 +84,23 @@ done <<< "$hover_lines"
 for size in 64 128 256; do
   check "labels fit at $size" "^tags @$size: .* fits=true"
 done
+for step in '128->64' '64->256' '256->128'; do
+  check "resize $step follows Settings, ground fixed" "^resize $step: .* ok=true"
+done
+for step in '128->256' '256->64'; do
+  check "slider $step follows Settings, ground fixed" "^slider $step: .* ok=true"
+done
 check "menu-bar names Demo"       '^menu-bar AX: GitHub Pet, Demo data, '
 check "partial AX quality"        'at least 3 items, some sources unavailable'
 check "loading count unknown"     '^state=Loading… badge=\? rows=0'
 check "urgent fixture"            'mood=urgent'
 check "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
-check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x164 pt'
+check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x151 pt'
 check "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
 check "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
-           05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark; do
+           05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
+           lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do
   [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
 done
 

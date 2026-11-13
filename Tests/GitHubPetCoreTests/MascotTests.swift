@@ -271,3 +271,33 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
         #expect(unshifted.clipElapsed == nil, "a mismatched clock does not produce negative clip time")
     }
 }
+
+@Suite struct CompactSummaryTests {
+    private let items = (0..<3).map {
+        InboxItem(id: "i\($0)", kind: .reviewRequest, repository: "secret-org/repo", title: "Secret title",
+                  url: nil, updatedAt: Date(timeIntervalSince1970: 0))
+    }
+
+    @Test func atMostTwoLinesAndNoDetails() {
+        for state in [DataState.ready, .partial, .stale, .loading, .empty, .ghMissing, .unauthenticated, .error("offline")] {
+            for demo in [false, true] {
+                let lines = PrivacyText.compactSummary(dataState: state, items: items, unseenCount: 1, demo: demo)
+                #expect(lines.count == 2, "\(state)")
+                #expect(!lines.joined().lowercased().contains("secret"), "no names or titles")
+                if demo { #expect(lines[0] == "Demo data (fixtures)") }
+            }
+        }
+    }
+
+    @Test func countQualityStaysExplicit() {
+        func quality(_ state: DataState) -> String {
+            PrivacyText.compactSummary(dataState: state, items: items, unseenCount: 1)[0]
+        }
+        #expect(quality(.ready) == "3 items · 1 new")
+        #expect(quality(.partial) == "3+ items · \(DataState.partial.statusText)")
+        #expect(quality(.stale) == DataState.stale.statusText)
+        #expect(quality(.error("offline")) == DataState.error("offline").statusText)
+        #expect(quality(.loading) == DataState.loading.statusText)
+        #expect(quality(.unauthenticated) == DataState.unauthenticated.statusText)
+    }
+}
