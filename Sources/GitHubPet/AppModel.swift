@@ -21,6 +21,9 @@ final class AppModel: ObservableObject {
     /// Incident IDs announced as new and not yet seen (separate from inbox markers, which are
     /// pruned against inbox snapshots).
     @Published private(set) var unseenIncidents: Set<String> = []
+    /// Start of the incident marker's ~6 s burst (#37): set by an incident event that may animate,
+    /// cleared when snooze, quiet hours or Reduce Motion stop gestures.
+    @Published private(set) var markerBurstStart: Date?
     @Published var settings: PetSettings {
         didSet {
             guard settings != oldValue else { return }
@@ -158,13 +161,31 @@ final class AppModel: ObservableObject {
     /// full summary can't be placed within #27's limits).
     func hoverLines(compact: Bool) -> [String] {
         compact
-            ? PrivacyText.compactSummary(dataState: dataState, items: items, unseenCount: unseenCount, demo: isDemo)
-            : summaryLines
+            ? IncidentMarker.compactHoverLines(dataState: dataState, items: items, unseenCount: unseenCount,
+                                               demo: isDemo, marker: incidentMarker)
+            : IncidentMarker.hoverLines(fullHoverSummary, marker: incidentMarker)
     }
 
+    /// The hover keeps its height with an incident line on top: it previews one item fewer
+    /// (the Inbox lists them all), so placement beside the character is unchanged (#27).
+    private var fullHoverSummary: [String] {
+        PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount, privacy: settings.privacyMode,
+                            demo: isDemo, maxLines: incidentMarker == nil ? 3 : 2)
+    }
+
+    /// Count of actionable items plus, separately, active incidents (#37); the badge stays items only.
     var statusAccessibilityLabel: String {
-        AccessibilityText.statusLabel(dataState: dataState, count: items.count, demo: isDemo,
-                                      needsAttention: showsAlertIcon)
+        IncidentMarker.statusLabel(dataState: dataState, count: items.count, demo: isDemo,
+                                   needsAttention: showsAlertIcon, marker: incidentMarker)
+    }
+
+    /// Shown only for a fresh, confirmed unresolved incident (#37).
+    var incidentMarker: IncidentMarker? { IncidentMarker.current(state: serviceState, incidents: serviceIncidents) }
+
+    /// Seconds into the marker burst at `date`, or nil for the static frame.
+    func markerBurstElapsed(at date: Date, reduced: Bool) -> TimeInterval? {
+        IncidentMarker.burstElapsed(now: date, burstStart: markerBurstStart, reducedMotion: reduced,
+                                    alertsAllowed: settings.alertsAllowed(at: date))
     }
 
     var showsAlertIcon: Bool {
@@ -203,6 +224,7 @@ final class AppModel: ObservableObject {
     private func resetServiceStatus() {
         serviceMonitor.reset()
         unseenIncidents.removeAll()
+        markerBurstStart = nil
     }
 
     func refresh() {
@@ -261,13 +283,17 @@ final class AppModel: ObservableObject {
         if case .incidents = outcome {
             unseenIncidents.formIntersection(serviceMonitor.incidents.map(\.inboxItem.id))
         }
-        clips.enqueue(events, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
+        let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date)
+        clips.enqueue(events, now: date, playable: playable)
+        // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
+        if playable && !events.isEmpty { markerBurstStart = date }
         sync(now: date)
     }
 
     private func cancelGesture() {
         clips.clear()
         activeClip = nil
+        markerBurstStart = nil
     }
 
     /// System Reduce Motion: stop a playing gesture the moment it is switched on.
@@ -277,7 +303,10 @@ final class AppModel: ObservableObject {
         let date = clock()
         engine.refreshFreshness(now: date)
         serviceMonitor.refreshFreshness(now: date)
-        if effectiveReducedMotion || !settings.alertsAllowed(at: date) { clips.clear() }
+        if effectiveReducedMotion || !settings.alertsAllowed(at: date) {
+            clips.clear()
+            markerBurstStart = nil
+        }
         clips.tick(now: date)
         sync(now: date)
     }
@@ -305,6 +334,10 @@ final class AppModel: ObservableObject {
     /// Opens only https://www.githubstatus.com/incidents/<id>; anything else is reported, not opened.
     func open(_ incident: ServiceIncident) {
         unseenIncidents.remove(incident.inboxItem.id)
+        if incident.isDemo {
+            blockedLinkNote = "Demo incident: no status page."
+            return
+        }
         guard let url = ServiceStatusLink.validated(incident.url) else {
             blockedLinkNote = "Link blocked: only githubstatus.com incident links can be opened."
             return

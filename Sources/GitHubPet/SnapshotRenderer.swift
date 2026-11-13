@@ -21,6 +21,9 @@ enum SnapshotRenderer {
                           + "demo=\(model.isDemo) mood=\(model.mascotState.rawValue)")
             report.append("service=\(model.serviceState.statusText(count: model.serviceIncidents.count)) "
                           + "incident-rows=\(model.serviceIncidents.count) unseen-incidents=\(model.unseenIncidents.count)")
+            report.append("incident-marker=\(model.incidentMarker?.tier.rawValue ?? "none") "
+                          + "hover-top=\(model.hoverLines(compact: false).first ?? "") "
+                          + "compact-hover=\(model.hoverLines(compact: true).joined(separator: " | "))")
             report.append("source=\(model.settings.dataSource.rawValue) privacy=\(model.settings.privacyMode) "
                           + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
@@ -116,6 +119,8 @@ enum SnapshotRenderer {
         model.markAllSeen()
         model.injectServiceIncident(.major)
         await capture("10c-incident-major")
+        report.append("## incident marker (#37: rasterised marker vs labels, every tier and pose)")
+        report += await incidentMarkerProbe(model: model)
         model.resolveServiceIncidents()
         await capture("10d-incidents-resolved")
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
@@ -434,6 +439,63 @@ enum SnapshotRenderer {
                              + "(closest \(closest), farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
                              + "lane=\(format(layout.laneHeight))")
                 empty = 0
+            }
+        }
+        return lines
+    }
+
+    /// The incident marker never touches the labels (#37): at 64/128/256 and 1×/2×, the union of
+    /// every tier's marker (static and burst frames) against the union of the labels over every
+    /// pose with the widest count. Reports the nearest gap and pixels visible in both.
+    private static func incidentMarkerProbe(model: AppModel) async -> [String] {
+        guard let lead = model.serviceIncidents.first else { return ["incident marker: no incident"] }
+        let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = .clear
+        window.isOpaque = false
+        let host = NSHostingView(rootView: AnyView(EmptyView()))
+        window.contentView = host
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        let saved = model.settings.mascotSize
+        defer { model.settings.mascotSize = saved }
+        var lines: [String] = []
+        for side in [64.0, 128, 256] {
+            model.settings.mascotSize = side
+            let layout = model.layout(side)
+            let poses = MascotState.allCases.flatMap { state in
+                ((model.pack?.frameURLs(for: state).indices.map { Optional($0) } ?? []) + [nil])
+                    .map { MascotPose(state: state, frame: $0, clipElapsed: nil) }
+            }
+            for scale in [CGFloat(1), 2] {
+                func union(_ a: [UInt8]?, _ b: [UInt8]?) -> [UInt8]? {
+                    guard let b else { return a }
+                    guard let a else { return b }
+                    return zip(a, b).map { max($0, $1) }
+                }
+                var labels: [UInt8]?, marker: [UInt8]?
+                for pose in poses {
+                    let view = MascotView(model: model, poseOverride: pose, badgeOverride: "99+", drawsArt: false,
+                                          drawsLabels: true).environment(\.displayScale, scale)
+                    labels = union(labels, await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale))
+                }
+                for tier in [IncidentMarker.Tier.minor, .major, .critical] {
+                    for elapsed in [nil, 0.0, 0.7, 1.9, 3.1, 5.3] as [TimeInterval?] {
+                        let view = IncidentMarkerView(marker: IncidentMarker(tier: tier, count: 1, lead: lead), layout: layout,
+                                                      elapsed: elapsed)
+                            .frame(width: layout.panelSize.width, height: layout.panelSize.height, alignment: .topLeading)
+                            .environment(\.displayScale, scale)
+                        marker = union(marker, await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale))
+                    }
+                }
+                guard let labels, let marker, labels.contains(where: { $0 > 0 }), marker.contains(where: { $0 > 0 }) else {
+                    lines.append("incident marker @\(Int(side)) \(Int(scale))x: empty render")
+                    continue
+                }
+                let (gap, overlap) = nearestGap(marker, labels, size: layout.panelSize, scale: scale)
+                lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(format(gap)) overlapping-pixels=\(overlap) "
+                             + "slot=\(IncidentMarker.frame(in: layout).integral)")
             }
         }
         return lines

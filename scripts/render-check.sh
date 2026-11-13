@@ -146,6 +146,20 @@ check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x[0-9]+ pt'
 check_in "count cap" "mascot caps at 99+, inbox and AX keep the full count" \
   '^count cap: items=1[0-9][0-9] mascot-badge=99\+ inbox-badge=1[0-9][0-9] ax=.* 1[0-9][0-9] items'
 check_in 11-gh-override "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
+# Incident marker (#37): only for a fresh confirmed incident; hover top line; AX counts it apart
+# from the badge; the marker never touches the labels at any size or scale.
+check_in 01-baseline "marker for a fresh minor incident" '^incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: .* \| Demo · '
+check_in 01-baseline "AX counts the incident apart" '^menu-bar AX: GitHub Pet, Demo data, 3 items, 1 active GitHub incident'
+check_in 01-baseline "badge stays items only" '^state=Up to date badge=3 '
+check_in 05-stale "no marker when stale" '^incident-marker=none '
+check_in 06-disconnected "no marker on failure" '^incident-marker=none '
+check_in 00-loading "no marker while loading" '^incident-marker=none '
+check_in 10c-incident-major "major tier marker" '^incident-marker=major hover-top=Demo GitHub incidents: .*\(\+1 more\)'
+check_in 10c-incident-major "AX counts two incidents" '^menu-bar AX: .*, 2 active GitHub incidents'
+check_in 10d-incidents-resolved "marker leaves on resolve" '^incident-marker=none '
+marker_lines=$(grep -E '^incident marker @' "$report" || true)
+if (( $(printf '%s\n' "$marker_lines" | grep -c 'overlapping-pixels=0 ') == 6 )); then echo "ok   incident marker clear of labels at 64/128/256, 1x/2x"
+else echo "FAIL incident marker vs labels:"; printf '%s\n' "$marker_lines"; failures=$((failures + 1)); fi
 check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \

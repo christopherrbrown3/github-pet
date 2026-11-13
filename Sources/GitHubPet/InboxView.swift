@@ -305,6 +305,8 @@ struct IncidentRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        // Demo incidents have no status page: shown, but they open nothing.
+        .disabled(incident.isDemo)
         .padding(.vertical, 3)
         .accessibilityLabel((unseen ? "New. " : "") + PrivacyText.title(item, privacy: privacy) + ". " + subtitle)
     }
@@ -313,7 +315,8 @@ struct IncidentRow: View {
 
     /// Impact and status are public status-page facts, so they stay visible in privacy mode.
     private var subtitle: String {
-        ([incident.isDemo ? PrivacyText.demoLabel : nil, incident.impact.label, incident.status.label]
+        ([incident.isDemo ? PrivacyText.demoLabel : nil, incident.impact.label, incident.status.label,
+          incident.isDemo ? "No status page" : nil]
             .compactMap { $0 }).joined(separator: " · ")
     }
 }

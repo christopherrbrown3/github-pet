@@ -306,23 +306,44 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         #expect(monitor.incidents.first?.name == "Renamed")
     }
 
-    @Test func escalationToMajorIsAnnouncedOnceAsUrgent() {
+    @Test func escalationIsAnnouncedOncePerTierReached() {
         let monitor = ServiceStatusMonitor()
         monitor.apply(.incidents([incident("a1", .minor)]), now: t0)
+        #expect(monitor.apply(.incidents([incident("a1", .none)]), now: t0 + 30).isEmpty)   // same tier
         let events = monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 60)
         #expect(events.map(\.item.id) == ["incident:a1"])
         #expect(events.first?.severity == .critical)
-        // Major → critical, de-escalation and re-escalation stay silent.
-        #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 120).isEmpty)
-        #expect(monitor.apply(.incidents([incident("a1", .minor)]), now: t0 + 180).isEmpty)
-        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 240).isEmpty)
+        // Major → critical is a new tier (#37 parity): announced once.
+        #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 120).count == 1)
+        // Downgrades and returns to tiers already reached stay silent.
+        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 180).isEmpty)
+        #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 240).isEmpty)
+        #expect(monitor.apply(.incidents([incident("a1", .minor)]), now: t0 + 300).isEmpty)
+        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 360).isEmpty)
     }
 
-    @Test func newMajorIncidentIsNotAnnouncedTwice() {
+    @Test func minorStraightToCriticalIsOneEvent() {
+        let monitor = ServiceStatusMonitor()
+        monitor.apply(.incidents([incident("a1", .minor)]), now: t0)
+        #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 60).count == 1)
+        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 120).isEmpty)
+    }
+
+    @Test func newMajorIncidentEscalatesOnlyToCritical() {
         let monitor = ServiceStatusMonitor()
         monitor.apply(.incidents([]), now: t0)
         #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 60).count == 1)
+        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 90).isEmpty)
+        #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 120).count == 1)
+    }
+
+    @Test func tierReachedWhileNotComparableIsNeverAnnounced() {
+        let monitor = ServiceStatusMonitor()
+        monitor.apply(.incidents([incident("a1", .minor)]), now: t0)
+        monitor.apply(.failure("offline"), now: t0 + 30)
+        #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 60).isEmpty)   // reconnect
         #expect(monitor.apply(.incidents([incident("a1", .critical)]), now: t0 + 120).isEmpty)
+        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 180).isEmpty)
     }
 
     @Test func recoveryLeavesWithoutAnimation() {
@@ -474,6 +495,14 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         #expect(PrivacyText.title(item, privacy: false) == "Degraded Actions")
         #expect(item.url?.absoluteString == "https://www.githubstatus.com/incidents/a1")
     }
+
+    @Test func demoIncidentsOpenNothing() {
+        var demo = incident("demoactions01")
+        demo.isDemo = true
+        #expect(demo.url == nil)
+        #expect(demo.inboxItem.url == nil)
+        #expect(ServiceStatusSimulator.defaultIncidents().allSatisfy { $0.url == nil })
+    }
 }
 
 @Suite struct ServiceStatusSimulatorTests {
@@ -618,7 +647,7 @@ private func client(maxBytes: Int = ServiceStatusClient.defaultMaxBytes,
 
 /// Per-URL canned behaviour for `StubProtocol`, so parallel tests do not interfere.
 private final class StubRegistry: @unchecked Sendable {
-    enum Behaviour { case respond(Int, [String: String], Data), hang }
+    enum Behaviour { case respond(Int, [String: String], Data), hang, drip(TimeInterval) }
     static let shared = StubRegistry()
     private let lock = NSLock()
     private var behaviours: [URL: Behaviour] = [:]
@@ -643,6 +672,12 @@ private final class StubProtocol: URLProtocol {
         switch behaviour {
         case .hang:
             break   // never answers: the session's request timeout must fire
+        case .drip(let interval):
+            // One byte per interval, forever: the inactivity timer never fires, only the deadline.
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
+                                           headerFields: ["Content-Type": "application/json"])!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            drip(every: interval)
         case .respond(let code, let headers, let body):
             let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: "HTTP/1.1", headerFields: headers)!
             if (300..<400).contains(code), let location = headers["Location"], let target = URL(string: location) {
@@ -661,7 +696,18 @@ private final class StubProtocol: URLProtocol {
         }
     }
 
-    override func stopLoading() {}
+    private let stopLock = NSLock()
+    private var stopped = false
+
+    private func drip(every interval: TimeInterval) {
+        DispatchQueue.global().asyncAfter(deadline: .now() + interval) { [weak self] in
+            guard let self, !self.stopLock.withLock({ self.stopped }) else { return }
+            self.client?.urlProtocol(self, didLoad: Data("[".utf8))
+            self.drip(every: interval)
+        }
+    }
+
+    override func stopLoading() { stopLock.withLock { stopped = true } }
 }
 
 /// CI runners have been seen stalling the whole test process for 25–40 s, so only the hanging
@@ -788,7 +834,8 @@ private func stubURL(_ name: String) -> URL {
         #expect(data.count == 4096)
     }
 
-    @Test func hangingServerTimesOut() async {
+    // Wall-clock guard: a broken timeout fails the test instead of hanging CI.
+    @Test(.timeLimit(.minutes(1))) func hangingServerTimesOut() async {
         let url = stubURL("hang")
         StubRegistry.shared.set(.hang, for: url)
         await #expect {
@@ -796,6 +843,20 @@ private func stubURL(_ name: String) -> URL {
         } throws: { error in
             (error as? URLError)?.code == .timedOut
         }
+    }
+
+    /// The timeout bounds the whole fetch (resource deadline), not just inactivity.
+    @Test(.timeLimit(.minutes(1))) func slowDripHitsTheTotalDeadline() async {
+        let url = stubURL("drip")
+        StubRegistry.shared.set(.drip(0.3), for: url)
+        let started = Date()
+        await #expect {
+            _ = try await stubTransport(timeout: 2).get(URLRequest(url: url, timeoutInterval: 2), maxBytes: 1 << 20)
+        } throws: { error in
+            (error as? URLError)?.code == .timedOut
+        }
+        // At least the deadline; the upper bound is the time limit (CI stalls make a tight bound flaky).
+        #expect(Date().timeIntervalSince(started) >= 1.9)
     }
 
     @Test func redirectsAreNotFollowed() async throws {

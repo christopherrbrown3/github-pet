@@ -75,8 +75,9 @@ public struct ServiceIncident: Identifiable, Hashable, Sendable {
 
     public var severity: EventSeverity { impact.severity }
 
-    /// The only link an incident opens: https://www.githubstatus.com/incidents/<id>.
-    public var url: URL? { ServiceStatusLink.incidentURL(id: id) }
+    /// The only link an incident opens: https://www.githubstatus.com/incidents/<id>. Demo incidents
+    /// have no status page, so they open nothing.
+    public var url: URL? { isDemo ? nil : ServiceStatusLink.incidentURL(id: id) }
 
     /// Inbox form, so incidents share event clips and privacy text with other items.
     public var inboxItem: InboxItem {

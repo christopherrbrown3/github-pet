@@ -124,14 +124,36 @@ use only: it isn't notarized or Developer ID signed.
   while the data is fresh or stale, like a critical inbox item).
 - Events: deduped by incident ID. The first success, and the first success after an error or stale
   period, record incidents silently; a new ID on a comparable poll animates once. Updates revise rows
-  silently. Escalation of a known incident to `major`/`critical` is announced once, as urgent (an outage
-  getting worse is worth an alert); de-escalation and re-escalation are silent. Resolved incidents leave
+  silently. Escalation of a known open incident to a tier it has never reached (minor → major, minor →
+  critical, major → critical) is announced once per tier, as urgent; downgrades and returns to a tier
+  already reached are silent (#37 parity). Resolved incidents leave
   the list without animation, and a reopened ID is not announced again (even at a higher impact). Gestures follow the same snooze,
   quiet-hours and Reduce Motion rules as inbox events; privacy mode hides incident names.
 - GitHub Status is public, so a `gh auth switch` re-baselines only the inbox; switching the data source
   resets both.
 - Rows open only `https://www.githubstatus.com/incidents/<id>` (lowercase alphanumeric ID, no query,
   fragment, port or credentials).
+
+### Incident marker (#37)
+- Shown behind the mascot art only for a fresh, confirmed unresolved incident (`IncidentMarker.current`);
+  loading, stale and failed status never show it. Tiers: `none`/`minor` → minor, `major` → major,
+  `critical` → critical.
+- Escalation parity: a known open incident rising to a tier it has never reached (minor → major,
+  minor → critical, major → critical) emits one urgent event; returning to a tier already reached,
+  downgrades, reopens and baseline/reconnect stay silent.
+- Each incident event starts a ~6 s burst; otherwise, and always under Reduce Motion, quiet hours or
+  snooze, the marker shows its static frame (it stays visible).
+- Every layer is clipped to `IncidentMarker.frame(in:)`: the art square below the design keep-out
+  (top 64 of 256 units) and below the whole label zone (`MascotLayout.labelRects`, including the
+  count's lowest tracking position) less the minimum gap. render-check rasterises every tier
+  (static and burst frames) against every pose's labels at 64/128/256 and 1×/2×: no shared pixels.
+- Hover: a top line `GitHub incident: <name>` (public name, kept in privacy mode; `Demo` prefix for
+  fixtures). The full hover previews one item fewer so its size, and placement, is unchanged; the
+  compact hover stays at two lines. Menu-bar and mascot label: `…, N items, 1 active GitHub incident`.
+  The badge counts actionable items only.
+- The current drawing is a placeholder in design's 256-unit canvas; design's spec
+  (docs/design/incidents/incident-marker.json, PR #38) replaces it.
+- Demo incident rows are shown but disabled ("No status page"); they open nothing.
 
 ### Settings
 Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`). Missing or invalid

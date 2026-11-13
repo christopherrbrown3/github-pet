@@ -42,9 +42,10 @@ public enum ServiceStatusState: Equatable, Sendable {
 ///   staleness records incidents silently (no replay);
 /// - each incident ID is announced at most once, even if it disappears and comes back (also when
 ///   it comes back with a higher impact);
-/// - updates (name, status, minor impact changes) revise rows silently. Escalation of a known
-///   incident to major or critical counts as meaningful: it is announced once, as urgent, on a
-///   comparable poll. De-escalation is silent and re-escalation is never re-announced;
+/// - updates (name, status, impact changes within the minor tier) revise rows silently. Escalation
+///   of a known open incident to a higher tier than it has ever reached (minor → major, minor →
+///   critical, major → critical; #37 parity) is announced once per tier, as urgent, on a comparable
+///   poll. Downgrades are silent, and returning to a tier already reached is never re-announced;
 /// - resolved incidents simply leave the list, without an event.
 public final class ServiceStatusMonitor {
     public static let defaultStaleAfter: TimeInterval = 10 * 60
@@ -60,8 +61,8 @@ public final class ServiceStatusMonitor {
     /// Incident IDs ever seen (bounded, oldest evicted first, current IDs refreshed).
     private var known: [String] = []
     private var knownSet: Set<String> = []
-    /// Incidents already seen at major or critical impact, so escalation is announced at most once.
-    private var urgentSeen: Set<String> = []
+    /// Highest marker tier each known incident has reached, so each tier is announced at most once.
+    private var highestTier: [String: IncidentMarker.Tier] = [:]
 
     public init(staleAfter: TimeInterval = ServiceStatusMonitor.defaultStaleAfter, capacity: Int = 512) {
         self.staleAfter = staleAfter
@@ -86,15 +87,17 @@ public final class ServiceStatusMonitor {
             let previousIDs = Set(incidents.map(\.id))
             for incident in current {
                 let isNew = !knownSet.contains(incident.id)
-                let escalated = previousIDs.contains(incident.id) && incident.impact >= .major
-                    && !urgentSeen.contains(incident.id)
+                let tier = IncidentMarker.Tier(incident.impact)
+                let escalated = previousIDs.contains(incident.id) && tier >= .major
+                    && tier > (highestTier[incident.id] ?? .minor)
                 if comparable && (isNew || escalated) { events.append(incident.event) }
             }
             for incident in current {
                 remember(incident.id)
-                if incident.impact >= .major { urgentSeen.insert(incident.id) }
+                let tier = IncidentMarker.Tier(incident.impact)
+                if tier > (highestTier[incident.id] ?? .minor) { highestTier[incident.id] = tier }
             }
-            urgentSeen.formIntersection(knownSet)
+            highestTier = highestTier.filter { knownSet.contains($0.key) }
             incidents = current
             baselineEstablished = true
             previousWasComparable = true
@@ -133,7 +136,7 @@ public final class ServiceStatusMonitor {
         previousWasComparable = false
         known.removeAll()
         knownSet.removeAll()
-        urgentSeen.removeAll()
+        highestTier.removeAll()
     }
 
     /// Whether any held incident is major or critical while the data is still usable.
