@@ -5,12 +5,15 @@ import Testing
 /// Records argv and replies from a script keyed by the first two arguments.
 private final class FakeRunner: CommandRunner, @unchecked Sendable {
     var replies: [String: CommandResult] = [:]
+    /// Answers before `replies` when it returns a result (full argv in hand).
+    var handler: (([String]) -> CommandResult?)?
     var throwing: Error?
     private(set) var calls: [(URL, [String])] = []
 
     func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult {
         calls.append((executable, arguments))
         if let throwing { throw throwing }
+        if let answer = handler?(arguments) { return answer }
         return replies[arguments.prefix(2).joined(separator: " ")] ?? CommandResult(exitCode: 127)
     }
 }
@@ -67,7 +70,35 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
         let client = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner)
         #expect(client.authState() == .unauthenticated)
         #expect(client.fetch() == .failure(.unauthenticated))
-        #expect(runner.calls.first?.1 == ["auth", "status", "--hostname", "github.com"])
+        #expect(runner.calls.first?.1 == ["auth", "status", "--active", "--hostname", "github.com"])
+    }
+
+    @Test func onlyTheActiveAccountIsChecked() {
+        // A valid active account with an expired inactive one: plain `auth status` fails, --active passes.
+        let runner = FakeRunner()
+        runner.handler = { args in
+            guard args.starts(with: ["auth", "status"]) else { return nil }
+            return args.contains("--active")
+                ? CommandResult(exitCode: 0)
+                : CommandResult(exitCode: 1, stderr: Data("X Failed to log in to github.com account old-user".utf8))
+        }
+        runner.replies["api graphql"] = CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1)]))
+        let client = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner)
+        #expect(client.authState() == .authenticated)
+        guard case .snapshot(let items, true) = client.fetch() else {
+            Issue.record("expected the active account's items")
+            return
+        }
+        #expect(items.count == 1)
+    }
+
+    @Test func oldGhWithoutActiveFlagLetsTheRequestDecide() {
+        let runner = FakeRunner()
+        runner.replies["auth status"] = CommandResult(exitCode: 1, stderr: Data("unknown flag: --active".utf8))
+        runner.replies["api graphql"] = CommandResult(exitCode: 4)
+        let client = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner)
+        #expect(client.authState() == .authenticated, "preflight is advisory on an old gh")
+        #expect(client.fetch() == .failure(.unauthenticated), "the request still maps exit 4 to signed out")
     }
 
     @Test func exitCodeFourMeansAuthRequired() {

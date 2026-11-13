@@ -188,13 +188,18 @@ public struct GhClient: Sendable {
             || text.contains("authentication required")
     }
 
+    /// Only the active account matters: without `--active`, `gh auth status` fails when any stored
+    /// account on the host (e.g. an expired inactive one) is invalid.
+    static let authStatusArguments = ["auth", "status", "--active", "--hostname", "github.com"]
+
     public func authState() -> GhAuthState {
         guard let gh = locator.locate() else { return .missing }
         do {
-            let result = try runner.run(executable: gh,
-                                        arguments: ["auth", "status", "--hostname", "github.com"],
-                                        timeout: timeout)
+            let result = try runner.run(executable: gh, arguments: Self.authStatusArguments, timeout: timeout)
             if result.exitCode == 0 { return .authenticated }
+            // A gh too old for --active: the preflight is only advisory then; the GraphQL request
+            // still maps exit 4 / "gh auth login" to signed out.
+            if result.stderrText.lowercased().contains("unknown flag") { return .authenticated }
             if result.exitCode == 1 || Self.isAuthFailure(result) { return .unauthenticated }
             return .error("gh auth status exited \(result.exitCode)")
         } catch CommandError.timedOut {
