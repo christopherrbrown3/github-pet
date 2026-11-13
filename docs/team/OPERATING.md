@@ -1,6 +1,6 @@
 # Operating the team
 
-GitHub Projects V2 is the intended durable system of record. Status sequence: Inbox → Backlog → Ready → In Progress → In Review → In QA → Done; Blocked is explicit. Fields: Owner Agent (role), Priority, Type, Milestone. PM alone updates assignment and status. Until Project scope authorization completes, issues and comments preserve all assignments; do not claim board synchronization.
+GitHub Projects V2 is the durable system of record: https://github.com/users/christopherrbrown3/projects/3/views/1 . Status sequence: Inbox → Backlog → Ready → In Progress → In Review → In QA → Done; Blocked is explicit. Fields: Owner Agent (role), Priority, Work Type, Milestone. GitHub reserves Type; Work Type provides the requested epic/feature/task classification. PM alone updates assignment and status. Project-scope authorization completed; issue comments preserve exact-SHA evidence and handoffs alongside board status.
 
 ## Bootstrap sessions
 
@@ -29,7 +29,7 @@ Launch directories initially pointed at the coordinator checkout; scoped dispatc
 6. Request Copilot review if available. Route exact SHA to independent QA. Status In QA means verification is underway, not that it passed.
 7. QA posts pass/fail/blocked evidence and reproducible defects. Send defects to Developer; verify new SHA with QA again.
 8. Mark blocked with reason and recovery owner when external input is needed. Preserve ready work. Never bypass model usage limits.
-9. Done requires acceptance evidence and any required owner approval. Bootstrap PRs remain unmerged until Chris explicitly authorizes merge.
+9. Done requires acceptance evidence and any required owner approval. Chris now authorizes merging ready PRs after review findings are handled; validate the current SHA and required acceptance first.
 10. Dispatch next authorized ready task. On shutdown, post current role/session/PR/status snapshot on #5 and each active issue.
 
 ## Recovery
@@ -40,11 +40,23 @@ For a dead specialist, inspect its saved CLI session, worktree status and issue 
 
 Example runtime commands (append the saved role/task instructions):
 - Developer: `claude --model claude-opus-5-5 --name developer --permission-mode auto`
-- Designer: `codex --no-daemon -m gpt-6.1-sol`
+- Designer: `codex --no-daemon -m gpt-6.1-terra`
 - QA: `codex --no-daemon -m gpt-6-luna`
 
 Verify launch argv, displayed model and an actual response before reporting operational. Trust prompts may be resolved only within the user's authorized project. Read blocked/error screens; do not force past permission decisions. No service restarts or usage-limit workarounds.
 
 ## Environment limits
 
-Swift 6.2.3 and Command Line Tools are present. Full Xcode is absent, so xcodebuild is unavailable. SwiftPM build/test and locally assembled .app are the prototype route; signing/notarization is not claimed. GitHub Projects requires project scope on gh; keep its authorization blocker visible until verified resolved.
+Swift 6.2.3 and Command Line Tools are present. Full Xcode is absent, so xcodebuild is unavailable. SwiftPM build/test and locally assembled .app are the prototype route; prototype bundles are ad-hoc signed and verified; Developer ID signing/notarization is not claimed. GitHub Projects project scope was verified available after authorization. Inspect gh auth/permissions if future board requests fail.
+
+## Current recovery checkpoint
+
+Read [CHECKPOINT.md](CHECKPOINT.md) and [roles.json](roles.json) before resuming. They supersede historical session addresses and old build SHAs above. After usage exhaustion, preserve work and stop retrying until reset or an authorized external change; restarting does not reset the allowance. All restarted agents must keep the latest user-authorized models and prove a response. Chris explicitly selected Terra for Designer. Never substitute a cheaper model to bypass limits.
+
+Use a fresh verification worktree pinned to the exact implementation SHA. Pushing a feature branch does not invalidate a detached old-SHA checkout or saved report. Keep one QA app version running at a time; never mix observed results across SHAs. Save a short checkpoint after each functional group so unfinished acceptance survives interruptions. Offscreen render checks validate rendered output, not menu-bar interactions, pointer behavior or animation timing.
+
+The first two PRs (#16 workflow, #17 QA plan) were already merged externally when inspected; this coordinator has not merged them. PR #18 implementation and #19 design remain open at the checkpoint. Chris subsequently authorized merges of ready PRs after Copilot findings are reviewed/handled. Releases remain unauthorized.
+
+## Model-selection reminder hazard
+
+During low allowance, Codex showed an idle popup whose default action was to switch from Sol to Luna. A pasted prompt followed by Enter can accept that default before the task reaches the agent. This explains an observed Designer model mismatch. Inspect the visible screen when readiness or model identity is uncertain; dismiss the suggestion with Keep current model (never show again) rather than accepting the default. Verify the model after dismissal. This changes reminder behavior only; usage limits remain in force. Never use a model switch to bypass an allowance.
