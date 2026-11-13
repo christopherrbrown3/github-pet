@@ -104,6 +104,16 @@ private struct PackFixture {
         #expect(fixture.errors().contains(.missingState("urgent")))
     }
 
+    @Test func onlyTheV1GroundAnchorIsAccepted() throws {
+        let fixture = try PackFixture()
+        for anchor in [[64, 128], [128, 231], [0, 0], [128]] {
+            try fixture.manifest { $0["anchor"] = anchor }
+            #expect(fixture.errors() == [.badAnchor], "anchor \(anchor)")
+        }
+        try fixture.manifest { $0["anchor"] = [128, 232] }
+        #expect(fixture.errors().isEmpty)
+    }
+
     @Test func pathTraversalAndAbsolutePathsAreRejected() throws {
         #expect(!MascotPack.isSafeRelativePath("../escape.png"))
         #expect(!MascotPack.isSafeRelativePath("frames/../../escape.png"))

@@ -50,7 +50,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .badCanvas: return "canvas must be 256×256"
-        case .badAnchor: return "anchor must be [x, y] inside the canvas"
+        case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
         case .missingState(let s): return "required state '\(s)' missing"
         case .frameCount(let s): return "state '\(s)' needs 1–\(MascotPack.maxFrames) frames"
         case .durationMismatch(let s): return "state '\(s)' durationMs count differs from frames"
@@ -77,6 +77,8 @@ public struct MascotPack: Equatable, Sendable {
     /// Pack bundled with the app (`assets/mascots/<id>` in the repository).
     public static let defaultPackID = "mona-pet-v1"
     public static let canvasSize = 256
+    /// The only supported ground anchor (schema v1), in canvas pixels.
+    public static let anchor = [128, 232]
     public static let maxFrames = 12
     public static let durationRange = 125...2000
     /// Read limits, enforced before decoding or hashing.
@@ -222,9 +224,9 @@ public struct MascotPack: Equatable, Sendable {
         var validated: [String: Data] = [:]
         guard manifest.schemaVersion == schemaVersion else { return ([.unsupportedSchema(manifest.schemaVersion)], [:]) }
         if manifest.canvas.width != canvasSize || manifest.canvas.height != canvasSize { errors.append(.badCanvas) }
-        if manifest.anchor.count != 2 || !manifest.anchor.allSatisfy({ (0...canvasSize).contains($0) }) {
-            errors.append(.badAnchor)
-        }
+        // Rendering, the attention lean and ground-preserving resizes all use the v1 ground point;
+        // a pack declaring another one would be drawn and resized wrongly, so it is rejected.
+        if manifest.anchor != anchor { errors.append(.badAnchor) }
         var checked: Set<String> = []
         for state in MascotState.allCases {
             guard let spec = manifest.states[state.rawValue] else {
