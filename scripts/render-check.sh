@@ -99,7 +99,8 @@ for size in 64 128 256; do
   for scale in 1x 2x; do
     line=$(grep -E "^near-touch @$size $scale: " "$report" || true)
     low=$(sed -E 's/.* gap-min=([0-9.]+) .*/\1/' <<< "$line"); high=$(sed -E 's/.* gap-max=([0-9.]+) .*/\1/' <<< "$line")
-    if [[ $line == *" overlapping-pixels=0 "* ]] && (( low >= 0.5 && high <= 2.5 )); then
+    if [[ $line == *" empty-renders=0 "* && $line == *" overlapping-pixels=0 "* && $low != none ]] \
+        && (( low >= 0.5 && high <= 2.5 )); then
       echo "ok   near-touch $size $scale: gap $low-$high pt, no overlap"
     else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
   done

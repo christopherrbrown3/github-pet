@@ -63,7 +63,7 @@ enum SnapshotRenderer {
             model.settings.mascotSize = saved
         }
         report.append("## near-touch labels (real MascotView rasterised; art and labels drawn separately)")
-        report += nearTouchMeasurements(model: model)
+        report += await nearTouchMeasurements(model: model)
         report.append("## hover placement (idle)")
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
@@ -293,9 +293,20 @@ enum SnapshotRenderer {
     /// each size, backing scale, pose (static and every frame of every state) and count text, the
     /// real MascotView is drawn twice (art only, labels only) and the nearest pair of visible
     /// pixels is found. Reports the range and any overlapping pixels.
-    private static func nearTouchMeasurements(model: AppModel) -> [String] {
+    private static func nearTouchMeasurements(model: AppModel) async -> [String] {
         guard let pack = model.pack else { return ["near-touch: no pack"] }
         var lines: [String] = []
+        // One offscreen window reused for every case: SwiftUI only commits its layers inside one.
+        let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = .clear
+        window.isOpaque = false
+        let host = NSHostingView(rootView: AnyView(EmptyView()))
+        window.contentView = host
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        var empty = 0
         let saved = model.settings.mascotSize
         defer { model.settings.mascotSize = saved }
         for side in [64.0, 128, 256] {
@@ -310,12 +321,16 @@ enum SnapshotRenderer {
                     for frame in frames {
                         let pose = MascotPose(state: state, frame: frame, clipElapsed: nil)
                         for badge in ["2", "2+", "?", "99+"] {
-                            func image(art: Bool) -> [UInt8]? {
+                            func image(art: Bool) async -> [UInt8]? {
                                 let view = MascotView(model: model, poseOverride: pose, badgeOverride: badge,
                                                       drawsArt: art, drawsLabels: !art)
-                                return alphaBitmap(view, size: layout.panelSize, scale: scale)
+                                return await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale)
                             }
-                            guard let artAlpha = image(art: true), let labelAlpha = image(art: false) else { continue }
+                            guard let artAlpha = await image(art: true), let labelAlpha = await image(art: false),
+                                  artAlpha.contains(where: { $0 > 0 }), labelAlpha.contains(where: { $0 > 0 }) else {
+                                empty += 1
+                                continue
+                            }
                             let (gap, overlap) = nearestGap(artAlpha, labelAlpha, size: layout.panelSize, scale: scale)
                             overlaps += overlap
                             if gap > (gaps.max() ?? -1) { worst = "\(state.rawValue)/\(frame.map(String.init) ?? "static")/\(badge)" }
@@ -324,18 +339,24 @@ enum SnapshotRenderer {
                     }
                 }
                 lines.append("near-touch @\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
-                             + "(farthest \(worst)) cases=\(gaps.count) overlapping-pixels=\(overlaps) lane=\(format(layout.laneHeight))")
+                             + "(farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
+                             + "lane=\(format(layout.laneHeight))")
+                empty = 0
             }
         }
         return lines
     }
 
-    /// Alpha channel of a view rasterised at `scale` (rows top first), via its layer tree.
-    private static func alphaBitmap<V: View>(_ view: V, size: CGSize, scale: CGFloat) -> [UInt8]? {
-        let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height))
+    /// Alpha channel of a view rasterised at `scale` (rows top first), via its layer tree, drawn
+    /// by `hosting` inside an offscreen window.
+    private static func alphaBitmap<V: View>(_ view: V, in hosting: NSHostingView<AnyView>, size: CGSize,
+                                             scale: CGFloat) async -> [UInt8]? {
+        hosting.rootView = AnyView(view.frame(width: size.width, height: size.height))
+        hosting.window?.setContentSize(size)
         hosting.frame = CGRect(origin: .zero, size: size)
-        hosting.wantsLayer = true
         hosting.layoutSubtreeIfNeeded()
+        hosting.window?.displayIfNeeded()
+        try? await Task.sleep(nanoseconds: 15_000_000)
         guard let layer = hosting.layer else { return nil }
         layer.contentsScale = scale
         let width = Int((size.width * scale).rounded(.up)), height = Int((size.height * scale).rounded(.up))
