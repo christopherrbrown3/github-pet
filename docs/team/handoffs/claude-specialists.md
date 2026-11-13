@@ -33,3 +33,7 @@ You are Graphic Designer replacing Codex Terra at Chris's request. Existing art/
 ## Verified takeover
 
 QA t1m and Designer t1n each replied ROLE_READY on claude-opus-5-5, clean worktrees. Both have gh/Swift/hc/local image inspection; no CUA tool is enabled. Designer image generation/editing has no native integration. PR18 f22deaf CI43487323700 succeeded138tests. System Reduce Motion on CI means actual gesture probe is skipped, not passed. Both specialists received scoped independent review tasks against this head. QA subsequently passed build/signing,138 tests, render-check, a positive model-level gesture probe with system Reduce Motion off, and seven focused gesture checks; native GUI remains blocked (PR18 comment6862383735). Designer sampled stills/filmstrips and did not sign off live natural motion. Developer is implementing the explicit-setting/system Reduce Motion cancellation improvement.
+
+## PM takeover
+
+The shared context above names PM t8 as it stood at launch. After the 2026-11-13 handoff, PM is Claude Code t1p (`product-manager`, claude-opus-5-5); report with `hc send product-manager`, not t8.

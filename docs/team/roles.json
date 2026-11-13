@@ -2,18 +2,21 @@
   "roles": [
     {
       "name": "product-manager",
-      "terminal": "t8",
-      "runtime": "codex",
+      "terminal": "t1p",
+      "runtime": "claude",
       "assignment": "#5",
-      "intendedModel": "gpt-6-astra",
-      "observedModel": "gpt-6.1-terra",
-      "sessionId": "01a1d07b-522b-7370-9477-72b1b877c355"
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "sessionId": null,
+      "previousCodexTerminal": "t8",
+      "previousCodexSessionId": "01a1d07b-522b-7370-9477-72b1b877c355",
+      "previousCodexObservedModel": "gpt-6.1-terra"
     },
     {
       "name": "developer",
       "terminal": "t9",
       "runtime": "claude",
-      "assignment": "#29 immediate cancellation, then QA defects",
+      "assignment": "PR18 six Copilot findings (one commit each), then QA defects",
       "intendedModel": "claude-opus-5-5",
       "observedModel": "claude-opus-5-5",
       "sessionId": null
@@ -41,5 +44,5 @@
   ],
   "observedDate": "2026-11-13",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly requested replacing Codex QA and Designer with Claude. Both new Opus5.5 sessions responded with verified model/workspace/tools. PM current runtime is Codex Terra, distinct from originally requested Astra. Inspect Herdr before routing. Chris authorizes PM merges after readiness and review; releases remain separate."
+  "note": "Chris explicitly requested replacing Codex QA, Designer and then PM with Claude. PM t1p (Opus5.5) accepted HANDOFF_GRANTED from Codex t8 on 2026-11-13; specialists route reports via hc send product-manager. Their Herdr parent remains t8 (launched --outlive-parent). Inspect Herdr before routing. Chris authorizes PM merges after readiness and review; releases remain separate."
 }

@@ -6,8 +6,8 @@ Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . The proj
 
 | Role | Terminal | Actual model | Work |
 |---|---|---|---|
-| product-manager | t8 | gpt-6.1-terra | Board, coordination, review and authorized merges; original Astra differs from current runtime |
-| developer | t9 | claude-opus-5-5 | #29 immediate cancellation fix and QA defects |
+| product-manager | t1p | claude-opus-5-5 | Chris requested Claude takeover from Codex t8 (gpt-6.1-terra); board, coordination, review and authorized merges |
+| developer | t9 | claude-opus-5-5 | PR18 six Copilot findings, then QA defects |
 | graphic-designer | t1n | claude-opus-5-5 | Chris requested Claude takeover; #29/badge visual review |
 | qa-engineer | t1m | claude-opus-5-5 | Chris requested Claude takeover; independent exact-SHA verification; no CUA tool |
 
@@ -31,3 +31,7 @@ Chris now explicitly authorizes merging ready PRs after Copilot findings are rev
 ## Takeover update
 
 QA and Designer responded from Claude Opus5.5 sessions t1m/t1n with clean dedicated worktrees. Current PR18 head at takeover is f22deaf336c94140e10bcbc207df5649e7b3aee4, CI43487323700 green138tests. #29 double-wave implementation is included; CI has system Reduce Motion enabled, so the positive gesture probe is SKIPPED while suppression is verified. QA independently completed this exact head: build/signing,138 tests, render-check, a positive model-level gesture probe with local system Reduce Motion off and seven focused gesture checks passed; native desktop motion remains unverified because CUA is unavailable. Designer reviewed selected stills/filmstrips; natural motion remains unverified. Developer is implementing immediate cancellation on explicit snooze/quiet changes and system Reduce Motion notifications; clock-driven quiet-hour boundaries remain tick-driven. README PR32/33 are merged. New #29 code needs Copilot review. See handoff for prior exact-SHA evidence and constraints.
+
+## PM takeover
+
+Chris requested a Claude Product Manager. Claude Code t1p (claude-opus-5-5) sent PM_READY, received HANDOFF_GRANTED from Codex PM t8 and accepted it on 2026-11-13. Specialists route reports via `hc send product-manager`; their Herdr parent remains t8, so notifications to the parent do not reach the new PM. Use role names and `hc ls`. At transfer, PR18 head e0789eec8a877bf7b68de7ee6607f2fcf63a4c7b had CI43490177306 green with 143 Developer tests. Developer implements immediate cancellation on snooze, quiet hours and Reduce Motion. QA was verifying it in qa-verify-e0789ee. Developer triaged six new Copilot threads as valid and was dispatched one commit per finding. The gh account-switch finding uses a single request-bound GraphQL query, because identity checks before and after the searches would miss an A->B->A switch. The Designer flagged the mascot's resemblance to GitHub's Octocat for owner review before #15 public distribution. Live motion remains unverified.

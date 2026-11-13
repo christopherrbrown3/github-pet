@@ -64,3 +64,5 @@ During low allowance, Codex showed an idle popup whose default action was to swi
 ## Claude specialist takeover
 
 Chris requested Claude replacements for QA and Designer. Both now run Opus5.5 in dedicated role worktrees; see [handoff](handoffs/claude-specialists.md) and roles.json. Original Codex sessions ended cleanly and their worktrees/evidence remain. Both replacements verified gh, Swift, hc and image inspection; neither has CUA enabled, and Designer image generation is unavailable/unverified. Do not infer old Codex tools carry across runtimes. Chris authorized PM to launch a scoped Codex artist if image generation or editing is needed; no artist is currently required.
+
+Chris then requested a Claude Product Manager. Claude Code t1p (claude-opus-5-5) accepted the handoff from Codex t8 and is now sole PM. Specialists report through `hc send product-manager`. Their Herdr parent is still t8, so do not rely on parent notifications.
