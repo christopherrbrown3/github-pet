@@ -33,9 +33,10 @@ private func graphQL(login: String? = "first-user", reviews: [String]? = [], rev
     return Data(#"{"data":{"viewer":\#(viewer),"reviews":\#(search(reviews, reviewTotal)),"assigned":\#(search(assigned, assignedTotal))}}"#.utf8)
 }
 
-private func node(_ number: Int, repo: String = "example/repo", url: String? = nil) -> String {
+private func node(_ number: Int, repo: String = "example/repo", url: String? = nil, id: String? = nil) -> String {
     let link = url ?? "https://github.com/\(repo)/pull/\(number)"
-    return #"{"number":\#(number),"title":"Item \#(number)","url":"\#(link)","updatedAt":"2026-11-12T10:00:00Z","repository":{"nameWithOwner":"\#(repo)"}}"#
+    let nodeID = id ?? "N_\(repo.replacingOccurrences(of: "/", with: "_"))_\(number)"
+    return #"{"id":"\#(nodeID)","number":\#(number),"title":"Item \#(number)","url":"\#(link)","updatedAt":"2026-11-12T10:00:00Z","repository":{"nameWithOwner":"\#(repo)"}}"#
 }
 
 
@@ -125,8 +126,9 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
         }
         #expect(fetch.account == "second-user")
         #expect(complete)
-        #expect(items.map(\.id) == ["reviewRequest:example/repo#12", "reviewRequest:example/repo#3",
-                                     "assignedIssue:example/other#7"])
+        #expect(items.map(\.id) == ["reviewRequest:N_example_repo_12", "reviewRequest:N_example_repo_3",
+                                     "assignedIssue:N_example_other_7"])
+        #expect(items.map(\.repository) == ["example/repo", "example/repo", "example/other"])
         #expect(items[0].url?.absoluteString == "https://github.com/example/repo/pull/12")
         #expect(items[1].url == nil, "unsafe link is dropped at parse time")
         // Exactly two gh calls: the auth check and ONE request for account + both searches.
@@ -135,6 +137,7 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
         let query = runner.calls[1].1.last ?? ""
         #expect(query.hasPrefix("query=") && query.contains("viewer { login }"))
         #expect(query.contains("review-requested:@me") && query.contains("assignee:@me") && query.contains("is:open"))
+        #expect(query.components(separatedBy: "{ id number").count == 3, "both fragments request the node id")
         #expect(runner.calls.allSatisfy { $0.0.path == "/opt/homebrew/bin/gh" })
     }
 
@@ -145,12 +148,31 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
             let (client, _) = client(CommandResult(exitCode: 0, stdout: graphQL(login: login, reviews: [node(1, repo: repo)])))
             let fetch = client.fetchWithAccount()
             #expect(fetch.account == login)
-            #expect(fetch.outcome == .snapshot(items: [InboxItem(id: "reviewRequest:\(repo)#1", kind: .reviewRequest,
+            let nodeID = "N_\(repo.replacingOccurrences(of: "/", with: "_"))_1"
+            #expect(fetch.outcome == .snapshot(items: [InboxItem(id: "reviewRequest:\(nodeID)", kind: .reviewRequest,
                                                                  repository: repo, title: "Item 1",
                                                                  url: URL(string: "https://github.com/\(repo)/pull/1"),
                                                                  updatedAt: Date(timeIntervalSince1970: 1_794_477_600))],
                                                complete: true))
         }
+    }
+
+    @Test func repositoryRenameKeepsTheItemsIdentity() {
+        // Same review request (node id) before and after its repository is renamed.
+        let before = GhGraphQLParser.parse(graphQL(reviews: [node(5, repo: "old-org/repo", id: "PR_kwStable5")]))?.reviews?.items
+        let after = GhGraphQLParser.parse(graphQL(reviews: [node(5, repo: "new-org/renamed", id: "PR_kwStable5")]))?.reviews?.items
+        #expect(before?.map(\.id) == ["reviewRequest:PR_kwStable5"] && before?.map(\.id) == after?.map(\.id))
+        #expect(after?.first?.repository == "new-org/renamed", "the name is display metadata")
+        // So the engine doesn't announce it again.
+        let engine = InboxEngine()
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        engine.apply(.snapshot(items: before ?? [], complete: true), now: t0)
+        #expect(engine.apply(.snapshot(items: after ?? [], complete: true), now: t0 + 60).isEmpty)
+    }
+
+    @Test func nodesWithoutAnIDAreSkipped() {
+        let page = GhGraphQLParser.parse(graphQL(reviews: [#"{"number":1,"title":"x","url":"https://github.com/a/b/pull/1","updatedAt":"2026-11-12T10:00:00Z","repository":{"nameWithOwner":"a/b"}}"#]))
+        #expect(page?.reviews?.items.isEmpty == true)
     }
 
     @Test func oneFailedSearchMakesSnapshotPartial() {

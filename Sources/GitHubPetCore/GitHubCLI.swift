@@ -222,11 +222,11 @@ public struct GhClient: Sendable {
           viewer { login }
           reviews: search(query: "is:pr is:open review-requested:@me", type: ISSUE, first: \(searchLimit)) {
             issueCount
-            nodes { ... on PullRequest { number title url updatedAt repository { nameWithOwner } } }
+            nodes { ... on PullRequest { id number title url updatedAt repository { nameWithOwner } } }
           }
           assigned: search(query: "is:issue is:open assignee:@me", type: ISSUE, first: \(searchLimit)) {
             issueCount
-            nodes { ... on Issue { number title url updatedAt repository { nameWithOwner } } }
+            nodes { ... on Issue { id number title url updatedAt repository { nameWithOwner } } }
           }
         }
         """
@@ -299,6 +299,7 @@ public enum GhGraphQLParser {
         }
         struct Node: Decodable {
             struct Repository: Decodable { var nameWithOwner: String }
+            var id: String?
             var number: Int?
             var title: String?
             var url: String?
@@ -308,8 +309,10 @@ public enum GhGraphQLParser {
         var data: DataField?
     }
 
-    /// Parses the GraphQL response, or nil if it isn't one. IDs are `<kind>:<owner/repo>#<number>`,
-    /// stable across polls; links outside https://github.com are dropped.
+    /// Parses the GraphQL response, or nil if it isn't one. IDs are `<kind>:<node id>`: GitHub's
+    /// immutable node ID, so renaming or transferring a repository doesn't make an existing item
+    /// look new. The repository name is display metadata only. Links outside https://github.com
+    /// are dropped.
     public static func parse(_ data: Data) -> Response? {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -317,9 +320,9 @@ public enum GhGraphQLParser {
         func page(_ search: Envelope.Search?, kind: ItemKind) -> Page? {
             guard let search else { return nil }
             let items: [InboxItem] = search.nodes.compactMap { node in
-                guard let node, let number = node.number, number > 0, let repo = node.repository?.nameWithOwner,
-                      !repo.isEmpty, let updatedAt = node.updatedAt else { return nil }
-                return InboxItem(id: "\(kind.rawValue):\(repo)#\(number)", kind: kind, repository: repo,
+                guard let node, let nodeID = node.id, !nodeID.isEmpty, let number = node.number, number > 0,
+                      let repo = node.repository?.nameWithOwner, !repo.isEmpty, let updatedAt = node.updatedAt else { return nil }
+                return InboxItem(id: "\(kind.rawValue):\(nodeID)", kind: kind, repository: repo,
                                  title: node.title ?? "", url: node.url.flatMap { SafeLink.validated($0) }, updatedAt: updatedAt)
             }
             return Page(items: items, total: search.issueCount)
