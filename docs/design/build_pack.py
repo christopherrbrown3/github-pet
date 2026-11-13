@@ -5,11 +5,10 @@ Run from any directory: python3 docs/design/build_pack.py
 Only assets/mascots/mona-pet-v1 is written. The source PNGs are never changed.
 """
 from pathlib import Path
-import hashlib
 import json
 import subprocess
 import tempfile
-from png_rgba import bounds, crop, read_png, write_png
+from png_rgba import bounds, crop, read_png, sha256_png, write_png
 
 ROOT = Path(__file__).resolve().parents[2]
 PACK = ROOT / 'assets/mascots/mona-pet-v1'
@@ -17,7 +16,7 @@ CANVAS, ANCHOR, FACE_WIDTH = 256, [128, 232], 112
 
 
 def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return sha256_png(path)
 
 
 def make_frame(sheet, number, destination):

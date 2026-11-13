@@ -8,6 +8,8 @@ Validation: real-file pack validation passes (dimensions, alpha, paths, hashes, 
 
 New design checks: 12 native badge text measurements fit; light/dark native compositions and key poses visually inspected; all 12 source frame hashes remain valid; rotated art bounds remain in canvas; finite timeline/fallback and browser preview completion/Reduce Motion checks pass. These checks do not verify production panel resizing, hover placement, event eligibility, quiet/snooze or native accessibility integration; `docs/design/notifications/validation.md` records limits.
 
+Copilot review fixes: bounded PNG input/dimensions/decompression and streaming hashes prevent unbounded image allocation in the design tools; visible/nonzero alpha bottoms must both meet the declared ground anchor. Ten focused regression tests pass, including a compressed bomb and shifted frames with updated hashes. An isolated rebuild remained byte-identical to the original pack. Details and limitations are in `docs/design/verification.md`.
+
 Native app/loader integration, VoiceOver, system accessibility settings and physical-display behavior remain integration QA work. Minor generated contour variation remains. No GitHub endorsement or trademark clearance is claimed. Runtime remains buildable with its independent placeholder. No merge is requested by this action.
 
 Closes #3

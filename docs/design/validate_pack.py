@@ -4,7 +4,7 @@ from pathlib import Path
 import hashlib
 import json
 import sys
-from png_rgba import bounds, read_png
+from png_rgba import bounds, read_png, sha256_png
 
 ROOT = Path(__file__).resolve().parents[2]
 PACK = ROOT / 'assets/mascots/mona-pet-v1'
@@ -40,17 +40,23 @@ def check_pack(pack):
             alpha = pixels[3::4]
             assert min(alpha) == 0 and max(alpha) > 240
             bbox = bounds(pixels, width, lambda r, g, b, a: a > 8)
-            assert bbox[0] >= 8 and bbox[1] >= 8 and bbox[2] <= 248 and bbox[3] <= 234, bbox
+            assert bbox[0] >= 8 and bbox[1] >= 8 and bbox[2] <= 248, bbox
+            # Include every nonzero-alpha pixel, not just the >8 alpha used
+            # for clipping-risk bounds. The bottom edge is exclusive.
+            visible_bbox = bounds(pixels, width, lambda r, g, b, a: a > 0)
+            if bbox[3] != manifest['anchor'][1] or visible_bbox[3] != manifest['anchor'][1]:
+                raise ValueError(f'Ground anchor mismatch: {relative}: visible={bbox}, nonzero={visible_bbox}')
             # Borders must be genuinely transparent, not a checkerboard or haze.
             assert all(pixels[(y * 256 + x) * 4 + 3] == 0 for y in range(256) for x in range(256) if x in (0, 255) or y in (0, 255))
-            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            digest = sha256_png(path)
             assert manifest['frameSha256'][relative] == digest
             poses.add(digest)
             if relative not in unique:
                 decoded += len(pixels)
                 unique.add(relative)
             checks.append({'path': relative, 'size': [width, height], 'alphaRange': [min(alpha), max(alpha)],
-                           'fullyTransparentPixels': alpha.count(0), 'boundsAlphaOver8': bbox, 'sha256': digest})
+                           'fullyTransparentPixels': alpha.count(0), 'boundsAlphaOver8': bbox,
+                           'visibleBottomAlphaOver0': visible_bbox[3], 'sha256': digest})
         assert len(poses) >= 2, f'{state} must have visible animation keyframes'
         resolve(clip['staticFallback'])
         results[state] = {'loop': clip['loop'], 'durationMs': sum(clip['durationMs']), 'distinctFrames': len(poses), 'files': checks}
@@ -61,12 +67,12 @@ def check_pack(pack):
     assert sum(manifest['states']['urgent']['durationMs']) <= 2000
     packing = json.loads((pack / 'packing.json').read_text())
     for relative, expected in packing['sourceSha256'].items():
-        assert hashlib.sha256(resolve(relative).read_bytes()).hexdigest() == expected
+        assert sha256_png(resolve(relative)) == expected
     for sheet in packing['sheets'].values():
         path = resolve(sheet['path'])
         width, height, _ = read_png(path)
         assert [width, height] == sheet['size'] == [1024, 256]
-        assert hashlib.sha256(path.read_bytes()).hexdigest() == sheet['sha256']
+        assert sha256_png(path) == sheet['sha256']
     return {'result': 'pass', 'contract': 'developer v1', 'canvas': [256, 256], 'anchor': [128, 232],
             'states': results, 'decodedRuntimeFrameBytes': decoded,
             'manifestSha256': hashlib.sha256((pack / 'manifest.json').read_bytes()).hexdigest(),
