@@ -2,42 +2,47 @@
   "roles": [
     {
       "name": "product-manager",
-      "terminal": "t8",
-      "runtime": "codex",
+      "terminal": "t1p",
+      "runtime": "claude",
       "assignment": "#5",
-      "intendedModel": "gpt-6-astra",
-      "observedModel": "gpt-6.1-sol",
-      "sessionId": "01a1d07b-522b-7370-9477-72b1b877c355"
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "sessionId": null,
+      "previousCodexTerminal": "t8",
+      "previousCodexSessionId": "01a1d07b-522b-7370-9477-72b1b877c355",
+      "previousCodexObservedModel": "gpt-6.1-terra"
     },
     {
       "name": "developer",
       "terminal": "t9",
       "runtime": "claude",
-      "assignment": "#27, #28, then #29",
+      "assignment": "PR18 six Copilot findings (one commit each), then QA defects",
       "intendedModel": "claude-opus-5-5",
       "observedModel": "claude-opus-5-5",
       "sessionId": null
     },
     {
       "name": "graphic-designer",
-      "terminal": "t1k",
-      "runtime": "codex",
-      "assignment": "#28, #29",
-      "intendedModel": "gpt-6.1-terra",
-      "observedModel": "gpt-6.1-terra",
-      "sessionId": "01a1d082-9e39-7740-99d9-f9df99831e41"
+      "terminal": "t1n",
+      "runtime": "claude",
+      "assignment": "#28, #29 visual review",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "previousCodexSessionId": "01a1d082-9e39-7740-99d9-f9df99831e41",
+      "sessionId": null
     },
     {
       "name": "qa-engineer",
-      "terminal": "t1g",
-      "runtime": "codex",
-      "assignment": "#4",
-      "intendedModel": "gpt-6-luna",
-      "observedModel": "gpt-6-luna",
-      "sessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81"
+      "terminal": "t1m",
+      "runtime": "claude",
+      "assignment": "#4, #27, #28, #29",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
+      "sessionId": "75c23127-a4b1-4819-bc22-3f78b1b19d9e"
     }
   ],
   "observedDate": "2026-11-13",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Live snapshot; inspect Herdr before dispatch. Chris explicitly chose Terra for Designer. PM actual Sol differs from original Astra request and was disclosed. Chris authorizes merging ready PRs after Copilot findings are reviewed/handled; releases remain separate."
+  "note": "Chris explicitly requested replacing Codex QA, Designer and then PM with Claude. PM t1p (Opus5.5) accepted HANDOFF_GRANTED from Codex t8 on 2026-11-13; specialists route reports via hc send product-manager. Their Herdr parent remains t8 (launched --outlive-parent). Inspect Herdr before routing. Chris authorizes PM merges after readiness and review; releases remain separate."
 }
