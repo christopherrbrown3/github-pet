@@ -4,7 +4,7 @@ GitHub Projects V2 is the durable system of record: https://github.com/users/chr
 
 ## Bootstrap sessions
 
-Herdr Core 0.1.20 (`hc`), Codex 0.167.2, Claude Code 2.1.311. The old `herdr` executable is absent. At bootstrap, the team observed PM t8, developer t9, designer t10 and QA t11; these historical model/session observations have since changed. The current roles.json and live Herdr state take precedence. All three replied through hc send t8. Designer exercised actual image generation and alpha validation. Generation/edit tools are exposed; editing must be verified when used.
+Herdr Core 0.1.20 (`hc`), Codex 0.167.2, Claude Code 2.1.311. The old `herdr` executable is absent. At bootstrap, the team observed PM t8, developer t9, designer t10 and QA t11; these historical model/session observations have since changed. The current roles.json and live Herdr state take precedence. All three replied through hc send t8. The original Codex Designer t10 exercised actual image generation and alpha validation. That historical capability does not establish generation or editing access for the Claude replacement.
 
 All four appear in one GitHub Pet Team tab, in a 2×2 arrangement. Session addresses are observations, not permanent identities. Inspect `hc ls`, `hc get` and `herdr-app ls` before routing. A stale inherited HC_TERMINAL_ID was observed (t2 rather than live PM t8); use the observed current parent explicitly.
 
