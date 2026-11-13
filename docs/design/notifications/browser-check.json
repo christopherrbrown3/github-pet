@@ -1,0 +1,13 @@
+{
+  "result":"pass",
+  "surface":"browser design preview only",
+  "imageWidths":[64,128,256],
+  "allImagesLoaded":true,
+  "movingTransformSampled":true,
+  "finiteCompletionStatus":"Finished once. Static attention fallback; no replay.",
+  "allImagesSettledToAttention03AtIdentity":true,
+  "previewReduceMotionSuppressed":true,
+  "emulatedSystemReduceMotionSuppressed":true,
+  "desktopHorizontalOverflow":false,
+  "runtimeEventSemanticsVerified":false
+}
