@@ -69,6 +69,14 @@ check_in 03-replayed "replay adds nothing"       '^state=Up to date badge=4 rows
 check_in 04-partial "partial is labelled"       '^state=Partial data badge=3\+ rows=3'
 check_in 05-stale "stale count unknown"       '^state=Stale badge=\? rows=4'
 check_in 06-disconnected "disconnect count unknown"  '^state=Error: simulated disconnect badge=\?'
+# GitHub Status (#11): its own quality line; failure and stale never read as "no incidents".
+check_in 00-loading "status loading is not none" '^service=Checking GitHub status… incident-rows=0'
+check_in 01-baseline "fixture incident, maintenance excluded" '^service=1 active GitHub incident incident-rows=1 unseen-incidents=0'
+check_in 05-stale "status stale keeps last known" '^service=GitHub status is stale incident-rows=1'
+check_in 06-disconnected "status failure is not none" '^service=GitHub status unavailable: simulated disconnect incident-rows=1'
+check_in 07-reconnected "status recovery is silent" '^service=1 active GitHub incident incident-rows=1 unseen-incidents=0'
+check_in 10c-incident-major "new major incident announced" '^service=2 active GitHub incidents incident-rows=2 unseen-incidents=1'
+check_in 10d-incidents-resolved "resolved incidents leave quietly" '^service=No active GitHub incidents incident-rows=0 unseen-incidents=0'
 check_in 01-baseline "mascot is one AX button"    '^mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, '
 check_in 00-loading "mascot drag vs click"       '^mascot pointer: drop-without-drag-events=moved click=opens-inbox'
 # Hover summary beside the character (#27 with #28 metrics): every case shows the real panel and
@@ -134,6 +142,7 @@ check_in 10-urgent-static "urgent fixture"            'mood=urgent'
 check_in 09-attention-static "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
 check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x[0-9]+ pt'
 check_in 11-gh-override "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
+check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \

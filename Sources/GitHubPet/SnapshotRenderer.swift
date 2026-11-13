@@ -19,6 +19,8 @@ enum SnapshotRenderer {
             report.append("## \(name)")
             report.append("state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
                           + "demo=\(model.isDemo) mood=\(model.mascotState.rawValue)")
+            report.append("service=\(model.serviceState.statusText(count: model.serviceIncidents.count)) "
+                          + "incident-rows=\(model.serviceIncidents.count) unseen-incidents=\(model.unseenIncidents.count)")
             report.append("source=\(model.settings.dataSource.rawValue) privacy=\(model.settings.privacyMode) "
                           + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
@@ -110,6 +112,12 @@ enum SnapshotRenderer {
         // Late in the scenario: the probe injects fixture events, which would change earlier counts.
         report.append("## attention gesture (#29, live model)")
         report += await gestureProbe(model: model, directory: directory)
+        // GitHub Status (#11): a new major incident is urgent; resolving leaves quietly.
+        model.markAllSeen()
+        model.injectServiceIncident(.major)
+        await capture("10c-incident-major")
+        model.resolveServiceIncidents()
+        await capture("10d-incidents-resolved")
         // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
         // is deterministic and can never contain live GitHub data.
         if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],

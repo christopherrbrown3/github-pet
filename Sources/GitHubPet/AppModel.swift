@@ -15,6 +15,12 @@ final class AppModel: ObservableObject {
     @Published private(set) var activeClip: EventClipQueue.Clip?
     @Published private(set) var blockedLinkNote: String?
     @Published private(set) var now = Date()
+    @Published private(set) var serviceState: ServiceStatusState = .loading
+    @Published private(set) var serviceIncidents: [ServiceIncident] = []
+    @Published private(set) var serviceLastSuccess: Date?
+    /// Incident IDs announced as new and not yet seen (separate from inbox markers, which are
+    /// pruned against inbox snapshots).
+    @Published private(set) var unseenIncidents: Set<String> = []
     @Published var settings: PetSettings {
         didSet {
             guard settings != oldValue else { return }
@@ -40,6 +46,11 @@ final class AppModel: ObservableObject {
     private var tickTimer: Timer?
     private var generations = SourceGenerations()
     private var accounts = AccountWatch()
+    // GitHub Status (#11): fixtures by default; githubstatus.com only with the live source.
+    private let serviceMonitor = ServiceStatusMonitor()
+    private let serviceSimulator = ServiceStatusSimulator()
+    private let serviceClient: ServiceStatusClient
+    private var serviceGenerations = SourceGenerations()
 
     init(options: LaunchOptions) {
         store = SettingsStore(defaults: options.userDefaults)
@@ -52,6 +63,10 @@ final class AppModel: ObservableObject {
         default: break
         }
         settings = loaded
+        // Snapshot evidence must be deterministic and never contain live data: with the live
+        // source selected there, GitHub Status fails at once instead of reaching the network.
+        serviceClient = options.snapshotDirectory == nil
+            ? ServiceStatusClient() : ServiceStatusClient(transport: OfflineStatusTransport())
 
         if let dir = options.resolvedPackDirectory() {
             switch MascotPack.load(from: dir) {
@@ -102,7 +117,10 @@ final class AppModel: ObservableObject {
     var inboxPrivacy: Bool { settings.privacyMode && !detailsRevealed }
 
     var mascotState: MascotState {
-        MascotPolicy.state(dataState: dataState, items: items, unseenCount: unseenCount, alertsAllowed: alertsAllowed)
+        let base = MascotPolicy.state(dataState: dataState, items: items, unseenCount: unseenCount,
+                                      alertsAllowed: alertsAllowed)
+        return ServiceStatusPolicy.mood(base: base, monitor: serviceMonitor, unseenIncidents: unseenIncidents.count,
+                                        alertsAllowed: alertsAllowed)
     }
 
     var badge: String? { MascotPolicy.badge(dataState: dataState, count: items.count) }
@@ -146,7 +164,9 @@ final class AppModel: ObservableObject {
                                       needsAttention: showsAlertIcon)
     }
 
-    var showsAlertIcon: Bool { alertsAllowed && (unseenCount > 0 || mascotState == .urgent) }
+    var showsAlertIcon: Bool {
+        alertsAllowed && (unseenCount > 0 || !unseenIncidents.isEmpty || mascotState == .urgent)
+    }
 
     // MARK: Polling
 
@@ -156,6 +176,7 @@ final class AppModel: ObservableObject {
     /// source (e.g. Demo fixtures or another account) are never shown as this source's data.
     private func switchSource() {
         generations.switchSource()
+        serviceGenerations.switchSource()
         accounts.reset()
         resetSession()
         pollTimer?.invalidate()
@@ -168,12 +189,15 @@ final class AppModel: ObservableObject {
 
     private func resetSession() {
         engine.reset()
+        serviceMonitor.reset()
         unseen.removeAll()
+        unseenIncidents.removeAll()
         clips.clear()
         activeClip = nil
     }
 
     func refresh() {
+        refreshServiceStatus()
         switch settings.dataSource {
         case .fixtures:
             apply(simulator.poll())
@@ -203,6 +227,35 @@ final class AppModel: ObservableObject {
         sync(now: date)
     }
 
+    private func refreshServiceStatus() {
+        switch settings.dataSource {
+        case .fixtures:
+            applyServiceStatus(serviceSimulator.poll())
+        case .githubCLI:
+            guard let generation = serviceGenerations.beginFetch() else { return }
+            let client = serviceClient
+            Task.detached {
+                let outcome = await client.fetch()
+                await MainActor.run {
+                    guard self.serviceGenerations.finishFetch(generation) else { return }
+                    self.applyServiceStatus(outcome)
+                }
+            }
+        }
+    }
+
+    private func applyServiceStatus(_ outcome: ServiceStatusOutcome) {
+        let date = clock()
+        let events = serviceMonitor.apply(outcome, now: date)
+        unseenIncidents.formUnion(events.map { $0.item.id })
+        // Resolved incidents leave quietly, taking their markers with them.
+        if case .incidents = outcome {
+            unseenIncidents.formIntersection(serviceMonitor.incidents.map(\.inboxItem.id))
+        }
+        clips.enqueue(events, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
+        sync(now: date)
+    }
+
     private func cancelGesture() {
         clips.clear()
         activeClip = nil
@@ -214,6 +267,7 @@ final class AppModel: ObservableObject {
     private func tick() {
         let date = clock()
         engine.refreshFreshness(now: date)
+        serviceMonitor.refreshFreshness(now: date)
         if effectiveReducedMotion || !settings.alertsAllowed(at: date) { clips.clear() }
         clips.tick(now: date)
         sync(now: date)
@@ -224,6 +278,9 @@ final class AppModel: ObservableObject {
         if items != engine.items { items = engine.items }
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
+        if serviceState != serviceMonitor.state { serviceState = serviceMonitor.state }
+        if serviceIncidents != serviceMonitor.incidents { serviceIncidents = serviceMonitor.incidents }
+        if serviceLastSuccess != serviceMonitor.lastSuccess { serviceLastSuccess = serviceMonitor.lastSuccess }
         if activeClip != clips.active { activeClip = clips.active }
     }
 
@@ -231,6 +288,20 @@ final class AppModel: ObservableObject {
 
     func markAllSeen() {
         unseen.removeAll()
+        unseenIncidents.removeAll()
+    }
+
+    func isUnseen(_ incident: ServiceIncident) -> Bool { unseenIncidents.contains(incident.inboxItem.id) }
+
+    /// Opens only https://www.githubstatus.com/incidents/<id>; anything else is reported, not opened.
+    func open(_ incident: ServiceIncident) {
+        unseenIncidents.remove(incident.inboxItem.id)
+        guard let url = ServiceStatusLink.validated(incident.url) else {
+            blockedLinkNote = "Link blocked: only githubstatus.com incident links can be opened."
+            return
+        }
+        blockedLinkNote = nil
+        NSWorkspace.shared.open(url)
     }
 
     func isUnseen(_ item: InboxItem) -> Bool { unseen.contains(item.id) }
@@ -286,27 +357,50 @@ final class AppModel: ObservableObject {
         objectWillChange.send()
     }
 
+    func injectServiceIncident(_ impact: IncidentImpact) {
+        guard usingFixtures else { return }
+        serviceSimulator.injectIncident(impact: impact, now: clock())
+        refreshServiceStatus()
+    }
+
+    func escalateServiceIncidents() {
+        guard usingFixtures else { return }
+        serviceSimulator.escalateAll(now: clock())
+        refreshServiceStatus()
+    }
+
+    func resolveServiceIncidents() {
+        guard usingFixtures else { return }
+        serviceSimulator.resolveAll()
+        refreshServiceStatus()
+    }
+
     func simulateDisconnect() {
         guard usingFixtures else { return }
         simulator.disconnect()
+        serviceSimulator.connected = false
         refresh()
     }
 
     func simulateReconnect() {
         guard usingFixtures else { return }
         simulator.reconnect()
+        serviceSimulator.connected = true
         refresh()
     }
 
     func markStale() {
         guard usingFixtures else { return }
         engine.markStale()
+        serviceMonitor.markStale()
         sync(now: clock())
     }
 
     func resetBaseline() {
         engine.resetBaseline()
+        serviceMonitor.resetBaseline()
         unseen.removeAll()
+        unseenIncidents.removeAll()
         clips.clear()
         refresh()
     }
@@ -317,5 +411,12 @@ final class AppModel: ObservableObject {
     func showLoadingForSnapshot() {
         resetSession()
         sync(now: clock())
+    }
+}
+
+/// GitHub Status transport for snapshot renders: fails immediately, never touches the network.
+private struct OfflineStatusTransport: StatusTransport {
+    func get(_ request: URLRequest, maxBytes: Int) async throws -> (Data, HTTPURLResponse) {
+        throw StatusFetchError.transport("live status disabled in snapshot mode")
     }
 }

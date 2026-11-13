@@ -103,6 +103,31 @@ use only: it isn't notarized or Developer ID signed.
   render-check drives the live model (one gesture, merge, end, Reduce Motion) and writes
   `gesture-{64,128,256}.png` filmstrips and `near-touch-*.png` contact sheets.
 
+### GitHub service incidents (#11)
+- Source: GitHub's public Statuspage API, `https://www.githubstatus.com/api/v2/incidents/unresolved.json`,
+  fetched only when the data source is **GitHub CLI** (Fixtures mode uses demo incidents decoded from a
+  Statuspage-shaped sample). It needs no sign-in, so it never uses `gh` or any token; authenticated
+  GitHub calls stay with `gh`. URLSession is ephemeral with no cookies, credential store or cache;
+  only `https://www.githubstatus.com` is allowed, redirects are refused, requests time out after 15 s,
+  and bodies over 512 KB are abandoned while streaming. Decoding is strict: an unknown status or impact,
+  a non-Statuspage ID or an unreadable date fails the whole fetch rather than shortening the list.
+- Confirmed incident: status `investigating`, `identified` or `monitoring`, not resolved and not
+  `maintenance` impact. Scheduled maintenance and resolved incidents are never shown as incidents.
+- Quality is separate from the inbox's: *Checking GitHub status…* (unknown), *No active GitHub
+  incidents* (fresh, verified none), *N active GitHub incidents* (fresh), *GitHub status is stale*
+  (no success for 10 minutes) and *GitHub status unavailable: …* (failure). Only the fresh-none state
+  says there are no incidents; stale and failed checks keep last-known incidents dimmed.
+- Severity: impact `none`/`minor` → actionable (attention), `major`/`critical` → critical (urgent mood
+  while the data is fresh or stale, like a critical inbox item).
+- Events: deduped by incident ID. The first success, and the first success after an error or stale
+  period, record incidents silently; a new ID on a comparable poll animates once. Updates revise rows
+  silently. Escalation of a known incident to `major`/`critical` is announced once, as urgent (an outage
+  getting worse is worth an alert); de-escalation and re-escalation are silent. Resolved incidents leave
+  the list without animation, and a reopened ID is not announced again. Gestures follow the same snooze,
+  quiet-hours and Reduce Motion rules as inbox events; privacy mode hides incident names.
+- Rows open only `https://www.githubstatus.com/incidents/<id>` (lowercase alphanumeric ID, no query,
+  fragment, port or credentials).
+
 ### Settings
 Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`). Missing or invalid
 fields fall back to defaults, and values outside their range are clamped. They survive relaunch.
@@ -178,7 +203,13 @@ In Fixtures mode the inbox footer has a **Simulator** menu:
 | Partial data (toggle) | While it's on, every poll is partial: "Partial data", badge `N+`, assigned-issue fixture missing, no events. It stays on across the 30-second fixture poll until you turn it off. |
 | Mark data stale | "Stale · last updated …", rows dimmed |
 | Simulate disconnect / Reconnect | "Error: simulated disconnect" with rows dimmed. Reconnecting replays nothing, even an entitlement injected while disconnected. |
-| Reset baseline | Next snapshot re-seeds silently |
+| Reset baseline | Next snapshot re-seeds silently (inbox and service incidents) |
+| GitHub service incident → Inject minor / major | One new incident row; one gesture (major: urgent mood). |
+| GitHub service incident → Escalate incidents to major | Escalated incidents announce once, as urgent; repeating does nothing. |
+| GitHub service incident → Resolve all incidents | Rows leave quietly; "No active GitHub incidents". |
+
+Mark data stale and Simulate disconnect also apply to service incidents ("GitHub status is stale",
+"GitHub status unavailable: simulated disconnect", last-known incidents dimmed); reconnecting replays nothing.
 
 Launch arguments and environment variables:
 
