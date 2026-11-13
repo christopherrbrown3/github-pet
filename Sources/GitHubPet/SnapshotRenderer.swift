@@ -384,6 +384,15 @@ enum SnapshotRenderer {
         try? await Task.sleep(nanoseconds: 1_900_000_000)
         let ended = model.activeClip == nil
         model.markAllSeen()
+        // Snooze mid-gesture stops it at once (no tick wait); lifting snooze replays nothing.
+        model.injectEntitlementEvent()
+        let playing = model.activeClip != nil
+        model.snooze(.oneHour)
+        let stoppedAtOnce = playing && model.activeClip == nil
+        model.cancelSnooze()
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        let replayed = model.activeClip != nil
+        model.markAllSeen()
         model.settings.reducedMotion = true
         model.injectEntitlementEvent()
         let reducedPlays = model.activeClip != nil
@@ -395,6 +404,7 @@ enum SnapshotRenderer {
         lines.append("gesture: started=\(first != nil) state=\(first?.state.rawValue ?? "none") "
                      + "duration=\(format(first.map { CGFloat($0.endsAt.timeIntervalSince($0.startedAt)) })) "
                      + "second-event-merged=\(merged) ended=\(ended) reduced-motion-plays=\(reducedPlays)")
+        lines.append("gesture cancel: snooze-stops-at-once=\(stoppedAtOnce) replayed-after-unsnooze=\(replayed)")
 
         guard let pack = model.pack, let gesture = pack.attentionGesture else { return lines + ["gesture: no pack gesture"] }
         var queue = EventClipQueue()
@@ -445,7 +455,7 @@ enum SnapshotRenderer {
     private static func writeContactSheet(_ cases: [(name: String, art: [UInt8], labels: [UInt8], gap: CGFloat)],
                                           size: CGSize, scale: CGFloat, to url: URL) {
         let cellW = Int((size.width * scale).rounded(.up)), cellH = Int((size.height * scale).rounded(.up))
-        let caption = Int(14 * max(scale, 1)), columns = 8
+        let caption = Int(22 * max(scale, 1)), columns = 8
         let rows = (cases.count + columns - 1) / columns
         let width = columns * cellW, height = rows * (cellH + caption)
         guard width > 0, height > 0,
@@ -470,10 +480,14 @@ enum SnapshotRenderer {
                 context.setFillColor(color)
                 context.fill(CGRect(x: originX + x, y: top - caption - y - 1, width: 1, height: 1))
             } }
-            let text = NSAttributedString(string: "\(item.name) \(format(item.gap))pt",
-                                          attributes: [.font: NSFont.systemFont(ofSize: CGFloat(caption) * 0.7),
+            // Two short lines that fit the cell: pose (state/frame@angle) and count + gap.
+            let parts = item.name.split(separator: "/")
+            let pose = parts.dropLast().joined(separator: "/"), badge = parts.last.map(String.init) ?? ""
+            let text = NSAttributedString(string: "\(pose)\n\(badge)  \(format(item.gap)) pt",
+                                          attributes: [.font: NSFont.systemFont(ofSize: CGFloat(caption) * 0.36),
                                                        .foregroundColor: NSColor.black])
-            text.draw(at: CGPoint(x: originX + 2, y: top - caption + 2))
+            text.draw(with: CGRect(x: originX + 2, y: top - caption + 1, width: cellW - 4, height: caption - 2),
+                      options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine])
         }
         NSGraphicsContext.restoreGraphicsState()
         guard let image = context.makeImage(),
@@ -756,8 +770,8 @@ enum SnapshotRenderer {
         for edge in [screen.minX, screen.maxX] where abs(edge - region.minX) < 60 || abs(edge - region.maxX) < 60 {
             region = region.union(CGRect(x: edge - 24, y: region.minY, width: 48, height: region.height))
         }
-        region.size.height += 30   // caption strip
-        region.origin.y -= 30
+        region.size.height += 44   // caption strip (wraps to up to four lines)
+        region.origin.y -= 44
         let scale: CGFloat = 2
         guard let context = CGContext(data: nil, width: Int(region.width * scale), height: Int(region.height * scale),
                                       bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
@@ -825,7 +839,7 @@ enum SnapshotRenderer {
         NSGraphicsContext.current = graphics
         let text = NSAttributedString(string: caption + " (display edge: red; dashed: panel and tag band)",
                                       attributes: [.font: NSFont.systemFont(ofSize: 9), .foregroundColor: NSColor.black])
-        let strip = CGRect(x: region.minX, y: region.minY, width: region.width, height: 30)
+        let strip = CGRect(x: region.minX, y: region.minY, width: region.width, height: 44)
         NSColor.white.setFill()
         strip.fill()
         text.draw(with: strip.insetBy(dx: 6, dy: 3), options: [.usesLineFragmentOrigin])

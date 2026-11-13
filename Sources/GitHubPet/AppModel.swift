@@ -21,10 +21,9 @@ final class AppModel: ObservableObject {
             store.save(settings)
             if settings.dataSource != oldValue.dataSource { switchSource() }
             if settings.privacyMode && !oldValue.privacyMode { detailsRevealed = false }
-            if settings.reducedMotion && !oldValue.reducedMotion {
-                clips.clear()
-                activeClip = nil
-            }
+            // Snooze, quiet hours or Reduce Motion turned on: stop a playing gesture now, not at
+            // the next tick. Nothing is re-queued, so turning them off later replays nothing.
+            if GestureCancellation.shouldCancel(from: oldValue, to: settings, at: clock()) { cancelGesture() }
         }
     }
 
@@ -71,6 +70,14 @@ final class AppModel: ObservableObject {
 
         tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
+        }
+        reduceMotionObserver = SystemNotificationObserver(
+            center: NSWorkspace.shared.notificationCenter,
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification
+        ) { [weak self] in
+            Task { @MainActor in
+                if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { self?.cancelGesture() }
+            }
         }
         switchSource()
         if let delay = options.injectEventAfter {
@@ -195,6 +202,14 @@ final class AppModel: ObservableObject {
         clips.enqueue(events, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
         sync(now: date)
     }
+
+    private func cancelGesture() {
+        clips.clear()
+        activeClip = nil
+    }
+
+    /// System Reduce Motion: stop a playing gesture the moment it is switched on.
+    private var reduceMotionObserver: SystemNotificationObserver?
 
     private func tick() {
         let date = clock()
