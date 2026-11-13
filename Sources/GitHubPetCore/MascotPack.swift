@@ -108,8 +108,36 @@ public struct MascotPack: Equatable, Sendable {
         (poseOutlines[state] ?? []).map(\.columnTops)
     }
 
-    /// Every pose's contour, for the fixed lane height.
-    public var allContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) }
+    /// The attention gesture, when this pack's attention state has the frames it uses.
+    public var attentionGesture: AttentionGesture? {
+        frameURLs(for: .attention).count >= AttentionGesture.friendlyDoubleWave.frameCount
+            ? AttentionGesture.friendlyDoubleWave : nil
+    }
+
+    /// Outline points of the attention frames the gesture leans (precomputed at load; rotating
+    /// them for a drawn pose is point math, not pixel work).
+    public var leaningOutlines: [[CGPoint]] = []
+
+    /// Every leaning frame's contour over the whole ±lean range: for the fixed lane height and the
+    /// count's movement range.
+    public var leaningContours: [[Int?]] = []
+
+    /// Contour of a drawn pose: upright from `poseContours`, or the leaning attention frame
+    /// rotated by exactly the pose's angle (callers add `MascotLayout.leanReserve` for it).
+    public func contour(for pose: MascotPose) -> [Int?]? {
+        if pose.angle != 0, pose.state == .attention, let frame = pose.frame, leaningOutlines.indices.contains(frame) {
+            return ArtProfile.rotatedContour(leaningOutlines[frame], canvas: MascotPack.canvasSize, from: pose.angle,
+                                             to: pose.angle, pivot: AttentionGesture.pivot, margin: 0)
+        }
+        let contours = poseContours(pose.state)
+        let index = pose.frame.map { $0 + 1 } ?? 0
+        return contours.indices.contains(index) ? contours[index] : nil
+    }
+
+    /// Every pose's contour, upright and leaning, for the fixed lane height and the count's range.
+    public var allContours: [[Int?]] {
+        MascotState.allCases.flatMap(poseContours) + leaningContours
+    }
 
     /// Outline across every state.
     public var artProfile: ArtProfile? { ArtProfile.union(MascotState.allCases.compactMap { artProfiles[$0] }) }
@@ -143,6 +171,22 @@ public struct MascotPack: Equatable, Sendable {
             // #27): the #29 lean will re-aim once at clip start/end using `sweptAttentionProfile`.
             pack.poseOutlines[state] = images.compactMap { ArtProfile(png: $0, alphaThreshold: 0) }
             pack.artProfiles[state] = ArtProfile.union(pack.poseOutlines[state] ?? [])
+            if state == .attention, let gesture = pack.attentionGesture {
+                // poseOutlines are static first, then frames.
+                let frames = Array((pack.poseOutlines[.attention] ?? []).dropFirst().prefix(gesture.frameCount))
+                pack.leaningOutlines = frames.map(\.outlinePoints)
+                // Each leaning frame swept over the whole lean, in 1° bands so the lane height and the
+                // count's range are known without a full sweep per angle.
+                // Plus exact contours every 0.25°, so the count's lowest tracked position is known too.
+                pack.leaningContours = pack.leaningOutlines.flatMap { points in
+                    stride(from: -gesture.maxAngle, to: gesture.maxAngle, by: 1).map {
+                        ArtProfile.rotatedContour(points, canvas: canvasSize, from: $0, to: $0 + 1,
+                                                  pivot: AttentionGesture.pivot, step: 0.05)
+                    } + stride(from: -gesture.maxAngle, through: gesture.maxAngle, by: 0.25).map {
+                        ArtProfile.rotatedContour(points, canvas: canvasSize, from: $0, to: $0, pivot: AttentionGesture.pivot)
+                    }
+                }
+            }
         }
         return .success(pack)
     }

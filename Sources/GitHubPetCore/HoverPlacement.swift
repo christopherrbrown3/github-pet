@@ -101,6 +101,56 @@ public struct ArtProfile: Equatable, Sendable {
         return ArtProfile(canvas: canvas, rows: (0..<canvas).map { low[$0] <= high[$0] ? low[$0]...high[$0] : nil })
     }
 
+    /// Points on this art's outline that bound it from above and the sides (canvas pixels, y
+    /// down): each column's top edge, the steps between columns and each row's outer ends, every
+    /// half pixel. Rotating these finds the top contour of the rotated art.
+    public var outlinePoints: [CGPoint] {
+        var points: [CGPoint] = []
+        for (column, top) in columnTops.enumerated() {
+            guard let top else { continue }
+            for dx in [0.0, 0.5, 1.0] { points.append(CGPoint(x: Double(column) + dx, y: Double(top))) }
+            let next = column + 1 < canvas ? columnTops[column + 1] : nil
+            let lower = max(top, next ?? (rows.lastIndex { $0 != nil } ?? top) + 1)
+            var y = Double(min(top, next ?? top))
+            while y <= Double(lower) { points.append(CGPoint(x: Double(column + 1), y: y)); y += 0.5 }
+        }
+        for (row, span) in rows.enumerated() {
+            guard let span else { continue }
+            for y in [Double(row), Double(row) + 0.5, Double(row + 1)] {
+                points.append(CGPoint(x: Double(span.lowerBound), y: y))
+                points.append(CGPoint(x: Double(span.upperBound + 1), y: y))
+            }
+        }
+        return points
+    }
+
+    /// Top contour of art with these outline points rotated by every angle in `from...to` degrees
+    /// (sampled every `step`°) about `pivot`, grown by `margin` pixels. Plain point math: cheap
+    /// enough to run for each drawn pose.
+    public static func rotatedContour(_ points: [CGPoint], canvas: Int, from: Double, to: Double, pivot: CGPoint,
+                                      margin: Int = 1, step: Double = 0.1) -> [Int?] {
+        var tops = [Int](repeating: .max, count: canvas)
+        let px = Double(pivot.x), py = Double(pivot.y)
+        var angles = Array(stride(from: from, through: to, by: step))
+        if angles.last != to { angles.append(to) }
+        for degrees in angles {
+            let angle = degrees * .pi / 180, c = cos(angle), s = sin(angle)
+            for point in points {
+                let x = Double(point.x), y = Double(point.y)
+                let rx = px + (x - px) * c - (y - py) * s, ry = py + (x - px) * s + (y - py) * c
+                let column = Int(rx.rounded(.down)), row = Int(ry.rounded(.down)) - margin
+                for col in (column - margin)...(column + margin) where (0..<canvas).contains(col) {
+                    tops[col] = min(tops[col], max(row, 0))
+                }
+            }
+        }
+        return tops.map { $0 == .max ? nil : $0 }
+    }
+
+    public func rotatedContour(from: Double, to: Double, pivot: CGPoint, margin: Int = 1, step: Double = 0.1) -> [Int?] {
+        Self.rotatedContour(outlinePoints, canvas: canvas, from: from, to: to, pivot: pivot, margin: margin, step: step)
+    }
+
     /// The native placeholder figure's outline, as fractions of its square.
     public static let placeholder: ArtProfile = {
         let canvas = 256
@@ -152,6 +202,12 @@ public struct MascotLayout: Equatable, Sendable {
     public static let rasterReserve: CGFloat = 0.75
     /// Clearance the layout keeps between each capsule and the art's contour.
     public static var nearTouchGap: CGFloat { nearTouchTarget + rasterReserve }
+    /// Extra clearance while the art leans: a rotated image is resampled, which widens its
+    /// antialiased edge by about a backing pixel (measured: 0.5 pt is enough at 2×; at 1× the
+    /// fringe consumed ~1.9 pt at 64 pt, so 1.5 pt there).
+    public static func leanReserve(displayScale: CGFloat) -> CGFloat { displayScale >= 2 ? 0.5 : 1.5 }
+    /// The larger lean reserve, used for the fixed lane so the panel never depends on the screen.
+    public static var maxLeanReserve: CGFloat { leanReserve(displayScale: 1) }
 
     private struct Stop {
         var side, countHeight, countFont, countPadding, demoHeight, demoFont, demoPadding, inset, gap, demoWidth,
@@ -186,11 +242,13 @@ public struct MascotLayout: Equatable, Sendable {
 
         let poses = contours.isEmpty ? [[Int?](repeating: 0, count: 256)] : contours
         // The smallest whole-point L (no fractional panel heights; the count's tracking takes up
-        // the rest) at which the widest count, at the top, and DEMO clear every pose.
+        // the rest) at which the widest count, at the top, and DEMO clear every pose, leaning ones
+        // included with their extra reserve (upright poses then track back down to the normal gap).
         let widest = countFrame(width: widestCountWidth, offset: 0), demo = demoFrame
+        let needed = Self.nearTouchGap + Self.maxLeanReserve
         var lane: CGFloat = 0
-        while lane < count.height + Self.nearTouchGap + 1, poses.contains(where: { contour in
-            clearance(contour, widest, lane: lane) < Self.nearTouchGap || clearance(contour, demo, lane: lane) < Self.nearTouchGap
+        while lane < count.height + needed + 1, poses.contains(where: { contour in
+            clearance(contour, widest, lane: lane) < needed || clearance(contour, demo, lane: lane) < needed
         }) {
             lane += 1
         }
@@ -221,8 +279,8 @@ public struct MascotLayout: Equatable, Sendable {
 
     /// How far the count of `width` moves down for a pose with this contour, so its capsule sits
     /// `nearTouchGap` from the art (nearest distance, not just vertically).
-    public func countOffset(contour: [Int?], width: CGFloat) -> CGFloat {
-        let gap = Self.nearTouchGap
+    public func countOffset(contour: [Int?], width: CGFloat, leaning: Bool = false, displayScale: CGFloat = 2) -> CGFloat {
+        let gap = Self.nearTouchGap + (leaning ? Self.leanReserve(displayScale: displayScale) : 0)
         func clear(_ offset: CGFloat) -> CGFloat { clearance(contour, countFrame(width: width, offset: offset), lane: laneHeight) }
         guard clear(0) > gap else { return 0 }
         // Clearance shrinks as the capsule moves down; find the offset where it reaches the gap.
@@ -262,7 +320,8 @@ public struct MascotLayout: Equatable, Sendable {
     public var labelRects: [CGRect] {
         let height = panelSize.height
         let demo = demoFrame
-        let depth = maxCountOffset + count.height
+        // Half a point of slack for lean angles between the sampled ones.
+        let depth = maxCountOffset + 0.5 + count.height
         return [CGRect(x: demo.minX, y: height - demo.maxY, width: demo.width, height: demo.height),
                 CGRect(x: countSlotX, y: height - depth, width: widestCountWidth, height: depth)]
     }

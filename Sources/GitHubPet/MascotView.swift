@@ -8,6 +8,7 @@ import SwiftUI
 struct MascotView: View {
 
     @ObservedObject var model: AppModel
+    @Environment(\.displayScale) private var displayScale
     /// Render-check only: draw a fixed pose and badge, and only some layers.
     var poseOverride: MascotPose?
     var badgeOverride: String?
@@ -21,7 +22,8 @@ struct MascotView: View {
             if reduced {
                 scene(at: model.clock(), reduced: true, layout: layout)
             } else {
-                TimelineView(.animation(minimumInterval: 1.0 / 8.0)) { context in
+                // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
+                TimelineView(.animation(minimumInterval: model.activeClip == nil ? 1.0 / 8.0 : 1.0 / 30.0)) { context in
                     scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
                 }
             }
@@ -39,12 +41,17 @@ struct MascotView: View {
         let badge = badgeOverride ?? model.badge
         let countWidth = badge.map { layout.count.width(text: Tag.textWidth($0, role: .count, size: layout.count.fontSize)) }
         let offset = countWidth.flatMap { width in
-            model.contour(for: pose).map { layout.countOffset(contour: $0, width: width) }
+            model.contour(for: pose).map {
+                layout.countOffset(contour: $0, width: width, leaning: pose.angle != 0, displayScale: displayScale)
+            }
         } ?? 0
         let demo = layout.demoFrame
         return ZStack(alignment: .topLeading) {
             figure(pose: pose, date: date, reduced: reduced)
                 .frame(width: layout.artSide, height: layout.artSide)
+                // Art-layer lean about the ground anchor (#29); labels stay upright.
+                .rotationEffect(.degrees(pose.angle),
+                                anchor: UnitPoint(x: AttentionGesture.pivot.x / 256, y: AttentionGesture.pivot.y / 256))
                 .offset(x: layout.artFrame.minX, y: layout.laneHeight)
                 .opacity(drawsArt ? 1 : 0)
             if model.isDemo, drawsLabels {
@@ -69,7 +76,7 @@ struct MascotView: View {
 
     private func pose(at date: Date, reduced: Bool) -> MascotPose {
         MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
-                            idleEpoch: .distantPast) { state in
+                            idleEpoch: .distantPast, gesture: model.pack?.attentionGesture) { state in
             model.pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
         }
     }

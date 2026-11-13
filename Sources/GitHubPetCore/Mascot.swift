@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Pack states agreed with design (pack schema v1).
@@ -129,11 +130,11 @@ public enum AccessibilityText {
 
 /// One-shot event clips: at most one active clip and a short pending queue. Critical
 /// events jump the queue; duplicate IDs are ignored; clips never loop.
+/// At most one event gesture at a time (#29). A batch of new events plays one gesture, led by its
+/// most severe event; events arriving while it plays merge into it (no restart, no queue, no
+/// backlog). Only an urgent batch preempts an attention gesture, and the interrupted gesture is
+/// not replayed. After a gesture ends, a later batch may start a new one.
 public struct EventClipQueue: Sendable {
-    public static let maxPending = 4
-    /// Long enough for the v1 pack's one-shot sequences (1.9 s) and within the 0.8–2.0 s budget.
-    public static let clipDuration: TimeInterval = 2.0
-
     public struct Clip: Equatable, Sendable {
         public var event: InboxEvent
         public var startedAt: Date
@@ -142,49 +143,104 @@ public struct EventClipQueue: Sendable {
         init(event: InboxEvent, startedAt: Date) {
             self.event = event
             self.startedAt = startedAt
-            self.endsAt = startedAt.addingTimeInterval(EventClipQueue.clipDuration)
+            self.endsAt = startedAt.addingTimeInterval(EventClipQueue.duration(of: event.severity == .critical ? .urgent : .attention))
         }
 
         /// Pack state used to play this clip.
         public var state: MascotState { event.severity == .critical ? .urgent : .attention }
     }
 
+    /// Attention plays the finite double wave (1.9 s); urgent keeps its 2.0 s one-shot.
+    public static func duration(of state: MascotState) -> TimeInterval {
+        state == .attention ? TimeInterval(AttentionGesture.friendlyDoubleWave.durationMs) / 1000 : 2.0
+    }
+
     public private(set) var active: Clip?
-    public private(set) var pending: [InboxEvent] = []
 
     public init() {}
 
-    /// Queue new events. With motion reduced or alerts disallowed nothing is queued:
-    /// the inbox and static mood still show the change.
+    /// Start a gesture for a batch of new events, or merge them into the one playing. With motion
+    /// reduced or alerts disallowed nothing plays: the inbox and static mood still show the change,
+    /// and nothing is replayed later.
     public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool) {
-        guard playable else { return }
-        for event in events {
-            if active?.event.item.id == event.item.id
-                || pending.contains(where: { $0.item.id == event.item.id }) { continue }
-            pending.append(event)
-        }
-        pending.sort { $0.severity > $1.severity }
-        if pending.count > Self.maxPending { pending.removeLast(pending.count - Self.maxPending) }
-        if let current = active, let first = pending.first, first.severity > current.event.severity {
-            pending.removeFirst()
-            active = Clip(event: first, startedAt: now)
-        }
         tick(now: now)
+        guard playable, let top = events.map(\.severity).max(),
+              let lead = events.first(where: { $0.severity == top }) else { return }
+        if let current = active {
+            if lead.severity > current.event.severity { active = Clip(event: lead, startedAt: now) }
+            return
+        }
+        active = Clip(event: lead, startedAt: now)
     }
 
     /// Advance time; returns the clip that should be showing, if any.
     @discardableResult
     public mutating func tick(now: Date) -> Clip? {
         if let current = active, now >= current.endsAt { active = nil }
-        if active == nil, !pending.isEmpty {
-            active = Clip(event: pending.removeFirst(), startedAt: now)
-        }
         return active
     }
 
     public mutating func clear() {
         active = nil
-        pending.removeAll()
+    }
+}
+
+/// The attention "friendly double wave" (design #29, docs/design/notifications/
+/// attention-storyboard.json): existing attention frames 00/01/02/01/02/03 with an art-layer lean
+/// of 0/−5/+5/−5/+5/0° about the ground anchor [128, 232]. Each step's angle is reached at its
+/// start, eased with cubic Bezier (0.2, 0.8, 0.2, 1) over the preceding step; the last 600 ms are
+/// still. Finite: 1.9 s, no loop.
+public struct AttentionGesture: Equatable, Sendable {
+    public struct Step: Equatable, Sendable {
+        public var startMs: Int
+        public var frame: Int
+        public var angle: Double
+    }
+
+    public var steps: [Step]
+    public var durationMs: Int
+    /// Rotation pivot in canvas pixels.
+    public static let pivot = CGPoint(x: 128, y: 232)
+
+    public static let friendlyDoubleWave = AttentionGesture(steps: [
+        Step(startMs: 0, frame: 0, angle: 0), Step(startMs: 150, frame: 1, angle: -5),
+        Step(startMs: 400, frame: 2, angle: 5), Step(startMs: 600, frame: 1, angle: -5),
+        Step(startMs: 850, frame: 2, angle: 5), Step(startMs: 1050, frame: 3, angle: 0),
+        Step(startMs: 1300, frame: 3, angle: 0),
+    ], durationMs: 1900)
+
+    public var maxAngle: Double { steps.map { abs($0.angle) }.max() ?? 0 }
+    /// Attention frames the gesture uses (0...3).
+    public var frameCount: Int { (steps.map(\.frame).max() ?? 0) + 1 }
+
+    private func step(atMs t: Double) -> Int {
+        steps.lastIndex { Double($0.startMs) <= t } ?? 0
+    }
+
+    public func frame(atMs t: Double) -> Int { steps[step(atMs: max(0, t))].frame }
+
+    public func angle(atMs t: Double) -> Double {
+        let index = step(atMs: max(0, t))
+        guard index + 1 < steps.count else { return steps[index].angle }
+        let from = steps[index], to = steps[index + 1]
+        let progress = (t - Double(from.startMs)) / Double(to.startMs - from.startMs)
+        return from.angle + (to.angle - from.angle) * Self.ease(min(max(progress, 0), 1))
+    }
+
+    /// CSS-style cubic Bezier (0.2, 0.8, 0.2, 1): y for a given x in 0...1.
+    public static func ease(_ x: Double) -> Double {
+        if x <= 0 { return 0 }
+        if x >= 1 { return 1 }
+        let (x1, y1, x2, y2) = (0.2, 0.8, 0.2, 1.0)
+        func bezier(_ u: Double, _ a: Double, _ b: Double) -> Double {
+            3 * (1 - u) * (1 - u) * u * a + 3 * (1 - u) * u * u * b + u * u * u
+        }
+        var low = 0.0, high = 1.0
+        for _ in 0..<40 {
+            let mid = (low + high) / 2
+            if bezier(mid, x1, x2) < x { low = mid } else { high = mid }
+        }
+        return bezier((low + high) / 2, y1, y2)
     }
 }
 
@@ -218,11 +274,14 @@ public struct MascotPose: Equatable, Sendable {
     public var frame: Int?
     /// Seconds into the active event clip, if one is playing.
     public var clipElapsed: TimeInterval?
+    /// Art-layer lean in degrees about the ground anchor (attention gesture); positive leans right.
+    public var angle: Double
 
-    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?) {
+    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0) {
         self.state = state
         self.frame = frame
         self.clipElapsed = clipElapsed
+        self.angle = angle
     }
 }
 
@@ -234,11 +293,19 @@ public struct MascotPose: Equatable, Sendable {
 ///   change alone (e.g. while snoozed, when clips are suppressed) never animates.
 /// - Reduced motion always shows the mood's static pose.
 public enum MascotAnimator {
+    /// - Parameter gesture: the attention gesture to play when the pack supports it (its attention
+    ///   state has the frames it uses); otherwise attention plays its manifest one-shot.
     public static func pose(mood: MascotState, clip: EventClipQueue.Clip?, now: Date, reducedMotion: Bool,
-                            idleEpoch: Date, durationsMs: (MascotState) -> [Int]) -> MascotPose {
+                            idleEpoch: Date, gesture: AttentionGesture? = nil,
+                            durationsMs: (MascotState) -> [Int]) -> MascotPose {
         if reducedMotion { return MascotPose(state: mood, frame: nil, clipElapsed: nil) }
         if let clip, now >= clip.startedAt, now < clip.endsAt {
             let elapsed = now.timeIntervalSince(clip.startedAt)
+            if clip.state == .attention, let gesture {
+                let ms = elapsed * 1000
+                return MascotPose(state: .attention, frame: gesture.frame(atMs: ms), clipElapsed: elapsed,
+                                  angle: gesture.angle(atMs: ms))
+            }
             let frame = FrameClock.frameIndex(durationsMs: durationsMs(clip.state), loop: false,
                                               elapsedMs: Int(elapsed * 1000), reducedMotion: false)
             return MascotPose(state: clip.state, frame: frame, clipElapsed: elapsed)

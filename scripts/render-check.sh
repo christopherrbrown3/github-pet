@@ -93,14 +93,21 @@ done <<< "$hover_lines"
 for size in 64 128 256; do
   check "labels fit at $size" "^tags @$size: .* fits=true"
 done
+check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
+  '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
+for png in gesture-64 gesture-128 gesture-256 near-touch-64-1x near-touch-128-2x near-touch-256-2x; do
+  [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+done
 # Near-touch (#28): the real MascotView rasterised at 1x and 2x for every pose and count text;
-# never an overlapping pixel, and the nearest gap between 0.5 and 2.5 pt (target about 1 pt).
+# never an overlapping pixel, and the nearest gap (to any pixel with alpha > 0, antialiased
+# fringe included) between 0.5 and 4 pt. Upright poses target about 1 pt; while the attention art
+# leans it keeps extra room for resampling (0.5 pt at 2x, 1.5 pt at 1x), reported separately.
 for size in 64 128 256; do
   for scale in 1x 2x; do
     line=$(grep -E "^near-touch @$size $scale: " "$report" || true)
     low=$(sed -E 's/.* gap-min=([0-9.]+) .*/\1/' <<< "$line"); high=$(sed -E 's/.* gap-max=([0-9.]+) .*/\1/' <<< "$line")
     if [[ $line == *" empty-renders=0 "* && $line == *" overlapping-pixels=0 "* && $low != none ]] \
-        && (( low >= 0.5 && high <= 2.5 )); then
+        && (( low >= 0.5 && high <= 4.0 )); then
       echo "ok   near-touch $size $scale: gap $low-$high pt, no overlap"
     else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
   done
@@ -116,7 +123,7 @@ check_in 04-partial "partial AX quality"        'at least 3 items, some sources 
 check_in 00-loading "loading count unknown"     '^state=Loading… badge=\? rows=0'
 check_in 10-urgent-static "urgent fixture"            'mood=urgent'
 check_in 09-attention-static "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
-check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x148 pt'
+check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x[0-9]+ pt'
 check_in 11-gh-override "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \

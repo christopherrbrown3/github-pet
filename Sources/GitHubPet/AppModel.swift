@@ -119,11 +119,7 @@ final class AppModel: ObservableObject {
     private var layouts: [Double: MascotLayout] = [:]
 
     /// Top contour of the pose being drawn (nil for the placeholder, whose labels stay above it).
-    func contour(for pose: MascotPose) -> [Int?]? {
-        let contours = pack?.poseContours(pose.state) ?? []
-        let index = pose.frame.map { $0 + 1 } ?? 0
-        return contours.indices.contains(index) ? contours[index] : nil
-    }
+    func contour(for pose: MascotPose) -> [Int?]? { pack?.contour(for: pose) }
 
     /// Mascots below this size get the compact two-line hover summary (#27).
     static let compactHoverBelow: Double = 80

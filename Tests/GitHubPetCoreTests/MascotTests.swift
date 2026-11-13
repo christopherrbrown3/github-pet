@@ -114,31 +114,90 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
         var queue = EventClipQueue()
         queue.enqueue([event("a")], now: t0, playable: true)
         #expect(queue.active?.event.item.id == "a")
-        #expect(queue.tick(now: t0 + EventClipQueue.clipDuration) == nil)
+        #expect(queue.tick(now: t0 + EventClipQueue.duration(of: .attention)) == nil)
         #expect(queue.tick(now: t0 + 60) == nil)
     }
 
-    @Test func notPlayableQueuesNothing() {
+    @Test func notPlayableQueuesNothingAndNeverReplays() {
         var queue = EventClipQueue()
         queue.enqueue([event("a")], now: t0, playable: false)
         #expect(queue.active == nil)
-        #expect(queue.pending.isEmpty)
+        #expect(queue.tick(now: t0 + 60) == nil, "a suppressed batch is not played later")
     }
 
-    @Test func duplicatesIgnoredAndPendingBounded() {
+    @Test func oneBatchIsOneGesture() {
         var queue = EventClipQueue()
-        queue.enqueue([event("a"), event("a")], now: t0, playable: true)
-        queue.enqueue([event("a")], now: t0, playable: true)
-        #expect(queue.pending.isEmpty)
         queue.enqueue((1...10).map { event("e\($0)") }, now: t0, playable: true)
-        #expect(queue.pending.count == EventClipQueue.maxPending)
+        #expect(queue.active?.startedAt == t0)
+        #expect(queue.tick(now: t0 + 1.9) == nil, "no backlog of clips after the gesture")
     }
 
-    @Test func criticalPreemptsActionable() {
+    @Test func arrivalsDuringAGestureMergeWithoutRestarting() {
+        var queue = EventClipQueue()
+        queue.enqueue([event("a")], now: t0, playable: true)
+        queue.enqueue([event("b"), event("c")], now: t0 + 1, playable: true)
+        #expect(queue.active?.event.item.id == "a" && queue.active?.startedAt == t0)
+        #expect(queue.tick(now: t0 + 1.9) == nil)
+        // A later, separate batch after the gesture ends plays normally.
+        queue.enqueue([event("d")], now: t0 + 5, playable: true)
+        #expect(queue.active?.startedAt == t0 + 5)
+    }
+
+    @Test func urgentPreemptsAndTheInterruptedWaveIsNotReplayed() {
         var queue = EventClipQueue()
         queue.enqueue([event("a")], now: t0, playable: true)
         queue.enqueue([event("boom", .ciFailure)], now: t0 + 0.5, playable: true)
-        #expect(queue.active?.event.item.id == "boom")
+        #expect(queue.active?.event.item.id == "boom" && queue.active?.state == .urgent)
+        #expect(queue.tick(now: t0 + 0.5 + EventClipQueue.duration(of: .urgent)) == nil, "attention is not replayed")
+        // An attention batch never preempts urgent.
+        queue.enqueue([event("x", .ciFailure)], now: t0 + 10, playable: true)
+        queue.enqueue([event("y")], now: t0 + 10.5, playable: true)
+        #expect(queue.active?.event.item.id == "x")
+    }
+}
+
+@Suite struct AttentionGestureTests {
+    private let gesture = AttentionGesture.friendlyDoubleWave
+
+    @Test func storyboardFramesAndAngles() {
+        // (time ms, frame, angle) at each step start: angle reached exactly there.
+        let expected: [(Double, Int, Double)] = [(0, 0, 0), (150, 1, -5), (400, 2, 5), (600, 1, -5),
+                                                 (850, 2, 5), (1050, 3, 0), (1300, 3, 0), (1899, 3, 0)]
+        for (ms, frame, angle) in expected {
+            #expect(gesture.frame(atMs: ms) == frame, "frame at \(ms)")
+            #expect(abs(gesture.angle(atMs: ms) - angle) < 0.001, "angle at \(ms)")
+        }
+        #expect(gesture.durationMs == 1900 && gesture.maxAngle == 5)
+    }
+
+    @Test func leanIsContinuousBoundedAndEased() {
+        var previous = gesture.angle(atMs: 0)
+        for ms in stride(from: 1.0, through: 1900, by: 1) {
+            let angle = gesture.angle(atMs: ms)
+            #expect(abs(angle) <= 5.0001)
+            #expect(abs(angle - previous) < 0.6, "no snap at \(ms) ms")
+            previous = angle
+        }
+        // Ease-out: most of the motion early in each interval.
+        #expect(AttentionGesture.ease(0) == 0 && abs(AttentionGesture.ease(1) - 1) < 0.0001)
+        #expect(AttentionGesture.ease(0.5) > 0.8)
+    }
+
+    @Test func animatorPlaysTheGestureAndReducedMotionIsStatic() {
+        var queue = EventClipQueue()
+        queue.enqueue([InboxEvent(item: item("a", .entitlement))], now: t0, playable: true)
+        let clip = queue.active!
+        let durations: (MascotState) -> [Int] = { _ in [300, 400, 400, 800] }
+        let leaning = MascotAnimator.pose(mood: .attention, clip: clip, now: t0 + 0.401, reducedMotion: false,
+                                          idleEpoch: t0, gesture: gesture, durationsMs: durations)
+        // Just past the +5° target, already easing back toward −5°.
+        #expect(leaning.frame == 2 && leaning.angle > 4.5 && leaning.angle <= 5)
+        let still = MascotAnimator.pose(mood: .attention, clip: clip, now: t0 + 0.4, reducedMotion: true,
+                                        idleEpoch: t0, gesture: gesture, durationsMs: durations)
+        #expect(still == MascotPose(state: .attention, frame: nil, clipElapsed: nil, angle: 0))
+        let after = MascotAnimator.pose(mood: .attention, clip: clip, now: t0 + 1.95, reducedMotion: false,
+                                        idleEpoch: t0, gesture: gesture, durationsMs: durations)
+        #expect(after.frame == nil && after.angle == 0, "finite: settles on the static pose")
     }
 }
 
@@ -208,7 +267,7 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
     @Test func clipLastsTwoSecondsFromItsStart() {
         let c = clip("a", at: t0)
         #expect(c.startedAt == t0)
-        #expect(c.endsAt == t0 + 2.0)
+        #expect(c.endsAt == t0 + 1.9, "attention: the 1.9 s double wave")
         #expect(c.state == .attention)
         #expect(clip("b", at: t0, .ciFailure).state == .urgent)
     }

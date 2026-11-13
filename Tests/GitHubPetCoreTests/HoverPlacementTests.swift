@@ -59,7 +59,9 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
             let layout = MascotLayout(artSide: side, contours: pack.allContours)
             // Never tighter than design; at most the larger raster reserve (0.75 vs 0.25 pt) plus
             // rounding up to a whole point above it.
-            #expect(layout.laneHeight >= lane && layout.laneHeight <= lane + 1.5,
+            // Never tighter than design's fixed envelope; above it by at most the reserves (raster
+            // +0.5, 1× lean +1.5), whole-point rounding and the lean bands' pixel of margin.
+            #expect(layout.laneHeight >= lane && layout.laneHeight <= lane + 4.5,
                     "lane \(layout.laneHeight) vs design \(lane) at \(side)")
         }
         let gap = MascotLayout.nearTouchGap
@@ -212,6 +214,59 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
             guard let span else { continue }
             let outer = try #require(swept.rows[row])
             #expect(outer.lowerBound <= span.lowerBound && outer.upperBound >= span.upperBound, "row \(row)")
+        }
+    }
+
+    @Test func leaningCountNeverCrossesTheExactlyRotatedArt() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let gesture = try #require(pack.attentionGesture)
+        let frames = Array(try #require(pack.poseOutlines[.attention]).dropFirst().prefix(gesture.frameCount))
+        for side in [CGFloat(64), 128, 256] {
+            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            for (index, outline) in frames.enumerated() {
+                // Between bucket centres too: every 0.05°.
+                for angle in stride(from: -5.0, through: 5.0, by: 0.05) {
+                    // The rotated pixels themselves (no margin) at this exact angle.
+                    let exact = outline.rotatedContour(from: angle, to: angle, pivot: AttentionGesture.pivot, margin: 0)
+                    let pose = MascotPose(state: .attention, frame: index, clipElapsed: 0, angle: angle == 0 ? 0.0001 : angle)
+                    let bucket = try #require(pack.contour(for: pose))   // what the app uses for this pose
+                    for column in 0..<256 {
+                        if let truth = exact[column] {
+                            #expect((bucket[column] ?? .max) <= truth, "bucket covers the exact contour")
+                        }
+                    }
+                    for width in [layout.count.height, layout.widestCountWidth] {
+                        let offset = layout.countOffset(contour: bucket, width: width, leaning: true, displayScale: 2)
+                        let clear = layout.clearance(exact, layout.countFrame(width: width, offset: offset),
+                                                     lane: layout.laneHeight)
+                        #expect(clear >= MascotLayout.nearTouchGap - 0.001, "frame \(index) at \(angle)° \(side) pt")
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func hoverDuringTheGestureClearsTheSweptLean() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let swept = try #require(pack.sweptAttentionProfile)
+        let poses = try #require(pack.poseProfiles[.attention])
+        for side in [CGFloat(64), 128, 256] {
+            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            func place(_ popover: CGSize) -> HoverPlacement {
+                HoverPlacement.place(art: swept, poses: poses, layout: layout, popover: popover,
+                                     panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
+            }
+            // As the app does: full summary if it meets the target, else compact (always below 80).
+            let full = side < 80 ? nil : place(tall)
+            let placement = full?.meetsTarget == true ? full! : place(short)
+            let popover = full?.meetsTarget == true ? tall : short
+            #expect(placement.laneClear, "labels clear at \(side)")
+            let rect = window(placement, popover)
+            #expect(pixels(swept, layout).allSatisfy { !$0.intersects(rect) }, "no lean angle reaches the popover at \(side)")
         }
     }
 

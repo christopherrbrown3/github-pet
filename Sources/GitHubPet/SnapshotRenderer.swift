@@ -63,7 +63,7 @@ enum SnapshotRenderer {
             model.settings.mascotSize = saved
         }
         report.append("## near-touch labels (real MascotView rasterised; art and labels drawn separately)")
-        report += await nearTouchMeasurements(model: model)
+        report += await nearTouchMeasurements(model: model, directory: directory)
         report.append("## hover placement (idle)")
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
@@ -107,6 +107,9 @@ enum SnapshotRenderer {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
         }
         model.settings.privacyMode = true
+        // Late in the scenario: the probe injects fixture events, which would change earlier counts.
+        report.append("## attention gesture (#29, live model)")
+        report += await gestureProbe(model: model, directory: directory)
         // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
         // is deterministic and can never contain live GitHub data.
         if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
@@ -293,7 +296,7 @@ enum SnapshotRenderer {
     /// each size, backing scale, pose (static and every frame of every state) and count text, the
     /// real MascotView is drawn twice (art only, labels only) and the nearest pair of visible
     /// pixels is found. Reports the range and any overlapping pixels.
-    private static func nearTouchMeasurements(model: AppModel) async -> [String] {
+    private static func nearTouchMeasurements(model: AppModel, directory: URL) async -> [String] {
         guard let pack = model.pack else { return ["near-touch: no pack"] }
         var lines: [String] = []
         // One offscreen window reused for every case: SwiftUI only commits its layers inside one.
@@ -314,16 +317,28 @@ enum SnapshotRenderer {
             let layout = model.layout(side)
             for scale in [CGFloat(1), 2] {
                 var gaps: [CGFloat] = []
+                var upright: [CGFloat] = [], leaning: [CGFloat] = []
                 var overlaps = 0
-                var worst = ""
-                for state in MascotState.allCases {
-                    let frames = pack.frameURLs(for: state).indices.map { Optional($0) } + [nil]
-                    for frame in frames {
-                        let pose = MascotPose(state: state, frame: frame, clipElapsed: nil)
+                var worst = "", closest = ""
+                var sheet: [(name: String, art: [UInt8], labels: [UInt8], gap: CGFloat)] = []
+                // Every upright pose, plus the attention gesture's leaning frames.
+                var poses = MascotState.allCases.flatMap { state in
+                    (pack.frameURLs(for: state).indices.map { Optional($0) } + [nil])
+                        .map { MascotPose(state: state, frame: $0, clipElapsed: nil) }
+                }
+                if pack.attentionGesture != nil {
+                    poses += [-5.0, -2.5].map { MascotPose(state: .attention, frame: 0, clipElapsed: 0, angle: $0) }
+                    for frame in [1, 2] {
+                        poses += [-5.0, -2.5, 2.5, 5].map { MascotPose(state: .attention, frame: frame, clipElapsed: 0, angle: $0) }
+                    }
+                }
+                for pose in poses {
+                        let state = pose.state, frame = pose.frame
                         for badge in ["2", "2+", "?", "99+"] {
                             func image(art: Bool) async -> [UInt8]? {
                                 let view = MascotView(model: model, poseOverride: pose, badgeOverride: badge,
                                                       drawsArt: art, drawsLabels: !art)
+                                    .environment(\.displayScale, scale)
                                 return await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale)
                             }
                             guard let artAlpha = await image(art: true), let labelAlpha = await image(art: false),
@@ -333,18 +348,134 @@ enum SnapshotRenderer {
                             }
                             let (gap, overlap) = nearestGap(artAlpha, labelAlpha, size: layout.panelSize, scale: scale)
                             overlaps += overlap
-                            if gap > (gaps.max() ?? -1) { worst = "\(state.rawValue)/\(frame.map(String.init) ?? "static")/\(badge)" }
+                            let name = "\(state.rawValue)/\(frame.map(String.init) ?? "static")"
+                                + (pose.angle == 0 ? "" : "@\(pose.angle)°") + "/\(badge)"
+                            if gap > (gaps.max() ?? -1) { worst = name }
+                            if gap < (gaps.min() ?? .infinity) { closest = name }
                             gaps.append(gap)
+                            if pose.angle == 0 { upright.append(gap) } else { leaning.append(gap) }
+                            sheet.append((name, artAlpha, labelAlpha, gap))
                         }
-                    }
                 }
+                writeContactSheet(sheet, size: layout.panelSize, scale: scale,
+                                  to: directory.appendingPathComponent("near-touch-\(Int(side))-\(Int(scale))x.png"))
                 lines.append("near-touch @\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
-                             + "(farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
+                             + "upright=\(format(upright.min()))-\(format(upright.max())) leaning=\(format(leaning.min()))-\(format(leaning.max())) "
+                             + "(closest \(closest), farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
                              + "lane=\(format(layout.laneHeight))")
                 empty = 0
             }
         }
         return lines
+    }
+
+    /// Drives the real AppModel: one injected event starts one attention gesture; a second event
+    /// during it merges (same start); it ends after 1.9 s; with Reduce Motion nothing plays. Also
+    /// writes a filmstrip of the real MascotView at the storyboard's key times for each size.
+    private static func gestureProbe(model: AppModel, directory: URL) async -> [String] {
+        var lines: [String] = []
+        let savedReduced = model.settings.reducedMotion
+        model.settings.reducedMotion = false
+        model.injectEntitlementEvent()
+        let first = model.activeClip
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        model.injectEntitlementEvent()
+        let merged = model.activeClip?.startedAt == first?.startedAt && first != nil
+        try? await Task.sleep(nanoseconds: 1_900_000_000)
+        let ended = model.activeClip == nil
+        model.markAllSeen()
+        model.settings.reducedMotion = true
+        model.injectEntitlementEvent()
+        let reducedPlays = model.activeClip != nil
+        model.settings.reducedMotion = savedReduced
+        model.markAllSeen()
+        lines.append("gesture: started=\(first != nil) state=\(first?.state.rawValue ?? "none") "
+                     + "duration=\(format(first.map { CGFloat($0.endsAt.timeIntervalSince($0.startedAt)) })) "
+                     + "second-event-merged=\(merged) ended=\(ended) reduced-motion-plays=\(reducedPlays)")
+
+        guard let pack = model.pack, let gesture = pack.attentionGesture else { return lines + ["gesture: no pack gesture"] }
+        var queue = EventClipQueue()
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        queue.enqueue([InboxEvent(item: FixtureSimulator.defaultItems()[0])], now: start, playable: true)
+        guard let clip = queue.active else { return lines }
+        let times: [Double] = [0, 75, 150, 275, 400, 500, 600, 725, 850, 950, 1050, 1300, 1899]
+        let saved = model.settings.mascotSize
+        defer { model.settings.mascotSize = saved }
+        for side in [64.0, 128, 256] {
+            model.settings.mascotSize = side
+            let size = model.layout(side).panelSize
+            let frames: [NSView] = times.map { ms in
+                let pose = MascotAnimator.pose(mood: .attention, clip: clip, now: start.addingTimeInterval(ms / 1000),
+                                               reducedMotion: false, idleEpoch: start, gesture: gesture) { _ in [] }
+                let view = VStack(spacing: 2) {
+                    MascotView(model: model, poseOverride: pose, badgeOverride: "2").frame(width: size.width, height: size.height)
+                    Text("\(Int(ms)) ms · f\(pose.frame.map(String.init) ?? "s") · \(String(format: "%+.1f", pose.angle))°")
+                        .font(.system(size: 9)).foregroundStyle(.black)
+                }
+                let host = NSHostingView(rootView: view)
+                host.frame = CGRect(origin: .zero, size: host.fittingSize)
+                return host
+            }
+            let strip = NSStackView(views: frames)
+            strip.spacing = 6
+            strip.frame = CGRect(origin: .zero, size: strip.fittingSize)
+            let window = NSWindow(contentRect: strip.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.backgroundColor = .white
+            window.appearance = NSAppearance(named: .aqua)
+            window.contentView = strip
+            window.setFrameOrigin(CGPoint(x: -20_000, y: -20_000))
+            window.orderFrontRegardless()
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            strip.layoutSubtreeIfNeeded()
+            if let png = renderPNG(strip) {
+                try? png.write(to: directory.appendingPathComponent("gesture-\(Int(side)).png"))
+            }
+            window.orderOut(nil)
+        }
+        lines.append("gesture filmstrips: gesture-64.png gesture-128.png gesture-256.png (\(times.count) key times)")
+        return lines
+    }
+
+    /// A grid of near-touch cases for visual review: art grey, labels blue, overlapping pixels red,
+    /// each captioned with its case and measured gap.
+    private static func writeContactSheet(_ cases: [(name: String, art: [UInt8], labels: [UInt8], gap: CGFloat)],
+                                          size: CGSize, scale: CGFloat, to url: URL) {
+        let cellW = Int((size.width * scale).rounded(.up)), cellH = Int((size.height * scale).rounded(.up))
+        let caption = Int(14 * max(scale, 1)), columns = 8
+        let rows = (cases.count + columns - 1) / columns
+        let width = columns * cellW, height = rows * (cellH + caption)
+        guard width > 0, height > 0,
+              let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        for (index, item) in cases.enumerated() {
+            let originX = (index % columns) * cellW
+            let top = height - (index / columns) * (cellH + caption)   // bottom-up coordinates
+            for y in 0..<cellH { for x in 0..<cellW {
+                let i = y * cellW + x
+                guard i < item.art.count else { continue }
+                let (a, l) = (item.art[i], item.labels[i])
+                guard a > 0 || l > 0 else { continue }
+                let color = a > 0 && l > 0 ? CGColor(red: 1, green: 0, blue: 0, alpha: 1)
+                    : l > 0 ? CGColor(red: 0, green: 0.31, blue: 0.69, alpha: CGFloat(l) / 255)
+                    : CGColor(gray: 0.2, alpha: CGFloat(a) / 255)
+                context.setFillColor(color)
+                context.fill(CGRect(x: originX + x, y: top - caption - y - 1, width: 1, height: 1))
+            } }
+            let text = NSAttributedString(string: "\(item.name) \(format(item.gap))pt",
+                                          attributes: [.font: NSFont.systemFont(ofSize: CGFloat(caption) * 0.7),
+                                                       .foregroundColor: NSColor.black])
+            text.draw(at: CGPoint(x: originX + 2, y: top - caption + 2))
+        }
+        NSGraphicsContext.restoreGraphicsState()
+        guard let image = context.makeImage(),
+              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { return }
+        try? png.write(to: url)
     }
 
     /// Alpha channel of a view rasterised at `scale` (rows top first), via its layer tree, drawn

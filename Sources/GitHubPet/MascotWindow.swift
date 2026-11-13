@@ -12,6 +12,8 @@ final class MascotWindowController {
     private var popover: NSPopover?
     private lazy var hoverAnchor = Self.makeHoverAnchor()
     private var summaryState: MascotState?
+    /// Whether the open summary was placed for a playing attention gesture (swept outline).
+    private var summaryForGesture = false
     /// Art size the panel is currently laid out for.
     private var shownSize: Double?
     /// The art's ground point on screen, kept unrounded: resizes are computed from it, not from
@@ -125,6 +127,7 @@ final class MascotWindowController {
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
         summaryState = model.mascotState
+        summaryForGesture = Self.gesturePlaying(model)
     }
 
     /// The hover summary popover, sized to its content before it is shown. Without that, the
@@ -147,7 +150,7 @@ final class MascotWindowController {
         func attempt(_ compact: Bool) -> (NSPopover, HoverPlacement) {
             let popover = makeHoverPopover(model: model, compact: compact)
             return (popover, hoverPlacement(panelFrame: panelFrame, layout: layout, pack: model.pack, state: model.mascotState,
-                                            popover: popover.contentSize, screen: screen))
+                                            popover: popover.contentSize, screen: screen, gesture: gesturePlaying(model)))
         }
         if !model.hoverIsCompact {
             let full = attempt(false)
@@ -158,9 +161,15 @@ final class MascotWindowController {
 
     /// Beside the visible character (#27): above it, the arrow either covered the DEMO/count
     /// tags or sat more than 12 pt from the art. See `HoverPlacement`.
+    /// An attention gesture with a lean is playing: hover placement then clears its swept outline.
+    static func gesturePlaying(_ model: AppModel) -> Bool {
+        model.activeClip?.state == .attention && model.pack?.attentionGesture != nil && !model.effectiveReducedMotion
+    }
+
     static func hoverPlacement(panelFrame: CGRect, layout: MascotLayout, pack: MascotPack?, state: MascotState,
-                               popover: CGSize, screen: CGRect) -> HoverPlacement {
-        HoverPlacement.place(art: pack?.artProfiles[state] ?? .placeholder, poses: pack?.poseProfiles[state] ?? [],
+                               popover: CGSize, screen: CGRect, gesture: Bool = false) -> HoverPlacement {
+        let art = gesture ? pack?.sweptAttentionProfile : pack?.artProfiles[state]
+        return HoverPlacement.place(art: art ?? .placeholder, poses: pack?.poseProfiles[state] ?? [],
                              layout: layout, popover: popover,
                              panelOrigin: panelFrame.origin, screen: screen)
     }
@@ -205,10 +214,14 @@ final class MascotWindowController {
 
     /// Each state's frames have their own outline: re-aim the open summary when the mood changes.
     private func repositionSummaryIfNeeded() {
-        guard let popover, let state = summaryState, state != model.mascotState, let window = panel else { return }
+        // Re-aim only when the mood changes or a gesture starts or ends, never per frame.
+        guard let popover, let state = summaryState, let window = panel,
+              state != model.mascotState || summaryForGesture != Self.gesturePlaying(model) else { return }
+        summaryForGesture = Self.gesturePlaying(model)
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
         let placement = Self.hoverPlacement(panelFrame: window.frame, layout: model.layout(model.settings.mascotSize), pack: model.pack,
-                                            state: model.mascotState, popover: popover.contentSize, screen: screen)
+                                            state: model.mascotState, popover: popover.contentSize, screen: screen,
+                                            gesture: summaryForGesture)
         summaryState = model.mascotState
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
     }

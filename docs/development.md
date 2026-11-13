@@ -89,11 +89,19 @@ use only: it isn't notarized or Developer ID signed.
   stale data or from a partial snapshot records IDs silently, so nothing is replayed on reconnect.
   New IDs are decided before the tracker records anything, so eviction can't make existing IDs
   look new.
-- Event clips play once (2.0 s), with at most one active and four pending. Critical clips go
-  first. Each clip plays its state's one-shot sequence from its own start, so a second event
-  replays it even if the mascot is already in attention. Without a clip, idle loops, and attention
-  and urgent hold their static pose. Clips are suppressed under reduced motion, snooze and quiet
-  hours. All timing uses the app clock, so the QA clock hooks apply.
+- Event gestures (#29): one batch of new events plays one gesture, led by its most severe event;
+  events arriving while it plays merge into it (no restart, no queue, no backlog). An urgent batch
+  preempts an attention gesture, which is not replayed. Attention plays the finite "friendly
+  double wave" (docs/design/notifications/attention-storyboard.json): frames 00/01/02/01/02/03 over
+  1.9 s with an eased ±5° art-layer lean about the ground anchor; urgent keeps its 2.0 s one-shot.
+  Without a gesture, idle loops and attention/urgent hold their static pose. Gestures are
+  suppressed (never replayed) under Reduce Motion, snooze and quiet hours, and cancelled if one
+  of those starts mid-gesture. All timing uses the app clock. While the art leans, the count keeps
+  tracking it (exact-angle contour from outline points precomputed at load, plus a resampling
+  reserve of 0.5 pt at 2× and 1.5 pt at 1×); DEMO and the panel stay put; the hover summary
+  re-aims only when the gesture starts and ends, clearing the swept outline meanwhile.
+  render-check drives the live model (one gesture, merge, end, Reduce Motion) and writes
+  `gesture-{64,128,256}.png` filmstrips and `near-touch-*.png` contact sheets.
 
 ### Settings
 Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`). Missing or invalid
