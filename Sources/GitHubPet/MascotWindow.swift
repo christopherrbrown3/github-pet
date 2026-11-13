@@ -151,8 +151,13 @@ final class MascotContainerView: NSView {
     override func mouseEntered(with event: NSEvent) { onHover?(true) }
     override func mouseExited(with event: NSEvent) { onHover?(false) }
 
+    /// Screen location of a press or release, taken from the event itself.
+    private func screenPoint(_ event: NSEvent) -> CGPoint {
+        event.window.map { $0.convertPoint(toScreen: event.locationInWindow) } ?? NSEvent.mouseLocation
+    }
+
     override func mouseDown(with event: NSEvent) {
-        mouseDownScreenPoint = NSEvent.mouseLocation
+        mouseDownScreenPoint = screenPoint(event)
         windowOriginAtMouseDown = window?.frame.origin
         dragged = false
     }
@@ -169,6 +174,17 @@ final class MascotContainerView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         defer { mouseDownScreenPoint = nil; windowOriginAtMouseDown = nil }
+        // A press that ends past the drag threshold is a drag even if no mouseDragged events
+        // arrived (synthetic or coalesced input opened the Inbox instead of moving; QA, 3cf6fa7).
+        if !dragged, let start = mouseDownScreenPoint, let origin = windowOriginAtMouseDown, let window {
+            let now = screenPoint(event)
+            let dx = now.x - start.x, dy = now.y - start.y
+            if hypot(dx, dy) >= Self.dragThreshold {
+                onHover?(false)
+                dragged = true
+                window.setFrameOrigin(CGPoint(x: origin.x + dx, y: origin.y + dy))
+            }
+        }
         if dragged, let origin = window?.frame.origin {
             onDragEnded?(origin)
         } else {

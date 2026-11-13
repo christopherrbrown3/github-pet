@@ -38,7 +38,18 @@ final class WindowPresenter {
     }
 
     private func present(_ window: NSWindow?) {
+        guard let window else { return }
+        // An autosaved frame may be smaller than the content needs (e.g. one saved while a
+        // window opened collapsed); never present a window that can't show its controls.
+        if let content = window.contentViewController?.view {
+            let needed = content.fittingSize
+            let current = window.contentLayoutRect.size
+            if current.width < needed.width || current.height < needed.height {
+                window.setContentSize(NSSize(width: max(current.width, needed.width),
+                                             height: max(current.height, needed.height)))
+            }
+        }
         NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(nil)
+        window.makeKeyAndOrderFront(nil)
     }
 }

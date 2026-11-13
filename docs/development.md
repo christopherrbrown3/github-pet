@@ -118,6 +118,12 @@ fields fall back to defaults, and values outside their range are clamped. They s
 The mascot panel is a single VoiceOver button labelled with the status and the privacy-aware
 summary; its press action opens the Inbox, the same as a click.
 
+### Windows and pointer
+- Inbox and Settings windows always open at least as large as their content, even if an older,
+  smaller frame was autosaved.
+- On the mascot, a press that ends 3 pt or more from where it started is a drag (move and save
+  position), even if no intermediate drag events arrived; otherwise it's a click (open Inbox).
+
 ### Links
 Only `https://github.com/...` URLs are opened, with no userinfo and no port other than 443.
 Anything else is blocked and the inbox shows "Link blocked".
@@ -148,7 +154,7 @@ Launch arguments and environment variables:
 | `--clock-offset <seconds>` / `GITHUB_PET_CLOCK_OFFSET` | Shift the app clock |
 | `TZ=<zone>` | Time zone for quiet hours |
 | `GITHUB_PET_GH_PATH=<path>` | Use this `gh` (point at a missing path or a fake script) |
-| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs in light (`name.png`) and dark (`name-dark.png`) appearance, including loading, urgent and reduced-motion static states (and a missing-`gh` state when `GITHUB_PET_GH_PATH` is set), and write `report.txt` (state, badge, rows, accessibility labels, the mascot's button/press contract, window sizes). Then quit. Always uses Demo fixtures, default settings and a throwaway preferences suite, whatever other flags or saved settings say, so its output never contains live data and it never changes your preferences. The missing-`gh` step runs only if `GITHUB_PET_GH_PATH` names a path that doesn't exist. No screen-recording permission needed. |
+| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs in light (`name.png`) and dark (`name-dark.png`) appearance, including loading, urgent and reduced-motion static states (and a missing-`gh` state when `GITHUB_PET_GH_PATH` is set), and write `report.txt` (state, badge, rows, accessibility labels, the mascot's button/press contract, a drag-versus-click probe on the real mascot container, window sizes including Settings). Then quit. Always uses Demo fixtures, default settings and a throwaway preferences suite, whatever other flags or saved settings say, so its output never contains live data and it never changes your preferences. The missing-`gh` step runs only if `GITHUB_PET_GH_PATH` names a path that doesn't exist. No screen-recording permission needed. |
 | `GITHUB_PET_PACK_DIR=<dir>` | Load this mascot pack instead of the bundled one. If validation fails, the placeholder is used and Settings explains why. |
 | `--placeholder` | Draw the native vector placeholder instead of the bundled pack |
 

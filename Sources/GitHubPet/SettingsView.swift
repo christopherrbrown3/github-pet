@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    static let minHeight: CGFloat = 660
 
     var body: some View {
         Form {
@@ -65,7 +66,10 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        // A grouped Form scrolls, so it reports almost no height of its own and the hosting
+        // window opened as a bare title bar (QA, 3cf6fa7). Give it a real height to size to.
         .frame(width: 520)
+        .frame(minHeight: Self.minHeight)
         .padding(.vertical, 8)
     }
 

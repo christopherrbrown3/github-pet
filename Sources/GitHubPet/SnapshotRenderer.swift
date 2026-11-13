@@ -23,6 +23,7 @@ enum SnapshotRenderer {
                           + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
             report.append(mascotAccessibility(model))
+            if name == "00-loading" { report.append(mascotPointer()) }
             let panel = MascotView.panelSize(side: model.settings.mascotSize)
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 report += await render(MascotView(model: model).frame(width: panel.width, height: panel.height),
@@ -78,6 +79,13 @@ enum SnapshotRenderer {
             model.settings.dataSource = .githubCLI
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await capture("11-gh-override")
+        }
+
+        // Settings goes through the same window sizing as the real Settings window.
+        report.append("## settings")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
+                                   appearance: appearance, asWindow: true)
         }
 
         let text = report.joined(separator: "\n") + "\n"
@@ -155,6 +163,33 @@ enum SnapshotRenderer {
         let handled = container.accessibilityPerformPress()
         return "mascot AX: element=\(element) role=\(role) press=\(handled && pressed ? "opens-inbox" : "none") "
             + "label=\(container.accessibilityLabel() ?? "")"
+    }
+
+    /// Drives the real mascot container with synthetic press/release events: a release past the
+    /// drag threshold with no mouseDragged in between must move and save, not open the Inbox;
+    /// a release in place must open the Inbox.
+    private static func mascotPointer() -> String {
+        let window = NSWindow(contentRect: CGRect(x: 2000, y: 2000, width: 128, height: 150),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        let container = MascotContainerView(frame: CGRect(x: 0, y: 0, width: 128, height: 150))
+        window.contentView = container
+        var clicks = 0
+        var saved: CGPoint?
+        container.onClick = { clicks += 1 }
+        container.onDragEnded = { saved = $0 }
+        func event(_ type: NSEvent.EventType, _ point: CGPoint) -> NSEvent {
+            NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
+                               windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+                               clickCount: 1, pressure: 1)!
+        }
+        container.mouseDown(with: event(.leftMouseDown, CGPoint(x: 72, y: 96)))
+        container.mouseUp(with: event(.leftMouseUp, CGPoint(x: 110, y: 104)))
+        let moved = window.frame.origin == CGPoint(x: 2038, y: 2008) && saved == window.frame.origin && clicks == 0
+        container.mouseDown(with: event(.leftMouseDown, CGPoint(x: 40, y: 40)))
+        container.mouseUp(with: event(.leftMouseUp, CGPoint(x: 41, y: 40)))
+        let clicked = clicks == 1 && window.frame.origin == CGPoint(x: 2038, y: 2008)
+        return "mascot pointer: drop-without-drag-events=\(moved ? "moved" : "FAILED \(window.frame.origin)") "
+            + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
     }
 
     private static func accessibilityDump(_ element: Any, depth: Int) -> [String] {
