@@ -1,6 +1,6 @@
 # Operating the team
 
-GitHub Projects V2 is the intended durable system of record. Status sequence: Inbox → Backlog → Ready → In Progress → In Review → In QA → Done; Blocked is explicit. Fields: Owner Agent (role), Priority, Type, Milestone. PM alone updates assignment and status. Until Project scope authorization completes, issues and comments preserve all assignments; do not claim board synchronization.
+GitHub Projects V2 is the durable system of record: https://github.com/users/christopherrbrown3/projects/3/views/1 . Status sequence: Inbox → Backlog → Ready → In Progress → In Review → In QA → Done; Blocked is explicit. Fields: Owner Agent (role), Priority, Work Type, Milestone. GitHub reserves Type; Work Type provides the requested epic/feature/task classification. PM alone updates assignment and status. Project-scope authorization completed; issue comments preserve exact-SHA evidence and handoffs alongside board status.
 
 ## Bootstrap sessions
 
@@ -47,4 +47,12 @@ Verify launch argv, displayed model and an actual response before reporting oper
 
 ## Environment limits
 
-Swift 6.2.3 and Command Line Tools are present. Full Xcode is absent, so xcodebuild is unavailable. SwiftPM build/test and locally assembled .app are the prototype route; signing/notarization is not claimed. GitHub Projects requires project scope on gh; keep its authorization blocker visible until verified resolved.
+Swift 6.2.3 and Command Line Tools are present. Full Xcode is absent, so xcodebuild is unavailable. SwiftPM build/test and locally assembled .app are the prototype route; prototype bundles are ad-hoc signed and verified; Developer ID signing/notarization is not claimed. GitHub Projects project scope was verified available after authorization. Inspect gh auth/permissions if future board requests fail.
+
+## Current recovery checkpoint
+
+Read [CHECKPOINT.md](CHECKPOINT.md) and [roles.json](roles.json) before resuming. They supersede historical session addresses and old build SHAs above. After usage exhaustion, preserve work and stop retrying until reset or an authorized external change; restarting does not reset the allowance. All restarted agents must keep their intended models and prove a response. Never substitute a cheaper model to bypass limits.
+
+Use a fresh verification worktree pinned to the exact implementation SHA. Pushing a feature branch does not invalidate a detached old-SHA checkout or saved report. Keep one QA app version running at a time; never mix observed results across SHAs. Save a short checkpoint after each functional group so unfinished acceptance survives interruptions. Offscreen render checks validate rendered output, not menu-bar interactions, pointer behavior or animation timing.
+
+The first two PRs (#16 workflow, #17 QA plan) were already merged externally when inspected; this coordinator has not merged them. PR #18 implementation and #19 design remain open at the checkpoint. No further PR merges, releases or auto-merge are authorized.
