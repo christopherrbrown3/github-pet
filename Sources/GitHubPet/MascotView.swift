@@ -8,39 +8,57 @@ import SwiftUI
 struct MascotView: View {
 
     @ObservedObject var model: AppModel
+    /// Render-check only: draw a fixed pose and badge, and only some layers.
+    var poseOverride: MascotPose?
+    var badgeOverride: String?
+    var drawsArt = true
+    var drawsLabels = true
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
         let layout = model.layout(model.settings.mascotSize)
-        ZStack(alignment: .top) {
-            Group {
-                if reduced {
-                    figure(at: model.clock(), reduced: true)
-                } else {
-                    TimelineView(.animation(minimumInterval: 1.0 / 8.0)) { context in
-                        figure(at: context.date.addingTimeInterval(model.clockOffset), reduced: false)
-                    }
+        Group {
+            if reduced {
+                scene(at: model.clock(), reduced: true, layout: layout)
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 8.0)) { context in
+                    scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
                 }
             }
-            .frame(width: layout.artSide, height: layout.artSide)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            // Labels (compact badge spacing): the count's top is the panel's top edge and DEMO is
-            // centred on it; they may overlap the art canvas's transparent margin, never its art.
-            HStack(spacing: 0) {
-                if model.isDemo {
-                    Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
-                }
-                Spacer(minLength: layout.minimumGap)
-                if let badge = model.badge {
-                    Tag(text: badge, role: model.mascotState == .urgent ? .urgentCount : .count, metrics: layout.count)
-                }
-            }
-            .frame(height: layout.count.height)
-            .padding(.horizontal, layout.inset)
         }
         .frame(width: layout.panelWidth, height: layout.panelSize.height)
         // VoiceOver sees the panel's container as one button (see MascotContainerView).
         .accessibilityHidden(true)
+    }
+
+    /// Art and labels for one instant, from one pose, so the count never lags the frame it tracks
+    /// (near-touch #28): DEMO is fixed; the count sits at the left of its "99+" slot and moves down
+    /// so its capsule stays `MascotLayout.nearTouchGap` above this pose's art.
+    private func scene(at date: Date, reduced: Bool, layout: MascotLayout) -> some View {
+        let pose = poseOverride ?? pose(at: date, reduced: reduced)
+        let badge = badgeOverride ?? model.badge
+        let countWidth = badge.map { layout.count.width(text: Tag.textWidth($0, role: .count, size: layout.count.fontSize)) }
+        let offset = countWidth.flatMap { width in
+            model.contour(for: pose).map { layout.countOffset(contour: $0, width: width) }
+        } ?? 0
+        let demo = layout.demoFrame
+        return ZStack(alignment: .topLeading) {
+            figure(pose: pose, date: date, reduced: reduced)
+                .frame(width: layout.artSide, height: layout.artSide)
+                .offset(x: layout.artFrame.minX, y: layout.laneHeight)
+                .opacity(drawsArt ? 1 : 0)
+            if model.isDemo, drawsLabels {
+                Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
+                    .frame(width: demo.width, height: demo.height)
+                    .offset(x: demo.minX, y: demo.minY)
+            }
+            if let badge, let countWidth, drawsLabels {
+                Tag(text: badge, role: model.mascotState == .urgent ? .urgentCount : .count, metrics: layout.count)
+                    .frame(width: countWidth, height: layout.count.height)
+                    .offset(x: layout.countSlotX, y: offset)
+            }
+        }
+        .frame(width: layout.panelWidth, height: layout.panelSize.height, alignment: .topLeading)
     }
 
     /// The mascot's spoken label: status first, then the privacy-aware summary.
@@ -57,8 +75,7 @@ struct MascotView: View {
     }
 
     @ViewBuilder
-    private func figure(at date: Date, reduced: Bool) -> some View {
-        let pose = pose(at: date, reduced: reduced)
+    private func figure(pose: MascotPose, date: Date, reduced: Bool) -> some View {
         if let pack = model.pack {
             PackFigure(pack: pack, pose: pose)
         } else {
@@ -72,6 +89,13 @@ struct MascotView: View {
 /// with at least 4.5:1 text contrast; urgency is also stated in words elsewhere.
 struct Tag: View {
     enum Role { case demo, count, urgentCount }
+
+    /// Native text width of a label at its font (for the capsule width the count tracks with).
+    static func textWidth(_ text: String, role: Role, size: CGFloat) -> CGFloat {
+        let font = role == .demo ? NSFont.systemFont(ofSize: size, weight: .bold)
+                                 : NSFont.monospacedDigitSystemFont(ofSize: size, weight: .semibold)
+        return (text as NSString).size(withAttributes: [.font: font]).width
+    }
 
     let text: String
     let role: Role

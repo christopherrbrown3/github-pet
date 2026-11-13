@@ -218,6 +218,12 @@ public struct MascotPose: Equatable, Sendable {
     public var frame: Int?
     /// Seconds into the active event clip, if one is playing.
     public var clipElapsed: TimeInterval?
+
+    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?) {
+        self.state = state
+        self.frame = frame
+        self.clipElapsed = clipElapsed
+    }
 }
 
 /// Pure animation policy shared by the artwork pack and the placeholder.

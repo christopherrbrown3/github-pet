@@ -120,10 +120,8 @@ final class MascotWindowController {
     private func showSummary(from view: NSView) {
         hideSummary()
         guard let window = view.window else { return }
-        let popover = Self.makeHoverPopover(model: model)
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
-        let placement = Self.hoverPlacement(panelFrame: window.frame, layout: model.layout(model.settings.mascotSize), pack: model.pack,
-                                            state: model.mascotState, popover: popover.contentSize, screen: screen)
+        let (popover, placement) = Self.prepareHover(model: model, panelFrame: window.frame, screen: screen)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
         summaryState = model.mascotState
@@ -131,15 +129,31 @@ final class MascotWindowController {
 
     /// The hover summary popover, sized to its content before it is shown. Without that, the
     /// hosting controller's provisional size placed the popover ~237 pt above the mascot (#27).
-    static func makeHoverPopover(model: AppModel) -> NSPopover {
+    static func makeHoverPopover(model: AppModel, compact: Bool) -> NSPopover {
         let popover = NSPopover()
         popover.behavior = .semitransient
         popover.animates = !model.effectiveReducedMotion
-        let controller = NSHostingController(rootView: HoverSummaryView(model: model))
+        let controller = NSHostingController(rootView: HoverSummaryView(model: model, compact: compact))
         controller.sizingOptions = .preferredContentSize
         popover.contentViewController = controller
         popover.contentSize = controller.view.fittingSize
         return popover
+    }
+
+    /// The hover popover and where it goes: the full summary if it can be placed within #27's
+    /// limits, else the compact one (always below `AppModel.compactHoverBelow`).
+    static func prepareHover(model: AppModel, panelFrame: CGRect, screen: CGRect) -> (NSPopover, HoverPlacement) {
+        let layout = model.layout(model.settings.mascotSize)
+        func attempt(_ compact: Bool) -> (NSPopover, HoverPlacement) {
+            let popover = makeHoverPopover(model: model, compact: compact)
+            return (popover, hoverPlacement(panelFrame: panelFrame, layout: layout, pack: model.pack, state: model.mascotState,
+                                            popover: popover.contentSize, screen: screen))
+        }
+        if !model.hoverIsCompact {
+            let full = attempt(false)
+            if full.1.meetsTarget { return full }
+        }
+        return attempt(true)
     }
 
     /// Beside the visible character (#27): above it, the arrow either covered the DEMO/count
@@ -300,13 +314,14 @@ final class MascotContainerView: NSView {
 
 struct HoverSummaryView: View {
     @ObservedObject var model: AppModel
+    var compact = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            ForEach(Array(model.hoverLines.enumerated()), id: \.offset) { index, line in
+            ForEach(Array(model.hoverLines(compact: compact).enumerated()), id: \.offset) { index, line in
                 Text(line).font(index == 0 ? .callout.bold() : .caption).lineLimit(1)
             }
-            if !model.hoverIsCompact {
+            if !compact {
                 Text("Click to open inbox").font(.caption2).foregroundStyle(.secondary)
             }
         }

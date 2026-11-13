@@ -28,7 +28,7 @@ enum SnapshotRenderer {
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 report += await render(MascotView(model: model).frame(width: panel.width, height: panel.height),
                                        name: "\(name)-mascot\(suffix)", directory: directory, appearance: appearance)
-                report += await render(HoverSummaryView(model: model), name: "\(name)-hover\(suffix)",
+                report += await render(HoverSummaryView(model: model, compact: model.hoverIsCompact), name: "\(name)-hover\(suffix)",
                                        directory: directory, appearance: appearance)
             }
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
@@ -50,19 +50,20 @@ enum SnapshotRenderer {
         report.append("## lane labels (native text, widest count)")
         for side in [CGFloat(64), 128, 256] {
             report.append(tagFit(model: model, side: side))
-            let layout = model.layout(Double(side))
-            let lane = HStack(spacing: 0) {
-                Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
-                Spacer(minLength: layout.minimumGap)
-                Tag(text: "99+", role: .count, metrics: layout.count)
-            }
-            .padding(.horizontal, layout.inset)
-            .frame(width: layout.panelWidth, height: layout.laneHeight)
+            // The real panel with the widest count, full DEMO and the idle pose.
+            let saved = model.settings.mascotSize
+            model.settings.mascotSize = Double(side)
+            let panel = MascotView(model: model, poseOverride: MascotPose(state: .idle, frame: nil, clipElapsed: nil),
+                                   badgeOverride: "99+")
+                .frame(width: model.layout(Double(side)).panelSize.width, height: model.layout(Double(side)).panelSize.height)
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
-                report += await render(lane, name: "lane-\(Int(side))-99plus\(suffix)", directory: directory,
+                report += await render(panel, name: "lane-\(Int(side))-99plus\(suffix)", directory: directory,
                                        appearance: appearance)
             }
+            model.settings.mascotSize = saved
         }
+        report.append("## near-touch labels (real MascotView rasterised; art and labels drawn separately)")
+        report += nearTouchMeasurements(model: model)
         report.append("## hover placement (idle)")
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
@@ -288,6 +289,100 @@ enum SnapshotRenderer {
         return lines
     }
 
+    /// Measures the actual rasterised gap between the labels and the art (#28 near-touch): for
+    /// each size, backing scale, pose (static and every frame of every state) and count text, the
+    /// real MascotView is drawn twice (art only, labels only) and the nearest pair of visible
+    /// pixels is found. Reports the range and any overlapping pixels.
+    private static func nearTouchMeasurements(model: AppModel) -> [String] {
+        guard let pack = model.pack else { return ["near-touch: no pack"] }
+        var lines: [String] = []
+        let saved = model.settings.mascotSize
+        defer { model.settings.mascotSize = saved }
+        for side in [64.0, 128, 256] {
+            model.settings.mascotSize = side
+            let layout = model.layout(side)
+            for scale in [CGFloat(1), 2] {
+                var gaps: [CGFloat] = []
+                var overlaps = 0
+                var worst = ""
+                for state in MascotState.allCases {
+                    let frames = pack.frameURLs(for: state).indices.map { Optional($0) } + [nil]
+                    for frame in frames {
+                        let pose = MascotPose(state: state, frame: frame, clipElapsed: nil)
+                        for badge in ["2", "2+", "?", "99+"] {
+                            func image(art: Bool) -> [UInt8]? {
+                                let view = MascotView(model: model, poseOverride: pose, badgeOverride: badge,
+                                                      drawsArt: art, drawsLabels: !art)
+                                return alphaBitmap(view, size: layout.panelSize, scale: scale)
+                            }
+                            guard let artAlpha = image(art: true), let labelAlpha = image(art: false) else { continue }
+                            let (gap, overlap) = nearestGap(artAlpha, labelAlpha, size: layout.panelSize, scale: scale)
+                            overlaps += overlap
+                            if gap > (gaps.max() ?? -1) { worst = "\(state.rawValue)/\(frame.map(String.init) ?? "static")/\(badge)" }
+                            gaps.append(gap)
+                        }
+                    }
+                }
+                lines.append("near-touch @\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
+                             + "(farthest \(worst)) cases=\(gaps.count) overlapping-pixels=\(overlaps) lane=\(format(layout.laneHeight))")
+            }
+        }
+        return lines
+    }
+
+    /// Alpha channel of a view rasterised at `scale` (rows top first), via its layer tree.
+    private static func alphaBitmap<V: View>(_ view: V, size: CGSize, scale: CGFloat) -> [UInt8]? {
+        let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height))
+        hosting.frame = CGRect(origin: .zero, size: size)
+        hosting.wantsLayer = true
+        hosting.layoutSubtreeIfNeeded()
+        guard let layer = hosting.layer else { return nil }
+        layer.contentsScale = scale
+        let width = Int((size.width * scale).rounded(.up)), height = Int((size.height * scale).rounded(.up))
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let ok = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.scaleBy(x: scale, y: scale)
+            if hosting.isFlipped {
+                context.translateBy(x: 0, y: size.height)
+                context.scaleBy(x: 1, y: -1)
+            }
+            layer.render(in: context)
+            return true
+        }
+        guard ok else { return nil }
+        return stride(from: 3, to: pixels.count, by: 4).map { pixels[$0] }
+    }
+
+    /// Nearest distance (points) between visible pixels of two same-size alpha bitmaps, and the
+    /// number of pixels visible in both.
+    private static func nearestGap(_ a: [UInt8], _ b: [UInt8], size: CGSize, scale: CGFloat) -> (CGFloat, Int) {
+        let width = Int((size.width * scale).rounded(.up)), height = a.count / max(width, 1)
+        var overlap = 0
+        var labelPixels: [(Int, Int)] = []
+        for y in 0..<height { for x in 0..<width where b[y * width + x] > 0 {
+            labelPixels.append((x, y))
+            if a[y * width + x] > 0 { overlap += 1 }
+        } }
+        guard let minY = labelPixels.map(\.1).min(), let maxY = labelPixels.map(\.1).max(),
+              let minX = labelPixels.map(\.0).min(), let maxX = labelPixels.map(\.0).max() else { return (.infinity, 0) }
+        let reach = Int(16 * scale)
+        var best = Int.max
+        for y in max(0, minY - reach)...min(height - 1, maxY + reach) {
+            for x in max(0, minX - reach)...min(width - 1, maxX + reach) where a[y * width + x] > 0 {
+                for (lx, ly) in labelPixels {
+                    let d = (lx - x) * (lx - x) + (ly - y) * (ly - y)
+                    if d < best { best = d }
+                }
+            }
+        }
+        // Distance between the facing edges of the two nearest pixels.
+        let gap = best == Int.max ? CGFloat.infinity : max(0, CGFloat(Double(best).squareRoot()) - 1) / scale
+        return (overlap > 0 ? 0 : gap, overlap)
+    }
+
     /// Full DEMO and the widest count ("99+") at their native sizes must fit the panel with the
     /// minimum gap (design spec #28), so neither is ever truncated.
     private static func tagFit(model: AppModel, side: CGFloat) -> String {
@@ -296,10 +391,13 @@ enum SnapshotRenderer {
         let demo = width(Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo))
         let count = width(Tag(text: "99+", role: .count, metrics: layout.count))
         let gap = layout.panelWidth - 2 * layout.inset - demo - count
-        return "tags @\(Int(side)): demo=\(Int(demo)) count99=\(Int(count)) panel=\(Int(layout.panelWidth)) "
-            + "gap=\(Int(gap)) min-gap=\(Int(layout.minimumGap)) fits=\(gap >= layout.minimumGap) "
-            + "lane=\(Int(layout.laneHeight)) panel-height=\(Int(layout.panelSize.height)) art-floor=\(layout.artTopFloor)px "
-            + "label-to-art=\(format(layout.labelToArtClearance))"
+        let demoClear = (model.pack?.allContours ?? []).map { layout.clearance($0, layout.demoFrame, lane: layout.laneHeight) }.min()
+        var line = "tags @\(Int(side)): demo=\(Int(demo)) count99=\(Int(count)) panel=\(Int(layout.panelWidth)) "
+        line += "gap=\(Int(gap)) min-gap=\(Int(layout.minimumGap)) fits=\(gap >= layout.minimumGap) "
+        line += "lane=\(format(layout.laneHeight)) panel-height=\(format(layout.panelSize.height)) "
+        line += "count-slot-x=\(Int(layout.countSlotX)) max-count-offset=\(format(layout.maxCountOffset)) "
+        line += "demo-to-art=\(format(demoClear))"
+        return line
     }
 
     struct HoverCase {
@@ -353,13 +451,11 @@ enum SnapshotRenderer {
         panel.orderFrontRegardless()
         try? await Task.sleep(nanoseconds: 300_000_000)   // let the panel reach the screen first
 
-        let popover = MascotWindowController.makeHoverPopover(model: model)
+        let (popover, placement) = MascotWindowController.prepareHover(model: model, panelFrame: panel.frame,
+                                                                       screen: screenFrame)
         popover.animates = false
         popover.appearance = NSAppearance(named: .aqua)
         let anchor = MascotWindowController.makeHoverAnchor()
-        let placement = MascotWindowController.hoverPlacement(panelFrame: panel.frame, layout: layout,
-                                                              pack: model.pack, state: state,
-                                                              popover: popover.contentSize, screen: screenFrame)
         MascotWindowController.show(popover, placement: placement, panelFrame: panel.frame, anchor: anchor)
         defer { popover.close(); panel.orderOut(nil); anchor.orderOut(nil) }
         var shown: NSWindow?

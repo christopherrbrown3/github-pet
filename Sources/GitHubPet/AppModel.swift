@@ -111,7 +111,18 @@ final class AppModel: ObservableObject {
     /// Panel geometry for an art size with the loaded pack's label floor (no pack: labels stay
     /// above the art canvas, since the placeholder's hop isn't bounded).
     func layout(_ size: Double) -> MascotLayout {
-        MascotLayout(artSide: CGFloat(size), artTopFloor: pack?.labelTopFloor ?? 0)
+        if let cached = layouts[size] { return cached }
+        let layout = MascotLayout(artSide: CGFloat(size), contours: pack?.allContours ?? [])
+        layouts[size] = layout
+        return layout
+    }
+    private var layouts: [Double: MascotLayout] = [:]
+
+    /// Top contour of the pose being drawn (nil for the placeholder, whose labels stay above it).
+    func contour(for pose: MascotPose) -> [Int?]? {
+        let contours = pack?.poseContours(pose.state) ?? []
+        let index = pose.frame.map { $0 + 1 } ?? 0
+        return contours.indices.contains(index) ? contours[index] : nil
     }
 
     /// Mascots below this size get the compact two-line hover summary (#27).
@@ -119,9 +130,10 @@ final class AppModel: ObservableObject {
 
     var hoverIsCompact: Bool { settings.mascotSize < Self.compactHoverBelow }
 
-    /// What the hover summary shows: the full summary, or two lines on a small mascot.
-    var hoverLines: [String] {
-        hoverIsCompact
+    /// What the hover summary shows: the full summary, or two lines (small mascot, or when the
+    /// full summary can't be placed within #27's limits).
+    func hoverLines(compact: Bool) -> [String] {
+        compact
             ? PrivacyText.compactSummary(dataState: dataState, items: items, unseenCount: unseenCount, demo: isDemo)
             : summaryLines
     }

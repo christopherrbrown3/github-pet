@@ -102,16 +102,14 @@ public struct MascotPack: Equatable, Sendable {
         artProfiles[.attention]?.swept(degrees: Self.attentionLeanDegrees, pivot: CGPoint(x: 128, y: 232))
     }
 
-    /// Earliest canvas row any frame can draw in (alpha > 0), including attention's ±5° lean as
-    /// rotated bounding rectangles (design's conservative method): where labels may come down
-    /// to, less their clearance (compact badge spacing). Pack-specific: 17 for mona-pet-v1.
-    public var labelTopFloor: Int {
-        let upright = artProfiles.values.compactMap(\.top).min() ?? 0
-        let leaning = (poseOutlines[.attention] ?? []).compactMap {
-            $0.rotatedBoundsTop(degrees: Self.attentionLeanDegrees, pivot: CGPoint(x: 128, y: 232))
-        }.min() ?? upright
-        return max(0, min(upright, leaning))
+    /// Top contour (any coverage) of each state's poses, static pose first: what the count label
+    /// tracks to stay near-touching the art (#28).
+    public func poseContours(_ state: MascotState) -> [[Int?]] {
+        (poseOutlines[state] ?? []).map(\.columnTops)
     }
+
+    /// Every pose's contour, for the fixed lane height.
+    public var allContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) }
 
     /// Outline across every state.
     public var artProfile: ArtProfile? { ArtProfile.union(MascotState.allCases.compactMap { artProfiles[$0] }) }

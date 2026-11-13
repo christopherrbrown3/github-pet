@@ -40,51 +40,81 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         let r256: Row = (256, 256, 26, Capsule(height: 40, fontSize: 22, padding: 10), Capsule(height: 24, fontSize: 13, padding: 7), 8, 12)
         let expected = [r64, r128, r256]
         for row in expected {
-            let layout = MascotLayout(artSide: row.side, artTopFloor: 17)
-            #expect(layout.panelWidth == row.width && layout.laneHeight == row.lane, "\(row.side)")
+            let layout = MascotLayout(artSide: row.side)
+            #expect(layout.panelWidth == row.width, "\(row.side)")
             #expect(layout.count == row.count && layout.demo == row.demo)
             #expect(layout.inset == row.inset && layout.minimumGap == row.gap)
-            #expect(layout.panelSize == CGSize(width: row.width, height: row.side + row.lane))
             #expect(layout.artFrame.midX == row.width / 2 && layout.artFrame.minY == 0, "art centred on the ground")
         }
-        #expect(MascotLayout(artSide: 64, artTopFloor: 17).artFrame.minX == 16, "16 pt inset at 64 pt")
+        #expect(MascotLayout(artSide: 64).artFrame.minX == 16, "16 pt inset at 64 pt")
     }
 
-    @Test func compactSpacingPanelsAndClearance() {
-        // compact-badge-metrics.json at 05ea2cd: 96×83, 128×151, 256×282.
-        let heights: [(CGFloat, CGFloat)] = [(64, 83), (128, 151), (256, 282)]
-        for (side, height) in heights {
-            #expect(MascotLayout(artSide: side, artTopFloor: 17).panelSize.height == height, "\(side)")
+    @Test func nearTouchCountTracksEveryPoseAtTheGap() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        // Design's full upright envelope (near-touch-measurements at ef98a48): 15.75/19.5/13 pt.
+        let design: [(CGFloat, CGFloat)] = [(64, 15.75), (128, 19.5), (256, 13)]
+        for (side, lane) in design {
+            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            // Never tighter than design; at most the larger raster reserve (0.75 vs 0.25 pt) plus
+            // rounding up to a whole point above it.
+            #expect(layout.laneHeight >= lane && layout.laneHeight <= lane + 1.5,
+                    "lane \(layout.laneHeight) vs design \(lane) at \(side)")
         }
+        let gap = MascotLayout.nearTouchGap
         for side in stride(from: CGFloat(64), through: 256, by: 16) {
-            let layout = MascotLayout(artSide: side, artTopFloor: 17)
-            #expect(layout.labelToArtClearance >= MascotLayout.labelClearance, "clearance at \(side)")
-            #expect(layout.tagBand.maxY == layout.panelSize.height, "count top at the panel's top edge")
+            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            for contour in pack.allContours {
+                #expect(layout.clearance(contour, layout.demoFrame, lane: layout.laneHeight) >= gap - 0.001, "DEMO at \(side)")
+                for width in [layout.count.height, layout.widestCountWidth] {
+                    let offset = layout.countOffset(contour: contour, width: width)
+                    let clear = layout.clearance(contour, layout.countFrame(width: width, offset: offset), lane: layout.laneHeight)
+                    #expect(clear >= gap - 0.001, "no closer than the gap at \(side)")
+                    #expect(offset == 0 || abs(clear - gap) < 0.001, "tracks to the gap at \(side): \(clear)")
+                    #expect(offset <= layout.maxCountOffset + 0.001)
+                }
+            }
         }
-        // Unknown art (floor 0): the labels stay entirely above the art canvas.
-        let unknown = MascotLayout(artSide: 128, artTopFloor: 0)
-        #expect(unknown.tagBand.minY >= unknown.artFrame.maxY + MascotLayout.labelClearance)
+    }
+
+    @Test func unknownArtKeepsLabelsAboveTheArtSquare() {
+        let layout = MascotLayout(artSide: 128)
+        #expect(layout.laneHeight >= layout.count.height + MascotLayout.nearTouchGap)
+        #expect(layout.tagBand.minY >= layout.artFrame.maxY)
+    }
+
+    @Test func clearanceFollowsTheCapsulesRoundedEnds() {
+        // One art column directly under the capsule's left end: the end has curved up there.
+        let layout = MascotLayout(artSide: 256)
+        var contour = [Int?](repeating: nil, count: 256)
+        let column = Int(layout.countSlotX - layout.artFrame.minX)
+        contour[column] = 0
+        let capsule = layout.countFrame(width: layout.widestCountWidth, offset: 0)
+        let flat = layout.clearance(contour, CGRect(x: capsule.minX - 100, y: 0, width: 200, height: capsule.height),
+                                    lane: 100)
+        let rounded = layout.clearance(contour, capsule, lane: 100)
+        #expect(rounded > flat, "the rounded end leaves more room than a flat bottom")
     }
 
     @Test func fullLabelsFitWithTheMinimumGapAtEverySize() {
         for side in stride(from: CGFloat(64), through: 256, by: 16) {
-            let layout = MascotLayout(artSide: side, artTopFloor: 17)
+            let layout = MascotLayout(artSide: side)
             let used = 2 * layout.inset + layout.demoWidth + layout.widestCountWidth + layout.minimumGap
             #expect(used <= layout.panelWidth, "DEMO and 99+ fit at \(side)")
         }
     }
 
     @Test func intermediateSizesInterpolateAndRoundUp() {
-        let layout = MascotLayout(artSide: 80, artTopFloor: 17)
+        let layout = MascotLayout(artSide: 80)
         #expect(layout.count == .init(height: 22, fontSize: 13, padding: 7))
-        // L = ceil(22 + 3 − 17 × 80/256) = 20.
-        #expect(layout.laneHeight == 20 && layout.inset == 5 && layout.minimumGap == 7)
+        #expect(layout.inset == 5 && layout.minimumGap == 7)
         let needed: CGFloat = 2 * 5 + 41 + 39 + 7
         #expect(layout.panelWidth == max(96, needed))
     }
 
     @Test func resizingKeepsTheGroundPointOnScreen() {
-        let small = MascotLayout(artSide: 64, artTopFloor: 17), large = MascotLayout(artSide: 256, artTopFloor: 17)
+        let small = MascotLayout(artSide: 64), large = MascotLayout(artSide: 256)
         let origin = CGPoint(x: 500, y: 300)
         let groundBefore = CGPoint(x: origin.x + small.ground.x, y: origin.y + small.ground.y)
         let resized = large.origin(resizedFrom: small, at: origin)
@@ -96,12 +126,12 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     @Test func sitsBesideTheCharacterBelowTheTags() {
         for side in [CGFloat(64), 128, 256] {
             for popover in [short, tall] {
-                let layout = MascotLayout(artSide: side, artTopFloor: 17)
+                let layout = MascotLayout(artSide: side)
                 let placement = HoverPlacement.place(art: block, layout: layout, popover: popover,
                                                      panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
                 let rect = window(placement, popover)
                 #expect(placement.side == .right)
-                #expect(placement.laneClear && !rect.intersects(layout.tagBand), "tags clear at \(side)")
+                #expect(placement.laneClear && !layout.labelRects.contains { $0.intersects(rect) }, "tags clear at \(side)")
                 #expect(pixels(block, layout).allSatisfy { !$0.intersects(rect) }, "no overlap at \(side)")
                 let nearest = pixels(block, layout).map { gap($0, rect) }.min()!
                 #expect(nearest <= 12 && nearest >= HoverPlacement.clearance - 0.01, "gap \(nearest) at \(side)")
@@ -110,7 +140,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     }
 
     @Test func flipsLeftAtTheRightScreenEdge() {
-        let layout = MascotLayout(artSide: 128, artTopFloor: 17)
+        let layout = MascotLayout(artSide: 128)
         let placement = HoverPlacement.place(art: block, layout: layout, popover: short,
                                              panelOrigin: CGPoint(x: screen.maxX - 152, y: 200), screen: screen)
         #expect(placement.side == .left)
@@ -118,7 +148,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     }
 
     @Test func screenWinsOverTheLaneOnlyWhenBothCannotHold() {
-        let layout = MascotLayout(artSide: 64, artTopFloor: 17)
+        let layout = MascotLayout(artSide: 64)
         // Tall summary, mascot 24 pt above the bottom of the screen: no room below the tags.
         let low = HoverPlacement.place(art: block, layout: layout, popover: tall,
                                        panelOrigin: CGPoint(x: 600, y: 24), screen: screen)
@@ -138,12 +168,19 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
             let poses = try #require(pack.poseProfiles[state])
             for side in [CGFloat(64), 72, 80, 128, 256] {
                 // Below 80 pt the hover is the compact two-line summary; above, up to four lines.
-                for popover in side < 80 ? [short] : [short, tall] {
-                    let layout = MascotLayout(artSide: side, artTopFloor: 17)
-                    let placement = HoverPlacement.place(art: art, poses: poses, layout: layout, popover: popover,
-                                                         panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
+                for wanted in side < 80 ? [short] : [short, tall] {
+                    let layout = MascotLayout(artSide: side, contours: pack.allContours)
+                    func place(_ popover: CGSize) -> HoverPlacement {
+                        HoverPlacement.place(art: art, poses: poses, layout: layout, popover: popover,
+                                             panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
+                    }
+                    // As the app does: the full summary if it meets the target, else the compact one.
+                    let full = place(wanted)
+                    let popover = full.meetsTarget ? wanted : short
+                    let placement = full.meetsTarget ? full : place(short)
+                    #expect(placement.meetsTarget, "\(state) \(side): compact fallback must meet the target")
                     let rect = window(placement, popover)
-                    #expect(placement.laneClear && !rect.intersects(layout.tagBand))
+                    #expect(placement.laneClear && !layout.labelRects.contains { $0.intersects(rect) })
                     // The arrow points at the character: tip within 12 pt of the static pose.
                     let tip = CGRect(origin: placement.tip, size: .zero)
                     let tipGap = pixels(poses[0], layout).map { gap($0, tip) }.min()!
@@ -176,14 +213,6 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
             let outer = try #require(swept.rows[row])
             #expect(outer.lowerBound <= span.lowerBound && outer.upperBound >= span.upperBound, "row \(row)")
         }
-    }
-
-    @Test func shippedPackLabelFloorMatchesTheDesignBound() throws {
-        let root = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
-        // Upright tops 20–25 px; attention's ±5° rotated bounds reach 17.94 → floor 17.
-        #expect(pack.labelTopFloor == 17)
     }
 
     @Test func unionIsTheOutlineNoPoseCrosses() {

@@ -7,10 +7,16 @@ import ImageIO
 public struct ArtProfile: Equatable, Sendable {
     public var canvas: Int
     public var rows: [ClosedRange<Int>?]
+    /// First visible row in each column (nil: empty column): the art's actual top contour.
+    public var columnTops: [Int?]
 
-    public init(canvas: Int, rows: [ClosedRange<Int>?]) {
+    public init(canvas: Int, rows: [ClosedRange<Int>?], columnTops: [Int?]? = nil) {
         self.canvas = canvas
         self.rows = rows
+        // Without a measured contour, assume each row's whole span is filled (conservative).
+        self.columnTops = columnTops ?? (0..<canvas).map { column in
+            rows.firstIndex { $0?.contains(column) == true }
+        }
     }
 
     /// First visible row, i.e. the transparent margin above the character.
@@ -36,6 +42,9 @@ public struct ArtProfile: Equatable, Sendable {
         rows = (0..<height).map { row in
             let visible = (0..<width).filter { pixels[(row * width + $0) * 4 + 3] > alphaThreshold }
             return visible.first.map { $0...visible.last! }
+        }
+        columnTops = (0..<width).map { column in
+            (0..<height).first { pixels[($0 * width + column) * 4 + 3] > alphaThreshold }
         }
         canvas = height
     }
@@ -92,22 +101,6 @@ public struct ArtProfile: Equatable, Sendable {
         return ArtProfile(canvas: canvas, rows: (0..<canvas).map { low[$0] <= high[$0] ? low[$0]...high[$0] : nil })
     }
 
-    /// Earliest canvas row the art's bounding rectangle reaches when rotated up to ±`degrees`
-    /// about `pivot`, sampled every 0.1° (design's conservative sway bound, rounded down).
-    public func rotatedBoundsTop(degrees: Double, pivot: CGPoint) -> Int? {
-        guard let top = top, let bottom = bottom else { return nil }
-        let left = rows.compactMap { $0?.lowerBound }.min()!, right = rows.compactMap { $0?.upperBound }.max()! + 1
-        let corners = [(Double(left), Double(top)), (Double(right), Double(top)),
-                       (Double(left), Double(bottom + 1)), (Double(right), Double(bottom + 1))]
-        let px = Double(pivot.x), py = Double(pivot.y)
-        var highest = Double(top)
-        for step in stride(from: -degrees, through: degrees + 0.0001, by: 0.1) {
-            let angle = step * .pi / 180
-            for (x, y) in corners { highest = min(highest, py + (x - px) * sin(angle) + (y - py) * cos(angle)) }
-        }
-        return Int(highest.rounded(.down))
-    }
-
     /// The native placeholder figure's outline, as fractions of its square.
     public static let placeholder: ArtProfile = {
         let canvas = 256
@@ -119,25 +112,25 @@ public struct ArtProfile: Equatable, Sendable {
     }()
 }
 
-/// Mascot panel geometry for an art size: compact badge spacing (design #28 revision,
-/// docs/design/notifications/compact-badge-spacing.md at 05ea2cd). The S×S art sits at the
-/// bottom, centred in a panel at least 96 pt wide. The count capsule's top is the panel's top
-/// edge and DEMO is centred vertically on it; both may enter the art canvas's transparent
-/// margin but stay at least `labelClearance` above the earliest visible pixel any frame or pose
-/// can reach (`artTopFloor`, canvas pixels, pack-specific). Metrics between 64, 128 and 256 pt
-/// are interpolated linearly over 64–128 and 128–256 and rounded up.
+/// Mascot panel geometry for an art size: near-touch badge spacing (design #28,
+/// docs/design/notifications/compact-badge-spacing.md at ef98a48). The S×S art sits at the bottom,
+/// centred in a panel at least 96 pt wide, its top L below the panel's top edge. DEMO is fixed at
+/// the leading inset; the count is left-aligned in a slot reserved for "99+" and, for each pose,
+/// moves down within the lane so its rounded capsule sits `nearTouchGap` above the art's actual
+/// top contour under it. L is the smallest quarter point at which the widest count (at the top)
+/// and DEMO clear every pose. Metrics between 64, 128 and 256 pt are interpolated linearly over
+/// 64–128 and 128–256 and rounded up.
 public struct MascotLayout: Equatable, Sendable {
     public struct Capsule: Equatable, Sendable {
         public var height: CGFloat
         public var fontSize: CGFloat
         /// Horizontal text inset per side; width is `max(height, ceil(text) + 2 × padding)`.
         public var padding: CGFloat
+
+        public func width(text: CGFloat) -> CGFloat { max(height, text.rounded(.up) + 2 * padding) }
     }
 
     public var artSide: CGFloat
-    /// Earliest canvas row (of 256) any frame or pose can draw a visible pixel in; 0 when
-    /// unknown, which keeps the labels entirely above the art canvas.
-    public var artTopFloor: Int
     public var count: Capsule
     public var demo: Capsule
     /// Horizontal inset of the capsules from the panel's sides.
@@ -146,9 +139,19 @@ public struct MascotLayout: Equatable, Sendable {
     /// Native SF widths measured by design for "DEMO" and the widest count, "99+".
     public var demoWidth: CGFloat
     public var widestCountWidth: CGFloat
+    /// Art top below the panel's top edge (top-left coordinates).
+    public private(set) var laneHeight: CGFloat = 0
+    /// Furthest the count moves down for any pose (any count width).
+    public private(set) var maxCountOffset: CGFloat = 0
 
-    /// Minimum vertical clearance between the labels and the visible art.
-    public static let labelClearance: CGFloat = 3
+    /// Design's capsule-to-art target clearance.
+    public static let nearTouchTarget: CGFloat = 1
+    /// Extra room for antialiased edges at 1× and 2× backing. Design asked for 0.25 pt, enlarged
+    /// as little as native measurement needs: at 0.25 and 0.5 the rasterised count touched the
+    /// art at 64 pt 1× (0.0 pt); at 0.75 every pose/count/scale measured 0.6–2.0 pt, no overlap.
+    public static let rasterReserve: CGFloat = 0.75
+    /// Clearance the layout keeps between each capsule and the art's contour.
+    public static var nearTouchGap: CGFloat { nearTouchTarget + rasterReserve }
 
     private struct Stop {
         var side, countHeight, countFont, countPadding, demoHeight, demoFont, demoPadding, inset, gap, demoWidth,
@@ -163,7 +166,9 @@ public struct MascotLayout: Equatable, Sendable {
              inset: 8, gap: 12, demoWidth: 54, countWidth: 62),
     ]
 
-    public init(artSide: CGFloat, artTopFloor: Int) {
+    /// - Parameter contours: top contours (`ArtProfile.columnTops`, 256-px canvas) of every pose
+    ///   the art can show. Empty means unknown: the labels then stay above the art square.
+    public init(artSide: CGFloat, contours: [[Int?]] = []) {
         let side = min(max(artSide, 64), 256)
         let (a, b) = side <= 128 ? (Self.stops[0], Self.stops[1]) : (Self.stops[1], Self.stops[2])
         let t = (side - a.side) / (b.side - a.side)
@@ -172,21 +177,28 @@ public struct MascotLayout: Equatable, Sendable {
             return (value - 0.0001).rounded(.up)
         }
         self.artSide = artSide
-        self.artTopFloor = max(artTopFloor, 0)
         count = Capsule(height: mix(\.countHeight), fontSize: mix(\.countFont), padding: mix(\.countPadding))
         demo = Capsule(height: mix(\.demoHeight), fontSize: mix(\.demoFont), padding: mix(\.demoPadding))
         inset = mix(\.inset)
         minimumGap = mix(\.gap)
         demoWidth = mix(\.demoWidth)
         widestCountWidth = mix(\.countWidth)
+
+        let poses = contours.isEmpty ? [[Int?](repeating: 0, count: 256)] : contours
+        // The smallest whole-point L (no fractional panel heights; the count's tracking takes up
+        // the rest) at which the widest count, at the top, and DEMO clear every pose.
+        let widest = countFrame(width: widestCountWidth, offset: 0), demo = demoFrame
+        var lane: CGFloat = 0
+        while lane < count.height + Self.nearTouchGap + 1, poses.contains(where: { contour in
+            clearance(contour, widest, lane: lane) < Self.nearTouchGap || clearance(contour, demo, lane: lane) < Self.nearTouchGap
+        }) {
+            lane += 1
+        }
+        laneHeight = lane
+        maxCountOffset = poses.map { countOffset(contour: $0, width: count.height) }.max() ?? 0
     }
 
-    /// Art top below the panel's top edge: `L = max(0, ceil(countHeight + 3 − floor × S/256))`.
-    public var laneHeight: CGFloat {
-        max(0, (count.height + Self.labelClearance - CGFloat(artTopFloor) * artSide / 256 - 0.0001).rounded(.up))
-    }
-    /// Wide enough for DEMO, the widest count and the minimum gap, so the panel never changes
-    /// with the count, Demo, privacy or mood.
+    /// W = max(S, 96, labels): stable across the count's value, Demo, privacy and mood.
     public var panelWidth: CGFloat {
         max(artSide, 96, 2 * inset + demoWidth + widestCountWidth + minimumGap)
     }
@@ -195,15 +207,68 @@ public struct MascotLayout: Equatable, Sendable {
     public var artFrame: CGRect { CGRect(x: (panelWidth - artSide) / 2, y: 0, width: artSide, height: artSide) }
     /// The ground point (the pack's anchor [128, 232]) in panel coordinates.
     public var ground: CGPoint { CGPoint(x: panelWidth / 2, y: 24 * artSide / 256) }
-    /// Where the capsules can be: from the panel's top edge down one count height, inside the
-    /// panel insets (panel coordinates, origin bottom-left).
-    public var tagBand: CGRect {
-        CGRect(x: inset, y: panelSize.height - count.height, width: panelWidth - 2 * inset, height: count.height)
+    /// Leading edge of the reserved "99+" slot (top-left x).
+    public var countSlotX: CGFloat { panelWidth - inset - widestCountWidth }
+
+    /// Count capsule in top-left coordinates, moved down by `offset`.
+    public func countFrame(width: CGFloat, offset: CGFloat) -> CGRect {
+        CGRect(x: countSlotX, y: offset, width: width, height: count.height)
     }
-    /// Vertical distance from the labels' bottom to the earliest visible art (≥ 3 pt).
-    public var labelToArtClearance: CGFloat {
-        laneHeight + CGFloat(artTopFloor) * artSide / 256 - count.height
+    /// DEMO capsule in top-left coordinates: centred on the count's highest position.
+    public var demoFrame: CGRect {
+        CGRect(x: inset, y: (count.height - demo.height) / 2, width: demoWidth, height: demo.height)
     }
+
+    /// How far the count of `width` moves down for a pose with this contour, so its capsule sits
+    /// `nearTouchGap` from the art (nearest distance, not just vertically).
+    public func countOffset(contour: [Int?], width: CGFloat) -> CGFloat {
+        let gap = Self.nearTouchGap
+        func clear(_ offset: CGFloat) -> CGFloat { clearance(contour, countFrame(width: width, offset: offset), lane: laneHeight) }
+        guard clear(0) > gap else { return 0 }
+        // Clearance shrinks as the capsule moves down; find the offset where it reaches the gap.
+        var low: CGFloat = 0, high = laneHeight + artSide
+        if clear(high) >= gap { return high }
+        for _ in 0..<30 {
+            let mid = (low + high) / 2
+            if clear(mid) >= gap { low = mid } else { high = mid }
+        }
+        return low
+    }
+
+    /// Nearest distance from a capsule (top-left rect, fully rounded ends) to the art below its
+    /// top contour, with the art's top at `lane`; negative if they overlap. Each contour column
+    /// is treated as a solid rectangle from its top edge downward (conservative).
+    public func clearance(_ contour: [Int?], _ capsule: CGRect, lane: CGFloat) -> CGFloat {
+        let scale = artSide / CGFloat(contour.count)
+        let artLeft = (panelWidth - artSide) / 2
+        let radius = capsule.height / 2
+        // The capsule is every point within `radius` of this horizontal segment.
+        let segmentLeft = capsule.minX + radius, segmentRight = max(capsule.maxX - radius, segmentLeft)
+        let segmentY = capsule.midY
+        var nearest = CGFloat.infinity
+        for (column, top) in contour.enumerated() {
+            guard let top else { continue }
+            let left = artLeft + CGFloat(column) * scale, right = left + scale
+            let artTop = lane + CGFloat(top) * scale
+            let dx = max(left - segmentRight, segmentLeft - right, 0)
+            let dy = max(artTop - segmentY, 0)
+            nearest = min(nearest, hypot(dx, dy) - radius)
+        }
+        return nearest
+    }
+
+    /// Where the labels can be (panel coordinates, origin bottom-left): DEMO, and the count's
+    /// reserved slot from the top edge down to the lowest the count can track.
+    public var labelRects: [CGRect] {
+        let height = panelSize.height
+        let demo = demoFrame
+        let depth = maxCountOffset + count.height
+        return [CGRect(x: demo.minX, y: height - demo.maxY, width: demo.width, height: demo.height),
+                CGRect(x: countSlotX, y: height - depth, width: widestCountWidth, height: depth)]
+    }
+
+    /// The band spanning both labels (panel coordinates).
+    public var tagBand: CGRect { labelRects.reduce(CGRect.null) { $0.union($1) } }
 
     /// Panel origin after resizing to this layout from `previous` at `origin`, keeping the
     /// ground point where it is on screen.
@@ -224,9 +289,15 @@ public struct HoverPlacement: Equatable, Sendable {
     /// Arrow tip in panel coordinates (origin at the panel's bottom-left). May lie outside the
     /// panel, so the popover is anchored to its own helper window, not to the panel.
     public var tip: CGPoint
-    /// False only when the screen is too short to keep the popover both on screen and below
-    /// the tags (a small mascot near the bottom of the screen with a tall summary).
+    /// False only when the screen is too short to keep the popover both on screen and clear of
+    /// the labels (a small mascot near the bottom of the screen with a tall summary).
     public var laneClear: Bool
+    /// Distance from the arrow tip to the static pose's nearest visible pixel.
+    public var arrowGap: CGFloat = 0
+
+    /// Whether this placement meets #27: labels clear and the arrow within `maxGap` of the art.
+    /// If not, show the compact summary instead.
+    public var meetsTarget: Bool { laneClear && arrowGap <= Self.maxGap }
 
     /// Clearance between the popover window and the nearest visible pixel.
     public static let clearance: CGFloat = 2
@@ -245,14 +316,11 @@ public struct HoverPlacement: Equatable, Sendable {
         let frame = layout.artFrame
         let scale = frame.width / CGFloat(art.canvas)
         let half = (popover.height + chrome.height) / 2
-        // Vertical range for the popover's centre: below the tags, and on screen.
-        let onScreenLow = screen.minY - panelOrigin.y + half
-        let onScreenHigh = screen.maxY - panelOrigin.y - half
-        let belowTags = layout.tagBand.minY - half
-        var high = min(belowTags, onScreenHigh)
-        let laneClear = high >= onScreenLow
-        if !laneClear { high = onScreenLow }   // staying on screen wins, as AppKit would force
-        let low = min(onScreenLow, high)
+        let windowWidth = popover.width + chrome.width
+        // Vertical range for the popover's centre: on screen, and no higher than the panel.
+        let low = screen.minY - panelOrigin.y + half
+        let high = max(min(screen.maxY - panelOrigin.y - half, layout.panelSize.height), low)
+        let labels = layout.labelRects
         let top = CGFloat(art.top ?? 0), bottom = CGFloat(art.bottom ?? (art.canvas - 1))
         let middle = frame.maxY - (top + bottom + 1) / 2 * scale
 
@@ -280,8 +348,8 @@ public struct HoverPlacement: Equatable, Sendable {
         }
         /// Best centre and tip x for one side: the height whose larger distance (arrow tip to the
         /// static pose, or popover window to any pose) is smallest.
-        func best(right: Bool) -> CGPoint {
-            typealias Candidate = (y: CGFloat, x: CGFloat, worst: CGFloat, tip: CGFloat)
+        func best(right: Bool) -> (CGPoint, Bool, CGFloat) {
+            typealias Candidate = (y: CGFloat, x: CGFloat, worst: CGFloat, tip: CGFloat, clear: Bool)
             var candidates: [Candidate] = []
             var y = high
             while y >= low - 0.001 {
@@ -290,25 +358,30 @@ public struct HoverPlacement: Equatable, Sendable {
                     let worst = poses.map { pose in
                         edge(pose, range, right: right).map { right ? x - $0 : $0 - x } ?? .infinity
                     }.max()!
-                    candidates.append((y, x, worst, tipDistance(CGPoint(x: x, y: y), poses[0])))
+                    let window = CGRect(x: right ? x : x - windowWidth, y: y - half, width: windowWidth, height: 2 * half)
+                    let clear = !labels.contains { $0.intersects(window) }
+                    candidates.append((y, x, worst, tipDistance(CGPoint(x: x, y: y), poses[0]), clear))
                 }
                 y -= 1
             }
-            // Minimise the larger of the two distances (arrow to static art, window to any pose).
-            let choice = candidates.min {
+            // Labels clear if possible (otherwise staying on screen wins, as AppKit would force);
+            // then minimise the larger of the two distances (arrow to static art, window to any pose).
+            let pool = candidates.contains { $0.clear } ? candidates.filter { $0.clear } : candidates
+            let choice = pool.min {
                 let (a, b) = (max($0.tip, $0.worst), max($1.tip, $1.worst))
                 return a < b - 0.001 || (abs(a - b) < 0.001 && $0.worst < $1.worst)
             }
-            return choice.map { CGPoint(x: $0.x, y: $0.y) }
-                ?? CGPoint(x: right ? frame.maxX + clearance : frame.minX - clearance, y: min(high, max(low, middle)))
+            return choice.map { (CGPoint(x: $0.x, y: $0.y), $0.clear, $0.tip) }
+                ?? (CGPoint(x: right ? frame.maxX + clearance : frame.minX - clearance, y: min(high, max(low, middle))),
+                    false, .infinity)
         }
 
-        let rightTip = best(right: true), leftTip = best(right: false)
+        let (rightTip, rightClear, rightGap) = best(right: true), (leftTip, leftClear, leftGap) = best(right: false)
         let needed = popover.width + chrome.width
         let roomRight = screen.maxX - (panelOrigin.x + rightTip.x)
         let roomLeft = panelOrigin.x + leftTip.x - screen.minX
         return roomRight >= needed || roomRight >= roomLeft
-            ? HoverPlacement(side: .right, tip: rightTip, laneClear: laneClear)
-            : HoverPlacement(side: .left, tip: leftTip, laneClear: laneClear)
+            ? HoverPlacement(side: .right, tip: rightTip, laneClear: rightClear, arrowGap: rightGap)
+            : HoverPlacement(side: .left, tip: leftTip, laneClear: leftClear, arrowGap: leftGap)
     }
 }
