@@ -72,6 +72,16 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         #expect(incidents[1].impact == .major)
     }
 
+    @Test func newerResolvedRecordRetiresOlderOpenOne() throws {
+        let data = payload([
+            raw("a1", status: "investigating", updated: "2026-11-13T09:00:00Z"),
+            raw("a1", status: "resolved", updated: "2026-11-13T09:30:00Z", resolved: "2026-11-13T09:30:00Z"),
+            raw("b2", status: "resolved", updated: "2026-11-13T09:00:00Z", resolved: "2026-11-13T09:00:00Z"),
+            raw("b2", status: "identified", updated: "2026-11-13T09:30:00Z"),
+        ])
+        #expect(try StatusPageDecoder.unresolvedIncidents(from: data).map(\.id) == ["b2"])
+    }
+
     @Test func missingUpdatedAtFallsBackToCreated() throws {
         let incidents = try StatusPageDecoder.unresolvedIncidents(from: payload([raw("a1", updated: nil)]))
         #expect(incidents.first?.updatedAt == ISO8601DateFormatter().date(from: "2026-11-13T09:10:00Z"))
@@ -98,6 +108,7 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         (raw(String(repeating: "a", count: 33)), "id"),
         (raw("a1", created: "yesterday"), "created_at"),
         (raw("a1", updated: "soon"), "updated_at"),
+        (raw("a1", resolved: "garbage"), "resolved_at"),
         (raw("a1", name: "  "), "name"),
     ])
     func invalidIncidentRejectsWholePayload(_ incident: String, _ field: String) {
@@ -325,6 +336,14 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         #expect(!monitor.hasUrgentIncident)
         // A resolved incident reopening under the same ID is not new.
         #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 180).isEmpty)
+    }
+
+    @Test func reopeningAtHigherImpactIsNotAnEscalation() {
+        let monitor = ServiceStatusMonitor()
+        monitor.apply(.incidents([incident("a1", .minor)]), now: t0)
+        monitor.apply(.incidents([]), now: t0 + 60)
+        #expect(monitor.apply(.incidents([incident("a1", .major)]), now: t0 + 120).isEmpty)
+        #expect(monitor.hasUrgentIncident)
     }
 
     @Test func errorReconnectDoesNotReplay() {
@@ -687,7 +706,7 @@ private func stubURL(_ name: String) -> URL {
         #expect(config.urlCache == nil)
         #expect(config.requestCachePolicy == .reloadIgnoringLocalAndRemoteCacheData)
         #expect(config.timeoutIntervalForRequest == 15)
-        #expect(config.timeoutIntervalForResource == 30)
+        #expect(config.timeoutIntervalForResource == 15)
         #expect(config.waitsForConnectivity == false)
         #expect(config.tlsMinimumSupportedProtocolVersion == .TLSv12)
     }

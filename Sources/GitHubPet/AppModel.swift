@@ -182,6 +182,7 @@ final class AppModel: ObservableObject {
         serviceGenerations.switchSource()
         accounts.reset()
         resetSession()
+        resetServiceStatus()
         pollTimer?.invalidate()
         pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
@@ -192,11 +193,16 @@ final class AppModel: ObservableObject {
 
     private func resetSession() {
         engine.reset()
-        serviceMonitor.reset()
         unseen.removeAll()
-        unseenIncidents.removeAll()
         clips.clear()
         activeClip = nil
+    }
+
+    /// Public GitHub Status doesn't depend on the gh account, so only a data-source switch (or a
+    /// snapshot reset) clears it, never a `gh auth switch`.
+    private func resetServiceStatus() {
+        serviceMonitor.reset()
+        unseenIncidents.removeAll()
     }
 
     func refresh() {
@@ -413,6 +419,7 @@ final class AppModel: ObservableObject {
     /// Render hook only: show the Loading state of a fresh source without polling.
     func showLoadingForSnapshot() {
         resetSession()
+        resetServiceStatus()
         sync(now: clock())
     }
 }

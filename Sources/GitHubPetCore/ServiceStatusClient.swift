@@ -125,7 +125,8 @@ public final class URLSessionStatusTransport: NSObject, StatusTransport, URLSess
         config.urlCache = nil
         config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         config.timeoutIntervalForRequest = timeout
-        config.timeoutIntervalForResource = timeout * 2
+        // The request timeout is per inactivity; the resource timeout bounds the whole fetch.
+        config.timeoutIntervalForResource = timeout
         config.waitsForConnectivity = false
         config.tlsMinimumSupportedProtocolVersion = .TLSv12
         configure?(config)

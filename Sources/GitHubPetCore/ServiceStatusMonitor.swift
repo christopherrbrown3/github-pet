@@ -40,7 +40,8 @@ public enum ServiceStatusState: Equatable, Sendable {
 /// - the first success establishes the baseline silently; incidents already open are not announced;
 /// - a poll is comparable only after a fresh previous success, so recovery from an error or
 ///   staleness records incidents silently (no replay);
-/// - each incident ID is announced at most once, even if it disappears and comes back;
+/// - each incident ID is announced at most once, even if it disappears and comes back (also when
+///   it comes back with a higher impact);
 /// - updates (name, status, minor impact changes) revise rows silently. Escalation of a known
 ///   incident to major or critical counts as meaningful: it is announced once, as urgent, on a
 ///   comparable poll. De-escalation is silent and re-escalation is never re-announced;
@@ -81,9 +82,12 @@ public final class ServiceStatusMonitor {
             let fresh = lastSuccess.map { now >= $0 && now.timeIntervalSince($0) < staleAfter } ?? false
             let comparable = baselineEstablished && previousWasComparable && fresh
             var events: [InboxEvent] = []
+            // Escalation is only a change within one open incident: a reopened ID stays silent.
+            let previousIDs = Set(incidents.map(\.id))
             for incident in current {
                 let isNew = !knownSet.contains(incident.id)
-                let escalated = !isNew && incident.impact >= .major && !urgentSeen.contains(incident.id)
+                let escalated = previousIDs.contains(incident.id) && incident.impact >= .major
+                    && !urgentSeen.contains(incident.id)
                 if comparable && (isNew || escalated) { events.append(incident.event) }
             }
             for incident in current {

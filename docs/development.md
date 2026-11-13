@@ -126,8 +126,10 @@ use only: it isn't notarized or Developer ID signed.
   period, record incidents silently; a new ID on a comparable poll animates once. Updates revise rows
   silently. Escalation of a known incident to `major`/`critical` is announced once, as urgent (an outage
   getting worse is worth an alert); de-escalation and re-escalation are silent. Resolved incidents leave
-  the list without animation, and a reopened ID is not announced again. Gestures follow the same snooze,
+  the list without animation, and a reopened ID is not announced again (even at a higher impact). Gestures follow the same snooze,
   quiet-hours and Reduce Motion rules as inbox events; privacy mode hides incident names.
+- GitHub Status is public, so a `gh auth switch` re-baselines only the inbox; switching the data source
+  resets both.
 - Rows open only `https://www.githubstatus.com/incidents/<id>` (lowercase alphanumeric ID, no query,
   fragment, port or credentials).
 

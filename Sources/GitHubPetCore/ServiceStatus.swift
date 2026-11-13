@@ -150,8 +150,9 @@ public enum StatusPageDecoder {
         var resolved_at: String?
     }
 
-    /// Unresolved incidents only, deduped by ID (latest update wins), most severe then newest first.
-    /// Resolved incidents and scheduled maintenance are dropped.
+    /// Unresolved incidents only, deduped by ID (latest update wins, before the lifecycle filter, so a
+    /// newer resolved record retires an older open one), most severe then newest first. Resolved
+    /// incidents and scheduled maintenance are dropped.
     public static func unresolvedIncidents(from data: Data) throws -> [ServiceIncident] {
         let payload: Payload
         do {
@@ -161,7 +162,8 @@ public enum StatusPageDecoder {
         }
         guard !payload.page.id.isEmpty else { throw StatusDecodeError.malformed }
         guard payload.incidents.count <= maxIncidents else { throw StatusDecodeError.tooManyIncidents }
-        var incidents: [ServiceIncident] = []
+        // Latest validated record per ID, with whether it is still an unresolved incident.
+        var latest: [String: (incident: ServiceIncident, active: Bool)] = [:]
         for raw in payload.incidents {
             guard ServiceStatusLink.isValidIncidentID(raw.id) else { throw StatusDecodeError.invalidIncident("id") }
             guard let status = IncidentStatus(rawValue: raw.status) else {
@@ -176,12 +178,14 @@ public enum StatusPageDecoder {
                 guard let parsed = date(text) else { throw StatusDecodeError.invalidIncident("updated_at") }
                 updated = parsed
             }
+            if let text = raw.resolved_at, date(text) == nil { throw StatusDecodeError.invalidIncident("resolved_at") }
             let name = sanitizedName(raw.name)
             guard !name.isEmpty else { throw StatusDecodeError.invalidIncident("name") }
-            guard status.isUnresolvedIncident, impact != .maintenance, raw.resolved_at == nil else { continue }
-            incidents.append(ServiceIncident(id: raw.id, name: name, status: status, impact: impact, updatedAt: updated))
+            let incident = ServiceIncident(id: raw.id, name: name, status: status, impact: impact, updatedAt: updated)
+            if let existing = latest[raw.id], existing.incident.updatedAt >= updated { continue }
+            latest[raw.id] = (incident, status.isUnresolvedIncident && impact != .maintenance && raw.resolved_at == nil)
         }
-        return dedupe(incidents)
+        return dedupe(latest.values.filter(\.active).map(\.incident))
     }
 
     /// One incident per ID (the most recently updated), most severe first, then newest.
