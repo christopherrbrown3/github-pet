@@ -4,7 +4,7 @@ A small desktop companion that helps you notice the GitHub work waiting for you.
 
 GitHub Pet is a native macOS app built with SwiftUI and AppKit. An optional animated Mona-inspired character lives on your desktop, with a persistent menu-bar inbox for actionable alerts. The goal is to tell you when something needs your attention, give you a brief preview, and open the relevant GitHub page when you choose to act.
 
-No hosted backend. All authenticated GitHub access goes through your locally installed **GitHub CLI (`gh`)**. The app does not own or store GitHub tokens, and approval actions open GitHub in your browser.
+No hosted backend. All authenticated GitHub access goes through your locally installed **GitHub CLI (`gh`)**. The app does not own or store GitHub tokens. It opens validated GitHub item links in your browser and performs no approval mutations.
 
 > **In development:** the application prototype is in [PR #18](https://github.com/christopherrbrown3/github-pet/pull/18). The default branch currently contains project setup, artwork, and design specifications. There is no packaged release or working Homebrew install command yet.
 
@@ -28,7 +28,7 @@ The prototype includes mascot size and visibility, privacy, reduced motion, snoo
 
 <img src="docs/screenshots/prototype-50ad2fe/settings.png" alt="Native settings render showing mascot sizing, privacy and reduced-motion controls, snooze, quiet hours, and GitHub CLI source selection" width="460">
 
-The images show the current implementation, not complete acceptance: live resizing, desktop placement, animation, and accessibility checks are still being worked through. Later changes may differ from this pinned snapshot.
+The images show the implementation snapshot at `50ad2fe`, not complete acceptance: live resizing, desktop placement, animation, and accessibility checks are still being worked through. Later changes may differ from this pinned snapshot.
 
 ## What works today
 
@@ -40,7 +40,7 @@ The open prototype PR includes:
 - Privacy controls, reduced motion, quiet hours, and snoozing.
 - An initial read-only live mode for **PR reviews requested from you** and **open issues assigned to you**, using the active `gh` account on github.com.
 
-Fixtures are the default. Live mode currently searches relevant activity across accessible repositories without a repository filter. Each search is capped at 30 results; hitting the cap marks the snapshot as partial. The stronger new-notification animation is still being implemented in [#29](https://github.com/christopherrbrown3/github-pet/issues/29).
+Fixtures are the default. Live mode currently searches relevant activity across accessible repositories without a repository filter. Each search is capped at 30 results; hitting the cap marks the snapshot as partial. The stronger new-notification animation implementation is in unmerged [PR #18](https://github.com/christopherrbrown3/github-pet/pull/18) and is pending verification ([#29](https://github.com/christopherrbrown3/github-pet/issues/29)).
 
 Unknown, failed, partial, or stale data must stay distinguishable from a verified empty inbox. An initial sync establishes a baseline; unchanged polls and noncomparable recovery must not manufacture new notifications.
 
