@@ -6,7 +6,7 @@
       "runtime": "codex",
       "assignment": "#5",
       "intendedModel": "gpt-6-astra",
-      "observedModel": "gpt-6.1-sol",
+      "observedModel": "gpt-6.1-terra",
       "sessionId": "01a1d07b-522b-7370-9477-72b1b877c355"
     },
     {
@@ -41,5 +41,5 @@
   ],
   "observedDate": "2026-11-13",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly requested replacing Codex QA and Designer with Claude. Both new Opus5.5 sessions responded with verified model/workspace/tools. PM retains Codex Sol. Inspect Herdr before routing. Chris authorizes PM merges after readiness and review; releases remain separate."
+  "note": "Chris explicitly requested replacing Codex QA and Designer with Claude. Both new Opus5.5 sessions responded with verified model/workspace/tools. PM current runtime is Codex Terra, distinct from originally requested Astra. Inspect Herdr before routing. Chris authorizes PM merges after readiness and review; releases remain separate."
 }

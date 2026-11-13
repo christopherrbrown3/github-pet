@@ -6,7 +6,7 @@ Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . The proj
 
 | Role | Terminal | Actual model | Work |
 |---|---|---|---|
-| product-manager | t8 | gpt-6.1-sol | Board, coordination, review and authorized merges; original Astra difference disclosed |
+| product-manager | t8 | gpt-6.1-terra | Board, coordination, review and authorized merges; original Astra differs from current runtime |
 | developer | t9 | claude-opus-5-5 | #27 hover / #28 badge fixes, then #29 animation |
 | graphic-designer | t1n | claude-opus-5-5 | Chris requested Claude takeover; #29/badge visual review |
 | qa-engineer | t1m | claude-opus-5-5 | Chris requested Claude takeover; independent exact-SHA verification; no CUA tool |
