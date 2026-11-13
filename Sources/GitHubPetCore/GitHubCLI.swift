@@ -204,27 +204,32 @@ public struct GhClient: Sendable {
         }
     }
 
-    struct Query {
-        var kind: ItemKind
-        var arguments: [String]
-    }
-
-    static let searchFields = "number,title,url,repository,updatedAt"
-    /// Per-query result cap. A query that fills it may have more matches, so it is partial.
+    /// Per-search result cap. More matches than this (GraphQL `issueCount`) make the snapshot
+    /// partial: its items are a lower bound.
     static let searchLimit = 30
 
-    static let queries: [Query] = [
-        Query(kind: .reviewRequest, arguments: ["search", "prs", "--review-requested=@me", "--state=open",
-                                                "--json", searchFields, "--limit", "\(searchLimit)"]),
-        Query(kind: .assignedIssue, arguments: ["search", "issues", "--assignee=@me", "--state=open",
-                                                "--json", searchFields, "--limit", "\(searchLimit)"]),
-    ]
+    /// One GraphQL request answers the viewer's login and both searches, so the account and the
+    /// items always come from the same token: `gh auth switch` mid-poll can't mix accounts.
+    /// The searches match `gh search prs --review-requested=@me --state=open` and
+    /// `gh search issues --assignee=@me --state=open` (checked: same items, order, URLs, dates).
+    static let graphQLQuery = """
+        query {
+          viewer { login }
+          reviews: search(query: "is:pr is:open review-requested:@me", type: ISSUE, first: \(searchLimit)) {
+            issueCount
+            nodes { ... on PullRequest { number title url updatedAt repository { nameWithOwner } } }
+          }
+          assigned: search(query: "is:issue is:open assignee:@me", type: ISSUE, first: \(searchLimit)) {
+            issueCount
+            nodes { ... on Issue { number title url updatedAt repository { nameWithOwner } } }
+          }
+        }
+        """
 
-    /// Login of the active github.com account; only compared in memory, never shown or stored.
-    static let accountArguments = ["api", "user", "--jq", ".login"]
+    static var requestArguments: [String] { ["api", "graphql", "-f", "query=\(graphQLQuery)"] }
 
-    /// One poll's result plus the account it belongs to (nil when the poll failed before
-    /// the account was known).
+    /// One poll's result plus the account it belongs to (nil when the poll failed before the
+    /// account was known).
     public struct AccountFetch: Sendable {
         public var account: String?
         public var outcome: FetchOutcome
@@ -232,9 +237,9 @@ public struct GhClient: Sendable {
 
     public func fetch() -> FetchOutcome { fetchWithAccount().outcome }
 
-    /// One poll: identify the active account, then run each search and merge. Any sub-query
-    /// failure makes the snapshot partial. The account lets the caller start a fresh baseline
-    /// when `gh auth switch` changes who is signed in.
+    /// One poll: a single authenticated request for the account and both searches. A search that
+    /// failed or hit the cap makes the snapshot partial; both failing is an error. The account lets
+    /// the caller start a fresh baseline when `gh auth switch` changes who is signed in.
     public func fetchWithAccount() -> AccountFetch {
         switch authState() {
         case .missing: return AccountFetch(account: nil, outcome: .failure(.ghMissing))
@@ -243,73 +248,79 @@ public struct GhClient: Sendable {
         case .authenticated: break
         }
         guard let gh = locator.locate() else { return AccountFetch(account: nil, outcome: .failure(.ghMissing)) }
-        let account: String
+        let result: CommandResult
         do {
-            let result = try runner.run(executable: gh, arguments: Self.accountArguments, timeout: timeout)
-            if Self.isAuthFailure(result) { return AccountFetch(account: nil, outcome: .failure(.unauthenticated)) }
-            let login = String(decoding: result.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard result.exitCode == 0, !login.isEmpty else {
-                return AccountFetch(account: nil, outcome: .failure(.failed("Couldn't identify the GitHub account")))
-            }
-            account = login
+            result = try runner.run(executable: gh, arguments: Self.requestArguments, timeout: timeout)
         } catch {
-            return AccountFetch(account: nil, outcome: .failure(.failed("Couldn't identify the GitHub account")))
+            return AccountFetch(account: nil, outcome: .failure(.failed("GitHub search failed")))
         }
-        return AccountFetch(account: account, outcome: search(gh))
-    }
-
-    private func search(_ gh: URL) -> FetchOutcome {
-
-        var items: [InboxItem] = []
-        var failures = 0
-        var capped = false
-        for query in Self.queries {
-            do {
-                let result = try runner.run(executable: gh, arguments: query.arguments, timeout: timeout)
-                if Self.isAuthFailure(result) { return .failure(.unauthenticated) }
-                guard result.exitCode == 0 else { failures += 1; continue }
-                let page = try GhSearchParser.parsePage(result.stdout, kind: query.kind)
-                items += page.items
-                if page.rowCount >= Self.searchLimit { capped = true }
-            } catch {
-                failures += 1
-            }
+        if Self.isAuthFailure(result) { return AccountFetch(account: nil, outcome: .failure(.unauthenticated)) }
+        // gh exits non-zero when GraphQL reports errors but still prints the response, which may
+        // hold one search's data: parse whatever arrived.
+        guard let response = GhGraphQLParser.parse(result.stdout), let account = response.account else {
+            return AccountFetch(account: nil, outcome: .failure(.failed("GitHub search failed")))
         }
-        if failures == Self.queries.count { return .failure(.failed("GitHub search failed")) }
-        return .snapshot(items: items, complete: failures == 0 && !capped)
+        let pages = [response.reviews, response.assigned]
+        let found = pages.compactMap { $0 }
+        guard !found.isEmpty else { return AccountFetch(account: account, outcome: .failure(.failed("GitHub search failed"))) }
+        let complete = found.count == pages.count && found.allSatisfy { $0.total <= $0.items.count }
+        return AccountFetch(account: account, outcome: .snapshot(items: found.flatMap(\.items), complete: complete))
     }
 }
 
-public enum GhSearchParser {
-    struct Row: Decodable {
-        struct Repository: Decodable { var nameWithOwner: String }
-        var number: Int
-        var title: String
-        var url: String
-        var repository: Repository
-        var updatedAt: Date
+public enum GhGraphQLParser {
+    public struct Page: Equatable, Sendable {
+        public var items: [InboxItem]
+        /// All matches (`issueCount`); more than `items` means the cap hid some.
+        public var total: Int
     }
 
-    public enum ParseError: Error { case malformed }
-
-    /// Parse `gh search … --json number,title,url,repository,updatedAt` output.
-    /// IDs are `<kind>:<owner/repo>#<number>`, stable across polls.
-    public static func parse(_ data: Data, kind: ItemKind) throws -> [InboxItem] {
-        try parsePage(data, kind: kind).items
+    public struct Response: Equatable, Sendable {
+        public var account: String?
+        public var reviews: Page?
+        public var assigned: Page?
     }
 
-    /// Items plus the raw row count (used to detect a query that hit its result cap).
-    public static func parsePage(_ data: Data, kind: ItemKind) throws -> (items: [InboxItem], rowCount: Int) {
+    private struct Envelope: Decodable {
+        struct DataField: Decodable {
+            struct Viewer: Decodable { var login: String? }
+            var viewer: Viewer?
+            var reviews: Search?
+            var assigned: Search?
+        }
+        struct Search: Decodable {
+            var issueCount: Int
+            var nodes: [Node?]
+        }
+        struct Node: Decodable {
+            struct Repository: Decodable { var nameWithOwner: String }
+            var number: Int?
+            var title: String?
+            var url: String?
+            var updatedAt: Date?
+            var repository: Repository?
+        }
+        var data: DataField?
+    }
+
+    /// Parses the GraphQL response, or nil if it isn't one. IDs are `<kind>:<owner/repo>#<number>`,
+    /// stable across polls; links outside https://github.com are dropped.
+    public static func parse(_ data: Data) -> Response? {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        guard let rows = try? decoder.decode([Row].self, from: data) else { throw ParseError.malformed }
-        let items: [InboxItem] = rows.compactMap { row in
-            let repo = row.repository.nameWithOwner
-            guard !repo.isEmpty, row.number > 0 else { return nil }
-            return InboxItem(id: "\(kind.rawValue):\(repo)#\(row.number)", kind: kind,
-                             repository: repo, title: row.title,
-                             url: SafeLink.validated(row.url), updatedAt: row.updatedAt)
+        guard let envelope = try? decoder.decode(Envelope.self, from: data), let body = envelope.data else { return nil }
+        func page(_ search: Envelope.Search?, kind: ItemKind) -> Page? {
+            guard let search else { return nil }
+            let items: [InboxItem] = search.nodes.compactMap { node in
+                guard let node, let number = node.number, number > 0, let repo = node.repository?.nameWithOwner,
+                      !repo.isEmpty, let updatedAt = node.updatedAt else { return nil }
+                return InboxItem(id: "\(kind.rawValue):\(repo)#\(number)", kind: kind, repository: repo,
+                                 title: node.title ?? "", url: node.url.flatMap { SafeLink.validated($0) }, updatedAt: updatedAt)
+            }
+            return Page(items: items, total: search.issueCount)
         }
-        return (items, rows.count)
+        let login = body.viewer?.login.flatMap { $0.isEmpty ? nil : $0 }
+        return Response(account: login, reviews: page(body.reviews, kind: .reviewRequest),
+                        assigned: page(body.assigned, kind: .assignedIssue))
     }
 }
