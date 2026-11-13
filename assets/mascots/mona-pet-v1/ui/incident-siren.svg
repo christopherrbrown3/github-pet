@@ -7,7 +7,7 @@
       <stop offset="1" stop-color="#B3261E"/>
     </linearGradient>
     <radialGradient id="glow" cx="28" cy="214" r="34" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FF3B30" stop-opacity="0.45"/>
+      <stop offset="0" stop-color="#FF3B30" stop-opacity="0.6"/>
       <stop offset="1" stop-color="#FF3B30" stop-opacity="0"/>
     </radialGradient>
   </defs>

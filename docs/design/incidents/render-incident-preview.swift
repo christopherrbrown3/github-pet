@@ -348,12 +348,36 @@ func checkFadeIn() {
     }
 }
 
+// SVG agreement check: the hand-authored siren must use the json's geometry and light palette.
+func checkSirenSVG() {
+    let svg = try! String(contentsOf: root.appendingPathComponent(dict(spec["siren"])["svg"] as! String), encoding: .utf8)
+    let siren = dict(spec["siren"]), glow = dict(siren["glow"]), gloss = dict(dict(siren["gloss"])["ellipse"])
+    let base = nums(dict(siren["base"])["rect"]), band = nums(dict(dict(siren["dome"])["band"])["rect"])
+    let light = dict(dict(spec["palette"])["light"])
+    func hex(_ token: String) -> String { dict(light[token])["hex"] as! String }
+    func f(_ v: CGFloat) -> String { v == v.rounded() ? String(Int(v)) : String(describing: Double(v)) }
+    let c = nums(glow["center"])
+    let expected = [
+        "radialGradient id=\"glow\" cx=\"\(f(c[0]))\" cy=\"\(f(c[1]))\" r=\"\(f(num(glow["radius"])))\"",
+        "stop-color=\"\(hex("incident.beacon"))\" stop-opacity=\"\(f(num(glow["alpha"])))\"",
+        "stop-color=\"\(hex("incident.siren.dome"))\"",
+        "stop-color=\"\(hex("incident.siren.domeShade"))\"",
+        "rect x=\"\(f(band[0]))\" y=\"\(f(band[1]))\" width=\"\(f(band[2]))\" height=\"\(f(band[3]))\"",
+        "ellipse cx=\"\(f(num(gloss["cx"])))\" cy=\"\(f(num(gloss["cy"])))\" rx=\"\(f(num(gloss["rx"])))\" ry=\"\(f(num(gloss["ry"])))\" fill=\"#FFFFFF\" fill-opacity=\"\(f(num(dict(light["incident.siren.gloss"])["alpha"])))\"",
+        "rect x=\"\(f(base[0]))\" y=\"\(f(base[1]))\" width=\"\(f(base[2]))\" height=\"\(f(base[3]))\" rx=\"\(f(num(dict(siren["base"])["cornerRadius"])))\" fill=\"\(hex("incident.siren.base"))\"",
+        "stroke=\"\(hex("incident.siren.outline"))\" stroke-width=\"\(f(num(dict(siren["outline"])["widthUnits"])))\"",
+    ]
+    let missing = expected.filter { !svg.contains($0) }
+    keepOutReport.append("siren svg vs json: \(expected.count - missing.count)/\(expected.count) attributes agree \(missing.isEmpty ? "PASS" : "FAIL missing \(missing)")")
+}
+
 for size in [64, 128, 256] {
     for appearance in ["light", "dark"] { try renderSheet(size: size, appearance: appearance, annotate: false) }
 }
 try renderSheet(size: 128, appearance: "light", annotate: true)
 checkKeepOut()
 checkFadeIn()
+checkSirenSVG()
 let report = (["Design previews of incident-marker.json drawn with CoreGraphics behind real mona-pet-v1 frames.",
                "Not native MascotView renders; labels (DEMO/count) are not drawn. Columns: static, burst 0.05/1.2/2.6 s (0.05 s is mid fade-in of a new incident). Rows: minor, major, critical."]
               + keepOutReport).joined(separator: "\n") + "\n"
