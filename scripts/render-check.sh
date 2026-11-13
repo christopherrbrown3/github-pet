@@ -62,6 +62,13 @@ check "stale count unknown"       '^state=Stale badge=\? rows=4'
 check "disconnect count unknown"  '^state=Error: simulated disconnect badge=\?'
 check "mascot is one AX button"    '^mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, '
 check "mascot drag vs click"       '^mascot pointer: drop-without-drag-events=moved click=opens-inbox'
+# Hover summary sits just above the visible character: 0-12 pt from the highest visible art
+# pixel to the arrow tip, never overlapping (#27: 237 pt at 128 pt on 3db865e).
+for side in 64 128 256; do
+  gap=$(grep -E "^hover gap @$side: " "$report" | sed -E 's/^hover gap @[0-9]+: (-?[0-9]+) pt.*/\1/')
+  if [[ $gap == <-> ]] && (( gap <= 12 )); then echo "ok   hover gap @$side ${gap} pt"
+  else echo "FAIL hover gap @$side '${gap:-missing}' (want 0-12 pt above the character)"; failures=$((failures + 1)); fi
+done
 check "menu-bar names Demo"       '^menu-bar AX: GitHub Pet, Demo data, '
 check "partial AX quality"        'at least 3 items, some sources unavailable'
 check "loading count unknown"     '^state=Loading… badge=\? rows=0'

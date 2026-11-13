@@ -85,6 +85,9 @@ public struct MascotPack: Equatable, Sendable {
 
     public var directory: URL
     public var manifest: MascotPackManifest
+    /// Canvas pixels above the highest visible pixel across the static poses: where the
+    /// character visibly starts, so UI such as the hover summary can sit right on top of it.
+    public var artTopInset: Int = 0
 
     public func frameURLs(for state: MascotState) -> [URL] {
         manifest.states[state.rawValue]?.frames.map { directory.appendingPathComponent($0) } ?? []
@@ -102,7 +105,37 @@ public struct MascotPack: Equatable, Sendable {
             return .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }
         let errors = validate(manifest, in: directory)
-        return errors.isEmpty ? .success(MascotPack(directory: directory, manifest: manifest)) : .failure(MascotPackErrors(errors: errors))
+        guard errors.isEmpty else { return .failure(MascotPackErrors(errors: errors)) }
+        var pack = MascotPack(directory: directory, manifest: manifest)
+        let insets = MascotState.allCases.compactMap { state in
+            pack.staticFallbackURL(for: state)
+                .flatMap { try? readBounded($0, limit: maxImageBytes) }
+                .flatMap(opaqueTopInset)
+        }
+        pack.artTopInset = insets.min() ?? 0
+        return .success(pack)
+    }
+
+    /// Rows from the top of the image down to the first row with a visible pixel (alpha above
+    /// about 6%), or nil if the image is undecodable or fully transparent.
+    public static func opaqueTopInset(_ data: Data) -> Int? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                          bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+        // Bitmap rows are stored top row first.
+        for row in 0..<height where (0..<width).contains(where: { pixels[(row * width + $0) * 4 + 3] > 16 }) {
+            return row
+        }
+        return nil
     }
 
     public static func validate(_ manifest: MascotPackManifest, in directory: URL) -> [MascotPackError] {

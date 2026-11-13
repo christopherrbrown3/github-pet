@@ -121,6 +121,10 @@ summary; its press action opens the Inbox, the same as a click.
 ### Windows and pointer
 - Inbox and Settings windows always open at least as large as their content, even if an older,
   smaller frame was autosaved.
+- The hover summary is sized to its content before it is shown and points at the character's
+  visible top (the pack's highest opaque pixel across static poses, plus 2 pt), so it sits just
+  above the art at any mascot size; NSPopover still keeps it on screen near display edges.
+  render-check measures the real on-screen gap at 64, 128 and 256 pt (must be 0-12 pt).
 - On the mascot, a press that ends 3 pt or more from where it started is a drag (move and save
   position), even if no intermediate drag events arrived; otherwise it's a click (open Inbox).
 

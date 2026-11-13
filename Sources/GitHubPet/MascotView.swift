@@ -15,6 +15,14 @@ struct MascotView: View {
         CGSize(width: side, height: side + laneHeight)
     }
 
+    /// Height above the panel's bottom edge where the character visibly starts: the art
+    /// square's top minus the pack's transparent margin (or the placeholder's).
+    static func characterTop(side: CGFloat, pack: MascotPack?) -> CGFloat {
+        let insetFraction = pack.map { CGFloat($0.artTopInset) / CGFloat(MascotPack.canvasSize) }
+            ?? PlaceholderFigure.topInsetFraction
+        return side * (1 - insetFraction)
+    }
+
     @ObservedObject var model: AppModel
 
     var body: some View {
@@ -90,6 +98,9 @@ struct PlaceholderFigure: View {
     let pose: MascotPose
     let date: Date
     let reduced: Bool
+
+    /// Top of the drawing (the attention/urgent symbol) as a fraction of the square.
+    static let topInsetFraction: CGFloat = 0.1
 
     /// Frame timings mirroring the pack: idle blink loop, one-shot hop for event clips.
     static func durationsMs(_ state: MascotState) -> [Int] {

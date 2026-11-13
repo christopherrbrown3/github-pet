@@ -242,6 +242,21 @@ private struct PackFixture {
     }
 }
 
+@Suite struct ArtBoundsTests {
+    @Test func topInsetIsTheFirstVisibleRow() {
+        // makePNG fills the bottom-left quadrant: the top half is transparent.
+        #expect(MascotPack.opaqueTopInset(makePNG(width: 256, height: 256)) == 128)
+        #expect(MascotPack.opaqueTopInset(makePNG(width: 256, height: 256, alpha: false)) == 0)
+        #expect(MascotPack.opaqueTopInset(Data("not a png".utf8)) == nil)
+    }
+
+    @Test func loadedPackRecordsTheHighestStaticPose() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest()
+        #expect(try fixture.load().get().artTopInset == 128)
+    }
+}
+
 @Suite struct BundledPackTests {
     /// The repository's shipped pack must pass the same validation the app runs at launch.
     @Test func repositoryPackIsValid() throws {
@@ -257,5 +272,6 @@ private struct PackFixture {
         #expect(pack.manifest.states["idle"]?.loop == true)
         #expect(pack.manifest.states["attention"]?.loop == false)
         #expect(pack.manifest.frameSha256?.count == 12)
+        #expect(pack.artTopInset == 20, "the urgent pose's head starts 20 px below the canvas top")
     }
 }

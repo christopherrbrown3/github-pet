@@ -81,6 +81,9 @@ enum SnapshotRenderer {
             await capture("11-gh-override")
         }
 
+        report.append("## hover placement")
+        for side in [CGFloat(64), 128, 256] { report.append(await hoverGap(model: model, side: side)) }
+
         // Settings goes through the same window sizing as the real Settings window.
         report.append("## settings")
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
@@ -190,6 +193,43 @@ enum SnapshotRenderer {
         let clicked = clicks == 1 && window.frame.origin == CGPoint(x: 2038, y: 2008)
         return "mascot pointer: drop-without-drag-events=\(moved ? "moved" : "FAILED \(window.frame.origin)") "
             + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
+    }
+
+    /// Shows a real mascot panel and hover popover on screen for a moment and measures the gap
+    /// between the popover's arrow tip (its window's bottom edge) and the character's visible top.
+    private static func hoverGap(model: AppModel, side: CGFloat) async -> String {
+        guard let screen = NSScreen.main?.visibleFrame else { return "hover gap @\(Int(side)): no screen" }
+        let size = MascotView.panelSize(side: side)
+        let panel = NSPanel(contentRect: CGRect(origin: CGPoint(x: screen.minX + 40, y: screen.minY + 40), size: size),
+                            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        let container = MascotContainerView(frame: CGRect(origin: .zero, size: size))
+        let hosting = PassthroughHostingView(rootView: MascotView(model: model))
+        hosting.frame = container.bounds
+        container.addSubview(hosting)
+        panel.contentView = container
+        panel.orderFrontRegardless()
+        try? await Task.sleep(nanoseconds: 300_000_000)   // let the panel reach the screen first
+        let popover = MascotWindowController.makeHoverPopover(model: model)
+        popover.animates = false
+        popover.show(relativeTo: MascotWindowController.hoverAnchor(in: container.bounds, pack: model.pack),
+                     of: container, preferredEdge: .maxY)
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        defer { popover.close(); panel.orderOut(nil) }
+        guard let popoverFrame = popover.contentViewController?.view.window?.frame else {
+            return "hover gap @\(Int(side)): popover not shown"
+        }
+        let characterTop = panel.frame.minY + MascotView.characterTop(side: side, pack: model.pack)
+        let gap = popoverFrame.minY - characterTop
+        let above = popoverFrame.minY >= panel.frame.minY
+        func describe(_ rect: CGRect) -> String {
+            "(\(Int(rect.minX)),\(Int(rect.minY)) \(Int(rect.width))x\(Int(rect.height)))"
+        }
+        // Gap from the highest visible art pixel (any static pose) to the popover's arrow tip,
+        // the popover's nearest visible point. Negative would mean overlap.
+        return "hover gap @\(Int(side)): \(Int(gap.rounded())) pt arrow-tip-to-character, popover \(above ? "above" : "below") "
+            + "panel=\(describe(panel.frame)) popover=\(describe(popoverFrame)) character-top-y=\(Int(characterTop))"
     }
 
     private static func accessibilityDump(_ element: Any, depth: Int) -> [String] {

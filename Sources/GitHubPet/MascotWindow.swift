@@ -82,12 +82,30 @@ final class MascotWindowController {
 
     private func showSummary(from view: NSView) {
         hideSummary()
+        let popover = Self.makeHoverPopover(model: model)
+        popover.show(relativeTo: Self.hoverAnchor(in: view.bounds, pack: model.pack), of: view, preferredEdge: .maxY)
+        self.popover = popover
+    }
+
+    /// The hover summary popover, sized to its content before it is shown. Without that, the
+    /// hosting controller's provisional size placed the popover ~237 pt above the mascot (#27).
+    static func makeHoverPopover(model: AppModel) -> NSPopover {
         let popover = NSPopover()
         popover.behavior = .semitransient
         popover.animates = !model.effectiveReducedMotion
-        popover.contentViewController = NSHostingController(rootView: HoverSummaryView(model: model))
-        popover.show(relativeTo: view.bounds, of: view, preferredEdge: .maxY)
-        self.popover = popover
+        let controller = NSHostingController(rootView: HoverSummaryView(model: model))
+        controller.sizingOptions = .preferredContentSize
+        popover.contentViewController = controller
+        popover.contentSize = controller.view.fittingSize
+        return popover
+    }
+
+    /// The popover points at the character's visible top, not the panel's top edge: the tag
+    /// lane and the art's transparent margin left a ~32 pt gap at 128 pt (#27).
+    static func hoverAnchor(in bounds: CGRect, pack: MascotPack?) -> CGRect {
+        // 2 pt of clearance so the arrow tip never touches anti-aliased edges of the art.
+        let top = MascotView.characterTop(side: bounds.width, pack: pack) + 2
+        return CGRect(x: bounds.minX, y: top - 1, width: bounds.width, height: 1)
     }
 
     private func hideSummary() {
