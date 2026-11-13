@@ -1,0 +1,291 @@
+{
+  "source": "mona-pet-v1; nonzero alpha pixel edges",
+  "angleStepDegrees": 0.1,
+  "targetVisibleGapPt": 1,
+  "rasterReservePt": 0.25,
+  "limitations": [
+    "Source-contour estimate; native 1x/2x compositing and runtime placement remain unverified.",
+    "Global fixed envelope means some individual upright poses can sit farther than the closest pose."
+  ],
+  "scales": [
+    {
+      "artSidePt": 64,
+      "panelWidthPt": 96,
+      "laneHeightPt": 15.75,
+      "panelHeightPt": 79.75,
+      "stateLaneTargetsPt": {
+        "idle": 15.5,
+        "urgent": 15.75,
+        "attention-static": 15.0,
+        "attention-sway": 15.5
+      },
+      "countSlotLeftPt": 56,
+      "countSlotWidthPt": 36,
+      "demoLeftPt": 4,
+      "demoTopPt": 3.5,
+      "sampledVisibleCountGapRangePt": {
+        "2+": {
+          "idle": [
+            1.339,
+            1.643
+          ],
+          "urgent": [
+            1.305,
+            1.305
+          ],
+          "attention-static": [
+            1.524,
+            1.524
+          ],
+          "attention-sway": [
+            1.982,
+            3.082
+          ]
+        },
+        "99+": {
+          "idle": [
+            1.339,
+            1.643
+          ],
+          "urgent": [
+            1.305,
+            1.305
+          ],
+          "attention-static": [
+            1.524,
+            1.524
+          ],
+          "attention-sway": [
+            1.982,
+            3.082
+          ]
+        }
+      },
+      "requiredLaneByLabelPt": {
+        "DEMO": 15.531,
+        "2": 15.725,
+        "2+": 15.725,
+        "?": 15.725,
+        "99+": 15.725
+      },
+      "requiredLaneByLabelAndStatePt": {
+        "DEMO": {
+          "idle": 15.281,
+          "urgent": 15.531,
+          "attention-static": 14.531,
+          "attention-sway": 15.434
+        },
+        "2": {
+          "idle": 15.441,
+          "urgent": 15.725,
+          "attention-static": 14.751,
+          "attention-sway": 14.828
+        },
+        "2+": {
+          "idle": 15.441,
+          "urgent": 15.725,
+          "attention-static": 14.751,
+          "attention-sway": 14.828
+        },
+        "?": {
+          "idle": 15.441,
+          "urgent": 15.725,
+          "attention-static": 14.751,
+          "attention-sway": 14.828
+        },
+        "99+": {
+          "idle": 15.441,
+          "urgent": 15.725,
+          "attention-static": 14.751,
+          "attention-sway": 14.828
+        }
+      }
+    },
+    {
+      "artSidePt": 128,
+      "panelWidthPt": 128,
+      "laneHeightPt": 19.5,
+      "panelHeightPt": 147.5,
+      "stateLaneTargetsPt": {
+        "idle": 18.5,
+        "urgent": 19.5,
+        "attention-static": 17.0,
+        "attention-sway": 19.0
+      },
+      "countSlotLeftPt": 75,
+      "countSlotWidthPt": 47,
+      "demoLeftPt": 6,
+      "demoTopPt": 7.5,
+      "sampledVisibleCountGapRangePt": {
+        "2+": {
+          "idle": [
+            1.5,
+            2.0
+          ],
+          "urgent": [
+            1.5,
+            1.5
+          ],
+          "attention-static": [
+            1.5,
+            1.5
+          ],
+          "attention-sway": [
+            1.513,
+            6.121
+          ]
+        },
+        "99+": {
+          "idle": [
+            1.5,
+            2.0
+          ],
+          "urgent": [
+            1.5,
+            1.5
+          ],
+          "attention-static": [
+            1.5,
+            1.5
+          ],
+          "attention-sway": [
+            1.513,
+            6.116
+          ]
+        }
+      },
+      "requiredLaneByLabelPt": {
+        "DEMO": 18.664,
+        "2": 19.312,
+        "2+": 19.312,
+        "?": 19.312,
+        "99+": 19.312
+      },
+      "requiredLaneByLabelAndStatePt": {
+        "DEMO": {
+          "idle": 17.812,
+          "urgent": 18.312,
+          "attention-static": 16.312,
+          "attention-sway": 18.664
+        },
+        "2": {
+          "idle": 18.312,
+          "urgent": 19.312,
+          "attention-static": 16.804,
+          "attention-sway": 18.903
+        },
+        "2+": {
+          "idle": 18.312,
+          "urgent": 19.312,
+          "attention-static": 16.812,
+          "attention-sway": 18.903
+        },
+        "?": {
+          "idle": 18.312,
+          "urgent": 19.312,
+          "attention-static": 16.804,
+          "attention-sway": 18.903
+        },
+        "99+": {
+          "idle": 18.312,
+          "urgent": 19.312,
+          "attention-static": 16.812,
+          "attention-sway": 18.903
+        }
+      }
+    },
+    {
+      "artSidePt": 256,
+      "panelWidthPt": 256,
+      "laneHeightPt": 13.0,
+      "panelHeightPt": 269.0,
+      "stateLaneTargetsPt": {
+        "idle": 13.0,
+        "urgent": 12.25,
+        "attention-static": 10.75,
+        "attention-sway": 12.75
+      },
+      "countSlotLeftPt": 186,
+      "countSlotWidthPt": 62,
+      "demoLeftPt": 8,
+      "demoTopPt": 15.5,
+      "sampledVisibleCountGapRangePt": {
+        "2+": {
+          "idle": [
+            1.401,
+            2.672
+          ],
+          "urgent": [
+            1.391,
+            1.391
+          ],
+          "attention-static": [
+            1.426,
+            1.426
+          ],
+          "attention-sway": [
+            1.815,
+            12.55
+          ]
+        },
+        "99+": {
+          "idle": [
+            1.401,
+            2.672
+          ],
+          "urgent": [
+            1.391,
+            1.391
+          ],
+          "attention-static": [
+            1.426,
+            1.426
+          ],
+          "attention-sway": [
+            1.815,
+            12.55
+          ]
+        }
+      },
+      "requiredLaneByLabelPt": {
+        "DEMO": 11.216,
+        "2": 12.967,
+        "2+": 12.967,
+        "?": 12.967,
+        "99+": 12.967
+      },
+      "requiredLaneByLabelAndStatePt": {
+        "DEMO": {
+          "idle": 7.382,
+          "urgent": 6.407,
+          "attention-static": 5.407,
+          "attention-sway": 11.216
+        },
+        "2": {
+          "idle": 12.967,
+          "urgent": 12.228,
+          "attention-static": 10.689,
+          "attention-sway": 12.507
+        },
+        "2+": {
+          "idle": 12.967,
+          "urgent": 12.228,
+          "attention-static": 10.689,
+          "attention-sway": 12.507
+        },
+        "?": {
+          "idle": 12.967,
+          "urgent": 12.228,
+          "attention-static": 10.689,
+          "attention-sway": 12.507
+        },
+        "99+": {
+          "idle": 12.967,
+          "urgent": 12.228,
+          "attention-static": 10.689,
+          "attention-sway": 12.507
+        }
+      }
+    }
+  ]
+}

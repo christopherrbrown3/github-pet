@@ -1,12 +1,45 @@
 {
   "designSchemaVersion": 1,
-  "status": "current compact spacing proposal; supersedes prior lane heights only",
+  "status": "historical 3-point proposal; superseded by near-touch-measurements.json and compact-badge-spacing.md",
   "units": "macOS points",
   "visibleAlphaTopFloorSourcePixels": 17,
   "minimumArtToCountGapPoints": 3,
   "scales": [
-    {"size":64,"panelWidth":96,"laneHeight":19,"panelHeight":83,"countHeight":20,"countFont":12,"demoHeight":16,"count99Width":36,"demoWidth":39,"minimumConservativeGap":3.25},
-    {"size":128,"panelWidth":128,"laneHeight":23,"panelHeight":151,"countHeight":28,"countFont":16,"demoHeight":20,"count99Width":47,"demoWidth":46,"minimumConservativeGap":3.5},
-    {"size":256,"panelWidth":256,"laneHeight":26,"panelHeight":282,"countHeight":40,"countFont":22,"demoHeight":24,"count99Width":62,"demoWidth":54,"minimumConservativeGap":3}
+    {
+      "size": 64,
+      "panelWidth": 96,
+      "laneHeight": 19,
+      "panelHeight": 83,
+      "countHeight": 20,
+      "countFont": 12,
+      "demoHeight": 16,
+      "count99Width": 36,
+      "demoWidth": 39,
+      "minimumConservativeGap": 3.25
+    },
+    {
+      "size": 128,
+      "panelWidth": 128,
+      "laneHeight": 23,
+      "panelHeight": 151,
+      "countHeight": 28,
+      "countFont": 16,
+      "demoHeight": 20,
+      "count99Width": 47,
+      "demoWidth": 46,
+      "minimumConservativeGap": 3.5
+    },
+    {
+      "size": 256,
+      "panelWidth": 256,
+      "laneHeight": 26,
+      "panelHeight": 282,
+      "countHeight": 40,
+      "countFont": 22,
+      "demoHeight": 24,
+      "count99Width": 62,
+      "demoWidth": 54,
+      "minimumConservativeGap": 3
+    }
   ]
 }

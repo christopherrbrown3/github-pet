@@ -1,6 +1,6 @@
 # Responsive badges and a clearer new-item gesture
 
-> **Compact revision:** Chris's newer #28 direction supersedes the lane heights and panel heights in the original comparison below. Use [compact-badge-spacing.md](compact-badge-spacing.md) and [compact-badge-metrics.json](compact-badge-metrics.json) for the current measured target. The previous PNG comparisons, JSON and table remain as historical evidence of label sizing and fit; they depict the older, taller lane.
+> **Near-touch revision:** Chris's latest #28 direction supersedes the older ≥3-point compact proposal and the original lane heights below. Use [compact-badge-spacing.md](compact-badge-spacing.md) and [near-touch-measurements.json](near-touch-measurements.json) for the current approximately 1-point capsule-to-visible-art target. Previous PNG comparisons, compact metrics and the table remain historical; they do not depict this revision.
 
 Design handoff for [#28](https://github.com/christopherrbrown3/github-pet/issues/28) and [#29](https://github.com/christopherrbrown3/github-pet/issues/29). The existing generated mascot identity and pack remain intact. These are reviewable implementation specifications; Developer owns the later application changes after PM handoff and #27 completion.
 
