@@ -389,6 +389,9 @@ enum SnapshotRenderer {
         let reducedPlays = model.activeClip != nil
         model.settings.reducedMotion = savedReduced
         model.markAllSeen()
+        // The system setting can't be overridden: with it on, nothing must play.
+        lines.append("gesture environment: system-reduce-motion=\(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion) "
+                     + "alerts-allowed=\(model.alertsAllowed)")
         lines.append("gesture: started=\(first != nil) state=\(first?.state.rawValue ?? "none") "
                      + "duration=\(format(first.map { CGFloat($0.endsAt.timeIntervalSince($0.startedAt)) })) "
                      + "second-event-merged=\(merged) ended=\(ended) reduced-motion-plays=\(reducedPlays)")

@@ -93,8 +93,15 @@ done <<< "$hover_lines"
 for size in 64 128 256; do
   check "labels fit at $size" "^tags @$size: .* fits=true"
 done
-check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
-  '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
+if section "attention gesture (#29, live model)" | grep -q 'system-reduce-motion=true'; then
+  # The runner has macOS Reduce Motion on: the app must play nothing. Not a pass for the gesture.
+  check_in "attention gesture (#29, live model)" "system Reduce Motion: nothing plays" \
+    '^gesture: started=false .* reduced-motion-plays=false'
+  echo "SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)"
+else
+  check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
+    '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
+fi
 for png in gesture-64 gesture-128 gesture-256 near-touch-64-1x near-touch-128-2x near-touch-256-2x; do
   [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
 done
