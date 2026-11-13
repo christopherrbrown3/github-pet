@@ -8,8 +8,8 @@ Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . The proj
 |---|---|---|---|
 | product-manager | t8 | gpt-6.1-sol | Board, coordination, review and authorized merges; original Astra difference disclosed |
 | developer | t9 | claude-opus-5-5 | #27 hover / #28 badge fixes, then #29 animation |
-| graphic-designer | t1k | gpt-6.1-terra | Chris explicitly selected Terra; compact badge design and visual review |
-| qa-engineer | t1g | gpt-6-luna | Independent exact-SHA acceptance; CUA pipe currently blocked |
+| graphic-designer | t1n | claude-opus-5-5 | Chris requested Claude takeover; #29/badge visual review |
+| qa-engineer | t1m | claude-opus-5-5 | Chris requested Claude takeover; independent exact-SHA verification; no CUA tool |
 
 Saved conversations and launch mappings are in roles.json. All resumed specialists responded. Keep dedicated worktrees; inspect live Herdr before recovery.
 
@@ -27,3 +27,7 @@ Saved conversations and launch mappings are in roles.json. All resumed specialis
 ## Merge authorization and constraints
 
 Chris now explicitly authorizes merging ready PRs after Copilot findings are reviewed/handled. Check current immutable head, conflicts, relevant checks and acceptance; do not merge an incomplete application just because it is conflict-free. Releases and auto-merge are not authorized. Native SwiftUI/AppKit, gh-only authenticated access, read-only product and no hardcoded internal repositories remain mandatory. Unknown/stale/partial/error never means empty. Do not bypass model limits or overwrite other worktrees.
+
+## Takeover update
+
+QA and Designer responded from Claude Opus5.5 sessions t1m/t1n with clean dedicated worktrees. Current PR18 head at takeover is f22deaf336c94140e10bcbc207df5649e7b3aee4, CI43487323700 green138tests. #29 double-wave implementation is included; CI has system Reduce Motion enabled, so the positive gesture probe is SKIPPED while suppression is verified. QA and Designer are independently reviewing this exact head and artifact. Native live motion remains unverified. README PR32/33 are merged. New #29 code needs Copilot review. See handoff for prior exact-SHA evidence and constraints.

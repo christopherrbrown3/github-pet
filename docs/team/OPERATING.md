@@ -40,8 +40,8 @@ For a dead specialist, inspect its saved CLI session, worktree status and issue 
 
 Example runtime commands (append the saved role/task instructions):
 - Developer: `claude --model claude-opus-5-5 --name developer --permission-mode auto`
-- Designer: `codex --no-daemon -m gpt-6.1-terra`
-- QA: `codex --no-daemon -m gpt-6-luna`
+- Designer: `claude --model claude-opus-5-5 --name graphic-designer --permission-mode auto`
+- QA: `claude --model claude-opus-5-5 --name qa-engineer --permission-mode auto`
 
 Verify launch argv, displayed model and an actual response before reporting operational. Trust prompts may be resolved only within the user's authorized project. Read blocked/error screens; do not force past permission decisions. No service restarts or usage-limit workarounds.
 
@@ -60,3 +60,7 @@ The first two PRs (#16 workflow, #17 QA plan) were already merged externally whe
 ## Model-selection reminder hazard
 
 During low allowance, Codex showed an idle popup whose default action was to switch from Sol to Luna. A pasted prompt followed by Enter can accept that default before the task reaches the agent. This explains an observed Designer model mismatch. Inspect the visible screen when readiness or model identity is uncertain; dismiss the suggestion with Keep current model (never show again) rather than accepting the default. Verify the model after dismissal. This changes reminder behavior only; usage limits remain in force. Never use a model switch to bypass an allowance.
+
+## Claude specialist takeover
+
+Chris requested Claude replacements for QA and Designer. Both now run Opus5.5 in dedicated role worktrees; see [handoff](handoffs/claude-specialists.md) and roles.json. Original Codex sessions ended cleanly and their worktrees/evidence remain. Both replacements verified gh, Swift, hc and image inspection; neither has CUA enabled, and Designer image generation is unavailable/unverified. Do not infer old Codex tools carry across runtimes.
