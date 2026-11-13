@@ -87,6 +87,20 @@ public struct MascotPack: Equatable, Sendable {
 
     public var directory: URL
     public var manifest: MascotPackManifest
+    /// The exact bytes validated for each image, keyed by manifest path. Everything after
+    /// validation (outlines, rendering) uses these; image paths are never reopened, so a custom
+    /// pack edited after loading (a FIFO, an oversized file) can't stall or exhaust the app.
+    public var imageData: [String: Data] = [:]
+
+    /// Validated bytes of a state's frames, in order.
+    public func frameData(for state: MascotState) -> [Data] {
+        (manifest.states[state.rawValue]?.frames ?? []).compactMap { imageData[$0] }
+    }
+
+    /// Validated bytes of a state's static pose.
+    public func staticFallbackData(for state: MascotState) -> Data? {
+        manifest.states[state.rawValue].flatMap { imageData[$0.staticFallback] }
+    }
     /// Visible outline of each state (its static pose and every animation frame), so UI such
     /// as the hover summary can sit right beside the character without covering any frame.
     public var artProfiles: [MascotState: ArtProfile] = [:]
@@ -160,12 +174,12 @@ public struct MascotPack: Equatable, Sendable {
               let manifest = try? JSONDecoder().decode(MascotPackManifest.self, from: data) else {
             return .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }
-        let errors = validate(manifest, in: directory)
+        let (errors, validated) = validateReading(manifest, in: directory)
         guard errors.isEmpty else { return .failure(MascotPackErrors(errors: errors)) }
         var pack = MascotPack(directory: directory, manifest: manifest)
+        pack.imageData = validated
         for state in MascotState.allCases {
-            let urls = [pack.staticFallbackURL(for: state)].compactMap { $0 } + pack.frameURLs(for: state)
-            let images = urls.compactMap { try? readBounded($0, limit: maxImageBytes) }
+            let images = [pack.staticFallbackData(for: state)].compactMap { $0 } + pack.frameData(for: state)
             pack.poseProfiles[state] = images.compactMap { ArtProfile(png: $0) }
             // The no-overlap outline counts any coverage. Upright frames only (PM decision for
             // #27): the #29 lean will re-aim once at clip start/end using `sweptAttentionProfile`.
@@ -198,8 +212,15 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     public static func validate(_ manifest: MascotPackManifest, in directory: URL) -> [MascotPackError] {
+        validateReading(manifest, in: directory).errors
+    }
+
+    /// Validates the manifest and every image, returning the errors and the bytes that passed.
+    static func validateReading(_ manifest: MascotPackManifest, in directory: URL)
+        -> (errors: [MascotPackError], data: [String: Data]) {
         var errors: [MascotPackError] = []
-        guard manifest.schemaVersion == schemaVersion else { return [.unsupportedSchema(manifest.schemaVersion)] }
+        var validated: [String: Data] = [:]
+        guard manifest.schemaVersion == schemaVersion else { return ([.unsupportedSchema(manifest.schemaVersion)], [:]) }
         if manifest.canvas.width != canvasSize || manifest.canvas.height != canvasSize { errors.append(.badCanvas) }
         if manifest.anchor.count != 2 || !manifest.anchor.allSatisfy({ (0...canvasSize).contains($0) }) {
             errors.append(.badAnchor)
@@ -220,10 +241,12 @@ public struct MascotPack: Equatable, Sendable {
                 errors.append(.durationOutOfRange(state.rawValue, duration))
             }
             for path in spec.frames + [spec.staticFallback] where checked.insert(path).inserted {
-                errors += validateFile(path, in: directory, checksums: manifest.frameSha256 ?? [:])
+                let (fileErrors, data) = validateFile(path, in: directory, checksums: manifest.frameSha256 ?? [:])
+                errors += fileErrors
+                if fileErrors.isEmpty, let data { validated[path] = data }
             }
         }
-        return errors
+        return (errors, validated)
     }
 
     /// Relative, `.png`, no `..`, and resolving inside the pack directory.
@@ -233,34 +256,36 @@ public struct MascotPack: Equatable, Sendable {
         return !path.split(separator: "/", omittingEmptySubsequences: false).contains { $0 == ".." || $0.isEmpty || $0 == "." }
     }
 
-    static func validateFile(_ path: String, in directory: URL, checksums: [String: String]) -> [MascotPackError] {
-        guard isSafeRelativePath(path) else { return [.unsafePath(path)] }
+    /// Validates one image and returns the bytes it checked (nil if it couldn't be read).
+    static func validateFile(_ path: String, in directory: URL, checksums: [String: String])
+        -> (errors: [MascotPackError], data: Data?) {
+        guard isSafeRelativePath(path) else { return ([.unsafePath(path)], nil) }
         let root = directory.standardizedFileURL.resolvingSymlinksInPath().path
         let fileURL = directory.appendingPathComponent(path).standardizedFileURL.resolvingSymlinksInPath()
-        guard fileURL.path.hasPrefix(root + "/") else { return [.unsafePath(path)] }
+        guard fileURL.path.hasPrefix(root + "/") else { return ([.unsafePath(path)], nil) }
         let data: Data
         do {
             data = try readBounded(fileURL, limit: maxImageBytes)
         } catch ReadError.tooLarge {
-            return [.tooLarge(path)]
+            return ([.tooLarge(path)], nil)
         } catch ReadError.notRegularFile {
-            return [.notRegularFile(path)]
+            return ([.notRegularFile(path)], nil)
         } catch {
-            return [.missingFile(path)]
+            return ([.missingFile(path)], nil)
         }
-        guard let size = pngSize(data) else { return [.notPNG(path)] }
+        guard let size = pngSize(data) else { return ([.notPNG(path)], data) }
         // Header dimensions first: a small file can declare a huge image, and decoding it
         // would allocate the full pixel buffer.
         if size.width != canvasSize || size.height != canvasSize {
-            return [.wrongSize(path, size.width, size.height)]
+            return ([.wrongSize(path, size.width, size.height)], data)
         }
-        guard isDecodableRGBA(data) else { return [.undecodable(path)] }
+        guard isDecodableRGBA(data) else { return ([.undecodable(path)], data) }
         var errors: [MascotPackError] = []
         if let expected = checksums[path] {
             let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             if actual != expected.lowercased() { errors.append(.checksumMismatch(path)) }
         }
-        return errors
+        return (errors, data)
     }
 
     enum ReadError: Error { case tooLarge, unreadable, notRegularFile }

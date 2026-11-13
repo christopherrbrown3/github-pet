@@ -658,8 +658,8 @@ enum SnapshotRenderer {
         // Art of every frame the state can show (static pose first), measured independently of
         // the placement code, as screen-space row rects.
         let poses: [ArtProfile] = model.pack.map { pack in
-            ([pack.staticFallbackURL(for: state)].compactMap { $0 } + pack.frameURLs(for: state))
-                .compactMap { try? Data(contentsOf: $0) }.compactMap { ArtProfile(png: $0) }
+            ([pack.staticFallbackData(for: state)].compactMap { $0 } + pack.frameData(for: state))
+                .compactMap { ArtProfile(png: $0) }
         } ?? [.placeholder]
         let art = layout.artFrame.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY)
         func pixels(_ pose: ArtProfile) -> [CGRect] {
