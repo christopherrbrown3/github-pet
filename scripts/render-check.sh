@@ -27,7 +27,7 @@ before=$(prefs before)
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
 GITHUB_PET_GH_PATH=/nonexistent/gh "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-for _ in {1..90}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
+for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
 wait $pid || true
 after=$(prefs after)

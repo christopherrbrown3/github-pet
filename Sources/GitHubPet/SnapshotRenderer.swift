@@ -378,25 +378,34 @@ enum SnapshotRenderer {
     }
 
     /// Nearest distance (points) between visible pixels of two same-size alpha bitmaps, and the
-    /// number of pixels visible in both.
+    /// number of pixels visible in both. Only edge pixels can be nearest, so only they are compared.
     private static func nearestGap(_ a: [UInt8], _ b: [UInt8], size: CGSize, scale: CGFloat) -> (CGFloat, Int) {
         let width = Int((size.width * scale).rounded(.up)), height = a.count / max(width, 1)
+        func edges(_ alpha: [UInt8], in box: (Int, Int, Int, Int)) -> [(Int, Int)] {
+            var result: [(Int, Int)] = []
+            for y in box.1...box.3 { for x in box.0...box.2 where alpha[y * width + x] > 0 {
+                let neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+                if neighbours.contains(where: { $0.0 < 0 || $0.1 < 0 || $0.0 >= width || $0.1 >= height
+                    || alpha[$0.1 * width + $0.0] == 0 }) { result.append((x, y)) }
+            } }
+            return result
+        }
         var overlap = 0
-        var labelPixels: [(Int, Int)] = []
+        var minX = width, minY = height, maxX = -1, maxY = -1
         for y in 0..<height { for x in 0..<width where b[y * width + x] > 0 {
-            labelPixels.append((x, y))
+            minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
             if a[y * width + x] > 0 { overlap += 1 }
         } }
-        guard let minY = labelPixels.map(\.1).min(), let maxY = labelPixels.map(\.1).max(),
-              let minX = labelPixels.map(\.0).min(), let maxX = labelPixels.map(\.0).max() else { return (.infinity, 0) }
+        guard maxX >= 0 else { return (.infinity, 0) }
         let reach = Int(16 * scale)
+        let labelEdges = edges(b, in: (minX, minY, maxX, maxY))
+        let artEdges = edges(a, in: (max(0, minX - reach), max(0, minY - reach),
+                                     min(width - 1, maxX + reach), min(height - 1, maxY + reach)))
         var best = Int.max
-        for y in max(0, minY - reach)...min(height - 1, maxY + reach) {
-            for x in max(0, minX - reach)...min(width - 1, maxX + reach) where a[y * width + x] > 0 {
-                for (lx, ly) in labelPixels {
-                    let d = (lx - x) * (lx - x) + (ly - y) * (ly - y)
-                    if d < best { best = d }
-                }
+        for (x, y) in artEdges {
+            for (lx, ly) in labelEdges {
+                let d = (lx - x) * (lx - x) + (ly - y) * (ly - y)
+                if d < best { best = d }
             }
         }
         // Distance between the facing edges of the two nearest pixels.
