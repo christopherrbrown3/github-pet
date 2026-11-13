@@ -16,7 +16,7 @@ Specialists resumed their original saved conversations following quota reset and
 ## Reviewable deliverables
 
 - Implementation PR #18: https://github.com/christopherrbrown3/github-pet/pull/18 . Remote head 3cf6fa7fd95fd6b491802261331ec2bbc8db72aa. CI run 43308089243 matches this SHA and succeeded: 102 developer tests, bundle/signature/asset checks, native offscreen render checks. This is CI evidence, not full independent acceptance.
-- Design PR #19: https://github.com/christopherrbrown3/github-pet/pull/19 . Head 6a9c88c8839ba0b08f2c24479b76f98ddace7f3d at recovery. Original generated assets are integrated into PR #18; the latest PR #19 commit only adds review evidence.
+- Design PR #19: https://github.com/christopherrbrown3/github-pet/pull/19 . Head 7a108969eb449b6896b6b6a3d07780e7662602e4 after evidence recovery. Original generated assets are integrated into PR #18; the latest PR #19 commits only add review evidence. Exact-SHA retest record: https://github.com/christopherrbrown3/github-pet/blob/7a108969eb449b6896b6b6a3d07780e7662602e4/docs/design/reviews/pr18-088b678-3cf6fa7-retests.md .
 - Latest independent saved QA checkpoint before restart: https://github.com/christopherrbrown3/github-pet/pull/18#issuecomment-6836094991 at 6f938c0. 101 tests/build/offscreen rendering passed. Live menu-bar and Inbox regression was NOT RUN there.
 - Prior QA reports are retained at their old SHAs. They must not be counted as passes for the current head.
 
