@@ -20,11 +20,13 @@ public struct EventTracker: Sendable {
 
     public func contains(_ id: String) -> Bool { known.contains(id) }
 
-    /// Replace the tracker contents with `ids` and mark the baseline as established.
+    /// Record `ids` and mark the baseline as established. IDs observed earlier (e.g. during
+    /// partial polls before the first complete snapshot) are kept, so they never fire later;
+    /// `reset()` is the only way to forget them (source or account change, baseline reset).
     public mutating func seed<S: Sequence>(_ ids: S) where S.Element == String {
-        order.removeAll()
-        known.removeAll()
-        for id in ids { remember(id) }
+        for id in ids where !id.isEmpty {
+            if known.contains(id) { refresh(id) } else { remember(id) }
+        }
         baselineEstablished = true
     }
 

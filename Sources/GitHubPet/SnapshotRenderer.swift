@@ -118,6 +118,16 @@ enum SnapshotRenderer {
         await capture("10c-incident-major")
         model.resolveServiceIncidents()
         await capture("10d-incidents-resolved")
+        // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
+        report.append("## count cap")
+        for _ in 0..<100 { model.injectEntitlementEvent() }
+        model.markAllSeen()
+        report.append("count cap: items=\(model.items.count) mascot-badge=\(model.mascotBadge ?? "none") "
+                      + "inbox-badge=\(model.badge ?? "none") ax=\(model.statusAccessibilityLabel)")
+        report += await render(MascotView(model: model)
+            .frame(width: model.layout(model.settings.mascotSize).panelSize.width,
+                   height: model.layout(model.settings.mascotSize).panelSize.height),
+                               name: "count-cap-mascot", directory: directory, appearance: .aqua)
         // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
         // is deterministic and can never contain live GitHub data.
         if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
@@ -128,6 +138,8 @@ enum SnapshotRenderer {
         }
 
 
+        report.append("## hover follows content growth (real mascot window controller)")
+        report.append(await hoverGrowthProbe(model: model))
         report.append("## resize (real mascot window controller, as the Settings slider does)")
         report += await resizeProbe(model: model, directory: directory)
 
@@ -240,6 +252,56 @@ enum SnapshotRenderer {
         let clicked = clicks == 1 && window.frame.origin == CGPoint(x: 2038, y: 2008)
         return "mascot pointer: drop-without-drag-events=\(moved ? "moved" : "FAILED \(window.frame.origin)") "
             + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
+    }
+
+    /// Opens the real controller's hover summary while Loading (narrow), then lets a refresh fill
+    /// it with titles (privacy off: much wider). The panel sits so the narrow summary fits on the
+    /// right but the wide one doesn't: the grown summary must be re-placed on the left, clear of
+    /// the art, the labels and the screen edge (Copilot 4567505191). Without re-placement it stays
+    /// on the right and AppKit pushes it back over the mascot.
+    private static func hoverGrowthProbe(model: AppModel) async -> String {
+        let saved = model.settings
+        defer { model.settings = saved }
+        guard let screen = NSScreen.main?.visibleFrame, let pack = model.pack else { return "hover growth: no screen or pack" }
+        model.settings.mascotSize = 128
+        model.settings.dataSource = .fixtures   // so the refresh below really fills the summary
+        model.settings.privacyMode = false
+        let layout = model.layout(128)
+        // Room on the right of the art for about 260 pt: enough for Loading, not for titles.
+        let origin = CGPoint(x: screen.maxX - layout.artFrame.maxX - 260, y: screen.minY + 160)
+        model.settings.mascotOriginX = Double(origin.x)
+        model.settings.mascotOriginY = Double(origin.y)
+        model.settings.mascotVisible = true
+        var controller: MascotWindowController? = MascotWindowController(model: model)
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        model.showLoadingForSnapshot()
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        controller?.showSummaryNow()
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        let before = controller?.summaryWindowFrame
+        model.refresh()
+        try? await Task.sleep(nanoseconds: 900_000_000)
+        defer { controller = nil }
+        guard let after = controller?.summaryWindowFrame, let before, let panel = controller?.panelFrame else {
+            model.settings.mascotVisible = false
+            return "hover growth: summary not shown"
+        }
+        let art = layout.artFrame.offsetBy(dx: panel.minX, dy: panel.minY)
+        let scale = art.width / CGFloat(MascotPack.canvasSize)
+        let artPixels = (pack.artProfiles[model.mascotState]?.rows ?? []).enumerated().compactMap { index, span in
+            span.map { CGRect(x: art.minX + CGFloat($0.lowerBound) * scale, y: art.maxY - CGFloat(index + 1) * scale,
+                              width: CGFloat($0.count) * scale, height: scale) }
+        }
+        let labels = layout.labelRects.map { $0.offsetBy(dx: panel.minX, dy: panel.minY) }
+        let side = { (frame: CGRect) in frame.minX >= art.midX ? "right" : "left" }
+        let artClear = !artPixels.contains { $0.intersects(after) }
+        let clear = !labels.contains { $0.intersects(after) }
+        let onScreen = screen.insetBy(dx: -0.5, dy: -0.5).contains(after)
+        model.settings.mascotVisible = false
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        return "hover growth: grew=\(after.width > before.width + 1) before-side=\(side(before)) after-side=\(side(after)) "
+            + "art-clear=\(artClear) labels-clear=\(clear) on-screen=\(onScreen) "
+            + "before=\(Int(before.width))x\(Int(before.height)) after=\(Int(after.width))x\(Int(after.height))"
     }
 
     /// Drives a real MascotWindowController through size changes the way the Settings slider does
@@ -656,8 +718,8 @@ enum SnapshotRenderer {
         // Art of every frame the state can show (static pose first), measured independently of
         // the placement code, as screen-space row rects.
         let poses: [ArtProfile] = model.pack.map { pack in
-            ([pack.staticFallbackURL(for: state)].compactMap { $0 } + pack.frameURLs(for: state))
-                .compactMap { try? Data(contentsOf: $0) }.compactMap { ArtProfile(png: $0) }
+            ([pack.staticFallbackData(for: state)].compactMap { $0 } + pack.frameData(for: state))
+                .compactMap { ArtProfile(png: $0) }
         } ?? [.placeholder]
         let art = layout.artFrame.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY)
         func pixels(_ pose: ArtProfile) -> [CGRect] {

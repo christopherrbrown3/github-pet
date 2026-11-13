@@ -32,6 +32,16 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(tracker.observe("x", comparableSnapshot: true) == false)
     }
 
+    @Test func seedKeepsEarlierObservations() {
+        var tracker = EventTracker()
+        _ = tracker.observe("early", comparableSnapshot: false)
+        tracker.seed(["x"])
+        #expect(tracker.contains("early") && tracker.contains("x") && tracker.baselineEstablished)
+        #expect(tracker.observe("early", comparableSnapshot: true) == false)
+        tracker.reset()
+        #expect(!tracker.contains("early") && !tracker.baselineEstablished)
+    }
+
     @Test func emptyIDIsIgnored() {
         var tracker = EventTracker()
         tracker.seed([])
@@ -190,6 +200,27 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         // A failing first fetch from the new source shows no rows from the old one.
         engine.apply(.failure(.unauthenticated), now: t0 + 1)
         #expect(engine.items.isEmpty)
+    }
+
+    @Test func idsSeenInPartialPollsBeforeTheBaselineNeverFire() {
+        // Copilot 4567505327: fresh polls partial [a] → complete [] → complete [a].
+        let engine = InboxEngine()
+        #expect(engine.apply(.snapshot(items: [item("a")], complete: false), now: t0).isEmpty)
+        #expect(engine.apply(.snapshot(items: [], complete: true), now: t0 + 60).isEmpty)
+        #expect(engine.baselineEstablished)
+        #expect(engine.apply(.snapshot(items: [item("a")], complete: true), now: t0 + 120).isEmpty,
+                "a was already observed")
+        // A genuinely new ID still fires.
+        #expect(engine.apply(.snapshot(items: [item("a"), item("b")], complete: true), now: t0 + 180).map(\.item.id) == ["b"])
+    }
+
+    @Test func explicitResetStillForgetsObservations() {
+        let engine = InboxEngine()
+        engine.apply(.snapshot(items: [item("a")], complete: false), now: t0)
+        engine.reset()   // source or account change
+        engine.apply(.snapshot(items: [], complete: true), now: t0 + 60)
+        #expect(engine.apply(.snapshot(items: [item("a")], complete: true), now: t0 + 120).map(\.item.id) == ["a"],
+                "after a reset, a is new to the new session")
     }
 
     @Test func resetBaselineReseedsSilently() {

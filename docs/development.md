@@ -50,9 +50,12 @@ use only: it isn't notarized or Developer ID signed.
 - `gh auth status --hostname github.com`: exit 0 means signed in. Exit 1 or 4, or "not logged in"
   on stderr, means **Not signed in to GitHub CLI** (hint: `gh auth login`). No executable means
   **GitHub CLI not found** (hint: `brew install gh`).
-- Live data comes from `gh search prs --review-requested=@me` and `gh search issues --assignee=@me`,
-  each capped at 30 results. If one query fails, or a query returns a full page of 30 (there may be
-  more), the snapshot is *partial*. If both fail, it's an *error*.
+- Live data comes from ONE `gh api graphql` request returning the viewer's login and two
+  searches, `is:pr is:open review-requested:@me` and `is:issue is:open assignee:@me` (the same
+  items, order, URLs and dates as `gh search prs/issues`), each capped at 30. One token answers the
+  whole request, so the account and the items can't come from different accounts. If one search
+  fails, or reports more matches (`issueCount`) than it returned, the snapshot is *partial*. If both
+  fail, or the response is unusable, it's an *error*.
 - Every `gh` child runs with `GH_HOST=github.com`, so a shell configured for another host can't
   make searches disagree with the github.com auth check. Output is read without blocking, and
   both pipes are closed on EOF, the collector deadline or a timeout, even if a descendant still
@@ -76,7 +79,7 @@ use only: it isn't notarized or Developer ID signed.
 - Switching the data source clears the inbox to Loading. Rows, counts and baseline from the
   previous source are never shown as the new source's data, and a slow fetch from an earlier
   session is discarded.
-- Each GitHub CLI poll first identifies the signed-in account (`gh api user`, compared in memory
+- Each GitHub CLI poll's response names the signed-in account (`viewer.login`, compared in memory
   only, never shown, logged or stored). If `gh auth switch` changes it, the baseline, unread
   markers and clips are reset, so the new account's existing items are not announced as new.
 - Unread markers are pruned only after a complete snapshot. A partial snapshot (a failed source)

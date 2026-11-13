@@ -11,9 +11,8 @@ final class MascotWindowController {
     private var panel: NSPanel?
     private var popover: NSPopover?
     private lazy var hoverAnchor = Self.makeHoverAnchor()
-    private var summaryState: MascotState?
-    /// Whether the open summary was placed for a playing attention gesture (swept outline).
-    private var summaryForGesture = false
+    /// What the open summary's placement was computed for.
+    private var summaryInputs: HoverPlacementInputs?
     /// Art size the panel is currently laid out for.
     private var shownSize: Double?
     /// The art's ground point on screen, kept unrounded: resizes are computed from it, not from
@@ -126,9 +125,25 @@ final class MascotWindowController {
         let (popover, placement) = Self.prepareHover(model: model, panelFrame: window.frame, screen: screen)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
-        summaryState = model.mascotState
-        summaryForGesture = Self.gesturePlaying(model)
+        summaryInputs = inputs(popover: popover, panelFrame: window.frame)
     }
+
+    private func inputs(popover: NSPopover, panelFrame: CGRect) -> HoverPlacementInputs {
+        HoverPlacementInputs(contentSize: Self.measuredContentSize(popover) ?? popover.contentSize, panelFrame: panelFrame,
+                             state: model.mascotState, gesture: Self.gesturePlaying(model))
+    }
+
+    /// The summary's current natural size (its content may have changed since it was placed).
+    static func measuredContentSize(_ popover: NSPopover) -> CGSize? {
+        (popover.contentViewController as? NSHostingController<HoverSummaryView>)?.view.fittingSize
+    }
+
+    /// Open summary and its window frame (render-check probe).
+    func showSummaryNow() {
+        guard let view = panel?.contentView else { return }
+        showSummary(from: view)
+    }
+    var summaryWindowFrame: CGRect? { popover?.contentViewController?.view.window?.frame }
 
     /// The hover summary popover, sized to its content before it is shown. Without that, the
     /// hosting controller's provisional size placed the popover ~237 pt above the mascot (#27).
@@ -146,15 +161,25 @@ final class MascotWindowController {
     /// The hover popover and where it goes: the full summary if it can be placed within #27's
     /// limits, else the compact one (always below `AppModel.compactHoverBelow`).
     static func prepareHover(model: AppModel, panelFrame: CGRect, screen: CGRect) -> (NSPopover, HoverPlacement) {
+        let popover = makeHoverPopover(model: model, compact: model.hoverIsCompact)
+        return (popover, placeHover(popover, model: model, panelFrame: panelFrame, screen: screen))
+    }
+
+    /// Sizes `popover` for the full summary if that can be placed within #27's limits, else the
+    /// compact one, and returns where it goes. Used when opening and when re-placing.
+    static func placeHover(_ popover: NSPopover, model: AppModel, panelFrame: CGRect, screen: CGRect) -> HoverPlacement {
         let layout = model.layout(model.settings.mascotSize)
-        func attempt(_ compact: Bool) -> (NSPopover, HoverPlacement) {
-            let popover = makeHoverPopover(model: model, compact: compact)
-            return (popover, hoverPlacement(panelFrame: panelFrame, layout: layout, pack: model.pack, state: model.mascotState,
-                                            popover: popover.contentSize, screen: screen, gesture: gesturePlaying(model)))
+        let controller = popover.contentViewController as? NSHostingController<HoverSummaryView>
+        func attempt(_ compact: Bool) -> HoverPlacement {
+            controller?.rootView = HoverSummaryView(model: model, compact: compact)
+            let size = controller?.view.fittingSize ?? popover.contentSize
+            popover.contentSize = size
+            return hoverPlacement(panelFrame: panelFrame, layout: layout, pack: model.pack, state: model.mascotState,
+                                  popover: size, screen: screen, gesture: gesturePlaying(model))
         }
         if !model.hoverIsCompact {
             let full = attempt(false)
-            if full.1.meetsTarget { return full }
+            if full.meetsTarget { return full }
         }
         return attempt(true)
     }
@@ -198,32 +223,28 @@ final class MascotWindowController {
         anchor.setFrame(CGRect(x: right ? tip.x - 1 : tip.x, y: tip.y - 0.5, width: 1, height: 1), display: false)
         anchor.orderFrontRegardless()
         guard let view = anchor.contentView else { return }
-        if popover.isShown {
-            popover.positioningRect = view.bounds
-        } else {
-            popover.show(relativeTo: view.bounds, of: view, preferredEdge: right ? .maxX : .minX)
-        }
+        // Showing again repositions an open popover, including onto the other side; setting only
+        // positioningRect would keep its original edge (found by the content-growth probe).
+        popover.show(relativeTo: view.bounds, of: view, preferredEdge: right ? .maxX : .minX)
     }
 
     private func hideSummary() {
         popover?.performClose(nil)
         popover = nil
-        summaryState = nil
+        summaryInputs = nil
         hoverAnchor.orderOut(nil)
     }
 
     /// Each state's frames have their own outline: re-aim the open summary when the mood changes.
     private func repositionSummaryIfNeeded() {
-        // Re-aim only when the mood changes or a gesture starts or ends, never per frame.
-        guard let popover, let state = summaryState, let window = panel,
-              state != model.mascotState || summaryForGesture != Self.gesturePlaying(model) else { return }
-        summaryForGesture = Self.gesturePlaying(model)
+        // Re-place when the content's size, the panel, the mood or a gesture changed (e.g. Loading
+        // replaced by results), re-choosing full or compact; never per animation frame.
+        guard let popover, let placed = summaryInputs, let window = panel,
+              placed.needsReplacement(for: inputs(popover: popover, panelFrame: window.frame)) else { return }
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
-        let placement = Self.hoverPlacement(panelFrame: window.frame, layout: model.layout(model.settings.mascotSize), pack: model.pack,
-                                            state: model.mascotState, popover: popover.contentSize, screen: screen,
-                                            gesture: summaryForGesture)
-        summaryState = model.mascotState
+        let placement = Self.placeHover(popover, model: model, panelFrame: window.frame, screen: screen)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
+        summaryInputs = inputs(popover: popover, panelFrame: window.frame)
     }
 
     /// Returns `frame.origin` if the frame is mostly on some screen, else nil.

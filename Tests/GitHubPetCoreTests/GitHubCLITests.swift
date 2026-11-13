@@ -19,12 +19,22 @@ private func locator(_ path: String?) -> GhLocator {
     GhLocator(environment: ["PATH": "/usr/bin:/bin"], isExecutable: { $0 == path })
 }
 
-private let searchJSON = """
-[{"number":12,"title":"Fix the thing","url":"https://github.com/example/repo/pull/12",
-  "repository":{"name":"repo","nameWithOwner":"example/repo"},"updatedAt":"2026-11-12T10:00:00Z"},
- {"number":3,"title":"Evil link","url":"javascript:alert(1)",
-  "repository":{"name":"repo","nameWithOwner":"example/repo"},"updatedAt":"2026-11-12T09:00:00Z"}]
-"""
+/// A GraphQL response: viewer login plus the two searches (nil search = errored alias).
+private func graphQL(login: String? = "first-user", reviews: [String]? = [], reviewTotal: Int? = nil,
+                     assigned: [String]? = [], assignedTotal: Int? = nil) -> Data {
+    func search(_ nodes: [String]?, _ total: Int?) -> String {
+        guard let nodes else { return "null" }
+        return #"{"issueCount":\#(total ?? nodes.count),"nodes":[\#(nodes.joined(separator: ","))]}"#
+    }
+    let viewer = login.map { #"{"login":"\#($0)"}"# } ?? "null"
+    return Data(#"{"data":{"viewer":\#(viewer),"reviews":\#(search(reviews, reviewTotal)),"assigned":\#(search(assigned, assignedTotal))}}"#.utf8)
+}
+
+private func node(_ number: Int, repo: String = "example/repo", url: String? = nil) -> String {
+    let link = url ?? "https://github.com/\(repo)/pull/\(number)"
+    return #"{"number":\#(number),"title":"Item \#(number)","url":"\#(link)","updatedAt":"2026-11-12T10:00:00Z","repository":{"nameWithOwner":"\#(repo)"}}"#
+}
+
 
 @Suite struct GhLocatorTests {
     @Test func overrideIsTheOnlyCandidate() {
@@ -65,94 +75,97 @@ private let searchJSON = """
         #expect(!GhClient.isAuthFailure(CommandResult(exitCode: 2)))
     }
 
-    @Test func authenticatedFetchUsesArgvAndBuildsStableIDs() {
+    private func client(_ reply: CommandResult, path: String = "/opt/homebrew/bin/gh") -> (GhClient, FakeRunner) {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
-        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data(searchJSON.utf8))
-        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
-        let client = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner)
-        guard case .snapshot(let items, let complete) = client.fetch() else {
+        runner.replies["api graphql"] = reply
+        return (GhClient(locator: locator(path), runner: runner), runner)
+    }
+
+    @Test func oneRequestReturnsAccountAndItemsWithStableIDs() {
+        let reply = CommandResult(exitCode: 0, stdout: graphQL(login: "second-user",
+                                                               reviews: [node(12), node(3, url: "javascript:alert(1)")],
+                                                               assigned: [node(7, repo: "example/other")]))
+        let (client, runner) = client(reply)
+        let fetch = client.fetchWithAccount()
+        guard case .snapshot(let items, let complete) = fetch.outcome else {
             Issue.record("expected snapshot")
             return
         }
+        #expect(fetch.account == "second-user")
         #expect(complete)
-        #expect(items.map(\.id) == ["reviewRequest:example/repo#12", "reviewRequest:example/repo#3"])
+        #expect(items.map(\.id) == ["reviewRequest:example/repo#12", "reviewRequest:example/repo#3",
+                                     "assignedIssue:example/other#7"])
         #expect(items[0].url?.absoluteString == "https://github.com/example/repo/pull/12")
         #expect(items[1].url == nil, "unsafe link is dropped at parse time")
-        let prs = runner.calls.first { $0.1.starts(with: ["search", "prs"]) }?.1 ?? []
-        #expect(prs.contains("--review-requested=@me"))
+        // Exactly two gh calls: the auth check and ONE request for account + both searches.
+        let commands = runner.calls.map { Array($0.1.prefix(2)) }
+        #expect(commands == [["auth", "status"], ["api", "graphql"]])
+        let query = runner.calls[1].1.last ?? ""
+        #expect(query.hasPrefix("query=") && query.contains("viewer { login }"))
+        #expect(query.contains("review-requested:@me") && query.contains("assignee:@me") && query.contains("is:open"))
         #expect(runner.calls.allSatisfy { $0.0.path == "/opt/homebrew/bin/gh" })
     }
 
-    @Test func oneFailingQueryMakesSnapshotPartial() {
-        let runner = FakeRunner()
-        runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
-        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data(searchJSON.utf8))
-        runner.replies["search issues"] = CommandResult(exitCode: 1, stderr: Data("HTTP 502".utf8))
-        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
+    @Test func accountAlwaysComesFromTheSameResponseAsItsItems() {
+        // gh auth switch A -> B -> A between polls: each poll's items carry that poll's own login,
+        // so no poll can mix accounts or tag one account's items with another's login.
+        for (login, repo) in [("user-a", "a/repo"), ("user-b", "b/repo"), ("user-a", "a/repo")] {
+            let (client, _) = client(CommandResult(exitCode: 0, stdout: graphQL(login: login, reviews: [node(1, repo: repo)])))
+            let fetch = client.fetchWithAccount()
+            #expect(fetch.account == login)
+            #expect(fetch.outcome == .snapshot(items: [InboxItem(id: "reviewRequest:\(repo)#1", kind: .reviewRequest,
+                                                                 repository: repo, title: "Item 1",
+                                                                 url: URL(string: "https://github.com/\(repo)/pull/1"),
+                                                                 updatedAt: Date(timeIntervalSince1970: 1_794_477_600))],
+                                               complete: true))
+        }
+    }
+
+    @Test func oneFailedSearchMakesSnapshotPartial() {
+        let (client, _) = client(CommandResult(exitCode: 1, stdout: graphQL(reviews: [node(12)], assigned: nil)))
         guard case .snapshot(let items, false) = client.fetch() else {
             Issue.record("expected partial snapshot")
             return
         }
-        #expect(items.count == 2)
+        #expect(items.count == 1)
     }
 
-    private func rows(_ count: Int) -> Data {
-        let row = { (n: Int) in
-            #"{"number":\#(n),"title":"t\#(n)","url":"https://github.com/example/repo/pull/\#(n)","repository":{"nameWithOwner":"example/repo"},"updatedAt":"2026-11-12T10:00:00Z"}"#
-        }
-        return Data("[\((1...max(1, count)).map(row).joined(separator: ","))]".utf8)
-    }
-
-    @Test func queryAtTheResultCapIsPartial() {
-        let runner = FakeRunner()
-        runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
-        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: rows(GhClient.searchLimit))
-        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
-        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
-        guard case .snapshot(let items, let complete) = client.fetch() else {
+    @Test func moreMatchesThanTheCapIsPartial() {
+        let rows = (1...GhClient.searchLimit).map { node($0) }
+        let (capped, runner) = client(CommandResult(exitCode: 0, stdout: graphQL(reviews: rows, reviewTotal: 31)))
+        guard case .snapshot(let items, let complete) = capped.fetch() else {
             Issue.record("expected snapshot")
             return
         }
         #expect(items.count == GhClient.searchLimit)
-        #expect(!complete, "a full page may hide more matches")
-        let limitArgument = runner.calls.first { $0.1.starts(with: ["search", "prs"]) }?.1.drop { $0 != "--limit" }.dropFirst().first
-        #expect(limitArgument == "\(GhClient.searchLimit)")
-    }
-
-    @Test func queryBelowTheCapIsComplete() {
-        let runner = FakeRunner()
-        runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
-        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: rows(GhClient.searchLimit - 1))
-        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
-        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
-        guard case .snapshot(_, true) = client.fetch() else {
+        #expect(!complete, "issueCount 31 > 30 returned: more matches are hidden")
+        #expect(runner.calls[1].1.last?.contains("first: \(GhClient.searchLimit)") == true)
+        // Exactly 30 matches is complete (the old row-count rule couldn't tell).
+        let (exact, _) = client(CommandResult(exitCode: 0, stdout: graphQL(reviews: rows, reviewTotal: 30)))
+        guard case .snapshot(_, true) = exact.fetch() else {
             Issue.record("expected complete snapshot")
             return
         }
     }
 
-    @Test func malformedOutputCountsAsFailure() {
-        let runner = FakeRunner()
-        runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
-        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data("{oops".utf8))
-        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("nope".utf8))
-        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
-        #expect(client.fetch() == .failure(.failed("GitHub search failed")))
+    @Test func bothSearchesFailingOrMalformedOutputIsAnError() {
+        let (both, _) = client(CommandResult(exitCode: 1, stdout: graphQL(reviews: nil, assigned: nil)))
+        #expect(both.fetch() == .failure(.failed("GitHub search failed")))
+        let (malformed, _) = client(CommandResult(exitCode: 0, stdout: Data("{oops".utf8)))
+        #expect(malformed.fetch() == .failure(.failed("GitHub search failed")))
     }
 
-    @Test func authFailureDuringSearchWins() {
-        let runner = FakeRunner()
-        runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
-        runner.replies["search prs"] = CommandResult(exitCode: 4)
-        let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
-        #expect(client.fetch() == .failure(.unauthenticated))
+    @Test func missingViewerIsAFailureNotAnEmptyInbox() {
+        let fetch = client(CommandResult(exitCode: 0, stdout: graphQL(login: nil))).0.fetchWithAccount()
+        #expect(fetch.account == nil)
+        #expect(fetch.outcome == .failure(.failed("GitHub search failed")))
+    }
+
+    @Test func authFailureOnTheRequestIsUnauthenticated() {
+        #expect(client(CommandResult(exitCode: 4)).0.fetch() == .failure(.unauthenticated))
+        let notLoggedIn = CommandResult(exitCode: 1, stderr: Data("To get started with GitHub CLI, please run:  gh auth login".utf8))
+        #expect(client(notLoggedIn).0.fetch() == .failure(.unauthenticated))
     }
 
     @Test func launchFailureIsTreatedAsMissing() {
@@ -160,44 +173,6 @@ private let searchJSON = """
         runner.throwing = CommandError.launchFailed("no such file")
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
         #expect(client.authState() == .missing)
-    }
-}
-
-@Suite struct GhAccountTests {
-    private func authenticatedRunner() -> FakeRunner {
-        let runner = FakeRunner()
-        runner.replies["auth status"] = CommandResult(exitCode: 0)
-        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
-        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
-        return runner
-    }
-
-    @Test func fetchReportsTheActiveAccount() {
-        let runner = authenticatedRunner()
-        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("second-user\n".utf8))
-        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner).fetchWithAccount()
-        #expect(fetch.account == "second-user")
-        #expect(fetch.outcome == .snapshot(items: [], complete: true))
-        #expect(runner.calls.map(\.1).contains(GhClient.accountArguments))
-    }
-
-    @Test func unidentifiedAccountIsAFailureNotAnEmptyInbox() {
-        let runner = authenticatedRunner()
-        runner.replies["api user"] = CommandResult(exitCode: 1, stderr: Data("HTTP 502".utf8))
-        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner).fetchWithAccount()
-        #expect(fetch.account == nil)
-        guard case .failure(.failed) = fetch.outcome else {
-            Issue.record("expected failure, got \(fetch.outcome)")
-            return
-        }
-        #expect(!runner.calls.contains { $0.1.first == "search" }, "no searches for an unknown account")
-    }
-
-    @Test func authFailureWhileIdentifyingIsUnauthenticated() {
-        let runner = authenticatedRunner()
-        runner.replies["api user"] = CommandResult(exitCode: 4)
-        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner).fetchWithAccount()
-        #expect(fetch.outcome == .failure(.unauthenticated))
     }
 }
 

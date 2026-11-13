@@ -360,3 +360,22 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
         #expect(quality(.unauthenticated) == DataState.unauthenticated.statusText)
     }
 }
+
+@Suite struct MascotBadgeCapTests {
+    @Test func mascotCapsAt99PlusAndKeepsSmallerCountsExact() {
+        #expect(MascotPolicy.mascotBadge(dataState: .ready, count: 99) == "99")
+        #expect(MascotPolicy.mascotBadge(dataState: .ready, count: 100) == "99+")
+        #expect(MascotPolicy.mascotBadge(dataState: .ready, count: 1234) == "99+")
+        #expect(MascotPolicy.mascotBadge(dataState: .partial, count: 99) == "99+", "partial 99 is already 99+")
+        #expect(MascotPolicy.mascotBadge(dataState: .partial, count: 150) == "99+")
+        #expect(MascotPolicy.mascotBadge(dataState: .stale, count: 500) == "?")
+        #expect(MascotPolicy.mascotBadge(dataState: .empty, count: 0) == nil)
+    }
+
+    @Test func inboxAndAccessibilityKeepTheFullCount() {
+        #expect(MascotPolicy.badge(dataState: .ready, count: 150) == "150")
+        #expect(MascotPolicy.badge(dataState: .partial, count: 150) == "150+")
+        let label = AccessibilityText.statusLabel(dataState: .ready, count: 150, demo: false, needsAttention: false)
+        #expect(label.contains("150"))
+    }
+}

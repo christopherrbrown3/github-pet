@@ -129,6 +129,8 @@ for size in 64 128 256; do
     else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
   done
 done
+check_in "hover follows content growth (real mascot window controller)" "hover re-placed when content grows" \
+  '^hover growth: grew=true before-side=right after-side=left art-clear=true labels-clear=true on-screen=true'
 for step in '128->64' '64->256' '256->128'; do
   check "resize $step follows Settings, ground fixed" "^resize $step: .* ok=true"
 done
@@ -141,6 +143,8 @@ check_in 00-loading "loading count unknown"     '^state=Loading… badge=\? rows
 check_in 10-urgent-static "urgent fixture"            'mood=urgent'
 check_in 09-attention-static "attention static pose"     '^state=Up to date badge=5 rows=5 demo=true mood=attention'
 check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x[0-9]+ pt'
+check_in "count cap" "mascot caps at 99+, inbox and AX keep the full count" \
+  '^count cap: items=1[0-9][0-9] mascot-badge=99\+ inbox-badge=1[0-9][0-9] ax=.* 1[0-9][0-9] items'
 check_in 11-gh-override "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
 check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'

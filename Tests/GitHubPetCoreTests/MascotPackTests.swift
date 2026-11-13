@@ -259,6 +259,39 @@ private struct PackFixture {
     }
 }
 
+@Suite struct ValidatedBytesTests {
+    @Test(.timeLimit(.minutes(1))) func packNeverReopensItsFilesAfterValidation() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest()
+        let pack = try fixture.load().get()
+        let before = pack.imageData
+        #expect(before.count == 6, "every distinct referenced image's validated bytes are kept")
+        // Swap a frame for a FIFO and another for an oversized file, then remove the pack entirely:
+        // everything the app needs after load still comes from the validated bytes.
+        let frame = fixture.directory.appendingPathComponent("frames/idle_1.png")
+        try FileManager.default.removeItem(at: frame)
+        #expect(mkfifo(frame.path, 0o600) == 0)
+        var big = validFrame
+        big.append(Data(count: MascotPack.maxImageBytes))
+        try big.write(to: fixture.directory.appendingPathComponent("frames/urgent_0.png"))
+        try FileManager.default.removeItem(at: fixture.directory)
+        for state in MascotState.allCases {
+            #expect(pack.frameData(for: state).count == 2)
+            #expect(pack.staticFallbackData(for: state) != nil)
+        }
+        #expect(pack.imageData == before)
+        #expect(pack.frameData(for: .idle)[1] == validFrame)
+    }
+
+    @Test func outlinesComeFromTheValidatedBytes() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest()
+        let pack = try fixture.load().get()
+        let expected = ArtProfile(png: validFrame)
+        #expect(pack.poseProfiles[.idle]?.allSatisfy { $0 == expected } == true)
+    }
+}
+
 @Suite struct BundledPackTests {
     /// The repository's shipped pack must pass the same validation the app runs at launch.
     @Test func repositoryPackIsValid() throws {

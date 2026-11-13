@@ -277,3 +277,23 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         #expect(ArtProfile.union([a, ArtProfile(canvas: 3, rows: [nil, nil, nil])]) == nil)
     }
 }
+
+@Suite struct HoverPlacementInputsTests {
+    private let base = HoverPlacementInputs(contentSize: CGSize(width: 150, height: 51),
+                                            panelFrame: CGRect(x: 10, y: 10, width: 128, height: 149),
+                                            state: .idle, gesture: false)
+
+    @Test func replacesOnContentPanelMoodOrGestureChanges() {
+        var grown = base; grown.contentSize.height = 115
+        var moved = base; moved.panelFrame.origin.x += 40
+        var mood = base; mood.state = .attention
+        var gesture = base; gesture.gesture = true
+        for changed in [grown, moved, mood, gesture] { #expect(base.needsReplacement(for: changed)) }
+    }
+
+    @Test func ignoresSubPointJitter() {
+        var jitter = base; jitter.contentSize.width += 0.3
+        #expect(!base.needsReplacement(for: jitter))
+        #expect(!base.needsReplacement(for: base))
+    }
+}

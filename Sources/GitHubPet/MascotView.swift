@@ -38,7 +38,7 @@ struct MascotView: View {
     /// so its capsule stays `MascotLayout.nearTouchGap` above this pose's art.
     private func scene(at date: Date, reduced: Bool, layout: MascotLayout) -> some View {
         let pose = poseOverride ?? pose(at: date, reduced: reduced)
-        let badge = badgeOverride ?? model.badge
+        let badge = badgeOverride ?? model.mascotBadge
         let countWidth = badge.map { layout.count.width(text: Tag.textWidth($0, role: .count, size: layout.count.fontSize)) }
         let offset = countWidth.flatMap { width in
             model.contour(for: pose).map {
@@ -227,25 +227,24 @@ struct PackFigure: View {
     }
 
     private func currentImage() -> NSImage? {
-        guard let frame = pose.frame else {
-            return PackImageCache.shared.image(pack.staticFallbackURL(for: pose.state))
-        }
-        let urls = pack.frameURLs(for: pose.state)
-        return PackImageCache.shared.image(urls.indices.contains(frame) ? urls[frame] : nil)
+        guard let spec = pack.manifest.states[pose.state.rawValue] else { return nil }
+        guard let frame = pose.frame else { return PackImageCache.shared.image(spec.staticFallback, in: pack) }
+        return spec.frames.indices.contains(frame) ? PackImageCache.shared.image(spec.frames[frame], in: pack) : nil
     }
 }
 
-/// Decoded frames for the single loaded pack (12 images, about 3 MB): no disk I/O per tick.
+/// Decoded frames for the single loaded pack (12 images, about 3 MB), decoded from the bytes
+/// validated at load: no disk I/O at all after validation, and none per tick.
 @MainActor
 final class PackImageCache {
     static let shared = PackImageCache()
-    private var images: [URL: NSImage] = [:]
+    private var images: [String: NSImage] = [:]
 
-    func image(_ url: URL?) -> NSImage? {
-        guard let url else { return nil }
-        if let cached = images[url] { return cached }
-        let image = NSImage(contentsOf: url)
-        images[url] = image
+    func image(_ path: String, in pack: MascotPack) -> NSImage? {
+        let key = pack.directory.path + "/" + path
+        if let cached = images[key] { return cached }
+        let image = pack.imageData[path].flatMap(NSImage.init(data:))
+        images[key] = image
         return image
     }
 }
