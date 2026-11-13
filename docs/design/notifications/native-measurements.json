@@ -1,0 +1,102 @@
+{
+  "measurements" : [
+    {
+      "countWidth" : 20,
+      "demoWidth" : 39,
+      "gap" : 29,
+      "label" : "2",
+      "minimumGap" : 6,
+      "size" : 64
+    },
+    {
+      "countWidth" : 28,
+      "demoWidth" : 39,
+      "gap" : 21,
+      "label" : "2+",
+      "minimumGap" : 6,
+      "size" : 64
+    },
+    {
+      "countWidth" : 20,
+      "demoWidth" : 39,
+      "gap" : 29,
+      "label" : "?",
+      "minimumGap" : 6,
+      "size" : 64
+    },
+    {
+      "countWidth" : 36,
+      "demoWidth" : 39,
+      "gap" : 13,
+      "label" : "99+",
+      "minimumGap" : 6,
+      "size" : 64
+    },
+    {
+      "countWidth" : 28,
+      "demoWidth" : 46,
+      "gap" : 42,
+      "label" : "2",
+      "minimumGap" : 8,
+      "size" : 128
+    },
+    {
+      "countWidth" : 37,
+      "demoWidth" : 46,
+      "gap" : 33,
+      "label" : "2+",
+      "minimumGap" : 8,
+      "size" : 128
+    },
+    {
+      "countWidth" : 28,
+      "demoWidth" : 46,
+      "gap" : 42,
+      "label" : "?",
+      "minimumGap" : 8,
+      "size" : 128
+    },
+    {
+      "countWidth" : 47,
+      "demoWidth" : 46,
+      "gap" : 23,
+      "label" : "99+",
+      "minimumGap" : 8,
+      "size" : 128
+    },
+    {
+      "countWidth" : 40,
+      "demoWidth" : 54,
+      "gap" : 146,
+      "label" : "2",
+      "minimumGap" : 12,
+      "size" : 256
+    },
+    {
+      "countWidth" : 48,
+      "demoWidth" : 54,
+      "gap" : 138,
+      "label" : "2+",
+      "minimumGap" : 12,
+      "size" : 256
+    },
+    {
+      "countWidth" : 40,
+      "demoWidth" : 54,
+      "gap" : 146,
+      "label" : "?",
+      "minimumGap" : 12,
+      "size" : 256
+    },
+    {
+      "countWidth" : 62,
+      "demoWidth" : 54,
+      "gap" : 124,
+      "label" : "99+",
+      "minimumGap" : 12,
+      "size" : 256
+    }
+  ],
+  "pointToPixelScale" : 1,
+  "renderer" : "AppKit standalone design composition"
+}

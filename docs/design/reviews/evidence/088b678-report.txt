@@ -1,0 +1,120 @@
+## 00-loading
+state=Loading… badge=? rows=0 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, count unknown, loading
+00-loading-inbox: 360x185 pt
+00-loading-hover: 142x67 pt
+00-loading-mascot: 128x128 pt
+00-loading-inbox-dark: 360x185 pt
+00-loading-hover-dark: 142x67 pt
+00-loading-mascot-dark: 128x128 pt
+
+## 01-baseline
+state=Up to date badge=3 rows=3 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, 3 items
+01-baseline-inbox: 360x281 pt
+01-baseline-hover: 320x115 pt
+01-baseline-mascot: 128x128 pt
+01-baseline-inbox-dark: 360x281 pt
+01-baseline-hover-dark: 320x115 pt
+01-baseline-mascot-dark: 128x128 pt
+
+## 02-injected
+state=Up to date badge=4 rows=4 demo=true mood=attention
+menu-bar AX: GitHub Pet, Demo data, 4 items, needs attention
+02-injected-inbox: 360x333 pt
+02-injected-hover: 320x115 pt
+02-injected-mascot: 128x128 pt
+02-injected-inbox-dark: 360x333 pt
+02-injected-hover-dark: 320x115 pt
+02-injected-mascot-dark: 128x128 pt
+
+## 03-replayed
+state=Up to date badge=4 rows=4 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, 4 items
+03-replayed-inbox: 360x333 pt
+03-replayed-hover: 320x115 pt
+03-replayed-mascot: 128x128 pt
+03-replayed-inbox-dark: 360x333 pt
+03-replayed-hover-dark: 320x115 pt
+03-replayed-mascot-dark: 128x128 pt
+
+## 04-partial
+state=Partial data badge=3+ rows=3 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, at least 3 items, some sources unavailable
+04-partial-inbox: 360x281 pt
+04-partial-hover: 320x131 pt
+04-partial-mascot: 128x128 pt
+04-partial-inbox-dark: 360x281 pt
+04-partial-hover-dark: 320x131 pt
+04-partial-mascot-dark: 128x128 pt
+
+## 05-stale
+state=Stale badge=? rows=4 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, count unknown, data is stale
+05-stale-inbox: 360x354 pt
+05-stale-hover: 320x115 pt
+05-stale-mascot: 128x128 pt
+05-stale-inbox-dark: 360x354 pt
+05-stale-hover-dark: 320x115 pt
+05-stale-mascot-dark: 128x128 pt
+
+## 06-disconnected
+state=Error: simulated disconnect badge=? rows=4 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, count unknown, Error: simulated disconnect
+06-disconnected-inbox: 360x354 pt
+06-disconnected-hover: 153x67 pt
+06-disconnected-mascot: 128x128 pt
+06-disconnected-inbox-dark: 360x354 pt
+06-disconnected-hover-dark: 153x67 pt
+06-disconnected-mascot-dark: 128x128 pt
+
+## 07-reconnected
+state=Up to date badge=4 rows=4 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, 4 items
+07-reconnected-inbox: 360x333 pt
+07-reconnected-hover: 320x115 pt
+07-reconnected-mascot: 128x128 pt
+07-reconnected-inbox-dark: 360x333 pt
+07-reconnected-hover-dark: 320x115 pt
+07-reconnected-mascot-dark: 128x128 pt
+
+## 08-privacy
+state=Up to date badge=4 rows=4 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, 4 items
+08-privacy-inbox: 360x333 pt
+08-privacy-hover: 149x115 pt
+08-privacy-mascot: 128x128 pt
+08-privacy-inbox-dark: 360x333 pt
+08-privacy-hover-dark: 149x115 pt
+08-privacy-mascot-dark: 128x128 pt
+
+## 09-attention-static
+state=Up to date badge=4 rows=4 demo=true mood=idle
+menu-bar AX: GitHub Pet, Demo data, 4 items
+09-attention-static-inbox: 360x333 pt
+09-attention-static-hover: 320x115 pt
+09-attention-static-mascot: 128x128 pt
+09-attention-static-inbox-dark: 360x333 pt
+09-attention-static-hover-dark: 320x115 pt
+09-attention-static-mascot-dark: 128x128 pt
+
+## 10-urgent-static
+state=Up to date badge=5 rows=5 demo=true mood=urgent
+menu-bar AX: GitHub Pet, Demo data, 5 items, needs attention
+10-urgent-static-inbox: 360x385 pt
+10-urgent-static-hover: 320x115 pt
+10-urgent-static-mascot: 128x128 pt
+10-urgent-static-inbox-dark: 360x385 pt
+10-urgent-static-hover-dark: 320x115 pt
+10-urgent-static-mascot-dark: 128x128 pt
+
+## 11-gh-override
+state=GitHub CLI not found badge=? rows=0 demo=false mood=urgent
+menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found, needs attention
+11-gh-override-inbox: 360x185 pt
+11-gh-override-hover: 144x51 pt
+11-gh-override-mascot: 128x128 pt
+11-gh-override-inbox-dark: 360x185 pt
+11-gh-override-hover-dark: 144x51 pt
+11-gh-override-mascot-dark: 128x128 pt
+

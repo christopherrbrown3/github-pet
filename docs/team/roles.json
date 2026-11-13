@@ -1,0 +1,43 @@
+{
+  "roles": [
+    {
+      "name": "product-manager",
+      "terminal": "t8",
+      "runtime": "codex",
+      "assignment": "#5",
+      "intendedModel": "gpt-6-astra",
+      "observedModel": "gpt-6.1-sol",
+      "sessionId": "01a1d07b-522b-7370-9477-72b1b877c355"
+    },
+    {
+      "name": "developer",
+      "terminal": "t9",
+      "runtime": "claude",
+      "assignment": "#27, #28, then #29",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "sessionId": null
+    },
+    {
+      "name": "graphic-designer",
+      "terminal": "t1k",
+      "runtime": "codex",
+      "assignment": "#28, #29",
+      "intendedModel": "gpt-6.1-terra",
+      "observedModel": "gpt-6.1-terra",
+      "sessionId": "01a1d082-9e39-7740-99d9-f9df99831e41"
+    },
+    {
+      "name": "qa-engineer",
+      "terminal": "t1g",
+      "runtime": "codex",
+      "assignment": "#4",
+      "intendedModel": "gpt-6-luna",
+      "observedModel": "gpt-6-luna",
+      "sessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81"
+    }
+  ],
+  "observedDate": "2026-11-13",
+  "noMergeWithoutUserAuthorization": true,
+  "note": "Live snapshot; inspect Herdr before dispatch. Chris explicitly chose Terra for Designer. PM actual Sol differs from original Astra request and was disclosed. Chris authorizes merging ready PRs after Copilot findings are reviewed/handled; releases remain separate."
+}

@@ -1,0 +1,22 @@
+name: Defect
+description: Report reproducible incorrect behavior
+title: "[Bug] "
+labels: ["type:task"]
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps and fixture or source state
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include commit, macOS version and sanitized logs. Never include tokens or private organization data.

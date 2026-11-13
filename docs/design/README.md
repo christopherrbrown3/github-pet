@@ -5,6 +5,8 @@ Sprint 1 design for [issue #3](https://github.com/christopherrbrown3/github-pet/
 - Open [review.html](review.html) for the animation controls, size samples, inbox, hover preview and speech bubble designs.
 - Runtime entry point: [`../../assets/mascots/mona-pet-v1/manifest.json`](../../assets/mascots/mona-pet-v1/manifest.json).
 - [Native UI specification](native-ui.md), [generation provenance](provenance.md), [machine-readable checks](validation.json).
+- [Native visual retests for #22/#23](reviews/pr18-088b678-3cf6fa7-retests.md), with exact reviewed commits and still-image limits.
+- [Responsive badges and clearer finite attention gesture (#28/#29)](notifications/README.md): native size comparisons, proposed timing/storyboard and playable preview. These are design handoffs for later runtime implementation; the v1 pack below is unchanged.
 - Validate: `python3 docs/design/validate_pack.py --report` from the repository root.
 - Rebuild from preserved generated sources on macOS: `python3 docs/design/build_pack.py`. Python standard library and macOS `sips` only. This packs/resamples existing image-generated art; it does not synthesize replacement artwork. Runtime builds do not require these design scripts or image-generation access.
 
