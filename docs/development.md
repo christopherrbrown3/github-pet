@@ -111,7 +111,9 @@ Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`)
 fields fall back to defaults, and values outside their range are clamped. They survive relaunch.
 
 - Mascot visibility, size (64–256 pt), and position (saved after each drag; reset in Settings;
-  ignored if mostly off-screen).
+  ignored if mostly off-screen). An accepted position is moved just enough that the whole panel,
+  including its count/quality badge, is on the display's visible area; near a screen edge this
+  takes precedence over keeping the ground point fixed when resizing.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox

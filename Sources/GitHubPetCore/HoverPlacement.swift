@@ -467,3 +467,18 @@ public struct HoverPlacementInputs: Equatable, Sendable {
             || panelFrame != other.panelFrame || state != other.state || gesture != other.gesture
     }
 }
+
+/// Where a saved or dropped mascot panel may sit. A position at least half on some display is
+/// kept, moved just enough that the whole panel (art and its count/quality badge) is inside that
+/// display's visible frame; otherwise there is no acceptable position (use the default spot).
+public enum PanelPosition {
+    public static func accepted(origin: CGPoint, size: CGSize, visibleFrames: [CGRect]) -> CGPoint? {
+        let frame = CGRect(origin: origin, size: size)
+        let area = { (rect: CGRect) in rect.isNull ? 0 : rect.width * rect.height }
+        guard let screen = visibleFrames.max(by: { area($0.intersection(frame)) < area($1.intersection(frame)) }),
+              area(screen.intersection(frame)) >= area(frame) * 0.5 else { return nil }
+        let x = min(max(origin.x, screen.minX), max(screen.maxX - size.width, screen.minX))
+        let y = min(max(origin.y, screen.minY), max(screen.maxY - size.height, screen.minY))
+        return CGPoint(x: x, y: y)
+    }
+}

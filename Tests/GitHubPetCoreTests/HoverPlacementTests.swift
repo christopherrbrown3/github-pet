@@ -297,3 +297,30 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         #expect(!base.needsReplacement(for: base))
     }
 }
+
+@Suite struct PanelPositionTests {
+    private let main = CGRect(x: 0, y: 25, width: 1440, height: 850)
+    private let size = CGSize(width: 128, height: 149)
+
+    @Test func mostlyVisiblePositionsAreClampedFullyOnScreen() {
+        // Badge (top-right) off the right edge: 60% of the panel visible.
+        let right = PanelPosition.accepted(origin: CGPoint(x: 1440 - 77, y: 300), size: size, visibleFrames: [main])
+        #expect(right == CGPoint(x: 1440 - 128, y: 300))
+        // Badge above the top of the work area.
+        let top = PanelPosition.accepted(origin: CGPoint(x: 600, y: 875 - 80), size: size, visibleFrames: [main])
+        #expect(top == CGPoint(x: 600, y: 875 - 149))
+        // Fully visible positions are unchanged.
+        #expect(PanelPosition.accepted(origin: CGPoint(x: 600, y: 300), size: size, visibleFrames: [main]) == CGPoint(x: 600, y: 300))
+    }
+
+    @Test func mostlyOffscreenOrGoneDisplaysFallBack() {
+        #expect(PanelPosition.accepted(origin: CGPoint(x: 1400, y: 300), size: size, visibleFrames: [main]) == nil)
+        #expect(PanelPosition.accepted(origin: CGPoint(x: 3000, y: 300), size: size, visibleFrames: [main]) == nil)
+    }
+
+    @Test func clampsIntoTheDisplayItMostlySitsOn() {
+        let second = CGRect(x: 1440, y: 0, width: 1920, height: 1080)
+        let origin = PanelPosition.accepted(origin: CGPoint(x: 1440 - 30, y: 300), size: size, visibleFrames: [main, second])
+        #expect(origin == CGPoint(x: 1440, y: 300), "mostly on the second display: moved fully onto it")
+    }
+}
