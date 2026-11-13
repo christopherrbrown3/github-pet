@@ -237,7 +237,8 @@ final class AppModel: ObservableObject {
 
     func injectEntitlementEvent() {
         guard usingFixtures else { return }
-        simulator.injectEntitlementEvent()
+        // App clock, like workflow injections, so QA clock hooks order fixture items consistently.
+        simulator.injectEntitlementEvent(now: clock())
         refresh()
     }
 

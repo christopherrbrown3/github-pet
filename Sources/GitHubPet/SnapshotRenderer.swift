@@ -69,6 +69,10 @@ enum SnapshotRenderer {
         }
         model.injectEntitlementEvent()
         await capture("02-injected")
+        // Fixture timestamps must use the app clock (QA clock hooks), not the wall clock.
+        if let newest = model.items.map(\.updatedAt).max() {
+            report.append("injected-age-on-app-clock=\(Int(model.clock().timeIntervalSince(newest)))s")
+        }
         model.replaySnapshot()
         await capture("03-replayed")
         model.markAllSeen()   // as when the user opens the inbox
