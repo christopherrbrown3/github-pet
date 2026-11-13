@@ -161,6 +161,39 @@ private struct PackFixture {
         #expect(fixture.errors().contains(.unsafePath("frames/link.png")))
     }
 
+    @Test func noSymlinkInsideThePackIsFollowed() throws {
+        // Even links that point inside the pack are rejected: reads walk the pack directory with
+        // O_NOFOLLOW, so a checked path can't be swapped for a link out of the pack before reading.
+        let fixture = try PackFixture()
+        try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("frames/same.png"),
+                                                   withDestinationURL: fixture.directory.appendingPathComponent("frames/idle_0.png"))
+        try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("linked"),
+                                                   withDestinationURL: fixture.directory.appendingPathComponent("frames"))
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            idle["staticFallback"] = "frames/same.png"
+            states["idle"] = idle
+            var urgent = states["urgent"] as! [String: Any]
+            urgent["staticFallback"] = "linked/urgent_0.png"
+            states["urgent"] = urgent
+            json["states"] = states
+        }
+        let errors = fixture.errors()
+        #expect(errors.contains(.unsafePath("frames/same.png")), "file symlink")
+        #expect(errors.contains(.unsafePath("linked/urgent_0.png")), "directory symlink component")
+    }
+
+    @Test func symlinkedManifestIsRejected() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest()
+        let real = fixture.directory.appendingPathComponent("real.json")
+        try FileManager.default.moveItem(at: fixture.directory.appendingPathComponent("manifest.json"), to: real)
+        try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("manifest.json"),
+                                                   withDestinationURL: real)
+        #expect(fixture.errors() == [.unreadableManifest])
+    }
+
     @Test func durationRulesAreEnforced() throws {
         let fixture = try PackFixture()
         try fixture.manifest { json in
