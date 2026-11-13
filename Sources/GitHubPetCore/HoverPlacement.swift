@@ -444,3 +444,26 @@ public struct HoverPlacement: Equatable, Sendable {
             : HoverPlacement(side: .left, tip: leftTip, laneClear: leftClear, arrowGap: leftGap)
     }
 }
+
+/// What a hover placement was computed for. The open summary is re-placed when any of it
+/// changes (content grew or shrank, the panel moved or resized, mood or gesture changed), never
+/// per animation frame.
+public struct HoverPlacementInputs: Equatable, Sendable {
+    public var contentSize: CGSize
+    public var panelFrame: CGRect
+    public var state: MascotState
+    public var gesture: Bool
+
+    public init(contentSize: CGSize, panelFrame: CGRect, state: MascotState, gesture: Bool) {
+        self.contentSize = contentSize
+        self.panelFrame = panelFrame
+        self.state = state
+        self.gesture = gesture
+    }
+
+    /// Whether `other` needs a new placement (sizes compared to half a point).
+    public func needsReplacement(for other: HoverPlacementInputs) -> Bool {
+        abs(contentSize.width - other.contentSize.width) > 0.5 || abs(contentSize.height - other.contentSize.height) > 0.5
+            || panelFrame != other.panelFrame || state != other.state || gesture != other.gesture
+    }
+}
