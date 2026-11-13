@@ -10,7 +10,8 @@ import GitHubPetCore
 ///   --start-time <ISO8601>        app clock starts at this instant (or GITHUB_PET_START_TIME)
 ///   --clock-offset <secs>         shift the app clock (or GITHUB_PET_CLOCK_OFFSET)
 ///   GITHUB_PET_GH_PATH=<path>     use this gh executable (missing/fake gh testing)
-///   --render-snapshots <dir>      render a fixture scenario offscreen to PNG + AX report, then quit
+///   --render-snapshots <dir>      render a fixture scenario offscreen to PNG + AX report, then quit;
+///                                 always fixtures, default settings and a throwaway preferences suite
 ///   --placeholder                 draw the native placeholder instead of the bundled pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
 struct LaunchOptions {
@@ -56,6 +57,14 @@ struct LaunchOptions {
             default: break
             }
         }
+        // Snapshot evidence is shared, so it must never contain live GitHub data or touch the
+        // user's preferences: force Demo fixtures and fresh settings in a throwaway suite,
+        // whatever other flags or saved settings say. Applied before AppModel exists.
+        if options.snapshotDirectory != nil {
+            options.forcedSource = "fixtures"
+            options.defaultsSuite = Self.snapshotDefaultsSuite
+            options.resetSettings = true
+        }
         return options
     }
 
@@ -80,6 +89,8 @@ struct LaunchOptions {
         }
         return nil
     }
+
+    static let snapshotDefaultsSuite = "dev.github-pet.render-snapshots.\(ProcessInfo.processInfo.processIdentifier)"
 
     var userDefaults: UserDefaults {
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {

@@ -43,6 +43,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case checksumMismatch(String)
     case tooLarge(String)
     case undecodable(String)
+    case notRegularFile(String)
 
     public var description: String {
         switch self {
@@ -61,6 +62,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .checksumMismatch(let p): return "SHA-256 mismatch for '\(p)'"
         case .tooLarge(let p): return "'\(p)' exceeds the size limit"
         case .undecodable(let p): return "'\(p)' is not a decodable RGBA PNG"
+        case .notRegularFile(let p): return "'\(p)' is not a regular file"
         }
     }
 }
@@ -116,7 +118,11 @@ public struct MascotPack: Equatable, Sendable {
                 errors.append(.missingState(state.rawValue))
                 continue
             }
-            if spec.frames.isEmpty || spec.frames.count > maxFrames { errors.append(.frameCount(state.rawValue)) }
+            // An over-limit state is invalid already: never open or decode its paths.
+            guard !spec.frames.isEmpty, spec.frames.count <= maxFrames, spec.durationMs.count <= maxFrames else {
+                errors.append(.frameCount(state.rawValue))
+                continue
+            }
             if spec.frames.count != spec.durationMs.count { errors.append(.durationMismatch(state.rawValue)) }
             for duration in spec.durationMs where !durationRange.contains(duration) {
                 errors.append(.durationOutOfRange(state.rawValue, duration))
@@ -145,15 +151,19 @@ public struct MascotPack: Equatable, Sendable {
             data = try readBounded(fileURL, limit: maxImageBytes)
         } catch ReadError.tooLarge {
             return [.tooLarge(path)]
+        } catch ReadError.notRegularFile {
+            return [.notRegularFile(path)]
         } catch {
             return [.missingFile(path)]
         }
         guard let size = pngSize(data) else { return [.notPNG(path)] }
+        // Header dimensions first: a small file can declare a huge image, and decoding it
+        // would allocate the full pixel buffer.
+        if size.width != canvasSize || size.height != canvasSize {
+            return [.wrongSize(path, size.width, size.height)]
+        }
         guard isDecodableRGBA(data) else { return [.undecodable(path)] }
         var errors: [MascotPackError] = []
-        if size.width != canvasSize || size.height != canvasSize {
-            errors.append(.wrongSize(path, size.width, size.height))
-        }
         if let expected = checksums[path] {
             let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             if actual != expected.lowercased() { errors.append(.checksumMismatch(path)) }
@@ -161,12 +171,19 @@ public struct MascotPack: Equatable, Sendable {
         return errors
     }
 
-    enum ReadError: Error { case tooLarge, unreadable }
+    enum ReadError: Error { case tooLarge, unreadable, notRegularFile }
 
-    /// Reads at most `limit` bytes; files over the limit are rejected without reading them whole.
+    /// Reads at most `limit` bytes from a regular file; larger files are rejected without
+    /// reading them whole. Opened non-blocking and checked with fstat, so a FIFO or device
+    /// planted in a pack can never stall launch.
     static func readBounded(_ url: URL, limit: Int) throws -> Data {
-        guard let handle = try? FileHandle(forReadingFrom: url) else { throw ReadError.unreadable }
+        let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+        guard fd >= 0 else { throw ReadError.unreadable }
+        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         defer { try? handle.close() }
+        var info = stat()
+        guard fstat(fd, &info) == 0 else { throw ReadError.unreadable }
+        guard info.st_mode & S_IFMT == S_IFREG else { throw ReadError.notRegularFile }
         guard let data = try handle.read(upToCount: limit + 1) else { return Data() }
         if data.count > limit { throw ReadError.tooLarge }
         return data

@@ -197,6 +197,43 @@ private struct PackFixture {
         #expect(fixture.errors() == [.unreadableManifest])
     }
 
+    @Test func overLimitFrameCountSkipsFileValidation() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            // Thousands of missing paths: a valid count would report each one.
+            idle["frames"] = (0..<5000).map { "frames/missing_\($0).png" }
+            idle["durationMs"] = Array(repeating: 400, count: 5000)
+            states["idle"] = idle
+            json["states"] = states
+        }
+        #expect(fixture.errors() == [.frameCount("idle")])
+    }
+
+    @Test func wrongDimensionsAreRejectedBeforeDecoding() throws {
+        let fixture = try PackFixture()
+        // Declares 8192×8192 (256 MiB decoded) with no pixel data: rejected on the header alone.
+        try pngHeaderOnly(width: 8192, height: 8192)
+            .write(to: fixture.directory.appendingPathComponent("frames/idle_1.png"))
+        try fixture.manifest()
+        #expect(fixture.errors() == [.wrongSize("frames/idle_1.png", 8192, 8192)])
+    }
+
+    @Test(.timeLimit(.minutes(1))) func fifoManifestAndFrameDoNotBlock() throws {
+        let fixture = try PackFixture()
+        let frame = fixture.directory.appendingPathComponent("frames/urgent_1.png")
+        try FileManager.default.removeItem(at: frame)
+        #expect(mkfifo(frame.path, 0o600) == 0)
+        try fixture.manifest()
+        #expect(fixture.errors() == [.notRegularFile("frames/urgent_1.png")])
+
+        let manifest = fixture.directory.appendingPathComponent("manifest.json")
+        try FileManager.default.removeItem(at: manifest)
+        #expect(mkfifo(manifest.path, 0o600) == 0)
+        #expect(fixture.errors() == [.unreadableManifest])
+    }
+
     @Test func boundedReadAcceptsExactlyTheLimit() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("bounded-\(UUID().uuidString)")
         try Data(count: 10).write(to: url)

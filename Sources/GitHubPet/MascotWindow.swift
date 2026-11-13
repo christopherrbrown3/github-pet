@@ -53,6 +53,11 @@ final class MascotWindowController {
         panel.setAccessibilityLabel("GitHub Pet mascot")
 
         let container = MascotContainerView()
+        let openInbox = { [weak self] in
+            guard let self else { return }
+            self.hideSummary()
+            WindowPresenter.shared.showInbox(model: self.model)
+        }
         let hosting = PassthroughHostingView(rootView: MascotView(model: model))
         hosting.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(hosting)
@@ -62,11 +67,8 @@ final class MascotWindowController {
             hosting.topAnchor.constraint(equalTo: container.topAnchor),
             hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
-        container.onClick = { [weak self] in
-            guard let self else { return }
-            self.hideSummary()
-            WindowPresenter.shared.showInbox(model: self.model)
-        }
+        container.onClick = openInbox
+        container.accessibilityText = { [weak self] in self.map { MascotView.accessibilityLabel($0.model) } ?? "" }
         container.onDragEnded = { [weak self] origin in
             self?.model.settings.mascotOriginX = Double(origin.x)
             self?.model.settings.mascotOriginY = Double(origin.y)
@@ -113,9 +115,11 @@ final class PassthroughHostingView<Content: View>: NSHostingView<Content> {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
-/// Distinguishes click from drag and reports hover.
+/// Distinguishes click from drag and reports hover. For accessibility it is a single button
+/// whose press action is the same as a click: it opens the shared Inbox.
 final class MascotContainerView: NSView {
     var onClick: (() -> Void)?
+    var accessibilityText: () -> String = { "" }
     var onDragEnded: ((CGPoint) -> Void)?
     var onHover: ((Bool) -> Void)?
 
@@ -125,6 +129,17 @@ final class MascotContainerView: NSView {
     private static let dragThreshold: CGFloat = 3
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .button }
+    override func accessibilityRoleDescription() -> String? { "button" }
+    override func accessibilityLabel() -> String? { accessibilityText() }
+    override func accessibilityHelp() -> String? { "Opens the inbox" }
+    override func accessibilityChildren() -> [Any]? { nil }
+    override func accessibilityPerformPress() -> Bool {
+        onClick?()
+        return onClick != nil
+    }
 
     override func updateTrackingAreas() {
         super.updateTrackingAreas()

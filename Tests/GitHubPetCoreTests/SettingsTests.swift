@@ -109,8 +109,15 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         #expect(settings == PetSettings())
         #expect(settings.mascotVisible)
         #expect(!settings.reducedMotion)
-        #expect(!settings.privacyMode)
+        #expect(settings.privacyMode, "privacy is on until the user opts out")
         #expect(settings.dataSource == .fixtures)
+    }
+
+    @Test func privacyDefaultsOnButAnExplicitChoiceIsKept() throws {
+        let missing = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"mascotSize":96}"#.utf8))
+        #expect(missing.privacyMode)
+        let optedOut = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"privacyMode":false}"#.utf8))
+        #expect(!optedOut.privacyMode)
     }
 
     @Test func roundTripsEveryField() {
@@ -120,7 +127,7 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         settings.mascotSize = 192
         settings.mascotOriginX = 100
         settings.mascotOriginY = 240
-        settings.privacyMode = true
+        settings.privacyMode = false
         settings.reducedMotion = true
         settings.snoozeUntil = Date(timeIntervalSince1970: 1_800_000_000)
         settings.quietHours = QuietHours(enabled: true, startMinute: 60, endMinute: 120)

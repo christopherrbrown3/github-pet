@@ -8,7 +8,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var items: [InboxItem] = []
     @Published private(set) var dataState: DataState = .loading
     @Published private(set) var lastSuccess: Date?
-    @Published private(set) var unseenIDs: Set<String> = []
+    @Published private(set) var unseen = UnseenItems()
+    /// "Show details" in the Inbox: names and titles for this app session only, never saved.
+    /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
+    @Published var detailsRevealed = false
     @Published private(set) var activeClip: EventClipQueue.Clip?
     @Published private(set) var blockedLinkNote: String?
     @Published private(set) var now = Date()
@@ -17,6 +20,7 @@ final class AppModel: ObservableObject {
             guard settings != oldValue else { return }
             store.save(settings)
             if settings.dataSource != oldValue.dataSource { switchSource() }
+            if settings.privacyMode && !oldValue.privacyMode { detailsRevealed = false }
             if settings.reducedMotion && !oldValue.reducedMotion {
                 clips.clear()
                 activeClip = nil
@@ -36,6 +40,7 @@ final class AppModel: ObservableObject {
     private var pollTimer: Timer?
     private var tickTimer: Timer?
     private var generations = SourceGenerations()
+    private var accounts = AccountWatch()
 
     init(options: LaunchOptions) {
         store = SettingsStore(defaults: options.userDefaults)
@@ -84,7 +89,10 @@ final class AppModel: ObservableObject {
 
     var alertsAllowed: Bool { settings.alertsAllowed(at: now) }
 
-    var unseenCount: Int { items.filter { unseenIDs.contains($0.id) }.count }
+    var unseenCount: Int { items.filter { unseen.contains($0.id) }.count }
+
+    /// Privacy for the Inbox rows: the setting, unless details were revealed this session.
+    var inboxPrivacy: Bool { settings.privacyMode && !detailsRevealed }
 
     var mascotState: MascotState {
         MascotPolicy.state(dataState: dataState, items: items, unseenCount: unseenCount, alertsAllowed: alertsAllowed)
@@ -115,16 +123,21 @@ final class AppModel: ObservableObject {
     /// source (e.g. Demo fixtures or another account) are never shown as this source's data.
     private func switchSource() {
         generations.switchSource()
-        engine.reset()
-        unseenIDs.removeAll()
-        clips.clear()
-        activeClip = nil
+        accounts.reset()
+        resetSession()
         pollTimer?.invalidate()
         pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
         sync(now: clock())
         refresh()
+    }
+
+    private func resetSession() {
+        engine.reset()
+        unseen.removeAll()
+        clips.clear()
+        activeClip = nil
     }
 
     func refresh() {
@@ -135,10 +148,14 @@ final class AppModel: ObservableObject {
             guard let generation = generations.beginFetch() else { return }
             let client = ghClient
             Task.detached {
-                let outcome = client.fetch()
+                let fetch = client.fetchWithAccount()
                 await MainActor.run {
                     // Results from a session that has since been switched away are dropped.
-                    if self.generations.finishFetch(generation) { self.apply(outcome) }
+                    guard self.generations.finishFetch(generation) else { return }
+                    // `gh auth switch` keeps the mode but changes whose data this is: start a
+                    // fresh baseline so the new account's existing items are not announced.
+                    if self.accounts.observe(fetch.account) { self.resetSession() }
+                    self.apply(fetch.outcome)
                 }
             }
         }
@@ -147,7 +164,8 @@ final class AppModel: ObservableObject {
     private func apply(_ outcome: FetchOutcome) {
         let date = clock()
         let events = engine.apply(outcome, now: date)
-        for event in events { unseenIDs.insert(event.item.id) }
+        unseen.record(events)
+        unseen.reconcile(after: outcome, items: engine.items)
         clips.enqueue(events, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
         sync(now: date)
     }
@@ -165,22 +183,20 @@ final class AppModel: ObservableObject {
         if items != engine.items { items = engine.items }
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
-        let present = Set(engine.items.map(\.id))
-        if !unseenIDs.isSubset(of: present) { unseenIDs.formIntersection(present) }
         if activeClip != clips.active { activeClip = clips.active }
     }
 
     // MARK: Actions
 
     func markAllSeen() {
-        unseenIDs.removeAll()
+        unseen.removeAll()
     }
 
-    func isUnseen(_ item: InboxItem) -> Bool { unseenIDs.contains(item.id) }
+    func isUnseen(_ item: InboxItem) -> Bool { unseen.contains(item.id) }
 
     /// Opens only validated https://github.com links; anything else is reported, not opened.
     func open(_ item: InboxItem) {
-        unseenIDs.remove(item.id)
+        unseen.remove(item.id)
         guard let url = SafeLink.validated(item.url) else {
             blockedLinkNote = "Link blocked: only https://github.com links can be opened."
             return
@@ -248,7 +264,7 @@ final class AppModel: ObservableObject {
 
     func resetBaseline() {
         engine.resetBaseline()
-        unseenIDs.removeAll()
+        unseen.removeAll()
         clips.clear()
         refresh()
     }
@@ -257,9 +273,7 @@ final class AppModel: ObservableObject {
 
     /// Render hook only: show the Loading state of a fresh source without polling.
     func showLoadingForSnapshot() {
-        engine.reset()
-        unseenIDs.removeAll()
-        clips.clear()
+        resetSession()
         sync(now: clock())
     }
 }

@@ -44,7 +44,8 @@ public struct PetSettings: Codable, Equatable, Sendable {
     /// Bottom-left window origin in screen coordinates; nil means the default spot.
     public var mascotOriginX: Double?
     public var mascotOriginY: Double?
-    public var privacyMode = false
+    /// On by default (design spec): names and titles stay hidden until the user opts in.
+    public var privacyMode = true
     public var reducedMotion = false
     public var snoozeUntil: Date?
     public var quietHours = QuietHours()

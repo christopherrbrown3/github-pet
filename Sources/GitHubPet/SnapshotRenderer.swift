@@ -19,7 +19,10 @@ enum SnapshotRenderer {
             report.append("## \(name)")
             report.append("state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
                           + "demo=\(model.isDemo) mood=\(model.mascotState.rawValue)")
+            report.append("source=\(model.settings.dataSource.rawValue) privacy=\(model.settings.privacyMode) "
+                          + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
+            report.append(mascotAccessibility(model))
             let panel = MascotView.panelSize(side: model.settings.mascotSize)
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 report += await render(MascotView(model: model).frame(width: panel.width, height: panel.height),
@@ -35,10 +38,14 @@ enum SnapshotRenderer {
             report.append("")
         }
 
+        // Default settings: privacy on, details hidden.
         model.showLoadingForSnapshot()
         await capture("00-loading")
         model.refresh()
         await capture("01-baseline")
+        // As if the user pressed "Show details": rows show titles, hover stays generic.
+        model.detailsRevealed = true
+        await capture("01b-details")
         model.injectEntitlementEvent()
         await capture("02-injected")
         model.replaySnapshot()
@@ -53,9 +60,9 @@ enum SnapshotRenderer {
         await capture("06-disconnected")
         model.simulateReconnect()
         await capture("07-reconnected")
-        model.settings.privacyMode = true
+        model.detailsRevealed = false
         await capture("08-privacy")
-        model.settings.privacyMode = false
+        model.detailsRevealed = true
         // Attention needs an unseen event while alerts are allowed; with reduced motion the
         // mascot holds the attention state's static fallback pose (no clip plays).
         model.settings.reducedMotion = true
@@ -64,8 +71,10 @@ enum SnapshotRenderer {
         model.markAllSeen()
         model.injectWorkflowFailure()
         await capture("10-urgent-static")
-        // Only with an explicit gh path (e.g. /nonexistent), so the result is deterministic.
-        if ProcessInfo.processInfo.environment[GhLocator.overrideVariable] != nil {
+        // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
+        // is deterministic and can never contain live GitHub data.
+        if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
+           !FileManager.default.fileExists(atPath: path) {
             model.settings.dataSource = .githubCLI
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await capture("11-gh-override")
@@ -73,6 +82,7 @@ enum SnapshotRenderer {
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
+        UserDefaults.standard.removePersistentDomain(forName: LaunchOptions.snapshotDefaultsSuite)
         FileHandle.standardError.write(Data("GitHubPet: snapshots written to \(directory.path)\n".utf8))
     }
 
@@ -131,6 +141,20 @@ enum SnapshotRenderer {
         layer.render(in: context)
         guard let image = context.makeImage() else { return nil }
         return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+    }
+
+    /// Exercises the real mascot container's accessibility contract: one button whose press
+    /// runs the same action as a click.
+    private static func mascotAccessibility(_ model: AppModel) -> String {
+        let container = MascotContainerView()
+        var pressed = false
+        container.onClick = { pressed = true }
+        container.accessibilityText = { MascotView.accessibilityLabel(model) }
+        let element = container.isAccessibilityElement()
+        let role = container.accessibilityRole()?.rawValue ?? "none"
+        let handled = container.accessibilityPerformPress()
+        return "mascot AX: element=\(element) role=\(role) press=\(handled && pressed ? "opens-inbox" : "none") "
+            + "label=\(container.accessibilityLabel() ?? "")"
     }
 
     private static func accessibilityDump(_ element: Any, depth: Int) -> [String] {

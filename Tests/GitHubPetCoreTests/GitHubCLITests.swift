@@ -68,6 +68,7 @@ private let searchJSON = """
     @Test func authenticatedFetchUsesArgvAndBuildsStableIDs() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
         runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data(searchJSON.utf8))
         runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
         let client = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner)
@@ -87,6 +88,7 @@ private let searchJSON = """
     @Test func oneFailingQueryMakesSnapshotPartial() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
         runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data(searchJSON.utf8))
         runner.replies["search issues"] = CommandResult(exitCode: 1, stderr: Data("HTTP 502".utf8))
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
@@ -107,6 +109,7 @@ private let searchJSON = """
     @Test func queryAtTheResultCapIsPartial() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
         runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: rows(GhClient.searchLimit))
         runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
@@ -123,6 +126,7 @@ private let searchJSON = """
     @Test func queryBelowTheCapIsComplete() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
         runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: rows(GhClient.searchLimit - 1))
         runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
@@ -135,6 +139,7 @@ private let searchJSON = """
     @Test func malformedOutputCountsAsFailure() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
         runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data("{oops".utf8))
         runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("nope".utf8))
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
@@ -144,6 +149,7 @@ private let searchJSON = """
     @Test func authFailureDuringSearchWins() {
         let runner = FakeRunner()
         runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("first-user\n".utf8))
         runner.replies["search prs"] = CommandResult(exitCode: 4)
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
         #expect(client.fetch() == .failure(.unauthenticated))
@@ -154,6 +160,44 @@ private let searchJSON = """
         runner.throwing = CommandError.launchFailed("no such file")
         let client = GhClient(locator: locator("/usr/local/bin/gh"), runner: runner)
         #expect(client.authState() == .missing)
+    }
+}
+
+@Suite struct GhAccountTests {
+    private func authenticatedRunner() -> FakeRunner {
+        let runner = FakeRunner()
+        runner.replies["auth status"] = CommandResult(exitCode: 0)
+        runner.replies["search prs"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
+        runner.replies["search issues"] = CommandResult(exitCode: 0, stdout: Data("[]".utf8))
+        return runner
+    }
+
+    @Test func fetchReportsTheActiveAccount() {
+        let runner = authenticatedRunner()
+        runner.replies["api user"] = CommandResult(exitCode: 0, stdout: Data("second-user\n".utf8))
+        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner).fetchWithAccount()
+        #expect(fetch.account == "second-user")
+        #expect(fetch.outcome == .snapshot(items: [], complete: true))
+        #expect(runner.calls.map(\.1).contains(GhClient.accountArguments))
+    }
+
+    @Test func unidentifiedAccountIsAFailureNotAnEmptyInbox() {
+        let runner = authenticatedRunner()
+        runner.replies["api user"] = CommandResult(exitCode: 1, stderr: Data("HTTP 502".utf8))
+        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner).fetchWithAccount()
+        #expect(fetch.account == nil)
+        guard case .failure(.failed) = fetch.outcome else {
+            Issue.record("expected failure, got \(fetch.outcome)")
+            return
+        }
+        #expect(!runner.calls.contains { $0.1.first == "search" }, "no searches for an unknown account")
+    }
+
+    @Test func authFailureWhileIdentifyingIsUnauthenticated() {
+        let runner = authenticatedRunner()
+        runner.replies["api user"] = CommandResult(exitCode: 4)
+        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner).fetchWithAccount()
+        #expect(fetch.outcome == .failure(.unauthenticated))
     }
 }
 
@@ -178,6 +222,28 @@ private let searchJSON = """
             try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/nonexistent/gh"),
                                            arguments: [], timeout: 5)
         }
+    }
+
+    @Test func searchesArePinnedToGitHubDotCom() throws {
+        // The launching shell may point GH_HOST at another host; the child must not inherit it.
+        let result = try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/usr/bin/env"),
+                                                    arguments: [], timeout: 5)
+        let lines = String(decoding: result.stdout, as: UTF8.self).split(separator: "\n")
+        #expect(lines.filter { $0.hasPrefix("GH_HOST=") } == ["GH_HOST=github.com"])
+    }
+
+    @Test func descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() throws {
+        func openDescriptors() -> Int {
+            (try? FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count) ?? 0
+        }
+        let before = openDescriptors()
+        let started = Date()
+        // The shell exits at once; its background child keeps stdout and stderr open for 5 s.
+        let result = try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"),
+                                                    arguments: ["-c", "sleep 5 & echo hi"], timeout: 5)
+        #expect(Date().timeIntervalSince(started) < 4.5, "collector deadline, not the descendant, bounds the wait")
+        #expect(String(decoding: result.stdout, as: UTF8.self) == "hi\n", "bytes read before the deadline are kept")
+        #expect(openDescriptors() <= before, "both pipe read ends are closed")
     }
 
     @Test func timeoutTerminatesTheChild() {

@@ -36,6 +36,15 @@ struct InboxView: View {
                         .accessibilityLabel("Demo data, not from GitHub")
                 }
                 Spacer()
+                if model.settings.privacyMode {
+                    // Session-only reveal (design spec); turning privacy on again re-hides.
+                    Button(model.detailsRevealed ? "Hide details" : "Show details") {
+                        model.detailsRevealed.toggle()
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                    .accessibilityIdentifier("inbox.showDetails")
+                }
                 if let badge = model.badge {
                     Text(badge)
                         .font(.caption.bold())
@@ -108,7 +117,7 @@ struct InboxView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(model.items) { item in
-                        InboxRow(item: item, privacy: model.settings.privacyMode,
+                        InboxRow(item: item, privacy: model.inboxPrivacy,
                                  unseen: model.isUnseen(item)) { model.open(item) }
                     }
                 }

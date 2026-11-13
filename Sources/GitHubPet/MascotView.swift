@@ -44,9 +44,14 @@ struct MascotView: View {
             .aspectRatio(1, contentMode: .fit)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(([model.statusAccessibilityLabel] + model.summaryLines.dropFirst(model.isDemo ? 1 : 0))
-            .joined(separator: ". "))
+        // VoiceOver sees the panel's container as one button (see MascotContainerView).
+        .accessibilityHidden(true)
+    }
+
+    /// The mascot's spoken label: status first, then the privacy-aware summary.
+    static func accessibilityLabel(_ model: AppModel) -> String {
+        ([model.statusAccessibilityLabel] + model.summaryLines.dropFirst(model.isDemo ? 1 : 0))
+            .joined(separator: ". ")
     }
 
     private func pose(at date: Date, reduced: Bool) -> MascotPose {

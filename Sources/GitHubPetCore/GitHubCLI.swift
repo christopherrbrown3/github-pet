@@ -28,7 +28,10 @@ public protocol CommandRunner: Sendable {
 public struct ProcessCommandRunner: CommandRunner {
     public var extraEnvironment: [String: String]
 
+    /// `GH_HOST` is pinned so searches use the same host as `auth status --hostname github.com`,
+    /// whatever the launching shell has configured.
     public init(extraEnvironment: [String: String] = [
+        "GH_HOST": "github.com",
         "GH_PROMPT_DISABLED": "1",
         "GH_NO_UPDATE_NOTIFIER": "1",
         "GH_SPINNER_DISABLED": "1",
@@ -63,6 +66,8 @@ public struct ProcessCommandRunner: CommandRunner {
         if exited.wait(timeout: .now() + timeout) == .timedOut {
             process.terminate()
             if exited.wait(timeout: .now() + 2) == .timedOut { kill(process.processIdentifier, SIGKILL) }
+            output.cancel()
+            errors.cancel()
             throw CommandError.timedOut
         }
         let outData = output.finish(within: 2)
@@ -71,21 +76,57 @@ public struct ProcessCommandRunner: CommandRunner {
     }
 }
 
-/// Drains a pipe on a background queue so a chatty child never blocks on a full pipe.
-private final class PipeCollector: @unchecked Sendable {
-    private let done = DispatchSemaphore(value: 0)
-    private var data = Data()
+/// Drains a pipe with non-blocking reads from a dispatch source, so a chatty child never
+/// blocks on a full pipe and no thread is ever parked in `read`. Cancelling (on EOF, a
+/// collector deadline or a command timeout) closes the descriptor, even if a descendant
+/// still holds the write end open.
+final class PipeCollector: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "GitHubPet.PipeCollector")
+    private let source: DispatchSourceRead
+    private let closed = DispatchSemaphore(value: 0)
+    private let fd: Int32
+    private var data = Data()   // only touched on `queue`
 
     init(_ handle: FileHandle) {
-        DispatchQueue.global(qos: .utility).async {
-            self.data = handle.readDataToEndOfFile()
-            self.done.signal()
+        fd = handle.fileDescriptor
+        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
+        source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: queue)
+        source.setEventHandler { [weak self] in self?.drain() }
+        source.setCancelHandler { [closed] in
+            try? handle.close()
+            closed.signal()
+        }
+        source.resume()
+    }
+
+    private func drain() {
+        var buffer = [UInt8](repeating: 0, count: 64 * 1024)
+        while true {
+            let count = read(fd, &buffer, buffer.count)
+            if count > 0 {
+                data.append(buffer, count: count)
+            } else if count < 0 && errno == EINTR {
+                continue
+            } else {
+                if count == 0 || errno != EAGAIN { source.cancel() }   // EOF or a real error
+                return
+            }
         }
     }
 
-    /// Collected bytes, or nothing if the pipe stays open past `seconds`.
+    /// Stops reading and closes the pipe. Safe to call more than once.
+    func cancel() {
+        source.cancel()
+    }
+
+    /// Bytes read until EOF, or what arrived within `seconds` if the pipe stays open longer.
+    /// Either way the descriptor is closed before this returns.
     func finish(within seconds: TimeInterval) -> Data {
-        done.wait(timeout: .now() + seconds) == .success ? data : Data()
+        if closed.wait(timeout: .now() + seconds) == .timedOut {
+            source.cancel()
+            closed.wait()
+        }
+        return queue.sync { data }
     }
 }
 
@@ -179,15 +220,45 @@ public struct GhClient: Sendable {
                                                 "--json", searchFields, "--limit", "\(searchLimit)"]),
     ]
 
-    /// One poll: run each search and merge. Any sub-query failure makes the snapshot partial.
-    public func fetch() -> FetchOutcome {
+    /// Login of the active github.com account; only compared in memory, never shown or stored.
+    static let accountArguments = ["api", "user", "--jq", ".login"]
+
+    /// One poll's result plus the account it belongs to (nil when the poll failed before
+    /// the account was known).
+    public struct AccountFetch: Sendable {
+        public var account: String?
+        public var outcome: FetchOutcome
+    }
+
+    public func fetch() -> FetchOutcome { fetchWithAccount().outcome }
+
+    /// One poll: identify the active account, then run each search and merge. Any sub-query
+    /// failure makes the snapshot partial. The account lets the caller start a fresh baseline
+    /// when `gh auth switch` changes who is signed in.
+    public func fetchWithAccount() -> AccountFetch {
         switch authState() {
-        case .missing: return .failure(.ghMissing)
-        case .unauthenticated: return .failure(.unauthenticated)
-        case .error(let message): return .failure(.failed(message))
+        case .missing: return AccountFetch(account: nil, outcome: .failure(.ghMissing))
+        case .unauthenticated: return AccountFetch(account: nil, outcome: .failure(.unauthenticated))
+        case .error(let message): return AccountFetch(account: nil, outcome: .failure(.failed(message)))
         case .authenticated: break
         }
-        guard let gh = locator.locate() else { return .failure(.ghMissing) }
+        guard let gh = locator.locate() else { return AccountFetch(account: nil, outcome: .failure(.ghMissing)) }
+        let account: String
+        do {
+            let result = try runner.run(executable: gh, arguments: Self.accountArguments, timeout: timeout)
+            if Self.isAuthFailure(result) { return AccountFetch(account: nil, outcome: .failure(.unauthenticated)) }
+            let login = String(decoding: result.stdout, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard result.exitCode == 0, !login.isEmpty else {
+                return AccountFetch(account: nil, outcome: .failure(.failed("Couldn't identify the GitHub account")))
+            }
+            account = login
+        } catch {
+            return AccountFetch(account: nil, outcome: .failure(.failed("Couldn't identify the GitHub account")))
+        }
+        return AccountFetch(account: account, outcome: search(gh))
+    }
+
+    private func search(_ gh: URL) -> FetchOutcome {
 
         var items: [InboxItem] = []
         var failures = 0

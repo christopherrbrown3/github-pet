@@ -321,3 +321,70 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(simulator.injectWorkflowFailure(now: t0).id != failure.id)
     }
 }
+
+@Suite struct AccountSessionTests {
+    @Test func firstAccountAndFailedPollsAreNotChanges() {
+        var watch = AccountWatch()
+        let first = watch.observe("first-user")
+        let failed = watch.observe(nil)   // a poll that failed before identifying the account
+        let same = watch.observe("first-user")
+        #expect(!first && !failed && !same)
+        #expect(watch.account == "first-user")
+        let switched = watch.observe("second-user")
+        #expect(switched)
+        watch.reset()
+        let afterReset = watch.observe("third-user")
+        #expect(!afterReset, "a source switch already started a fresh session")
+    }
+
+    @Test func switchingAccountsStartsAFreshBaselineWithoutEvents() {
+        var watch = AccountWatch()
+        let engine = InboxEngine()
+        var unseen = UnseenItems()
+        func poll(_ account: String, _ items: [InboxItem], at now: Date) -> [InboxEvent] {
+            if watch.observe(account) {
+                engine.reset()
+                unseen.removeAll()
+            }
+            let outcome = FetchOutcome.snapshot(items: items, complete: true)
+            let events = engine.apply(outcome, now: now)
+            unseen.record(events)
+            unseen.reconcile(after: outcome, items: engine.items)
+            return events
+        }
+        #expect(poll("first-user", [item("a")], at: t0).isEmpty)
+        #expect(poll("first-user", [item("a"), item("b")], at: t0 + 60).map(\.item.id) == ["b"])
+        // `gh auth switch`: the second account's existing items are its baseline, not news.
+        #expect(poll("second-user", [item("c"), item("d")], at: t0 + 120).isEmpty)
+        #expect(unseen.ids.isEmpty, "unread markers from the first account are dropped")
+        #expect(engine.items.map(\.id) == ["c", "d"])
+        #expect(poll("second-user", [item("c"), item("d"), item("e")], at: t0 + 180).map(\.item.id) == ["e"])
+    }
+}
+
+@Suite struct UnseenItemsTests {
+    private func marked(_ ids: String...) -> UnseenItems {
+        var unseen = UnseenItems()
+        unseen.record(ids.map { InboxEvent(item: item($0)) })
+        return unseen
+    }
+
+    @Test func partialSnapshotKeepsMarkersForMissingItems() {
+        var unseen = marked("a", "b")
+        // The source holding "b" failed this poll.
+        unseen.reconcile(after: .snapshot(items: [item("a")], complete: false), items: [item("a")])
+        #expect(unseen.ids == ["a", "b"])
+        unseen.reconcile(after: .failure(.failed("offline")), items: [item("a")])
+        #expect(unseen.ids == ["a", "b"])
+        // Recovery: "b" is back, still unread, with no new event needed.
+        unseen.reconcile(after: .snapshot(items: [item("a"), item("b")], complete: true),
+                         items: [item("a"), item("b")])
+        #expect(unseen.ids == ["a", "b"])
+    }
+
+    @Test func completeSnapshotPrunesItemsThatAreGone() {
+        var unseen = marked("a", "b")
+        unseen.reconcile(after: .snapshot(items: [item("a")], complete: true), items: [item("a")])
+        #expect(unseen.ids == ["a"])
+    }
+}

@@ -53,6 +53,13 @@ use only: it isn't notarized or Developer ID signed.
 - Live data comes from `gh search prs --review-requested=@me` and `gh search issues --assignee=@me`,
   each capped at 30 results. If one query fails, or a query returns a full page of 30 (there may be
   more), the snapshot is *partial*. If both fail, it's an *error*.
+- Every `gh` child runs with `GH_HOST=github.com`, so a shell configured for another host can't
+  make searches disagree with the github.com auth check. Output is read without blocking, and
+  both pipes are closed on EOF, the collector deadline or a timeout, even if a descendant still
+  holds them open.
+- Custom mascot packs: only regular files are read (opened non-blocking, so a FIFO can't stall
+  launch), PNG header dimensions are checked before any decode, and a state with too many frames
+  is rejected before any of its files are opened.
 
 ### Data quality and events
 - States: Loading, Up to date, All clear, Partial data, Stale (no success for 10 min),
@@ -69,6 +76,11 @@ use only: it isn't notarized or Developer ID signed.
 - Switching the data source clears the inbox to Loading. Rows, counts and baseline from the
   previous source are never shown as the new source's data, and a slow fetch from an earlier
   session is discarded.
+- Each GitHub CLI poll first identifies the signed-in account (`gh api user`, compared in memory
+  only, never shown, logged or stored). If `gh auth switch` changes it, the baseline, unread
+  markers and clips are reset, so the new account's existing items are not announced as new.
+- Unread markers are pruned only after a complete snapshot. A partial snapshot (a failed source)
+  keeps them, since recovery does not re-announce those items.
 - Items are keyed by stable IDs such as `reviewRequest:owner/repo#12`.
 - The first complete snapshot sets the baseline and fires no events. Unchanged polls never fire
   again. An ID fires at most once, even if it disappears and comes back.
@@ -89,15 +101,22 @@ fields fall back to defaults, and values outside their range are clamped. They s
 
 - Mascot visibility, size (64–256 pt), and position (saved after each drag; reset in Settings;
   ignored if mostly off-screen).
-- **Privacy mode** hides repository names and titles in the inbox, the menu-bar popover, the hover
-  summary and accessibility labels, showing generic labels such as "Review request". Counts are
-  still shown, and links behave the same.
+- **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
+  menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
+  "Review request". Counts and data quality are still shown, and links behave the same. The inbox
+  header has a **Show details** link that reveals names and titles in the inbox rows for the
+  current app session only (never saved); hover, mascot and menu-bar text stay generic. Turning
+  privacy mode on again hides the details immediately.
 - **Reduce motion** (also on when macOS Reduce Motion is on) gives a static pose with no clips.
   Colour, symbol and text still change.
 - **Snooze** (1 h, 4 h, until 9:00 tomorrow) and **quiet hours** (local time; can wrap past midnight;
   start = end means off) keep the mascot and menu-bar icon calm. The inbox keeps updating, and
   auth/critical states still show as text.
 - Data source: Fixtures (default) or GitHub CLI.
+
+### Accessibility
+The mascot panel is a single VoiceOver button labelled with the status and the privacy-aware
+summary; its press action opens the Inbox, the same as a click.
 
 ### Links
 Only `https://github.com/...` URLs are opened, with no userinfo and no port other than 443.
@@ -129,7 +148,7 @@ Launch arguments and environment variables:
 | `--clock-offset <seconds>` / `GITHUB_PET_CLOCK_OFFSET` | Shift the app clock |
 | `TZ=<zone>` | Time zone for quiet hours |
 | `GITHUB_PET_GH_PATH=<path>` | Use this `gh` (point at a missing path or a fake script) |
-| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs in light (`name.png`) and dark (`name-dark.png`) appearance, including loading, urgent and reduced-motion static states (and a missing-`gh` state when `GITHUB_PET_GH_PATH` is set), and write `report.txt` (state, badge, rows, accessibility label, window sizes). Then quit. No screen-recording permission needed. |
+| `--render-snapshots <dir>` | Run a fixture scenario (baseline, inject, replay, partial, stale, disconnect, reconnect, privacy), render the real Inbox window, hover summary and mascot offscreen to PNGs in light (`name.png`) and dark (`name-dark.png`) appearance, including loading, urgent and reduced-motion static states (and a missing-`gh` state when `GITHUB_PET_GH_PATH` is set), and write `report.txt` (state, badge, rows, accessibility labels, the mascot's button/press contract, window sizes). Then quit. Always uses Demo fixtures, default settings and a throwaway preferences suite, whatever other flags or saved settings say, so its output never contains live data and it never changes your preferences. The missing-`gh` step runs only if `GITHUB_PET_GH_PATH` names a path that doesn't exist. No screen-recording permission needed. |
 | `GITHUB_PET_PACK_DIR=<dir>` | Load this mascot pack instead of the bundled one. If validation fails, the placeholder is used and Settings explains why. |
 | `--placeholder` | Draw the native vector placeholder instead of the bundled pack |
 
