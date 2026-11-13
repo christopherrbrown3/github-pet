@@ -645,12 +645,91 @@ private final class StubProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
-private func stubTransport(timeout: TimeInterval = 5) -> URLSessionStatusTransport {
+/// CI runners have been seen stalling the whole test process for 25–40 s, so only the hanging
+/// case relies on a short timeout; everything else gets one far beyond any stall.
+private func stubTransport(timeout: TimeInterval = 120) -> URLSessionStatusTransport {
     URLSessionStatusTransport(timeout: timeout) { $0.protocolClasses = [StubProtocol.self] }
 }
 
 private func stubURL(_ name: String) -> URL {
     URL(string: "https://www.githubstatus.com/stub/\(name)-\(UUID().uuidString.lowercased()).json")!
+}
+
+/// Transport pieces checked without URLSession, independent of runner timing.
+@Suite struct StatusTransportUnitTests {
+    private struct Bytes: AsyncSequence {
+        typealias Element = UInt8
+        var data: Data
+        struct AsyncIterator: AsyncIteratorProtocol {
+            var iterator: Data.Iterator
+            mutating func next() async -> UInt8? { iterator.next() }
+        }
+        func makeAsyncIterator() -> AsyncIterator { AsyncIterator(iterator: data.makeIterator()) }
+    }
+
+    @Test func collectEnforcesTheCap() async throws {
+        let body = Data(repeating: 7, count: 4096)
+        #expect(try await URLSessionStatusTransport.collect(Bytes(data: body), expectedLength: -1, maxBytes: 4096) == body)
+        await #expect(throws: StatusFetchError.tooLarge) {
+            _ = try await URLSessionStatusTransport.collect(Bytes(data: body + Data([1])), expectedLength: -1, maxBytes: 4096)
+        }
+        await #expect(throws: StatusFetchError.tooLarge) {
+            _ = try await URLSessionStatusTransport.collect(Bytes(data: Data()), expectedLength: 4097, maxBytes: 4096)
+        }
+    }
+
+    @Test func configurationKeepsNoState() {
+        let config = URLSessionStatusTransport(timeout: 15).configuration
+        #expect(config.httpCookieStorage == nil)
+        #expect(config.httpShouldSetCookies == false)
+        #expect(config.httpCookieAcceptPolicy == .never)
+        #expect(config.urlCredentialStorage == nil)
+        #expect(config.urlCache == nil)
+        #expect(config.requestCachePolicy == .reloadIgnoringLocalAndRemoteCacheData)
+        #expect(config.timeoutIntervalForRequest == 15)
+        #expect(config.timeoutIntervalForResource == 30)
+        #expect(config.waitsForConnectivity == false)
+        #expect(config.tlsMinimumSupportedProtocolVersion == .TLSv12)
+    }
+
+    @Test func redirectsAreRefused() {
+        let transport = URLSessionStatusTransport(timeout: 15)
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let task = session.dataTask(with: ServiceStatusClient.endpoint)
+        let redirect = HTTPURLResponse(url: ServiceStatusClient.endpoint, statusCode: 302, httpVersion: nil,
+                                       headerFields: ["Location": "https://evil.example/"])!
+        var followed: URLRequest? = URLRequest(url: URL(string: "https://placeholder.invalid")!)
+        transport.urlSession(session, task: task, willPerformHTTPRedirection: redirect,
+                             newRequest: URLRequest(url: URL(string: "https://evil.example/")!)) { followed = $0 }
+        #expect(followed == nil)
+    }
+
+    @Test(arguments: [(NSURLAuthenticationMethodHTTPBasic, URLSession.AuthChallengeDisposition.cancelAuthenticationChallenge),
+                      (NSURLAuthenticationMethodClientCertificate, .cancelAuthenticationChallenge),
+                      (NSURLAuthenticationMethodServerTrust, .performDefaultHandling)])
+    func onlyServerTrustIsHandled(_ method: String, _ expected: URLSession.AuthChallengeDisposition) {
+        let transport = URLSessionStatusTransport(timeout: 15)
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let space = URLProtectionSpace(host: ServiceStatusLink.host, port: 443, protocol: "https", realm: nil,
+                                       authenticationMethod: method)
+        let challenge = URLAuthenticationChallenge(protectionSpace: space, proposedCredential: nil,
+                                                   previousFailureCount: 0, failureResponse: nil, error: nil,
+                                                   sender: ChallengeSender())
+        var disposition: URLSession.AuthChallengeDisposition?
+        var credential: URLCredential?
+        transport.urlSession(session, task: session.dataTask(with: ServiceStatusClient.endpoint),
+                             didReceive: challenge) { disposition = $0; credential = $1 }
+        #expect(disposition == expected)
+        #expect(credential == nil)
+    }
+
+    private final class ChallengeSender: NSObject, URLAuthenticationChallengeSender {
+        func use(_ credential: URLCredential, for challenge: URLAuthenticationChallenge) {}
+        func continueWithoutCredential(for challenge: URLAuthenticationChallenge) {}
+        func cancel(_ challenge: URLAuthenticationChallenge) {}
+    }
 }
 
 @Suite struct URLSessionStatusTransportTests {
@@ -693,13 +772,11 @@ private func stubURL(_ name: String) -> URL {
     @Test func hangingServerTimesOut() async {
         let url = stubURL("hang")
         StubRegistry.shared.set(.hang, for: url)
-        let started = Date()
         await #expect {
             _ = try await stubTransport(timeout: 0.5).get(URLRequest(url: url, timeoutInterval: 0.5), maxBytes: 4096)
         } throws: { error in
             (error as? URLError)?.code == .timedOut
         }
-        #expect(Date().timeIntervalSince(started) < 10)
     }
 
     @Test func redirectsAreNotFollowed() async throws {

@@ -113,7 +113,7 @@ public struct ServiceStatusClient: Sendable {
 /// redirects refused, authentication challenges other than server trust cancelled, and the body
 /// read incrementally so an oversized response is abandoned at `maxBytes`.
 public final class URLSessionStatusTransport: NSObject, StatusTransport, URLSessionTaskDelegate, @unchecked Sendable {
-    private let configuration: URLSessionConfiguration
+    let configuration: URLSessionConfiguration
 
     /// - Parameter configure: test hook to adjust the hardened configuration (e.g. stub protocols).
     public init(timeout: TimeInterval, configure: ((URLSessionConfiguration) -> Void)? = nil) {
@@ -138,13 +138,19 @@ public final class URLSessionStatusTransport: NSObject, StatusTransport, URLSess
         defer { session.invalidateAndCancel() }
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse else { throw StatusFetchError.transport("not HTTP") }
-        if http.expectedContentLength > Int64(maxBytes) { throw StatusFetchError.tooLarge }
+        return (try await Self.collect(bytes, expectedLength: http.expectedContentLength, maxBytes: maxBytes), http)
+    }
+
+    /// Reads at most `maxBytes`, failing as soon as the declared or streamed length exceeds it.
+    static func collect<S: AsyncSequence>(_ bytes: S, expectedLength: Int64, maxBytes: Int) async throws -> Data
+    where S.Element == UInt8 {
+        if expectedLength > Int64(maxBytes) { throw StatusFetchError.tooLarge }
         var data = Data()
         for try await byte in bytes {
             if data.count >= maxBytes { throw StatusFetchError.tooLarge }
             data.append(byte)
         }
-        return (data, http)
+        return data
     }
 
     public func urlSession(_ session: URLSession, task: URLSessionTask,
