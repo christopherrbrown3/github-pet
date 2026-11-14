@@ -1,0 +1,49 @@
+name: Swift
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Build
+        run: swift build
+      - name: Test
+        timeout-minutes: 10
+        # The suite is swift-testing only; skip the empty XCTest pass.
+        run: scripts/test.sh --disable-xctest
+      - name: Bundle app
+        run: scripts/build-app.sh release
+      - name: Verify bundle
+        run: |
+          plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
+          codesign --verify --strict .build/app/GitHubPet.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true
+          test -f .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/manifest.json
+          test "$(ls .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/frames/*.png | wc -l)" -eq 12
+      - name: GUI render check
+        timeout-minutes: 5
+        run: scripts/render-check.sh
+      - name: Upload render evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-check
+          path: .build/render-check
+          if-no-files-found: ignore
