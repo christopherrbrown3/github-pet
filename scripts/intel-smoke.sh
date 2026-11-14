@@ -20,7 +20,11 @@ GITHUB_PET_GH_PATH=/nonexistent/gh arch -x86_64 "$binary" --render-snapshots "$o
 pid=$!
 for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "intel-smoke: timed out" >&2; exit 1; fi
-wait $pid || true
+wait $pid || {
+  result=$?
+  echo "intel-smoke: x86_64 slice exited unsuccessfully ($result)" >&2
+  exit "$result"
+}
 grep -q '^## 01-baseline' "$out/report.txt" && grep -q '^state=Up to date badge=3 rows=3 demo=true' "$out/report.txt" \
   || { echo "intel-smoke: no usable report from the x86_64 slice" >&2; exit 1; }
 echo "intel-smoke: x86_64 slice ran the snapshot scenario under Rosetta"
