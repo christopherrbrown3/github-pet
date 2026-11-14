@@ -14,9 +14,9 @@ Chris explicitly requested Codex takeover and token-conscious model selection. S
 ## Work and gates
 
 - Main: PR18 merged as `83b7b5c`; prototype exists. No release/tag authorized.
-- PR36: `8c462b2673af0b6cafae7018d3e132f0b906d2d8`, CI43579009400 green, 274 Developer tests. QA independently verifying current head and four outstanding Copilot fixes. Includes outage simulator and separate incident marker; unknown/stale/failure never means empty. #11/#37 In QA.
-- PR42: `56b071ca6050f30e95327d460cdd69fed984de2c`, existing independent QA PASS, including deliberate-overlap negative probe. #39 remains In QA pending integration.
-- PR43: `f85d5c1102646161150a14bc485cff475866a178`, CI green but QA FAIL D1 (build number1 from shallow checkout; temporary merge-SHA ZIP provenance). Developer fixing D1 and both Copilot findings, including limiting advertised main downloads to push events. #15 In Progress for rework. QA will verify new immutable head.
+- PR36 merged as `9a533ec209eb703a2120a03c44fee6c409da748a` from `8c462b2673af0b6cafae7018d3e132f0b906d2d8`. CI43579009400 green274 tests; QA55 assertions/10 targeted tests/nine stills PASS (comment6879047123), final current-head Copilot no open code issues; four threads resolved. #11/#37 Done. Desktop motion/popover/VoiceOver limitations remain under#4.
+- PR42: `56b071ca6050f30e95327d460cdd69fed984de2c`, prior independent QA PASS including negative overlap probe. Developer dispatched to integrate main9a533ec in a separate worktree; await exact resulting SHA/CI/delta QA. #39 In QA.
+- PR43: current `f1cfada8aeb28588e86952d39496f0cfeee03c34`, CI43606856503 pending. D1 fixed atf54d5a6; its actual artifact independently passed provenance/signature/universal/checksum/build51. Additional D2 (Intel smoke discarded child failure) reproduced independently and fixed atf1cfada; independent fixture exits0/86 correctly, eight regressions PASS. Await new CI/artifact and Copilot. #15 In Progress.
 - Integration order retained: PR36, then42, then43. Refresh current-head reviews/CI/QA and conflicts before each authorized ready merge. No auto-merge or release.
 - #35/#40/#41/#44 remain Backlog; no unsolicited expansion.
 
