@@ -4,6 +4,29 @@ public enum ScopeValidationError: Error, Equatable, Sendable {
     case invalidOrganization, invalidRepository, emptySelection, tooManyTargets, invalidIdentity, unsupportedHost
 }
 
+/// Full-input byte checks, independent of Foundation regex entry point/string representation.
+/// User-input trimming happens at target construction; protocol IDs are never trimmed.
+enum ScopeASCII {
+    private static func alphanumeric(_ byte: UInt8) -> Bool {
+        (48...57).contains(byte) || (65...90).contains(byte) || (97...122).contains(byte)
+    }
+    static func owner(_ value: String) -> Bool {
+        let bytes = value.utf8
+        return (1...39).contains(bytes.count) && alphanumeric(bytes.first!) && alphanumeric(bytes.last!)
+            && bytes.allSatisfy { alphanumeric($0) || $0 == 45 }
+    }
+    static func repositoryName(_ value: String) -> Bool {
+        let bytes = value.utf8
+        return (1...100).contains(bytes.count) && value != "." && value != ".."
+            && bytes.allSatisfy { alphanumeric($0) || $0 == 95 || $0 == 46 || $0 == 45 }
+    }
+    static func nodeID(_ value: String, maximum: Int = 512) -> Bool {
+        let bytes = value.utf8
+        return (1...maximum).contains(bytes.count)
+            && bytes.allSatisfy { alphanumeric($0) || $0 == 95 || $0 == 43 || $0 == 47 || $0 == 61 || $0 == 45 }
+    }
+}
+
 /// Immutable, validated input. Query text can contain only these normalized components.
 public struct MonitoringTarget: Hashable, Sendable, Codable {
     public enum Kind: String, Codable, Sendable { case organization, repository }
@@ -11,24 +34,19 @@ public struct MonitoringTarget: Hashable, Sendable, Codable {
     public let owner: String
     public let name: String?
 
-    private static func ownerValid(_ value: String) -> Bool {
-        (1...39).contains(value.utf8.count)
-            && value.range(of: "^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$", options: .regularExpression) != nil
-    }
     public init(organization: String) throws {
-        let owner = organization.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard Self.ownerValid(owner) else { throw ScopeValidationError.invalidOrganization }
-        self.kind = .organization; self.owner = owner; self.name = nil
+        let owner = organization.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard ScopeASCII.owner(owner) else { throw ScopeValidationError.invalidOrganization }
+        self.kind = .organization; self.owner = owner.lowercased(); self.name = nil
     }
     public init(repository: String) throws {
         let parts = repository.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: "/", omittingEmptySubsequences: false)
         guard parts.count == 2 else { throw ScopeValidationError.invalidRepository }
-        let owner = String(parts[0]).lowercased(), name = String(parts[1]).lowercased()
-        guard Self.ownerValid(owner), (1...100).contains(name.utf8.count), name != ".", name != "..",
-              name.range(of: "^[A-Za-z0-9_.-]+$", options: .regularExpression) != nil else {
+        let owner = String(parts[0]), name = String(parts[1])
+        guard ScopeASCII.owner(owner), ScopeASCII.repositoryName(name) else {
             throw ScopeValidationError.invalidRepository
         }
-        self.kind = .repository; self.owner = owner; self.name = name
+        self.kind = .repository; self.owner = owner.lowercased(); self.name = name.lowercased()
     }
     public var qualifier: String { kind == .organization ? "org:\(owner)" : "repo:\(owner)/\(name!)" }
     public var includes: (String) -> Bool {
@@ -86,8 +104,7 @@ public struct ScopeAccount: Hashable, Sendable, Codable {
     public let viewerID: String
     public init(host: String = "github.com", viewerID: String) throws {
         guard host.lowercased() == "github.com" else { throw ScopeValidationError.unsupportedHost }
-        guard (1...256).contains(viewerID.utf8.count),
-              viewerID.range(of: "^[A-Za-z0-9_+/=-]+$", options: .regularExpression) != nil else {
+        guard ScopeASCII.nodeID(viewerID, maximum: 256) else {
             throw ScopeValidationError.invalidIdentity
         }
         self.host = "github.com"; self.viewerID = viewerID

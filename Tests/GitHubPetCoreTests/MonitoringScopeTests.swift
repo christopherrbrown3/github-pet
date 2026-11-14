@@ -4,6 +4,7 @@ import Testing
 
 private let accountA = try! ScopeAccount(viewerID: "U_fixture_A")
 private let accountB = try! ScopeAccount(viewerID: "U_fixture_B")
+private let lineTerminators = ["\n", "\r", "\r\n", "\u{85}", "\u{2028}", "\u{2029}"]
 private func mixedScope() throws -> MonitoringScope {
     try MonitoringScope(selected: [MonitoringTarget(organization: "Example"), MonitoringTarget(repository: "example/pet")])
 }
@@ -90,6 +91,24 @@ private func response(_ body: [String: Any], errors: [[String: Any]]? = nil) thr
         let source = ScopedFixtureSource(items: [item, item])
         #expect(source.poll(scope: try mixedScope()) == .snapshot(items: [InboxItem(id: item.id, kind: item.kind,
             repository: item.repository, title: item.title, url: nil, updatedAt: item.updatedAt, isDemo: true)], complete: true))
+    }
+
+    @Test func byteValidationRejectsLineSeparatorsAndPreservesIntentionalInputTrimming() throws {
+        for suffix in lineTerminators {
+            #expect(throws: ScopeValidationError.invalidRepository) {
+                try MonitoringTarget(repository: "example" + suffix + "/pet")
+            }
+            #expect(throws: ScopeValidationError.invalidIdentity) { try ScopeAccount(viewerID: "U_fixture_A" + suffix) }
+            #expect(try MonitoringTarget(organization: " EXAMPLE" + suffix).owner == "example")
+            #expect(try MonitoringTarget(repository: " EXAMPLE/PET" + suffix).qualifier == "repo:example/pet")
+            let org = try JSONSerialization.data(withJSONObject: ["kind": "organization", "owner": " EXAMPLE" + suffix])
+            #expect(try JSONDecoder().decode(MonitoringTarget.self, from: org).owner == "example")
+            let repo = try JSONSerialization.data(withJSONObject: ["kind": "repository", "owner": "example" + suffix, "name": "pet"])
+            #expect(throws: (any Error).self) { try JSONDecoder().decode(MonitoringTarget.self, from: repo) }
+            let identity = try JSONSerialization.data(withJSONObject: ["host": "github.com", "viewerID": "U_fixture_A" + suffix])
+            #expect(throws: (any Error).self) { try JSONDecoder().decode(ScopeAccount.self, from: identity) }
+        }
+        #expect(throws: ScopeValidationError.self) { try MonitoringTarget(organization: "K") }
     }
 }
 
@@ -193,6 +212,34 @@ private func response(_ body: [String: Any], errors: [[String: Any]]? = nil) thr
         var body = envelope(plan)
         body["reviews0"] = ["issueCount": 9.22e18, "nodes": [], "pageInfo": ["hasNextPage": false]]
         #expect(!ScopedResponseParser.parse(try response(body), plan: plan).complete)
+    }
+
+    @Test func fullJSONIdentifierSuffixesNeverProduceVerifiedEmptyOrCompleteData() throws {
+        let everything = try ScopeQueryPlan()
+        let selected = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        #expect(ScopedResponseParser.parse(try response(envelope(everything)), plan: everything).complete)
+        #expect(ScopedResponseParser.parse(try response(envelope(selected)), plan: selected).complete)
+        for suffix in lineTerminators {
+            // The original940 JSON path accepted these viewer IDs for a fresh Everything fetch.
+            var body = envelope(everything)
+            body["viewer"] = ["id": accountA.viewerID + suffix, "login": "fixture-user"]
+            let viewer = ScopedResponseParser.parse(try response(body), plan: everything)
+            #expect(viewer.viewer == nil && !viewer.complete && viewer.successfulSources == 0)
+            if case .failure = viewer.outcome {} else { Issue.record("malformed viewer must fail") }
+            // Same original full JSON metadata cases, not a standalone regex surrogate.
+            body = envelope(selected)
+            body["target0"] = ["__typename": "Organization", "id": "O_fixture" + suffix, "login": "example"]
+            let org = ScopedResponseParser.parse(try response(body), plan: selected)
+            #expect(!org.complete && org.issues.contains(.malformedTarget(0)))
+            body = envelope(selected)
+            body["target1"] = ["__typename": "Repository", "id": "R_fixture" + suffix, "nameWithOwner": "example/pet"]
+            let repo = ScopedResponseParser.parse(try response(body), plan: selected)
+            #expect(!repo.complete && repo.issues.contains(.malformedTarget(1)))
+            // JSONDecoder row IDs were rejected locally before the fix; preserve that result.
+            body = envelope(everything); body["reviews0"] = page([row("PR_fixture_1" + suffix)])
+            let item = ScopedResponseParser.parse(try response(body), plan: everything)
+            #expect(!item.complete && item.items.isEmpty && item.issues.contains(.malformedRow("reviews0")))
+        }
     }
 }
 

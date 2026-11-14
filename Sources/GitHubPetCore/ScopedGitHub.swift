@@ -130,8 +130,7 @@ public enum ScopedResponseParser {
             guard let metadata = body["target\(index)"] as? [String: Any] else {
                 issues.append(.targetUnavailable(index)); continue
             }
-            guard let id = metadata["id"] as? String, (1...512).contains(id.utf8.count),
-                  id.range(of: "^[A-Za-z0-9_+/=-]+$", options: .regularExpression) != nil else {
+            guard let id = metadata["id"] as? String, ScopeASCII.nodeID(id) else {
                 issues.append(.malformedTarget(index)); continue
             }
             let type = metadata["__typename"] as? String
@@ -160,8 +159,7 @@ public enum ScopedResponseParser {
             for node in nodes {
                 guard let data = try? JSONSerialization.data(withJSONObject: node, options: [.fragmentsAllowed]),
                       let row = try? decoder.decode(Row.self, from: data), row.number > 0,
-                      !row.id.isEmpty, row.id.utf8.count <= 512,
-                      row.id.range(of: "^[A-Za-z0-9_+/=-]+$", options: .regularExpression) != nil,
+                      ScopeASCII.nodeID(row.id),
                       row.__typename == (search.kind == .reviewRequest ? "PullRequest" : "Issue"),
                       let repository = try? MonitoringTarget(repository: row.repository.nameWithOwner),
                       let url = SafeLink.validated(row.url),

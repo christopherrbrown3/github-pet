@@ -98,3 +98,19 @@ child's PID through a bounded FIFO handshake and calls `task.cancel()` from an i
 queue. It requires remaining active budget, `.cancelled` (never `.timedOut`), the child gone/reaped
 and an unrelated test-owned process still running. These checks passed against unchanged old
 production transport; no production cancellation defect was observed or patched.
+
+### Identifier validation evidence (PR48 rework)
+
+Old940 native-string constructors rejected embedded-owner/account-ID LF, CR, CRLF, NEL, LS
+and PS locally. That raw target example was **not** reproduced here. The original full JSON
+response path did accept suffixed metadata IDs and fresh Everything viewer IDs; rows were rejected
+and selected expected-account mismatch still discarded all rows. Independent negative-before
+evidence is [QA's calibrated report](https://github.com/christopherrbrown3/github-pet/pull/48#issuecomment-6883863530).
+No representation mechanism or exploit is claimed beyond these observed paths.
+
+Full-input ASCII byte validation now covers target components and all protocol IDs, independent
+of regex behavior across runtimes/string entry points. Surrounding user-input trimming remains
+intentional; IDs received from the protocol are never trimmed. Regressions pass the six suffixes
+through JSONSerialization and the actual parser: invalid Everything viewer IDs fail, malformed
+metadata is incomplete/failure, rows remain rejected. Raw and decoded configuration tests retain
+the intended whitespace/case normalization and reject embedded separators.
