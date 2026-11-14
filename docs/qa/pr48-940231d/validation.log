@@ -1,0 +1,11 @@
+SOURCE HEAD 940231dc1a794dcf221449e8df1a441718b1ca3f; only stable47 core objects for unchanged model dependencies
+OS Version 27.0 (Build 26A428)
+PASS separator="\n" embedded-owner-rejected=true node-ID-rejected=true
+PASS separator="\r" embedded-owner-rejected=true node-ID-rejected=true
+PASS separator="\r\n" embedded-owner-rejected=true node-ID-rejected=true
+PASS separator="" embedded-owner-rejected=true node-ID-rejected=true
+PASS separator=" " embedded-owner-rejected=true node-ID-rejected=true
+PASS separator=" " embedded-owner-rejected=true node-ID-rejected=true
+RESULT raw rejection cases=12 failures=0; no newline defect reproduced on this target
+
+EXIT 0
