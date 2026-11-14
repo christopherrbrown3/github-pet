@@ -24,7 +24,7 @@ The active scope is always visible in the Inbox header and Settings. Outside Set
 
 ## Account and polling behavior
 
-PM recommendation, pending the optional user preference question: remember selections separately per GitHub host/account. First use of an account starts with Everything and a silent baseline; returning to an account restores its own selection. Do not reuse one account's validation/discovery result for another account. Never show the former account's inbox or selection as the new account's verified data.
+PM default while the optional user preference question remains unanswered: remember selections separately per GitHub host/account. This is a stated implementation assumption, open to user correction. First use of an account starts with Everything and a silent baseline; returning to an account restores its own selection. Do not reuse one account's validation/discovery result for another account. Never show the former account's inbox or selection as the new account's verified data.
 
 Apply scope atomically: invalidate in-flight repository fetches/discovery, clear obsolete repository rows/counts/unseen state and queued repository attention, enter loading for the new scope and seed its first valid snapshot silently. Old-scope replies cannot repopulate the current inbox. A failed/partial first snapshot cannot later replay old items as new. Undoing a scope change is another baseline, not an event replay. Scope changes must not reset, suppress or replay the unrelated public service-incident monitor.
 
@@ -52,5 +52,5 @@ Developer owns production Swift/tests/build CI and supplies exact SHA, focused c
 
 1. Finish the narrow #44 reliability PR separately; do not mix its test-clock fix into this feature.
 2. Developer returns a short implementation plan resolving bounded query union, accessible-target validation and request-bound account identity before production edits for #30.
-3. PM records the chosen limits and handles any genuinely open product decision; preserve the optional account-persistence question as pending until answered or explicitly adopted as the stated PM default.
+3. PM records the chosen limits and handles any genuinely open product decision; record any answer to the optional account-persistence question; otherwise use the stated PM default above.
 4. Implement fixtures/core/settings within the dedicated #30 branch/worktree, then independent current-head QA. Stage reviewable work while QA is quota-stopped; do not restart/switch agents to bypass allowance.
