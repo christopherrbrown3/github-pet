@@ -125,6 +125,35 @@ private struct PackFixture {
         #expect(fixture.errors().isEmpty, "idle loops, so it has no clip limit")
     }
 
+    @Test func pathsWithNulOrControlCharactersCantEscapeThePack() throws {
+        // Copilot 4569991795: "..\0ignored/outside.png" reached openat as ".." (C stops at NUL).
+        let fixture = try PackFixture()
+        let outside = fixture.directory.deletingLastPathComponent().appendingPathComponent("outside.png")
+        try validFrame.write(to: outside)
+        defer { try? FileManager.default.removeItem(at: outside) }
+        let escaping = "..\u{0}ignored/outside.png"
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            idle["staticFallback"] = escaping
+            states["idle"] = idle
+            json["states"] = states
+        }
+        #expect(fixture.errors() == [.unsafePath(escaping)])
+        for path in ["frames/a\u{0}.png", "frames/a\nb.png", "frames/\u{7F}.png", "frames/\tidle_0.png"] {
+            #expect(!MascotPack.isSafeRelativePath(path), "\(path.debugDescription)")
+        }
+        // The openat walk refuses such components itself, even if a caller skipped the check.
+        let root = open(fixture.directory.path, O_RDONLY | O_DIRECTORY)
+        defer { close(root) }
+        for path in [escaping, "../outside.png", "./frames/idle_0.png", "frames//idle_0.png", ""] {
+            #expect(throws: MascotPack.ReadError.unsafeComponent) {
+                try MascotPack.readInPack(root: root, path: path, limit: MascotPack.maxImageBytes)
+            }
+        }
+        #expect(try MascotPack.readInPack(root: root, path: "frames/idle_0.png", limit: MascotPack.maxImageBytes) == validFrame)
+    }
+
     @Test func hugeDurationsAreRejectedWithoutCrashing() throws {
         // Copilot 4569991771: summing [Int.max, 125] used to trap during app init.
         let fixture = try PackFixture()

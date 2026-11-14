@@ -282,8 +282,10 @@ public struct MascotPack: Equatable, Sendable {
 
     /// Relative, `.png`, no `..`, and resolving inside the pack directory.
     public static func isSafeRelativePath(_ path: String) -> Bool {
-        guard !path.isEmpty, !path.hasPrefix("/"), !path.hasPrefix("~"),
-              path.lowercased().hasSuffix(".png"), !path.contains("\\") else { return false }
+        // No NUL or other control characters: C APIs stop at NUL, so "..\0x/a.png" would reach
+        // openat as "..".
+        guard !path.isEmpty, !path.unicodeScalars.contains(where: isControl), !path.hasPrefix("/"),
+              !path.hasPrefix("~"), path.lowercased().hasSuffix(".png"), !path.contains("\\") else { return false }
         return !path.split(separator: "/", omittingEmptySubsequences: false).contains { $0 == ".." || $0.isEmpty || $0 == "." }
     }
 
@@ -294,7 +296,7 @@ public struct MascotPack: Equatable, Sendable {
         let data: Data
         do {
             data = try readInPack(root: root, path: path, limit: maxImageBytes)
-        } catch ReadError.symlink {
+        } catch ReadError.symlink, ReadError.unsafeComponent {
             return ([.unsafePath(path)], nil)
         } catch ReadError.tooLarge {
             return ([.tooLarge(path)], nil)
@@ -318,13 +320,20 @@ public struct MascotPack: Equatable, Sendable {
         return (errors, data)
     }
 
-    enum ReadError: Error { case tooLarge, unreadable, notRegularFile, symlink }
+    enum ReadError: Error { case tooLarge, unreadable, notRegularFile, symlink, unsafeComponent }
+
+    static func isControl(_ scalar: Unicode.Scalar) -> Bool { scalar.value < 0x20 || scalar.value == 0x7F }
 
     /// Opens `path` (a safe relative path) under the pack's directory descriptor one component at a
     /// time with O_NOFOLLOW, so no symlink anywhere below the pack is followed, and reads it
     /// bounded from that same descriptor.
     static func readInPack(root: Int32, path: String, limit: Int) throws -> Data {
-        let components = path.split(separator: "/").map(String.init)
+        let components = path.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        // Defence in depth, whatever the caller checked: every component must be a plain name that
+        // means the same thing to openat as it does here.
+        guard !components.isEmpty, components.allSatisfy({ component in
+            !component.isEmpty && component != "." && component != ".." && !component.unicodeScalars.contains(where: isControl)
+        }) else { throw ReadError.unsafeComponent }
         guard let name = components.last else { throw ReadError.unreadable }
         var directory = root
         defer { if directory != root { close(directory) } }
