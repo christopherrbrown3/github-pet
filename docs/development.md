@@ -16,6 +16,7 @@ It needs no Xcode project, and Xcode itself is optional.
 swift build                       # debug build of the library and app
 scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
+scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
 ```
 
@@ -24,9 +25,27 @@ swift-testing on its own, so the script adds the CLT framework search paths and 
 copy of the Testing/Foundation cross-import overlay, which is incomplete. If you have Xcode,
 a plain `swift test` works too.
 
-`scripts/build-app.sh [debug|release]` puts the bundle together from the SwiftPM binary and an
-`Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). The bundle is for local
-use only: it isn't notarized or Developer ID signed.
+`scripts/build-app.sh [debug|release] [--universal]` puts the bundle together from the SwiftPM
+binary and an `Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). It isn't
+notarized or Developer ID signed. `--universal` builds arm64 and x86_64 separately with `--triple`
+(SwiftPM's multi-`--arch` build needs Xcode's xcbuild) and merges them with `lipo`. The version
+(`CFBundleShortVersionString`) comes from the `VERSION` file; the build number (`CFBundleVersion`)
+is the commit count from complete Git history. A shallow or missing Git checkout is rejected
+before compilation; for a shallow clone, run `git fetch --unshallow` first.
+`GitHubPetSourceRevision` in the signed `Info.plist` records the full checked-out commit SHA.
+
+`scripts/package-zip.sh` builds the universal app, zips it with
+`ditto -c -k --sequesterRsrc --keepParent` as `GitHubPet-<version>-<shortsha>-universal.zip`, writes
+the `.sha256` beside it, then unpacks a copy and checks the checksum, signature, version, build
+number, architectures and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
+(14 days for PRs, 90 for `main`). `scripts/intel-smoke.sh` runs the x86_64 slice under Rosetta
+(skipped, and says so, where Rosetta is absent). End-user steps are in [install.md](install.md).
+
+On PRs, CI first builds/tests GitHub's combined branch, then checks out the exact PR head with
+full history for packaging and render checks. The ZIP's short SHA and the bundle's full SHA
+therefore identify the source actually packaged. CI asserts that checkout and history before
+packaging. `scripts/test-packaging.sh` exercises full and depth-1/depth-2 clones without compiling
+the app, proving shallow histories fail before reaching Swift.
 
 `swift run GitHubPet` also works for quick iteration.
 
@@ -37,7 +56,7 @@ use only: it isn't notarized or Developer ID signed.
 | `Sources/GitHubPetCore` | UI-free logic: inbox engine, event baseline/dedupe, settings, quiet hours/snooze, `gh` client, link safety, mascot pack validation |
 | `Sources/GitHubPet` | App: `MenuBarExtra` inbox, Inbox and Settings windows, transparent mascot `NSPanel` |
 | `Tests/GitHubPetCoreTests` | swift-testing suites for everything in Core |
-| `scripts/` | `test.sh`, `build-app.sh` |
+| `scripts/` | `test.sh`, `build-app.sh`, `package-zip.sh`, `intel-smoke.sh` |
 
 ## Behaviour contracts
 
@@ -306,8 +325,10 @@ goes to stderr: `GitHubPet: mascot pack mona-pet-v1 loaded from …`, or
 the placeholder.
 
 ## Known limitations (M1)
-- The app is ad-hoc signed only, so it isn't notarized. Gatekeeper may need a right-click → Open
-  when it's copied to another Mac.
+- The app is ad-hoc signed only, so it isn't notarized. For a downloaded copy, follow the
+  [first-launch approval steps](install.md#4-first-launch-approve-the-app-once), including
+  **Open Anyway** in System Settings on macOS 15 or later. Clean-Mac quarantined first launch
+  remains unverified.
 - The live `gh` source covers review requests and assigned issues. Entitlement data and
   configurable entitlement repositories exist only in fixtures for now.
 - The event baseline lives in memory. A relaunch re-baselines silently, which is safe but means
