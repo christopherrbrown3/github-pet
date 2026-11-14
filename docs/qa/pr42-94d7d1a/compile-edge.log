@@ -1,0 +1,5 @@
+HEAD 94d7d1ab4cba4bb3a871c7938ca381e13f839759
+error: input file '/Users/chris/github-pet-worktrees/developer-hover-integration/.build/debug/GitHubPet.build/SnapshotRenderer.swift.o' was modified during the build
+error: input file '/Users/chris/github-pet-worktrees/developer-hover-integration/.build/debug/GitHubPet.build/SnapshotRenderer.swift.o' was modified during the build
+
+EXIT 1
