@@ -79,3 +79,17 @@ and capped responses, real chatty stdout/stderr, valid JSON followed by overflow
 preflight/request budgets, cancellation and descendant pipes. Existing gh/descriptor/timeout
 regressions must also pass. No real authenticated fetch or user preference change is needed.
 Independent QA is pending while its session is quota-stopped; this draft is not merge-ready.
+
+### Cancellation regression calibration (PR48 rework)
+
+The original `Task.sleep(100ms)` canceller did not prove that cancellation preceded the command
+deadline. A controlled old-build executor-occupancy reproduction returned `timedOut` with the
+deadline already expired before cancellation was requested. This establishes a fixture ordering
+failure mode matching CI, not a traced proof of CI's precise scheduler history.
+
+The replacement checks keep the original 10-second command deadline. Prelaunch cancellation
+uses a launch gate and proves no child marker is written. In-flight cancellation receives the
+child's PID through a bounded FIFO handshake and calls `task.cancel()` from an independent GCD
+queue. It requires remaining active budget, `.cancelled` (never `.timedOut`), the child gone/reaped
+and an unrelated test-owned process still running. These checks passed against unchanged old
+production transport; no production cancellation defect was observed or patched.

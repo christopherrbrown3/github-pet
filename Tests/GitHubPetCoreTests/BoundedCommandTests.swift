@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Testing
 @testable import GitHubPetCore
 
@@ -54,16 +55,118 @@ import Testing
         #expect(!result.outputComplete)
         #expect(start.duration(to: .now) < .seconds(4.5))
     }
-    @Test func deadlineAndCancellationTerminateOnlyTheirChild() async {
+    @Test func deadlineTerminatesTheChild() {
         #expect(throws: CommandError.timedOut) {
             try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["10"], timeout: 0.1)
         }
-        let task = Task.detached {
-            try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["10"], timeout: 10)
+    }
+
+    @Test func prelaunchCancellationDoesNotSpawnAChild() async throws {
+        let directory = try cancellationDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let marker = directory.appendingPathComponent("launched")
+        let gate = DispatchSemaphore(value: 0)
+        let task = Task.detached(priority: .high) {
+            guard waitForGate(gate) else { throw CommandError.launchFailed("test launch gate") }
+            return try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "printf launched > \"$1\"", "fixture", marker.path], timeout: 10)
         }
-        try? await Task.sleep(for: .milliseconds(100))
         task.cancel()
+        gate.signal()
         do { _ = try await task.value; Issue.record("cancelled command succeeded") }
         catch { #expect(error as? CommandError == .cancelled) }
+        #expect(!FileManager.default.fileExists(atPath: marker.path))
+    }
+
+    @Test func inFlightCancellationUsesChildHandshakeAndIndependentScheduling() async throws {
+        let directory = try cancellationDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fifo = directory.appendingPathComponent("started")
+        #expect(mkfifo(fifo.path, 0o600) == 0)
+        let fd = open(fifo.path, O_RDWR | O_NONBLOCK)
+        guard fd >= 0 else { Issue.record("could not open child-start handshake"); return }
+        var observerOwnsFD = false
+        defer { if !observerOwnsFD { close(fd) } }
+        let observerDone = DispatchGroup()
+        let receipt = CancellationReceipt()
+
+        // A separate test-owned process waits for stdin, rather than expiring on a timer.
+        let unrelated = Process(), unrelatedInput = Pipe(), unrelatedEnded = DispatchGroup()
+        unrelated.executableURL = URL(fileURLWithPath: "/bin/cat")
+        unrelated.standardInput = unrelatedInput
+        unrelated.standardOutput = FileHandle.nullDevice; unrelated.standardError = FileHandle.nullDevice
+        unrelatedEnded.enter(); unrelated.terminationHandler = { _ in unrelatedEnded.leave() }
+        try unrelated.run()
+        defer {
+            try? unrelatedInput.fileHandleForWriting.close()
+            if unrelated.isRunning { unrelated.terminate() }
+            if !waitForGroup(unrelatedEnded, seconds: 2), unrelated.isRunning { kill(unrelated.processIdentifier, SIGKILL) }
+        }
+
+        let budget = CommandBudget(timeout: 10) // Same command deadline as the original test.
+        let task = Task.detached(priority: .high) {
+            try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "printf '%s\\n' $$ > \"$1\"; exec /bin/sleep 10", "fixture", fifo.path], budget: budget)
+        }
+        // This POSIX readiness wait and cancellation run on a GCD queue, not the cooperative
+        // executor that is busy running the synchronous full test suite. No Task.sleep ordering.
+        observerDone.enter()
+        observerOwnsFD = true
+        DispatchQueue(label: "scope.tests.independent-cancellation").async {
+            defer { close(fd); observerDone.leave() }
+            let pid = waitForChildPID(fd, seconds: 5)
+            receipt.record(pid: pid, remaining: budget.remaining)
+            task.cancel()
+        }
+        do { _ = try await task.value; Issue.record("in-flight cancellation succeeded") }
+        catch { #expect(error as? CommandError == .cancelled) } // Never accepts timedOut.
+        #expect(waitForGroup(observerDone, seconds: 2), "bounded independent observer must finish")
+        let observed = receipt.value
+        #expect(observed.pid != nil && observed.alive, "actual child-start receipt is required")
+        #expect(observed.remaining > 0, "cancellation must precede the active deadline")
+        if let pid = observed.pid {
+            #expect(pid != unrelated.processIdentifier)
+            let status = kill(pid, 0), error = errno
+            #expect(status == -1 && error == ESRCH, "cancelled child is gone/reaped")
+        }
+        #expect(unrelated.isRunning, "cancellation must not signal another process or process group")
+    }
+}
+
+private func cancellationDirectory() throws -> URL {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    return directory
+}
+private func waitForGate(_ gate: DispatchSemaphore) -> Bool { gate.wait(timeout: .now() + 5) == .success }
+private func waitForGroup(_ group: DispatchGroup, seconds: TimeInterval) -> Bool {
+    group.wait(timeout: .now() + seconds) == .success
+}
+private func waitForChildPID(_ fd: Int32, seconds: TimeInterval) -> Int32? {
+    let end = ContinuousClock.now.advanced(by: .seconds(seconds))
+    while true {
+        let parts = ContinuousClock.now.duration(to: end).components
+        let remaining = Double(parts.seconds) + Double(parts.attoseconds) / 1e18
+        guard remaining > 0 else { return nil }
+        var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+        let ready = poll(&descriptor, 1, Int32((remaining * 1000).rounded(.up)))
+        if ready < 0 && errno == EINTR { continue }
+        guard ready > 0 else { return nil }
+        var buffer = [UInt8](repeating: 0, count: 128)
+        let count = read(fd, &buffer, buffer.count)
+        guard count > 0, let pid = Int32(String(decoding: buffer.prefix(count), as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)), pid > 1 else { return nil }
+        return pid
+    }
+}
+private final class CancellationReceipt: @unchecked Sendable {
+    private let lock = NSLock()
+    private var state: (pid: Int32?, remaining: TimeInterval, alive: Bool) = (nil, 0, false)
+    func record(pid: Int32?, remaining: TimeInterval) {
+        lock.lock(); defer { lock.unlock() }
+        state = (pid, remaining, pid.map { kill($0, 0) == 0 } ?? false)
+    }
+    var value: (pid: Int32?, remaining: TimeInterval, alive: Bool) {
+        lock.lock(); defer { lock.unlock() }; return state
     }
 }
