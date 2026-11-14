@@ -257,7 +257,7 @@ public struct MascotPack: Equatable, Sendable {
             // (its last frames never shown), so it is rejected rather than truncated.
             if state != .idle {
                 let limit = Int((EventClipQueue.duration(of: state) * 1000).rounded())
-                let total = spec.durationMs.reduce(0, +)
+                let total = saturatingSum(spec.durationMs)
                 if total > limit { errors.append(.clipTooLong(state.rawValue, total, limit)) }
             }
             for path in spec.frames + [spec.staticFallback] where checked.insert(path).inserted {
@@ -267,6 +267,17 @@ public struct MascotPack: Equatable, Sendable {
             }
         }
         return (errors, validated)
+    }
+
+    /// Sum of manifest durations that saturates instead of trapping on overflow (a manifest may
+    /// declare e.g. Int.max; such values are rejected as out of range, never crash the app).
+    static func saturatingSum(_ values: [Int]) -> Int {
+        var total = 0
+        for value in values {
+            let (sum, overflow) = total.addingReportingOverflow(max(value, 0))
+            total = overflow ? .max : sum
+        }
+        return total
     }
 
     /// Relative, `.png`, no `..`, and resolving inside the pack directory.

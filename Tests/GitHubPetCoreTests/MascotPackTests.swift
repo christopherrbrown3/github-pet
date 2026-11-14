@@ -125,6 +125,23 @@ private struct PackFixture {
         #expect(fixture.errors().isEmpty, "idle loops, so it has no clip limit")
     }
 
+    @Test func hugeDurationsAreRejectedWithoutCrashing() throws {
+        // Copilot 4569991771: summing [Int.max, 125] used to trap during app init.
+        let fixture = try PackFixture()
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var urgent = states["urgent"] as! [String: Any]
+            urgent["durationMs"] = [Int.max, 125]
+            states["urgent"] = urgent
+            json["states"] = states
+        }
+        let errors = fixture.errors()
+        #expect(errors.contains(.durationOutOfRange("urgent", Int.max)))
+        #expect(errors.contains(.clipTooLong("urgent", Int.max, 2000)))
+        #expect(MascotPack.saturatingSum([Int.max, Int.max, 1]) == Int.max)
+        #expect(MascotPack.saturatingSum([-5, 300, 400]) == 700, "negative values (already rejected) don't reduce the total")
+    }
+
     @Test func onlyTheV1GroundAnchorIsAccepted() throws {
         let fixture = try PackFixture()
         for anchor in [[64, 128], [128, 231], [0, 0], [128]] {
