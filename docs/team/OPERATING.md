@@ -4,6 +4,8 @@
 
 Chris explicitly authorized Codex PM and specialists with cost-conscious model selection. This supersedes historical Claude-only model instructions below. Read [the current takeover](handoffs/codex-takeover-2026-11-14.md), [CHECKPOINT.md](CHECKPOINT.md) and roles.json. Sole PM is **t1r**; reports go to `hc send t1r`. Active specialists: `codex-developer` t1s (Sol/high) and `codex-qa` t1t (Sol/medium), both verified by launch argv, TUI and READY. Old Claude sessions subsequently exited cleanly; do not restart them or use their old terminal names for current dispatch. Designer/developer-2 remain idle to conserve usage. Never launch duplicates or automatically switch models.
 
+Current continuation: Chris said keep working after app handoff. Developer is assigned #44 reliability, then a short #30 implementation plan. QA is quota-stopped after completed main-artifact and PR45 documentation reviews; do not retry/restart/switch to bypass limits. New acceptance waits for independent review. The saved mainb0127f0 app stays untouched.
+
 GitHub Projects V2 is the durable system of record: https://github.com/users/christopherrbrown3/projects/3/views/1 . Status sequence: Inbox → Backlog → Ready → In Progress → In Review → In QA → Done; Blocked is explicit. Fields: Owner Agent (role), Priority, Work Type, Milestone. GitHub reserves Type; Work Type provides the requested epic/feature/task classification. PM alone updates assignment and status. Project-scope authorization completed; issue comments preserve exact-SHA evidence and handoffs alongside board status.
 
 ## Bootstrap sessions

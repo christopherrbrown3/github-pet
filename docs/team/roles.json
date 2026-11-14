@@ -4,7 +4,7 @@
       "name": "product-manager",
       "terminal": "t1r",
       "runtime": "codex",
-      "assignment": "Maintain authoritative board and handoff; feature integration complete; PR45 documentation review",
+      "assignment": "Continue product work: #44 reliability dispatch and #30 monitoring-scope brief/plan",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": null,
       "sessionId": null,
@@ -21,7 +21,7 @@
       "name": "developer",
       "terminal": "t1s",
       "runtime": "codex",
-      "assignment": "Idle after verified mainb0127f0 universal app/ZIP handoff; no backlog expansion",
+      "assignment": "#44 monotonic timing + snapshot-only injection freshness in isolated worktree; then #30 implementation plan",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -49,7 +49,7 @@
       "name": "qa-engineer",
       "terminal": "t1t",
       "runtime": "codex",
-      "assignment": "Final mainb0127f0 artifact sanity, then idle; PR45 documentation review only if dispatched",
+      "assignment": "Quota-stopped after completed main artifact and PR45 doc PASS; no retry/model switch; new PR acceptance pending availability",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -63,5 +63,5 @@
   ],
   "observedDate": "2026-11-14",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history."
+  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history. Chris subsequently said keep working: PM may dispatch ready backlog tasks; previous idle/no-expansion checkpoint is historical. Saved mainb0127f0 artifacts remain immutable. No new release/tag authorization."
 }

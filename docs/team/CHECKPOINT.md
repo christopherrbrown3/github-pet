@@ -1,10 +1,10 @@
-# Team checkpoint — 2026-11-14 completed feature integration
+# Team checkpoint — 2026-11-14 continued product work
 
 Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . Live state and exact-head evidence supersede this snapshot.
 
 ## Team
 
-Sole PM t1r; reports use `hc send t1r`. Developer t1s `codex-developer` GPT-6.1 Sol/high; QA t1t `codex-qa` GPT-6.1 Sol/medium. Specialist models/efforts verified by argv, TUI and READY. PM local config is Sol/high; launch argv did not explicitly select its model. Designer/developer-2 idle. Old Claude sessions exited cleanly, history preserved; do not restart them. Chris authorized Codex takeover and token-conscious choices; see roles.json and [initial takeover](handoffs/codex-takeover-2026-11-14.md).
+Sole PM t1r; reports use `hc send t1r`. Developer t1s `codex-developer` GPT-6.1 Sol/high; QA t1t `codex-qa` GPT-6.1 Sol/medium. Specialist models/efforts verified by argv, TUI and READY. PM local config is Sol/high; launch argv did not explicitly select its model. Designer/developer-2 idle. QA has since hit its usage limit after posting all completed QA; do not restart/switch models to bypass it. Old Claude sessions exited cleanly, history preserved; do not restart them. Chris authorized Codex takeover and token-conscious choices; see roles.json and [initial takeover](handoffs/codex-takeover-2026-11-14.md).
 
 ## Merged and verified
 
@@ -23,10 +23,10 @@ Actual push-to-main CI **43609749683 SUCCESS**:277 tests,8 packaging regressions
 - ZIP SHA256 `f427650c9624b64dc6a89871ffd952342dea429df10441c34ccf5968cf6952a5`.
 - [Main artifact](https://github.com/christopherrbrown3/github-pet/actions/runs/43609749683/artifacts/14120062080).
 
-QA dispatched a final independent main-artifact provenance/signature/checksum sanity check; see latest PR43 comments for final result. No duplicate local build or app launch; no user settings, permissions, quarantine or unrelated processes changed.
+Final independent main-artifact QA PASS: PR43 comment6879875192; checksum/all archive and app bytes/signature/architectures/build71/fullSHA/accepted tree/mascot bytes verified, actual Rosetta execution confirmed in fresh mainCI log. No duplicate local build or app launch; no user settings, permissions, quarantine or unrelated processes changed.
 
 ## Remaining scope
 
-#15 stays open: app/ZIP packaging is delivered, broader native install/login/accessibility/distribution acceptance is not complete. Clean-Mac quarantined first launch and settings preservation, physical Intel, actual native popover chrome/manual pointer/VoiceOver and live motion remain unverified (#4/#15). Rosetta CI execution is not physical Intel evidence. No release, tag, Homebrew publication or auto-merge authorized/performed. #35/#40/#41/#44 remain Backlog; agents idle after handoff, no unsolicited expansion.
+#15 stays open: app/ZIP packaging is delivered, broader native install/login/accessibility/distribution acceptance is not complete. Clean-Mac quarantined first launch and settings preservation, physical Intel, actual native popover chrome/manual pointer/VoiceOver and live motion remain unverified (#4/#15). Rosetta CI execution is not physical Intel evidence. No release, tag, Homebrew publication or auto-merge authorized/performed. Chris subsequently instructed PM to keep working. #44 is In Progress: Developer uses dedicated developer-test-timing worktree/branch fix/44-monotonic-test-timing from main645950c, fixing two wall-clock elapsed assertions and a separate snapshot-only fixture-freshness check. Production stale/recovery semantics stay intact. #30 is Ready for planning: see features/30-monitoring-scope.md; Developer implementation plan follows44. #35/#40/#41 remain Backlog. QA is quota-stopped; new PRs remain unmerged until independent review is available.
 
-PM documentation PR45 records takeover and this checkpoint; review/checks on its current SHA govern that documentation merge. Earlier handoff sections are historical, not current active assignments.
+PM documentation PR45 merged as645950cb918e9327513ed8e363f732d0087f81c5 after doc QA/currentCI/Copilot PASS. Current PM continuation branch docs/30-monitoring-scope-brief records the next scope proposal and revised assignments. Earlier handoff sections are historical, not current active assignments.
