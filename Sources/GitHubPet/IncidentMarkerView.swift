@@ -5,8 +5,10 @@ import SwiftUI
 /// (`IncidentMarkerSpec`, docs/design/incidents/incident-marker.json; reference maths in
 /// render-incident-preview.swift). It works in the 256-unit art canvas (top-left origin, y down),
 /// ground-anchored and upright: it does not lean with the #29 gesture. Layers back to front:
-/// beacon sweep, smoke, flames, siren. As a safety net every layer is also clipped to
+/// beacon sweep, smoke, flames, siren. The canvas spans the panel's full width (design lets the
+/// marker use the gutters beside smaller art) and every layer is clipped to
 /// `IncidentMarker.frame(in:)`, so nothing can reach the count, quality or DEMO labels.
+/// Each layer is composited once at its fade-in opacity, so nested fills never fade separately.
 ///
 /// The settle crossfades parameters (sweep angle and alpha, flame height and lean) toward the
 /// static frame rather than blending two images, so opaque layers never dip.
@@ -20,10 +22,11 @@ struct IncidentMarkerView: View {
     var body: some View {
         let art = layout.artFrame
         let slot = IncidentMarker.frame(in: layout)
-        let clipTop = art.maxY - slot.maxY   // slot top in art-local, top-left points
+        let clipTop = art.maxY - slot.maxY   // slot top below the art square's top, in points
         Canvas { context, size in
-            let scale = size.width / 256
-            context.clip(to: Path(CGRect(x: 0, y: clipTop, width: size.width, height: slot.height)))
+            let scale = art.width / 256
+            context.clip(to: Path(CGRect(x: slot.minX, y: clipTop, width: slot.width, height: slot.height)))
+            context.translateBy(x: art.minX, y: 0)
             context.scaleBy(x: scale, y: scale)
             let unitsPerPoint = 1 / scale
             let layers = IncidentMarker.layers(marker.tier, spec: spec)
@@ -32,21 +35,22 @@ struct IncidentMarkerView: View {
             if layers.contains(.flames) { layer(.flames, &context) { drawFlames(&$0, unitsPerPoint: unitsPerPoint) } }
             if layers.contains(.siren) { layer(.siren, &context) { drawSiren(&$0, unitsPerPoint: unitsPerPoint) } }
         }
-        .frame(width: art.width, height: art.height)
-        .offset(x: art.minX, y: layout.laneHeight)
+        .frame(width: layout.panelWidth, height: art.height)
+        .offset(y: layout.laneHeight)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    /// Each layer fades as one (a transparency layer at its fade-in opacity).
+    /// Each layer fades as one: it is drawn into its own transparency layer at full opacity, and
+    /// that layer is composited at the fade-in opacity (the parent's opacity), so nested flame fills
+    /// never show through each other mid-fade.
     private func layer(_ kind: IncidentMarker.Layer, _ context: inout GraphicsContext,
                        draw: (inout GraphicsContext) -> Void) {
         let opacity = phase.opacity(kind)
         guard opacity > 0 else { return }
-        context.drawLayer { layer in
-            layer.opacity = opacity
-            draw(&layer)
-        }
+        var parent = context
+        parent.opacity = opacity
+        parent.drawLayer { layer in draw(&layer) }
     }
 
     private var time: Double { phase.time ?? 0 }

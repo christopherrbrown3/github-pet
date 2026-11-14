@@ -160,6 +160,9 @@ check_in 10d-incidents-resolved "marker leaves on resolve" '^incident-marker=non
 marker_lines=$(grep -E '^incident marker @' "$report" || true)
 if (( $(printf '%s\n' "$marker_lines" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x"
 else echo "FAIL incident marker vs labels:"; printf '%s\n' "$marker_lines"; failures=$((failures + 1)); fi
+# D1 (#37 review): at 64 pt the outer tongues reach into the panel gutters instead of being cut at the art square.
+if (( $(grep -cE '^incident marker @64 [12]x: .* gutter-pixels=[1-9]' "$report") == 2 )); then echo "ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)"
+else echo "FAIL incident marker clipped to the 64 pt art square"; failures=$((failures + 1)); fi
 if (( $(grep -cE '^incident renders @[0-9]+: 24 PNGs' "$report") == 3 )); then echo "ok   incident renders for design (72 PNGs)"
 else echo "FAIL incident renders missing"; failures=$((failures + 1)); fi
 check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'

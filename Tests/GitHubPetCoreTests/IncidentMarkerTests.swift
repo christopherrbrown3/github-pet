@@ -173,7 +173,8 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
         for layout in try layouts() {
             let slot = IncidentMarker.frame(in: layout)
             #expect(slot.height > layout.artSide / 3, "usable slot at \(layout.artSide): \(slot)")
-            #expect(layout.artFrame.contains(slot), "inside the art square at \(layout.artSide)")
+            #expect(CGRect(origin: .zero, size: layout.panelSize).contains(slot), "inside the panel at \(layout.artSide)")
+            #expect(slot.width == layout.panelWidth, "full panel width, gutters included")
             #expect(slot.maxY <= layout.artFrame.maxY - 64 * layout.artSide / 256, "below the design keep-out")
             for label in layout.labelRects {
                 #expect(!slot.intersects(label), "slot \(slot) vs label \(label) at \(layout.artSide)")

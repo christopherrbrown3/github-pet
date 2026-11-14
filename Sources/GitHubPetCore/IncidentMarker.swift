@@ -166,13 +166,14 @@ public struct IncidentMarker: Equatable, Sendable {
     /// Design keep-out: the top band of the 256-unit art canvas.
     public static var keepOutCanvasTop: CGFloat { CGFloat(IncidentMarkerSpec.standard.keepOut.topBandMaxY) }
 
-    /// The marker's slot in panel coordinates (origin bottom-left): the art square below the design
-    /// keep-out and below every place a label can be (DEMO, and the count down to its lowest
-    /// tracking position) less the layout's minimum gap. Every marker layer is clipped to it and
-    /// drawn behind the art, so it never covers the badge, quality or DEMO.
+    /// The marker's slot in panel coordinates (origin bottom-left): the panel's full width (design
+    /// allows the side gutters beside smaller art), from the ground up to below the design keep-out
+    /// and below every place a label can be (DEMO, and the count down to its lowest tracking
+    /// position) less the layout's minimum gap. Every marker layer is clipped to it and drawn behind
+    /// the art, so it never covers the badge, quality or DEMO.
     public static func frame(in layout: MascotLayout) -> CGRect {
         let art = layout.artFrame
         let top = min(art.maxY - keepOutCanvasTop * layout.artSide / 256, layout.tagBand.minY - layout.minimumGap)
-        return CGRect(x: art.minX, y: art.minY, width: art.width, height: max(0, top - art.minY))
+        return CGRect(x: 0, y: art.minY, width: layout.panelWidth, height: max(0, top - art.minY))
     }
 }

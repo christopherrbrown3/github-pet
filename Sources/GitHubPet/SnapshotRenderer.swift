@@ -498,8 +498,18 @@ enum SnapshotRenderer {
                 let width = Int((layout.panelSize.width * scale).rounded(.up))
                 let keepOutRows = Int(((layout.laneHeight + layout.artSide * 64 / 256) * scale).rounded(.down))
                 let keepOutPixels = marker.prefix(width * keepOutRows).filter { $0 > 0 }.count
-                lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(format(gap)) overlapping-pixels=\(overlap) "
-                             + "keep-out-pixels=\(keepOutPixels) slot=\(IncidentMarker.frame(in: layout).integral)")
+                // Design lets the marker use the side gutters beside the art (64 pt: 16 pt each side).
+                let artLeft = Int((layout.artFrame.minX * scale).rounded(.down)), artRight = Int((layout.artFrame.maxX * scale).rounded(.up))
+                let gutterPixels = marker.indices.filter { index in
+                    let x = index % width
+                    return (x < artLeft || x >= artRight) && marker[index] > 0
+                }.count
+                // gap: nearest marker-to-label distance in points; the probe searches 16 pt around the
+                // labels, so ">16" means nothing nearer. slot: the clip rect (panel points, origin at the
+                // panel's bottom-left: x, y, width, height).
+                lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(gap.isFinite ? format(gap) : ">16") "
+                             + "overlapping-pixels=\(overlap) keep-out-pixels=\(keepOutPixels) gutter-pixels=\(gutterPixels) "
+                             + "slot=\(IncidentMarker.frame(in: layout).integral)")
             }
             // Native renders for design to compare with docs/design/incidents/previews: the real
             // mascot panel (labels, widest count) over the marker, design's preview columns.
