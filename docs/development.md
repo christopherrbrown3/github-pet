@@ -16,6 +16,7 @@ It needs no Xcode project, and Xcode itself is optional.
 swift build                       # debug build of the library and app
 scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
+scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
 ```
 
@@ -24,9 +25,19 @@ swift-testing on its own, so the script adds the CLT framework search paths and 
 copy of the Testing/Foundation cross-import overlay, which is incomplete. If you have Xcode,
 a plain `swift test` works too.
 
-`scripts/build-app.sh [debug|release]` puts the bundle together from the SwiftPM binary and an
-`Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). The bundle is for local
-use only: it isn't notarized or Developer ID signed.
+`scripts/build-app.sh [debug|release] [--universal]` puts the bundle together from the SwiftPM
+binary and an `Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). It isn't
+notarized or Developer ID signed. `--universal` builds arm64 and x86_64 separately with `--triple`
+(SwiftPM's multi-`--arch` build needs Xcode's xcbuild) and merges them with `lipo`. The version
+(`CFBundleShortVersionString`) comes from the `VERSION` file; the build number (`CFBundleVersion`)
+is the commit count.
+
+`scripts/package-zip.sh` builds the universal app, zips it with
+`ditto -c -k --sequesterRsrc --keepParent` as `GitHubPet-<version>-<shortsha>-universal.zip`, writes
+the `.sha256` beside it, then unpacks a copy and checks the checksum, signature, version, build
+number, architectures and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
+(14 days for PRs, 90 for `main`). `scripts/intel-smoke.sh` runs the x86_64 slice under Rosetta
+(skipped, and says so, where Rosetta is absent). End-user steps are in [install.md](install.md).
 
 `swift run GitHubPet` also works for quick iteration.
 
@@ -37,7 +48,7 @@ use only: it isn't notarized or Developer ID signed.
 | `Sources/GitHubPetCore` | UI-free logic: inbox engine, event baseline/dedupe, settings, quiet hours/snooze, `gh` client, link safety, mascot pack validation |
 | `Sources/GitHubPet` | App: `MenuBarExtra` inbox, Inbox and Settings windows, transparent mascot `NSPanel` |
 | `Tests/GitHubPetCoreTests` | swift-testing suites for everything in Core |
-| `scripts/` | `test.sh`, `build-app.sh` |
+| `scripts/` | `test.sh`, `build-app.sh`, `package-zip.sh`, `intel-smoke.sh` |
 
 ## Behaviour contracts
 

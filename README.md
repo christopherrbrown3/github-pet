@@ -63,27 +63,39 @@ You will be able to choose **individual repositories, organizations, or everythi
 
 The companion should make a new actionable event noticeable with a finite animation, while respecting reduced motion, privacy, quiet hours, and snooze. An inbox item stays available after the animation ends. Mascot packs should make the artwork and animation replaceable without rewriting monitoring logic.
 
-## Try the development build
+## Install a development build
 
-There is no release to install yet. For the current prototype, check out the implementation PR explicitly:
+There is no tagged release or Homebrew cask yet. Every build of `main` produces a universal
+(Apple Silicon + Intel) **GitHubPet.app ZIP with a SHA-256 checksum** as the GitHub Actions
+artifact **GitHubPet-app**. **[Installation guide](docs/install.md)** covers downloading it,
+checking the checksum, moving the app to Applications and approving its first launch.
+
+GitHub Pet doesn't use a paid Apple Developer account. Its builds are **ad-hoc signed and not
+notarized**, so macOS asks you to approve the app once: **System Settings → Privacy & Security →
+Open Anyway**. On macOS 15 and later this replaces the old Control-click → Open shortcut. The guide
+never asks you to remove quarantine attributes or turn off Gatekeeper.
+[Apple's first-launch guidance](https://support.apple.com/en-us/102445).
+
+It is a **menu-bar app with no Dock icon**, and it starts on invented **Demo** data. For your own
+review requests and assigned issues, install the GitHub CLI, sign in with `gh auth login`, and choose
+**GitHub CLI (gh)** in Settings. GitHub Pet uses that CLI's sign-in; it never asks you to paste a
+token into the app.
+
+To build it yourself (Xcode or just the Command Line Tools):
 
 ```sh
-gh repo clone christopherrbrown3/github-pet
-cd github-pet
-gh pr checkout 18
-./scripts/build-app.sh
-open .build/app/GitHubPet.app --args --fixtures
+gh repo clone christopherrbrown3/github-pet && cd github-pet
+scripts/package-zip.sh
+open .build/app/GitHubPet.app
 ```
 
-The build needs a compatible Swift toolchain and macOS SDK (Xcode or Command Line Tools). Current local development uses Swift 6.2.3 on Apple Silicon. This produces an **ad-hoc signed, unnotarized development app**, not a release installer. See the prototype's [development guide](https://github.com/christopherrbrown3/github-pet/blob/50ad2fe74da7809a4b5f7e91a1b819984270d58e/docs/development.md) for requirements, test commands, and fixture hooks. The command above checks out the current PR head; screenshots and evidence on this page remain pinned to the stated commit.
+See the [development guide](docs/development.md) for tests and QA hooks.
 
-For live mode, install `gh`, sign in using `gh auth login`, and choose **GitHub CLI (gh)** in Settings. GitHub Pet uses that CLI authentication; it does not ask you to paste a token into the app.
+## Distribution plan
 
-## Free distribution plan
-
-The planned release path is a **Homebrew cask in a project-owned tap**, plus a **ZIP containing GitHubPet.app** on GitHub Releases. Updates will initially use Homebrew or a new download. These channels are not published yet.
-
-The project will not require a paid Apple Developer account. Builds will be ad-hoc signed and unnotarized, so downloaded releases may need first-launch approval in **System Settings → Privacy & Security → Open Anyway**. We will verify and document that installation flow rather than disable macOS security settings. [Apple's first-launch guidance](https://support.apple.com/en-us/102445). Installation work is tracked in [#15](https://github.com/christopherrbrown3/github-pet/issues/15).
+Next is a **Homebrew cask in a project-owned tap**, and then GitHub Releases with the same ZIP.
+Updates will use Homebrew or a new download. Installation work is tracked in
+[#15](https://github.com/christopherrbrown3/github-pet/issues/15).
 
 ## Follow development
 

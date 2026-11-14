@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -28,8 +29,9 @@ jobs:
         timeout-minutes: 10
         # The suite is swift-testing only; skip the empty XCTest pass.
         run: scripts/test.sh --disable-xctest
-      - name: Bundle app
-        run: scripts/build-app.sh release
+      - name: Package app (universal ZIP)
+        # Builds the arm64 + x86_64 app the checks below use, zips it and self-verifies the archive.
+        run: scripts/package-zip.sh
       - name: Verify bundle
         run: |
           plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
@@ -40,6 +42,22 @@ jobs:
       - name: GUI render check
         timeout-minutes: 5
         run: scripts/render-check.sh
+      - name: Intel slice smoke (Rosetta)
+        # Not on PRs, to keep them fast (pushes to main and manual runs); prints SKIP without Rosetta.
+        if: github.event_name != 'pull_request'
+        timeout-minutes: 6
+        run: scripts/intel-smoke.sh
+      - name: Upload app ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: GitHubPet-app
+          path: |
+            .build/dist/*.zip
+            .build/dist/*.zip.sha256
+          if-no-files-found: error
+          retention-days: ${{ github.event_name == 'pull_request' && 14 || 90 }}
+          # Already compressed.
+          compression-level: 0
       - name: Upload render evidence
         if: always()
         uses: actions/upload-artifact@v4
