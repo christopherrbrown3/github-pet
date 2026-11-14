@@ -1,0 +1,10 @@
+{"children": [], "ended": true, "exit_code": 0, "reason": "exit", "signal": null, "status": null, "terminal": "t2g", "turn": 0}
+{"conclusion": "success", "event": "pull_request", "headSha": "0f720962d549185c0a04d928c2952ef7e9bc3da0", "status": "completed"}
+PASS actual CI diagnostic transparent
+PASS actual CI diagnostic no-candidate
+PASS dropped past edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=false
+PASS dropped past saved edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=true
+PASS dropped beyond all displays: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=false
+PASS actual CI 11 measured hover cases
+PASS content growth repositions
+PASS green exact-head CI/render evidence downloaded and checked
