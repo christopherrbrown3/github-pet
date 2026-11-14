@@ -264,11 +264,34 @@ enum SnapshotRenderer {
         let frame = controller?.panelFrame ?? .null
         let labels = model.layout(128).labelRects.map { $0.offsetBy(dx: frame.minX, dy: frame.minY) }
         let inside = screen.insetBy(dx: -0.5, dy: -0.5)
+        var line = "badge on screen: panel-inside=\(inside.contains(frame)) labels-inside=\(labels.allSatisfy { inside.contains($0) }) "
+            + "saved-x-offscreen=\(Int(size.width * 0.4))pt panel=(\(Int(frame.minX)),\(Int(frame.minY)))"
+
+        // Drop the panel 40% past the right edge with a real drag on its container (#39): it must
+        // settle fully on screen and the saved origin must be where it settled.
+        model.settings.mascotOriginX = Double(screen.midX)
+        model.settings.mascotOriginY = Double(screen.minY + 200)
+        try? await Task.sleep(nanoseconds: 300_000_000)
+        if let container = controller?.panelContentView as? MascotContainerView, let window = container.window {
+            let start = window.frame
+            let dx = screen.maxX - start.minX - size.width * 0.6
+            func event(_ type: NSEvent.EventType, _ point: CGPoint) -> NSEvent {
+                NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
+                                   windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+                                   clickCount: 1, pressure: 1)!
+            }
+            container.mouseDown(with: event(.leftMouseDown, CGPoint(x: 40, y: 40)))
+            container.mouseUp(with: event(.leftMouseUp, CGPoint(x: 40 + dx, y: 40)))
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            let settled = controller?.panelFrame ?? .null
+            let saved = CGPoint(x: model.settings.mascotOriginX ?? .nan, y: model.settings.mascotOriginY ?? .nan)
+            line += "\ndropped past edge: panel-inside=\(inside.contains(settled)) saved-equals-shown=\(saved == settled.origin) "
+                + "dropped-x-offscreen=\(Int(size.width * 0.4))pt"
+        }
         model.settings.mascotVisible = false
         try? await Task.sleep(nanoseconds: 200_000_000)
         controller = nil
-        return "badge on screen: panel-inside=\(inside.contains(frame)) labels-inside=\(labels.allSatisfy { inside.contains($0) }) "
-            + "saved-x-offscreen=\(Int(size.width * 0.4))pt panel=(\(Int(frame.minX)),\(Int(frame.minY)))"
+        return line
     }
 
     /// Opens the real controller's hover summary while Loading (narrow), then lets a refresh fill
@@ -771,8 +794,10 @@ enum SnapshotRenderer {
             }
             gaps.append(nearest)
         }
-        let tags = layout.tagBand.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY)
-        let laneClear = !visible.contains { $0.intersects(tags) }
+        // The labels' own rects (DEMO, count slot), as placement uses them: the band between them is
+        // empty and may be covered (#39).
+        let labels = layout.labelRects.map { $0.offsetBy(dx: panel.frame.minX, dy: panel.frame.minY) }
+        let laneClear = !visible.contains { piece in labels.contains { $0.intersects(piece) } }
         let onScreen = screenFrame.insetBy(dx: -0.5, dy: -0.5).contains(window)
         // Where the arrow points: the window's edge on the arrow side, at the anchor's height.
         let tip = CGPoint(x: placement.side == .right ? window.minX : window.maxX, y: panel.frame.minY + placement.tip.y)
@@ -785,13 +810,14 @@ enum SnapshotRenderer {
             + "\(format(tipGap)) pt; overlap \(overlaps == 0 ? "none" : "\(overlaps)"); "
             + "tags \(laneClear ? "clear" : "COVERED"); popover from \(source)"
         await writeHoverComposite(name: "hover-\(placementCase.name(state))", directory: directory, screen: screenFrame,
-                                  panel: panel, popoverWindow: popoverWindow, capture: capture, tip: tip, tags: tags,
+                                  panel: panel, popoverWindow: popoverWindow, capture: capture, tip: tip, labels: labels,
                                   caption: caption)
         func rect(_ r: CGRect) -> String { "(\(Int(r.minX)),\(Int(r.minY)) \(Int(r.width))x\(Int(r.height)))" }
         // Window-boundary measures: the popover window rectangle (not its drawn arrow/chrome).
         var line = "\(label): state=\(state.rawValue) side=\(sideName) window-gap-min=\(format(best)) "
         line += "window-gap-max=\(format(worst)) arrow-anchor-to-static-art=\(format(tipGap)) "
         line += "frames=\(poses.count) overlap=\(overlaps) lane=\(laneClear ? "clear" : "covered") on-screen=\(onScreen) "
+        line += "meets-target=\(placement.meetsTarget) "
         line += "popover-source=\(source) panel=\(rect(panel.frame)) art=\(rect(art)) popover=\(rect(window)) "
         line += "screen=\(rect(screenFrame))"
         return line
@@ -854,7 +880,7 @@ enum SnapshotRenderer {
     /// popover (natively captured where the OS allows; otherwise its window bounds as a flat
     /// outlined shape with its real content, labelled as such) and a caption.
     private static func writeHoverComposite(name: String, directory: URL, screen: CGRect, panel: NSWindow,
-                                            popoverWindow: NSWindow, capture: CGImage?, tip: CGPoint, tags: CGRect,
+                                            popoverWindow: NSWindow, capture: CGImage?, tip: CGPoint, labels: [CGRect],
                                             caption: String) async {
         var region = panel.frame.union(popoverWindow.frame).insetBy(dx: -24, dy: -24)
         for edge in [screen.minX, screen.maxX] where abs(edge - region.minX) < 60 || abs(edge - region.maxX) < 60 {
@@ -897,7 +923,7 @@ enum SnapshotRenderer {
         context.setLineDash(phase: 0, lengths: [3, 3])
         context.setLineWidth(0.5)
         context.stroke(panel.frame)
-        context.stroke(tags)
+        for label in labels { context.stroke(label) }
         context.setLineDash(phase: 0, lengths: [])
 
         // Popover: its natively captured pixels, else its window bounds (flat, outlined) and content.
@@ -927,7 +953,7 @@ enum SnapshotRenderer {
         let graphics = NSGraphicsContext(cgContext: context, flipped: false)
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = graphics
-        let text = NSAttributedString(string: caption + " (display edge: red; dashed: panel and tag band)",
+        let text = NSAttributedString(string: caption + " (display edge: red; dashed: panel and label rects)",
                                       attributes: [.font: NSFont.systemFont(ofSize: 9), .foregroundColor: NSColor.black])
         let strip = CGRect(x: region.minX, y: region.minY, width: region.width, height: 44)
         NSColor.white.setFill()
