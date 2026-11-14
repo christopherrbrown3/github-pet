@@ -70,6 +70,11 @@ thread scheduling are not hard realtime, but an exhausted deadline can never ret
 Injected in-memory `CommandRunner` fixtures remain source-compatible through a default budget
 method that accounts for returned bytes and elapsed time. A custom real-I/O runner must override
 that requirement to enforce collection-time limits; the shipped `ProcessCommandRunner` does.
+The thread-safe `reserve` and `check` methods are public for external runner implementations.
+`scripts/test-public-budget.sh` compiles a standalone normal-import client and exercises the
+shared budget across stdout/stderr and successive commands, atomic reservations and typed errors.
+It is a separate compiler invocation, so an unrelated test file's `@testable` import cannot
+accidentally grant this client internal access.
 
 ## Review boundary
 
@@ -78,7 +83,7 @@ account mismatch/return, metadata-vs-empty, overlap deduplication/once-only even
 and capped responses, real chatty stdout/stderr, valid JSON followed by overflow, shared
 preflight/request budgets, cancellation and descendant pipes. Existing gh/descriptor/timeout
 regressions must also pass. No real authenticated fetch or user preference change is needed.
-Independent QA is pending while its session is quota-stopped; this draft is not merge-ready.
+Independent QA is required on the final immutable head; this draft is not merge-ready.
 
 ### Cancellation regression calibration (PR48 rework)
 

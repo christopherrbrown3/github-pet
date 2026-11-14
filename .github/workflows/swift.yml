@@ -32,6 +32,9 @@ jobs:
         timeout-minutes: 10
         # The suite is swift-testing only; skip the empty XCTest pass.
         run: scripts/test.sh --disable-xctest
+      - name: External public CommandRunner API
+        timeout-minutes: 2
+        run: scripts/test-public-budget.sh
       - name: Check out PR head for packaging
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4

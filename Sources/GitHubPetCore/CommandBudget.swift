@@ -26,14 +26,19 @@ public final class CommandBudget: @unchecked Sendable {
     }
 
     @discardableResult
-    func reserve(_ bytes: Int) -> Bool {
+    /// Atomically debit a complete chunk BEFORE retaining it. Shared across streams/commands.
+    /// A negative or overflowing reservation fails closed and latches outputLimitExceeded;
+    /// callers must stop collection on false and must never append that chunk.
+    public func reserve(_ bytes: Int) -> Bool {
         lock.lock(); defer { lock.unlock() }
         guard !overflow, bytes >= 0, bytes <= limit - used else { overflow = true; return false }
         used += bytes
         return true
     }
 
-    func check() throws {
+    /// Check the latched byte error, current Task cancellation and monotonic deadline.
+    /// Real-I/O implementations call this while collecting and waiting, not only on exit.
+    public func check() throws {
         lock.lock(); let exceeded = overflow; lock.unlock()
         if exceeded { throw CommandError.outputLimitExceeded }
         if Task.isCancelled { throw CommandError.cancelled }
