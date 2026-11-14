@@ -73,6 +73,9 @@ enum SnapshotRenderer {
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
         }
+        // Rendering can take longer than the freshness window under load. Re-poll unchanged
+        // fixtures before deliberate events: recovery stays silent, then the new event is comparable.
+        model.refresh()
         model.injectEntitlementEvent()
         await capture("02-injected")
         // Fixture timestamps must use the app clock (QA clock hooks), not the wall clock.
@@ -97,6 +100,7 @@ enum SnapshotRenderer {
         // Attention needs an unseen event while alerts are allowed; with reduced motion the
         // mascot holds the attention state's static fallback pose (no clip plays).
         model.settings.reducedMotion = true
+        model.refresh()
         model.injectEntitlementEvent()
         await capture("09-attention-static")
         report.append("## hover placement (attention, swept lean outline)")
@@ -104,6 +108,7 @@ enum SnapshotRenderer {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
         }
         model.markAllSeen()
+        model.refresh()
         model.injectWorkflowFailure()
         await capture("10-urgent-static")
         report.append("## hover placement (urgent, privacy off: names and titles)")
@@ -117,12 +122,15 @@ enum SnapshotRenderer {
         report += await gestureProbe(model: model, directory: directory)
         // GitHub Status (#11): a new major incident is urgent; resolving leaves quietly.
         model.markAllSeen()
+        model.refresh()
         model.injectServiceIncident(.major)
         await capture("10c-incident-major")
         // Simulator range (#37): critical via the simulator; maintenance is never an incident; a
         // service-only fetch failure never reads as "no incidents".
+        model.refresh()
         model.injectServiceIncident(.critical)
         await capture("10e-incident-critical")
+        model.refresh()
         model.injectScheduledMaintenance()
         await capture("10f-maintenance-ignored")
         model.setServiceFetchFails(true)
@@ -134,6 +142,7 @@ enum SnapshotRenderer {
         await capture("10d-incidents-resolved")
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
         report.append("## count cap")
+        model.refresh()
         for _ in 0..<100 { model.injectEntitlementEvent() }
         model.markAllSeen()
         report.append("count cap: items=\(model.items.count) mascot-badge=\(model.mascotBadge ?? "none") "
@@ -646,15 +655,19 @@ enum SnapshotRenderer {
         var lines: [String] = []
         let savedReduced = model.settings.reducedMotion
         model.settings.reducedMotion = false
+        // This probe follows potentially slow raster work, with no periodic snapshot polls.
+        model.refresh()
         model.injectEntitlementEvent()
         let first = model.activeClip
         try? await Task.sleep(nanoseconds: 300_000_000)
+        model.refresh()
         model.injectEntitlementEvent()
         let merged = model.activeClip?.startedAt == first?.startedAt && first != nil
         try? await Task.sleep(nanoseconds: 1_900_000_000)
         let ended = model.activeClip == nil
         model.markAllSeen()
         // Snooze mid-gesture stops it at once (no tick wait); lifting snooze replays nothing.
+        model.refresh()
         model.injectEntitlementEvent()
         let playing = model.activeClip != nil
         model.snooze(.oneHour)
@@ -664,6 +677,7 @@ enum SnapshotRenderer {
         let replayed = model.activeClip != nil
         model.markAllSeen()
         model.settings.reducedMotion = true
+        model.refresh()
         model.injectEntitlementEvent()
         let reducedPlays = model.activeClip != nil
         model.settings.reducedMotion = savedReduced
