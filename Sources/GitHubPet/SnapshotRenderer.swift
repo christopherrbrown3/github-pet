@@ -19,6 +19,11 @@ enum SnapshotRenderer {
             report.append("## \(name)")
             report.append("state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
                           + "demo=\(model.isDemo) mood=\(model.mascotState.rawValue)")
+            report.append("service=\(model.serviceState.statusText(count: model.serviceIncidents.count)) "
+                          + "incident-rows=\(model.serviceIncidents.count) unseen-incidents=\(model.unseenIncidents.count)")
+            report.append("incident-marker=\(model.incidentMarker?.tier.rawValue ?? "none") "
+                          + "hover-top=\(model.hoverLines(compact: false).first ?? "") "
+                          + "compact-hover=\(model.hoverLines(compact: true).joined(separator: " | "))")
             report.append("source=\(model.settings.dataSource.rawValue) privacy=\(model.settings.privacyMode) "
                           + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
@@ -110,6 +115,23 @@ enum SnapshotRenderer {
         // Late in the scenario: the probe injects fixture events, which would change earlier counts.
         report.append("## attention gesture (#29, live model)")
         report += await gestureProbe(model: model, directory: directory)
+        // GitHub Status (#11): a new major incident is urgent; resolving leaves quietly.
+        model.markAllSeen()
+        model.injectServiceIncident(.major)
+        await capture("10c-incident-major")
+        // Simulator range (#37): critical via the simulator; maintenance is never an incident; a
+        // service-only fetch failure never reads as "no incidents".
+        model.injectServiceIncident(.critical)
+        await capture("10e-incident-critical")
+        model.injectScheduledMaintenance()
+        await capture("10f-maintenance-ignored")
+        model.setServiceFetchFails(true)
+        await capture("10g-status-fetch-fails")
+        model.setServiceFetchFails(false)
+        report.append("## incident marker (#37: rasterised marker vs labels and keep-out, every tier and pose)")
+        report += await incidentMarkerProbe(model: model, directory: directory)
+        model.resolveServiceIncidents()
+        await capture("10d-incidents-resolved")
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
         report.append("## count cap")
         for _ in 0..<100 { model.injectEntitlementEvent() }
@@ -480,6 +502,112 @@ enum SnapshotRenderer {
             }
         }
         return lines
+    }
+
+    /// The incident marker never touches the labels (#37): at 64/128/256 and 1×/2×, the union of
+    /// every tier's marker (static and burst frames) against the union of the labels over every
+    /// pose with the widest count. Reports the nearest gap and pixels visible in both.
+    private static func incidentMarkerProbe(model: AppModel, directory: URL) async -> [String] {
+        guard let lead = model.serviceIncidents.first else { return ["incident marker: no incident"] }
+        let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = .clear
+        window.isOpaque = false
+        let host = NSHostingView(rootView: AnyView(EmptyView()))
+        window.contentView = host
+        window.orderFrontRegardless()
+        defer { window.orderOut(nil) }
+        let saved = model.settings.mascotSize
+        defer { model.settings.mascotSize = saved }
+        var lines: [String] = []
+        for side in [64.0, 128, 256] {
+            model.settings.mascotSize = side
+            let layout = model.layout(side)
+            let poses = MascotState.allCases.flatMap { state in
+                ((model.pack?.frameURLs(for: state).indices.map { Optional($0) } ?? []) + [nil])
+                    .map { MascotPose(state: state, frame: $0, clipElapsed: nil) }
+            }
+            for scale in [CGFloat(1), 2] {
+                func union(_ a: [UInt8]?, _ b: [UInt8]?) -> [UInt8]? {
+                    guard let b else { return a }
+                    guard let a else { return b }
+                    return zip(a, b).map { max($0, $1) }
+                }
+                var labels: [UInt8]?, marker: [UInt8]?
+                for pose in poses {
+                    let view = MascotView(model: model, poseOverride: pose, badgeOverride: "99+", drawsArt: false,
+                                          drawsLabels: true).environment(\.displayScale, scale)
+                    labels = union(labels, await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale))
+                }
+                for tier in [IncidentMarker.Tier.minor, .major, .critical] {
+                    for elapsed in [nil, 0.0, 0.7, 1.9, 3.1, 5.3, 5.7] as [TimeInterval?] {
+                        let view = IncidentMarkerView(marker: IncidentMarker(tier: tier, count: 1, lead: lead), layout: layout,
+                                                      phase: markerPhase(tier, elapsed, lead: lead))
+                            .frame(width: layout.panelSize.width, height: layout.panelSize.height, alignment: .topLeading)
+                            .environment(\.displayScale, scale)
+                        marker = union(marker, await alphaBitmap(view, in: host, size: layout.panelSize, scale: scale))
+                    }
+                }
+                guard let labels, let marker, labels.contains(where: { $0 > 0 }), marker.contains(where: { $0 > 0 }) else {
+                    lines.append("incident marker @\(Int(side)) \(Int(scale))x: empty render")
+                    continue
+                }
+                let (gap, overlap) = nearestGap(marker, labels, size: layout.panelSize, scale: scale)
+                // Design keep-out: no marker pixel in the top 64 canvas units of the art square.
+                let width = Int((layout.panelSize.width * scale).rounded(.up))
+                let keepOutRows = Int(((layout.laneHeight + layout.artSide * 64 / 256) * scale).rounded(.down))
+                let keepOutPixels = marker.prefix(width * keepOutRows).filter { $0 > 0 }.count
+                // Design lets the marker use the side gutters beside the art (64 pt: 16 pt each side).
+                let artLeft = Int((layout.artFrame.minX * scale).rounded(.down)), artRight = Int((layout.artFrame.maxX * scale).rounded(.up))
+                let gutterPixels = marker.indices.filter { index in
+                    let x = index % width
+                    return (x < artLeft || x >= artRight) && marker[index] > 0
+                }.count
+                // gap: nearest marker-to-label distance in points; the probe searches 16 pt around the
+                // labels, so ">16" means nothing nearer. slot: the clip rect (panel points, origin at the
+                // panel's bottom-left: x, y, width, height).
+                lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(gap.isFinite ? format(gap) : ">16") "
+                             + "overlapping-pixels=\(overlap) keep-out-pixels=\(keepOutPixels) gutter-pixels=\(gutterPixels) "
+                             + "slot=\(IncidentMarker.frame(in: layout).integral)")
+            }
+            // Native renders for design to compare with docs/design/incidents/previews: the real
+            // mascot panel (labels, widest count) over the marker, design's preview columns.
+            let tierPoses: [IncidentMarker.Tier: MascotPose] = [
+                .minor: MascotPose(state: .attention, frame: 3, clipElapsed: nil),
+                .major: MascotPose(state: .urgent, frame: 0, clipElapsed: nil),
+                .critical: MascotPose(state: .urgent, frame: 0, clipElapsed: nil),
+            ]
+            let columns: [(String, TimeInterval?)] = [("static", nil), ("0.05s", 0.05), ("1.2s", 1.2), ("2.6s", 2.6)]
+            var rendered = 0
+            for tier in [IncidentMarker.Tier.minor, .major, .critical] {
+                for (column, elapsed) in columns {
+                    let scene = ZStack(alignment: .topLeading) {
+                        IncidentMarkerView(marker: IncidentMarker(tier: tier, count: 1, lead: lead), layout: layout,
+                                           phase: markerPhase(tier, elapsed, lead: lead))
+                        MascotView(model: model, poseOverride: tierPoses[tier], badgeOverride: "99+", drawsMarker: false)
+                    }
+                    .frame(width: layout.panelSize.width, height: layout.panelSize.height, alignment: .topLeading)
+                    for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                        let name = "incident-\(Int(side))-\(tier.rawValue)-\(column)\(suffix)"
+                        if !(await render(scene, name: name, directory: directory, appearance: appearance)).isEmpty { rendered += 1 }
+                    }
+                }
+            }
+            lines.append("incident renders @\(Int(side)): \(rendered) PNGs (tiers x static/0.05s/1.2s/2.6s x light/dark)")
+        }
+        return lines
+    }
+
+    /// The marker phase `elapsed` seconds into a burst for a new incident (every layer fading in),
+    /// or the static frame for nil.
+    private static func markerPhase(_ tier: IncidentMarker.Tier, _ elapsed: TimeInterval?,
+                                    lead: ServiceIncident) -> IncidentMarker.Phase {
+        guard let elapsed else { return .still }
+        let start = Date(timeIntervalSince1970: 0)
+        return IncidentMarker(tier: tier, count: 1, lead: lead)
+            .phase(now: start.addingTimeInterval(elapsed), burst: IncidentMarker.Burst(start: start, fromTier: nil),
+                   reducedMotion: false, alertsAllowed: true)
     }
 
     /// Drives the real AppModel: one injected event starts one attention gesture; a second event

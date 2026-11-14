@@ -69,6 +69,14 @@ check_in 03-replayed "replay adds nothing"       '^state=Up to date badge=4 rows
 check_in 04-partial "partial is labelled"       '^state=Partial data badge=3\+ rows=3'
 check_in 05-stale "stale count unknown"       '^state=Stale badge=\? rows=4'
 check_in 06-disconnected "disconnect count unknown"  '^state=Error: simulated disconnect badge=\?'
+# GitHub Status (#11): its own quality line; failure and stale never read as "no incidents".
+check_in 00-loading "status loading is not none" '^service=Checking GitHub status… incident-rows=0'
+check_in 01-baseline "fixture incident, maintenance excluded" '^service=1 active GitHub incident incident-rows=1 unseen-incidents=0'
+check_in 05-stale "status stale keeps last known" '^service=GitHub status is stale incident-rows=1'
+check_in 06-disconnected "status failure is not none" '^service=GitHub status unavailable: simulated disconnect incident-rows=1'
+check_in 07-reconnected "status recovery is silent" '^service=1 active GitHub incident incident-rows=1 unseen-incidents=0'
+check_in 10c-incident-major "new major incident announced" '^service=2 active GitHub incidents incident-rows=2 unseen-incidents=1'
+check_in 10d-incidents-resolved "resolved incidents leave quietly" '^service=No active GitHub incidents incident-rows=0 unseen-incidents=0'
 check_in 01-baseline "mascot is one AX button"    '^mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, '
 check_in 00-loading "mascot drag vs click"       '^mascot pointer: drop-without-drag-events=moved click=opens-inbox'
 # Hover summary beside the character (#27 with #28 metrics): every case shows the real panel and
@@ -143,6 +151,33 @@ check "mascot panel has tag lane" '^10-urgent-static-mascot: 128x[0-9]+ pt'
 check_in "count cap" "mascot caps at 99+, inbox and AX keep the full count" \
   '^count cap: items=1[0-9][0-9] mascot-badge=99\+ inbox-badge=1[0-9][0-9] ax=.* 1[0-9][0-9] items'
 check_in 11-gh-override "missing gh named"          '^state=GitHub CLI not found badge=\? rows=0'
+# Incident marker (#37): only for a fresh confirmed incident; hover top line; AX counts it apart
+# from the badge; the marker never touches the labels at any size or scale.
+check_in 01-baseline "marker for a fresh minor incident" '^incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: .* \| Demo · '
+check_in 01-baseline "AX counts the incident apart" '^menu-bar AX: GitHub Pet, Demo data, 3 items, 1 active GitHub incident'
+check_in 01-baseline "badge stays items only" '^state=Up to date badge=3 '
+check_in 05-stale "no marker when stale" '^incident-marker=none '
+check_in 06-disconnected "no marker on failure" '^incident-marker=none '
+check_in 00-loading "no marker while loading" '^incident-marker=none '
+check_in 10c-incident-major "major tier marker" '^incident-marker=major hover-top=Demo GitHub incidents: .*\(\+1 more\)'
+check_in 10c-incident-major "AX counts two incidents" '^menu-bar AX: .*, 2 active GitHub incidents'
+check_in 10e-incident-critical "simulator critical announced" '^service=3 active GitHub incidents incident-rows=3 unseen-incidents=2'
+check_in 10e-incident-critical "critical tier marker" '^incident-marker=critical hover-top=Demo GitHub incidents: Major outage: github.com \(\+2 more\)'
+check_in 10f-maintenance-ignored "maintenance is not an incident" '^service=3 active GitHub incidents incident-rows=3 unseen-incidents=2'
+check_in 10f-maintenance-ignored "maintenance keeps the marker" '^incident-marker=critical '
+check_in 10g-status-fetch-fails "service fetch failure is not none" '^service=GitHub status unavailable: simulated status fetch failure incident-rows=3'
+check_in 10g-status-fetch-fails "no marker on service failure" '^incident-marker=none '
+check_in 10g-status-fetch-fails "inbox unaffected by service failure" '^state=Up to date '
+check_in 10d-incidents-resolved "marker leaves on resolve" '^incident-marker=none '
+marker_lines=$(grep -E '^incident marker @' "$report" || true)
+if (( $(printf '%s\n' "$marker_lines" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x"
+else echo "FAIL incident marker vs labels:"; printf '%s\n' "$marker_lines"; failures=$((failures + 1)); fi
+# D1 (#37 review): at 64 pt the outer tongues reach into the panel gutters instead of being cut at the art square.
+if (( $(grep -cE '^incident marker @64 [12]x: .* gutter-pixels=[1-9]' "$report") == 2 )); then echo "ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)"
+else echo "FAIL incident marker clipped to the 64 pt art square"; failures=$((failures + 1)); fi
+if (( $(grep -cE '^incident renders @[0-9]+: 24 PNGs' "$report") == 3 )); then echo "ok   incident renders for design (72 PNGs)"
+else echo "FAIL incident renders missing"; failures=$((failures + 1)); fi
+check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \

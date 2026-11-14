@@ -7,6 +7,8 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
     case authoredPullRequest
     case ciFailure
     case entitlement
+    /// A confirmed GitHub service incident from githubstatus.com (see `ServiceIncident`).
+    case serviceIncident
 
     /// Generic label used whenever privacy mode hides repository and title.
     public var genericLabel: String {
@@ -16,6 +18,7 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
         case .authoredPullRequest: return "Your pull request"
         case .ciFailure: return "Workflow failure"
         case .entitlement: return "Entitlement update"
+        case .serviceIncident: return "GitHub service incident"
         }
     }
 
@@ -119,9 +122,15 @@ public enum FetchOutcome: Equatable, Sendable {
 /// A newly observed item, reported at most once per stable ID.
 public struct InboxEvent: Equatable, Sendable {
     public var item: InboxItem
-    public var severity: EventSeverity { item.kind.severity }
+    /// The kind's severity unless the source knows better (service incidents use their impact).
+    public var severity: EventSeverity
 
     public init(item: InboxItem) {
+        self.init(item: item, severity: item.kind.severity)
+    }
+
+    public init(item: InboxItem, severity: EventSeverity) {
         self.item = item
+        self.severity = severity
     }
 }
