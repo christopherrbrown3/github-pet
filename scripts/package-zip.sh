@@ -48,12 +48,14 @@ codesign --verify --strict "$unpacked"
 plist=$unpacked/Contents/Info.plist
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = "$version"
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" = "$(git rev-list --count HEAD)"
+test "$(/usr/libexec/PlistBuddy -c 'Print :GitHubPetSourceRevision' "$plist")" = "$(git rev-parse HEAD)"
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$plist")" = true
 test "$(lipo -archs "$unpacked/Contents/MacOS/GitHubPet")" = "$archs"
 test -f "$unpacked/Contents/Resources/MascotPacks/mona-pet-v1/manifest.json"
 test "$(ls "$unpacked"/Contents/Resources/MascotPacks/mona-pet-v1/frames/*.png | wc -l)" -eq 12
 
 echo "Packaged $zip"
+echo "  source: $(git rev-parse HEAD) (complete history, $(git rev-list --count HEAD) commits)"
 echo "  architectures: $archs"
 echo "  size: $(stat -f %z "$zip") bytes"
 echo "  sha256: $(cut -d' ' -f1 < "$zip.sha256")"

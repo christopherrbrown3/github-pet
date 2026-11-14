@@ -25,7 +25,14 @@ app_name=GitHubPet
 bundle_id=dev.github-pet.GitHubPet
 version=$(tr -d '[:space:]' < VERSION)
 [[ $version =~ '^[0-9]+\.[0-9]+\.[0-9]+$' ]] || { echo "VERSION must be MAJOR.MINOR.PATCH, got '$version'" >&2; exit 65; }
-build_number=$(git rev-list --count HEAD 2>/dev/null || echo 1)
+# A shallow count can look valid (even >1) while silently understating the build number.
+# Reject it before compiling; package verification must not compare two truncated counts.
+if [[ $(git rev-parse --is-shallow-repository 2>/dev/null) != false ]]; then
+  echo "build-app: requires a Git checkout with complete history; for a shallow clone, run git fetch --unshallow" >&2
+  exit 65
+fi
+source_revision=$(git rev-parse HEAD)
+build_number=$(git rev-list --count HEAD)
 
 app=.build/app/$app_name.app
 rm -rf "$app"
@@ -65,6 +72,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$version</string>
   <key>CFBundleVersion</key><string>$build_number</string>
+  <key>GitHubPetSourceRevision</key><string>$source_revision</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>

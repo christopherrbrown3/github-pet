@@ -18,11 +18,12 @@ Every build of `main` produces a downloadable ZIP as a GitHub Actions artifact.
 
 ## 1. Download
 
-The ZIP is attached to each successful run of the **Swift** workflow on `main` as the artifact
+The ZIP is attached to each successful **push** run of the **Swift** workflow on `main` as the artifact
 **GitHubPet-app** (kept for 90 days). Downloading artifacts requires a GitHub account.
 
 In a browser: open the repository's **Actions** tab, choose the **Swift** workflow, open the latest
-successful run on `main`, and download **GitHubPet-app** under **Artifacts**. GitHub delivers it
+successful **push** run on this repository's `main` (not a pull request), and download
+**GitHubPet-app** under **Artifacts**. GitHub delivers it
 as a ZIP that contains:
 
 - `GitHubPet-<version>-<commit>-universal.zip`: the app.
@@ -32,7 +33,8 @@ With the GitHub CLI:
 
 ```sh
 run=$(gh run list --repo christopherrbrown3/github-pet --workflow Swift --branch main \
-  --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+  --event push --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+test -n "$run" && test "$run" != null || { echo "No successful main push build is available yet" >&2; exit 1; }
 gh run download "$run" --repo christopherrbrown3/github-pet --name GitHubPet-app --dir GitHubPet-download
 cd GitHubPet-download
 ```

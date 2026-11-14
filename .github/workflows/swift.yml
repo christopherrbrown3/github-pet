@@ -19,6 +19,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Keep PR build/tests on GitHub's combined branch; metadata needs complete history.
+          fetch-depth: 0
       - name: Toolchain
         run: |
           xcodebuild -version
@@ -29,6 +32,23 @@ jobs:
         timeout-minutes: 10
         # The suite is swift-testing only; skip the empty XCTest pass.
         run: scripts/test.sh --disable-xctest
+      - name: Check out PR head for packaging
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          # Downloadable artifacts identify the actual PR source, not an ephemeral merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Verify packaging source and history
+        env:
+          EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+          test "$(git rev-parse --is-shallow-repository)" = false
+          test "$(git rev-list --count HEAD)" -gt 1
+      - name: Packaging provenance regression
+        timeout-minutes: 2
+        run: scripts/test-packaging.sh
       - name: Package app (universal ZIP)
         # Builds the arm64 + x86_64 app the checks below use, zips it and self-verifies the archive.
         run: scripts/package-zip.sh
