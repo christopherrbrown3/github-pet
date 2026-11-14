@@ -421,8 +421,55 @@ final class AppModel: ObservableObject {
 
     func resolveServiceIncidents() {
         guard usingFixtures else { return }
-        serviceSimulator.resolveAll()
+        serviceSimulator.resolveAll(now: clock())
         refreshServiceStatus()
+    }
+
+    /// Every open fixture incident one tier up (minor → major → critical): one burst per tier reached.
+    func escalateServiceIncidentsOneLevel() {
+        guard usingFixtures else { return }
+        serviceSimulator.escalateOneLevel(now: clock())
+        refreshServiceStatus()
+    }
+
+    /// One tier down: silent.
+    func deescalateServiceIncidentsOneLevel() {
+        guard usingFixtures else { return }
+        serviceSimulator.deescalateOneLevel(now: clock())
+        refreshServiceStatus()
+    }
+
+    /// Reopen the last resolved fixture incident under its old ID: silent.
+    func reopenLastResolvedIncident() {
+        guard usingFixtures else { return }
+        serviceSimulator.reopenLastResolved(now: clock())
+        refreshServiceStatus()
+    }
+
+    var canReopenServiceIncident: Bool { serviceSimulator.canReopen }
+
+    /// Scheduled maintenance: never an incident, never the marker.
+    func injectScheduledMaintenance() {
+        guard usingFixtures else { return }
+        serviceSimulator.injectMaintenance(now: clock())
+        refreshServiceStatus()
+    }
+
+    var serviceFetchFails: Bool { serviceSimulator.fetchFails }
+
+    /// Service status only: the fetch fails (last-known incidents dimmed, never "no incidents") or recovers.
+    func setServiceFetchFails(_ fails: Bool) {
+        guard usingFixtures else { return }
+        serviceSimulator.fetchFails = fails
+        refreshServiceStatus()
+        objectWillChange.send()
+    }
+
+    /// Service status only: stale until the next poll.
+    func markServiceStale() {
+        guard usingFixtures else { return }
+        serviceMonitor.markStale()
+        sync(now: clock())
     }
 
     func simulateDisconnect() {

@@ -158,6 +158,13 @@ check_in 06-disconnected "no marker on failure" '^incident-marker=none '
 check_in 00-loading "no marker while loading" '^incident-marker=none '
 check_in 10c-incident-major "major tier marker" '^incident-marker=major hover-top=Demo GitHub incidents: .*\(\+1 more\)'
 check_in 10c-incident-major "AX counts two incidents" '^menu-bar AX: .*, 2 active GitHub incidents'
+check_in 10e-incident-critical "simulator critical announced" '^service=3 active GitHub incidents incident-rows=3 unseen-incidents=2'
+check_in 10e-incident-critical "critical tier marker" '^incident-marker=critical hover-top=Demo GitHub incidents: Major outage: github.com \(\+2 more\)'
+check_in 10f-maintenance-ignored "maintenance is not an incident" '^service=3 active GitHub incidents incident-rows=3 unseen-incidents=2'
+check_in 10f-maintenance-ignored "maintenance keeps the marker" '^incident-marker=critical '
+check_in 10g-status-fetch-fails "service fetch failure is not none" '^service=GitHub status unavailable: simulated status fetch failure incident-rows=3'
+check_in 10g-status-fetch-fails "no marker on service failure" '^incident-marker=none '
+check_in 10g-status-fetch-fails "inbox unaffected by service failure" '^state=Up to date '
 check_in 10d-incidents-resolved "marker leaves on resolve" '^incident-marker=none '
 marker_lines=$(grep -E '^incident marker @' "$report" || true)
 if (( $(printf '%s\n' "$marker_lines" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x"

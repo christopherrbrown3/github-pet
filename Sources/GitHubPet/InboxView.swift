@@ -334,8 +334,30 @@ struct SimulatorMenu: View {
             Menu("GitHub service incident") {
                 Button("Inject minor incident") { model.injectServiceIncident(.minor) }
                 Button("Inject major incident (urgent)") { model.injectServiceIncident(.major) }
-                Button("Escalate incidents to major") { model.escalateServiceIncidents() }
+                Button("Inject critical incident (urgent)") { model.injectServiceIncident(.critical) }
+                Divider()
+                Button("Escalate one level") { model.escalateServiceIncidentsOneLevel() }
+                Button("De-escalate one level (silent)") { model.deescalateServiceIncidentsOneLevel() }
+                Button("Escalate all to major") { model.escalateServiceIncidents() }
+                Divider()
                 Button("Resolve all incidents") { model.resolveServiceIncidents() }
+                Button("Reopen last resolved (silent)") { model.reopenLastResolvedIncident() }
+                    .disabled(!model.canReopenServiceIncident)
+                Button("Inject scheduled maintenance (ignored)") { model.injectScheduledMaintenance() }
+                Divider()
+                if model.serviceFetchFails {
+                    Button("Status fetch recovers") { model.setServiceFetchFails(false) }
+                } else {
+                    Button("Status fetch fails") { model.setServiceFetchFails(true) }
+                }
+                Button("Mark status stale") { model.markServiceStale() }
+                if !model.serviceIncidents.isEmpty {
+                    Divider()
+                    // Current tier per incident, for stepping through tier bursts.
+                    ForEach(model.serviceIncidents) { incident in
+                        Text("\(incident.name): \(IncidentMarker.Tier(impact: incident.impact).rawValue)")
+                    }
+                }
             }
             Button("Mark data stale") { model.markStale() }
             if model.simulatorConnected {

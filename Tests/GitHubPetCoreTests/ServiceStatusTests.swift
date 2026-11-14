@@ -876,3 +876,155 @@ private func stubURL(_ name: String) -> URL {
         #expect(await client.fetch() == .failure("timed out"))
     }
 }
+
+/// Each Simulator action, through the real decoder, monitor and marker: event or no event.
+@Suite struct ServiceStatusSimulatorActionTests {
+    private final class Harness {
+        let simulator: ServiceStatusSimulator
+        let monitor = ServiceStatusMonitor()
+        var now = t0
+
+        init(_ incidents: [ServiceIncident] = []) {
+            var counter = 0
+            simulator = ServiceStatusSimulator(incidents: incidents) {
+                counter += 1
+                return String(format: "%012d", counter)
+            }
+            poll()   // baseline
+        }
+
+        @discardableResult
+        func poll() -> [InboxEvent] {
+            now += 30
+            return monitor.apply(simulator.poll(), now: now)
+        }
+
+        var marker: IncidentMarker? { IncidentMarker.current(state: monitor.state, incidents: monitor.incidents) }
+    }
+
+    @Test func injectEachTierIsANewUrgentOrAttentionEvent() {
+        let h = Harness()
+        h.simulator.injectIncident(impact: .critical, now: h.now)
+        let events = h.poll()
+        #expect(events.count == 1)
+        #expect(events.first?.severity == .critical)
+        #expect(h.marker?.tier == .critical)
+        #expect(h.monitor.incidents.first?.name == "Major outage: github.com")
+        h.simulator.injectIncident(impact: .minor, now: h.now)
+        #expect(h.poll().first?.severity == .actionable)
+        h.simulator.injectIncident(impact: .major, now: h.now)
+        #expect(h.poll().first?.severity == .critical)
+        #expect(h.monitor.incidents.count == 3)
+        #expect(Set(h.monitor.incidents.map(\.id)).count == 3)
+    }
+
+    @Test func escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() {
+        let h = Harness()
+        h.simulator.injectIncident(impact: .minor, now: h.now)
+        #expect(h.poll().count == 1)                           // new
+        h.simulator.escalateOneLevel(now: h.now)
+        #expect(h.poll().count == 1)                           // minor -> major
+        #expect(h.marker?.tier == .major)
+        h.simulator.escalateOneLevel(now: h.now)
+        #expect(h.poll().count == 1)                           // major -> critical
+        #expect(h.marker?.tier == .critical)
+        h.simulator.escalateOneLevel(now: h.now)
+        #expect(h.poll().isEmpty)                              // already critical
+        h.simulator.deescalateOneLevel(now: h.now)
+        #expect(h.poll().isEmpty)                              // critical -> major: silent
+        #expect(h.marker?.tier == .major)
+        h.simulator.deescalateOneLevel(now: h.now)
+        #expect(h.poll().isEmpty)                              // major -> minor: silent
+        #expect(h.marker?.tier == .minor)
+        h.simulator.escalateOneLevel(now: h.now)
+        #expect(h.poll().isEmpty)                              // back to major: tier already reached
+    }
+
+    @Test func escalateAllToMajorStillWorks() {
+        let h = Harness()
+        h.simulator.injectIncident(impact: .minor, now: h.now)
+        h.poll()
+        h.simulator.escalateAll(now: h.now)
+        #expect(h.poll().count == 1)
+        #expect(h.simulator.incidents.allSatisfy { $0.impact == .major })
+    }
+
+    @Test func resolveIsQuietAndReopenIsSilent() {
+        let h = Harness()
+        h.simulator.injectIncident(impact: .major, now: h.now)
+        h.poll()
+        #expect(!h.simulator.canReopen)
+        h.simulator.resolveAll(now: h.now)
+        #expect(h.poll().isEmpty)
+        #expect(h.monitor.state == .operational)
+        #expect(h.marker == nil)
+        #expect(h.simulator.canReopen)
+        #expect(h.simulator.reopenLastResolved(now: h.now))
+        #expect(h.poll().isEmpty)                              // same ID: silent
+        #expect(h.marker?.tier == .major)
+        #expect(!h.simulator.reopenLastResolved(now: h.now))   // nothing left to reopen
+    }
+
+    @Test func scheduledMaintenanceIsNeverAnIncident() {
+        let h = Harness()
+        h.simulator.injectMaintenance(now: h.now)
+        #expect(h.poll().isEmpty)
+        #expect(h.monitor.incidents.isEmpty)
+        #expect(h.monitor.state == .operational)
+        #expect(h.marker == nil)
+        h.simulator.injectIncident(impact: .minor, now: h.now)
+        h.poll()
+        h.simulator.injectMaintenance(now: h.now)
+        #expect(h.poll().isEmpty)
+        #expect(h.monitor.incidents.count == 1)
+        // Escalating never turns maintenance into an incident.
+        h.simulator.escalateOneLevel(now: h.now)
+        h.poll()
+        #expect(h.monitor.incidents.count == 1)
+    }
+
+    @Test func statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() {
+        let h = Harness()
+        h.simulator.injectIncident(impact: .major, now: h.now)
+        h.poll()
+        h.simulator.fetchFails = true
+        #expect(h.poll().isEmpty)
+        #expect(h.monitor.state == .error("simulated status fetch failure"))
+        #expect(h.monitor.incidents.count == 1)                // last known, dimmed
+        #expect(h.marker == nil)
+        #expect(!h.monitor.hasUrgentIncident)
+        // Opened while failing: recorded silently on recovery.
+        h.simulator.injectIncident(impact: .critical, now: h.now)
+        h.simulator.fetchFails = false
+        #expect(h.poll().isEmpty)
+        #expect(h.monitor.state == .incidents)
+        #expect(h.marker?.tier == .critical)
+    }
+
+    @Test func fetchFailureBeforeAnySuccessIsUnknown() {
+        let simulator = ServiceStatusSimulator(incidents: [])
+        simulator.fetchFails = true
+        let monitor = ServiceStatusMonitor()
+        monitor.apply(simulator.poll(), now: t0)
+        #expect(monitor.state != .operational)
+        #expect(!monitor.state.isFresh)
+    }
+
+    @Test func markStaleHidesTheMarkerAndRecoveryIsSilent() {
+        let h = Harness()
+        h.simulator.injectIncident(impact: .minor, now: h.now)
+        h.poll()
+        h.monitor.markStale()
+        #expect(h.monitor.state == .stale)
+        #expect(h.marker == nil)
+        h.simulator.injectIncident(impact: .major, now: h.now)
+        #expect(h.poll().isEmpty)
+        #expect(h.marker?.tier == .major)
+    }
+
+    @Test func disconnectFailsTheServiceSourceToo() {
+        let simulator = ServiceStatusSimulator()
+        simulator.connected = false
+        #expect(simulator.poll() == .failure("simulated disconnect"))
+    }
+}

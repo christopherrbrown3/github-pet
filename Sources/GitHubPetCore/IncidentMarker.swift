@@ -12,6 +12,8 @@ public struct IncidentMarker: Equatable, Sendable {
         case major
         case critical
 
+        public init(impact: IncidentImpact) { self.init(impact) }
+
         init(_ impact: IncidentImpact) {
             switch impact {
             case .critical: self = .critical

@@ -242,9 +242,18 @@ In Fixtures mode the inbox footer has a **Simulator** menu:
 | Mark data stale | "Stale · last updated …", rows dimmed |
 | Simulate disconnect / Reconnect | "Error: simulated disconnect" with rows dimmed. Reconnecting replays nothing, even an entitlement injected while disconnected. |
 | Reset baseline | Next snapshot re-seeds silently (inbox and service incidents) |
-| GitHub service incident → Inject minor / major | One new incident row; one gesture (major: urgent mood). |
-| GitHub service incident → Escalate incidents to major | Escalated incidents announce once, as urgent; repeating does nothing. |
-| GitHub service incident → Resolve all incidents | Rows leave quietly; "No active GitHub incidents". |
+| GitHub service incident → Inject minor / major / critical | One new incident (Demo names "Actions degraded", "Git operations outage", "Major outage: github.com"); one event, minor = attention, major/critical = urgent; marker at that tier. |
+| GitHub service incident → Escalate one level | Every open incident one tier up (minor → major → critical): one urgent event and burst per tier reached; nothing once critical. |
+| GitHub service incident → De-escalate one level (silent) | One tier down; no event. Escalating back to a tier already reached is silent too. |
+| GitHub service incident → Escalate all to major | Open incidents below major become major (one event each, first time only). |
+| GitHub service incident → Resolve all incidents | Rows leave quietly; "No active GitHub incidents"; no marker. |
+| GitHub service incident → Reopen last resolved (silent) | The last resolved incident returns under its old ID; no event, marker at its tier. |
+| GitHub service incident → Inject scheduled maintenance (ignored) | Reported by the (simulated) Statuspage payload but filtered by the real decoder: no row, no count, no marker. |
+| GitHub service incident → Status fetch fails / recovers | Service status only: "GitHub status unavailable: simulated status fetch failure", last-known incidents dimmed, no marker, never "no incidents". Recovery re-baselines silently. The inbox is unaffected. |
+| GitHub service incident → Mark status stale | Service status only: "GitHub status is stale", no marker; the next poll recovers silently. |
+
+Simulated polls go through the real `StatusPageDecoder` as a Statuspage JSON payload. The submenu lists
+each open incident with its current tier.
 
 Mark data stale and Simulate disconnect also apply to service incidents ("GitHub status is stale",
 "GitHub status unavailable: simulated disconnect", last-known incidents dimmed); reconnecting replays nothing.

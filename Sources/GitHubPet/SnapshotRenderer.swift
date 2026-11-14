@@ -119,6 +119,15 @@ enum SnapshotRenderer {
         model.markAllSeen()
         model.injectServiceIncident(.major)
         await capture("10c-incident-major")
+        // Simulator range (#37): critical via the simulator; maintenance is never an incident; a
+        // service-only fetch failure never reads as "no incidents".
+        model.injectServiceIncident(.critical)
+        await capture("10e-incident-critical")
+        model.injectScheduledMaintenance()
+        await capture("10f-maintenance-ignored")
+        model.setServiceFetchFails(true)
+        await capture("10g-status-fetch-fails")
+        model.setServiceFetchFails(false)
         report.append("## incident marker (#37: rasterised marker vs labels and keep-out, every tier and pose)")
         report += await incidentMarkerProbe(model: model, directory: directory)
         model.resolveServiceIncidents()
