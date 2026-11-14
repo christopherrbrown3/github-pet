@@ -1,0 +1,64 @@
+Building for debugging...
+[0/12] /Users/chris/github-pet-worktrees/developer-timing/.build/arm64-apple-macosx/debug/GitHubPetPackageTests.derived/runner.swift
+[1/12] Write sources
+[5/12] Write GitHubPet-entitlement.plist
+[6/12] Write swift-version--1AB21518FC5DEDBE.txt
+[8/30] Compiling GitHubPetCore ServiceStatusMonitor.swift
+[9/30] Compiling GitHubPetCore Session.swift
+[10/32] Emitting module GitHubPetCore
+[11/32] Compiling GitHubPetCore MascotPack.swift
+[12/32] Compiling GitHubPetCore Models.swift
+[13/32] Compiling GitHubPetCore EventTracker.swift
+[14/32] Compiling GitHubPetCore FixtureSimulator.swift
+[15/32] Compiling GitHubPetCore GestureCancellation.swift
+[16/32] Compiling GitHubPetCore IncidentMarker.swift
+[17/32] Compiling GitHubPetCore IncidentMarkerSpec.swift
+[18/32] Compiling GitHubPetCore Mascot.swift
+[19/32] Compiling GitHubPetCore SafeLink.swift
+[20/32] Compiling GitHubPetCore ServiceStatus.swift
+[21/32] Compiling GitHubPetCore GitHubCLI.swift
+[22/32] Compiling GitHubPetCore HoverPlacement.swift
+[23/32] Compiling GitHubPetCore InboxEngine.swift
+[24/32] Compiling GitHubPetCore ServiceStatusClient.swift
+[25/32] Compiling GitHubPetCore ServiceStatusFixtures.swift
+[26/32] Compiling GitHubPetCore Settings.swift
+[27/32] Compiling GitHubPetCore SourceGenerations.swift
+[28/52] Compiling GitHubPetCoreTests ServiceStatusTests.swift
+[29/52] Emitting module GitHubPetCoreTests
+[30/52] Compiling GitHubPet InboxView.swift
+[31/52] Compiling GitHubPet IncidentMarkerView.swift
+[32/52] Compiling GitHubPetCoreTests MascotTests.swift
+[33/52] Compiling GitHubPetCoreTests MascotPackTests.swift
+[34/52] Compiling GitHubPetCoreTests InboxEngineTests.swift
+[35/52] Compiling GitHubPetCoreTests IncidentMarkerTests.swift
+[36/52] Compiling GitHubPetCoreTests GitHubCLITests.swift
+[37/52] Compiling GitHubPetCoreTests HoverPlacementTests.swift
+[38/53] Compiling GitHubPetCoreTests SettingsTests.swift
+[39/55] Compiling GitHubPetPackageTests runner.swift
+[40/55] Emitting module GitHubPetPackageTests
+[40/55] Write Objects.LinkFileList
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/Testing.framework/Versions/A/Testing' which was built for newer version 14.0
+[41/55] Linking GitHubPetPackageTests
+[43/55] Compiling GitHubPet MascotWindow.swift
+[44/55] Compiling GitHubPet SettingsView.swift
+[45/55] Compiling GitHubPet SnapshotRenderer.swift
+[46/55] Emitting module GitHubPet
+[47/55] Compiling GitHubPet LaunchOptions.swift
+[52/55] Compiling GitHubPet MascotView.swift
+[53/56] Compiling GitHubPet WindowPresenter.swift
+[53/56] Write Objects.LinkFileList
+[54/56] Linking GitHubPet
+[55/56] Applying GitHubPet
+Build complete! (43.52s)
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite URLSessionStatusTransportTests started.
+◇ Suite ProcessRunnerTests started.
+◇ Test slowDripHitsTheTotalDeadline() started.
+◇ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() started.
+✔ Test slowDripHitsTheTotalDeadline() passed after 2.023 seconds.
+✔ Suite URLSessionStatusTransportTests passed after 2.023 seconds.
+✔ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() passed after 4.017 seconds.
+✔ Suite ProcessRunnerTests passed after 4.017 seconds.
+✔ Test run with 2 tests in 2 suites passed after 4.017 seconds.

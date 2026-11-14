@@ -1,0 +1,6 @@
+{"conclusion": "success", "headSha": "bb44d7b47c300793b7a9ab30c73a9844b5f16f82", "status": "completed"}
+PASS actual CI deliberate fixture injection/replay/incident scenarios
+PASS actual CI full render-check; normal-load artifact does not simulate a >staleAfter render gap
+build-and-test	Test	2026-11-14T19:47:59.6774170Z ✔ Test run with 278 tests passed after 117.697 seconds.
+build-and-test	GUI render check	2026-11-14T19:52:56.0955990Z SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)
+build-and-test	GUI render check	2026-11-14T19:52:56.3320940Z render-check: all checks passed (.build/render-check)

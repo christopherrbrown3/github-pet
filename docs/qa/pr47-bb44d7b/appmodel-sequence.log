@@ -1,0 +1,116 @@
+HEAD bb44d7b47c300793b7a9ab30c73a9844b5f16f82
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+PASS gap=601 entitlement refresh=false baseline silent
+PASS gap=601 entitlement refresh=false domain gap exceeds staleAfter
+PASS gap=601 entitlement refresh=false exactly one new row
+PASS gap=601 entitlement refresh=false negative control stays silent stale recovery
+PASS gap=601 entitlement refresh=false unchanged/replayed snapshot none
+PASS gap=601 entitlement refresh=true baseline silent
+PASS gap=601 entitlement refresh=true domain gap exceeds staleAfter
+PASS gap=601 entitlement refresh=true recovery silent and fresh
+PASS gap=601 entitlement refresh=true recovery rows unchanged
+PASS gap=601 entitlement refresh=true exactly one new row
+PASS gap=601 entitlement refresh=true new event once
+PASS gap=601 entitlement refresh=true unchanged/replayed snapshot none
+PASS gap=601 workflow refresh=false baseline silent
+PASS gap=601 workflow refresh=false domain gap exceeds staleAfter
+PASS gap=601 workflow refresh=false exactly one new row
+PASS gap=601 workflow refresh=false negative control stays silent stale recovery
+PASS gap=601 workflow refresh=false unchanged/replayed snapshot none
+PASS gap=601 workflow refresh=true baseline silent
+PASS gap=601 workflow refresh=true domain gap exceeds staleAfter
+PASS gap=601 workflow refresh=true recovery silent and fresh
+PASS gap=601 workflow refresh=true recovery rows unchanged
+PASS gap=601 workflow refresh=true exactly one new row
+PASS gap=601 workflow refresh=true new event once
+PASS gap=601 workflow refresh=true unchanged/replayed snapshot none
+PASS gap=601 major refresh=false baseline silent
+PASS gap=601 major refresh=false domain gap exceeds staleAfter
+PASS gap=601 major refresh=false exactly one new row
+PASS gap=601 major refresh=false negative control stays silent stale recovery
+PASS gap=601 major refresh=false unchanged/replayed snapshot none
+PASS gap=601 major refresh=true baseline silent
+PASS gap=601 major refresh=true domain gap exceeds staleAfter
+PASS gap=601 major refresh=true recovery silent and fresh
+PASS gap=601 major refresh=true recovery rows unchanged
+PASS gap=601 major refresh=true exactly one new row
+PASS gap=601 major refresh=true new event once
+PASS gap=601 major refresh=true unchanged/replayed snapshot none
+PASS gap=601 critical refresh=false baseline silent
+PASS gap=601 critical refresh=false domain gap exceeds staleAfter
+PASS gap=601 critical refresh=false exactly one new row
+PASS gap=601 critical refresh=false negative control stays silent stale recovery
+PASS gap=601 critical refresh=false unchanged/replayed snapshot none
+PASS gap=601 critical refresh=true baseline silent
+PASS gap=601 critical refresh=true domain gap exceeds staleAfter
+PASS gap=601 critical refresh=true recovery silent and fresh
+PASS gap=601 critical refresh=true recovery rows unchanged
+PASS gap=601 critical refresh=true exactly one new row
+PASS gap=601 critical refresh=true new event once
+PASS gap=601 critical refresh=true unchanged/replayed snapshot none
+PASS gap=1062 entitlement refresh=false baseline silent
+PASS gap=1062 entitlement refresh=false domain gap exceeds staleAfter
+PASS gap=1062 entitlement refresh=false exactly one new row
+PASS gap=1062 entitlement refresh=false negative control stays silent stale recovery
+PASS gap=1062 entitlement refresh=false unchanged/replayed snapshot none
+PASS gap=1062 entitlement refresh=true baseline silent
+PASS gap=1062 entitlement refresh=true domain gap exceeds staleAfter
+PASS gap=1062 entitlement refresh=true recovery silent and fresh
+PASS gap=1062 entitlement refresh=true recovery rows unchanged
+PASS gap=1062 entitlement refresh=true exactly one new row
+PASS gap=1062 entitlement refresh=true new event once
+PASS gap=1062 entitlement refresh=true unchanged/replayed snapshot none
+PASS gap=1062 workflow refresh=false baseline silent
+PASS gap=1062 workflow refresh=false domain gap exceeds staleAfter
+PASS gap=1062 workflow refresh=false exactly one new row
+PASS gap=1062 workflow refresh=false negative control stays silent stale recovery
+PASS gap=1062 workflow refresh=false unchanged/replayed snapshot none
+PASS gap=1062 workflow refresh=true baseline silent
+PAGitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+GitHubPet: mascot placeholder (no pack)
+SS gap=1062 workflow refresh=true domain gap exceeds staleAfter
+PASS gap=1062 workflow refresh=true recovery silent and fresh
+PASS gap=1062 workflow refresh=true recovery rows unchanged
+PASS gap=1062 workflow refresh=true exactly one new row
+PASS gap=1062 workflow refresh=true new event once
+PASS gap=1062 workflow refresh=true unchanged/replayed snapshot none
+PASS gap=1062 major refresh=false baseline silent
+PASS gap=1062 major refresh=false domain gap exceeds staleAfter
+PASS gap=1062 major refresh=false exactly one new row
+PASS gap=1062 major refresh=false negative control stays silent stale recovery
+PASS gap=1062 major refresh=false unchanged/replayed snapshot none
+PASS gap=1062 major refresh=true baseline silent
+PASS gap=1062 major refresh=true domain gap exceeds staleAfter
+PASS gap=1062 major refresh=true recovery silent and fresh
+PASS gap=1062 major refresh=true recovery rows unchanged
+PASS gap=1062 major refresh=true exactly one new row
+PASS gap=1062 major refresh=true new event once
+PASS gap=1062 major refresh=true unchanged/replayed snapshot none
+PASS gap=1062 critical refresh=false baseline silent
+PASS gap=1062 critical refresh=false domain gap exceeds staleAfter
+PASS gap=1062 critical refresh=false exactly one new row
+PASS gap=1062 critical refresh=false negative control stays silent stale recovery
+PASS gap=1062 critical refresh=false unchanged/replayed snapshot none
+PASS gap=1062 critical refresh=true baseline silent
+PASS gap=1062 critical refresh=true domain gap exceeds staleAfter
+PASS gap=1062 critical refresh=true recovery silent and fresh
+PASS gap=1062 critical refresh=true recovery rows unchanged
+PASS gap=1062 critical refresh=true exactly one new row
+PASS gap=1062 critical refresh=true new event once
+PASS gap=1062 critical refresh=true unchanged/replayed snapshot none
+RESULT checks=96 failures=0; clock seam only, no sleep/render/desktop claim
+
+EXIT 0

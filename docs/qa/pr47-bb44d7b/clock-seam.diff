@@ -1,0 +1,11 @@
+--- exact-head/AppModel.swift
++++ QA-copy/AppModel.swift
+@@ -40,7 +40,7 @@
+     let packErrors: [MascotPackError]
+ 
+     private let store: SettingsStore
+-    let clockOffset: TimeInterval
++    var clockOffset: TimeInterval
+     private let pollsPeriodically: Bool
+     private let engine = InboxEngine()
+     private let simulator = FixtureSimulator()

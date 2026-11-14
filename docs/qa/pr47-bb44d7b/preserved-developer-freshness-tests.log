@@ -1,0 +1,29 @@
+[0/1] Planning build
+Building for debugging...
+[0/5] Write sources
+[1/5] Write swift-version--1AB21518FC5DEDBE.txt
+[3/9] Emitting module GitHubPetCoreTests
+[4/9] Compiling GitHubPetCoreTests InboxEngineTests.swift
+[4/10] Write Objects.LinkFileList
+[6/10] Compiling GitHubPet SnapshotRenderer.swift
+[7/10] Emitting module GitHubPet
+[7/11] Write Objects.LinkFileList
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/Testing.framework/Versions/A/Testing' which was built for newer version 14.0
+[8/11] Linking GitHubPetPackageTests
+[9/11] Linking GitHubPet
+[10/11] Applying GitHubPet
+Build complete! (2.66s)
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite InboxEngineTests started.
+◇ Test pollsFurtherApartThanStaleAfterAreNotComparable() started.
+◇ Test refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() started.
+◇ Test staleRecoveryDoesNotReplay() started.
+◇ Test clockGoingBackwardsIsNotComparable() started.
+✔ Test staleRecoveryDoesNotReplay() passed after 0.001 seconds.
+✔ Test clockGoingBackwardsIsNotComparable() passed after 0.001 seconds.
+✔ Test pollsFurtherApartThanStaleAfterAreNotComparable() passed after 0.001 seconds.
+✔ Test refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() passed after 0.001 seconds.
+✔ Suite InboxEngineTests passed after 0.001 seconds.
+✔ Test run with 4 tests in 1 suite passed after 0.001 seconds.
