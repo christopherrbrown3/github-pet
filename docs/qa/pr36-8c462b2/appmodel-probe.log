@@ -1,0 +1,62 @@
+HEAD 8c462b2673af0b6cafae7018d3e132f0b906d2d8
+COMMAND ['/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr36-8c462b2/focused-probe']
+GitHubPet: mascot placeholder (no pack)
+system-reduce-motion=false
+PASS baseline minor static
+PASS minor injection decoded Demo
+PASS incident leaves inbox badge unchanged
+PASS minor event once
+PASS minor starts burst
+PASS unchanged poll preserves burst
+PASS major tier
+PASS major starts distinct burst
+PASS critical tier
+PASS critical starts distinct burst
+PASS critical repeated silent
+PASS deescalation silent
+PASS rereaching critical silent
+PASS maintenance ignored
+PASS service-only failure retained rows and inbox
+PASS failure never empty
+PASS failure clears hidden burst
+PASS quick recovery static
+PASS service-only stale retained rows and inbox
+PASS stale clears burst and marker
+PASS stale recovery static
+PASS reset baseline cancels burst and unseen
+PASS resolve hides marker cancels burst
+PASS quick reopen static
+PASS disconnect cancels burst
+PASS reconnect static
+PASS reduce has positive precondition
+PASS reduce cancels immediately retains monitoring
+PASS reduce static phase
+PASS reduce suppresses new burst
+PASS reduce no replay after unsuppress
+PASS quiet has positive precondition
+PASS quiet cancels immediately retains monitoring
+PASS quiet static phase
+PASS quiet suppresses new burst
+PASS quiet no replay after unsuppress
+PASS snooze has positive precondition
+PASS snooze cancels immediately retains monitoring
+PASS snooze static phase
+PASS snooze suppresses new burst
+PASS snooze no replay after unsuppress
+PASS ASCII ID rejects "q́"
+PASS ASCII ID rejects "1⃣"
+PASS ASCII ID rejects "ａｂ"
+PASS ASCII ID rejects "a​"
+PASS ASCII ID rejects "ABC"
+PASS ASCII ID rejects "../a"
+PASS over-capacity baseline silent
+PASS over-capacity unchanged 1
+PASS over-capacity unchanged 2
+PASS over-capacity unchanged 3
+PASS over-capacity tier major once
+PASS over-capacity tier major no replay
+PASS over-capacity tier critical once
+PASS over-capacity tier critical no replay
+RESULT checks=55 failures=0
+
+EXIT 0

@@ -1,0 +1,6 @@
+swift build exit 0
+test.sh exit 1
+build-app exit 0
+ 9:03  up 8 days, 23:04, 1 user, load averages: 20.46 17.59 15.47
+render-check exit 1
+ 9:34  up 8 days, 23:35, 1 user, load averages: 61.92 29.45 20.09

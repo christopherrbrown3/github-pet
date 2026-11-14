@@ -1,0 +1,14 @@
+HEAD 8c462b2673af0b6cafae7018d3e132f0b906d2d8
+COMMAND ['/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr36-8c462b2/stills-probe', '/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr36-8c462b2', '/Users/chris/github-pet-worktrees/qa-verify-8c462b2/assets/mascots/mona-pet-v1']
+GitHubPet: mascot pack mona-pet-v1 loaded from /Users/chris/github-pet-worktrees/qa-verify-8c462b2/assets/mascots/mona-pet-v1
+PASS rendered focused-64-critical-static.png bytes=29669
+PASS rendered focused-64-critical-static-dark.png bytes=30054
+PASS rendered focused-64-major-fade.png bytes=27325
+PASS rendered focused-128-critical-static.png bytes=81000
+PASS rendered focused-128-critical-static-dark.png bytes=81743
+PASS rendered focused-128-major-fade.png bytes=75644
+PASS rendered focused-256-critical-static.png bytes=226450
+PASS rendered focused-256-critical-static-dark.png bytes=228870
+PASS rendered focused-256-major-fade.png bytes=207538
+
+EXIT 0

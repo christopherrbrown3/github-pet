@@ -1,0 +1,39 @@
+Building for debugging...
+[0/7] Write sources
+[2/7] Write GitHubPet-entitlement.plist
+[3/7] Write swift-version--1AB21518FC5DEDBE.txt
+[5/25] Compiling GitHubPetCore MascotPack.swift
+[6/25] Compiling GitHubPetCore Models.swift
+[7/25] Compiling GitHubPetCore SafeLink.swift
+[8/25] Compiling GitHubPetCore ServiceStatus.swift
+[9/25] Compiling GitHubPetCore ServiceStatusClient.swift
+[10/25] Compiling GitHubPetCore ServiceStatusFixtures.swift
+[11/25] Compiling GitHubPetCore ServiceStatusMonitor.swift
+[12/25] Compiling GitHubPetCore Session.swift
+[13/27] Emitting module GitHubPetCore
+[14/27] Compiling GitHubPetCore EventTracker.swift
+[15/27] Compiling GitHubPetCore FixtureSimulator.swift
+[16/27] Compiling GitHubPetCore GestureCancellation.swift
+[17/27] Compiling GitHubPetCore IncidentMarker.swift
+[18/27] Compiling GitHubPetCore IncidentMarkerSpec.swift
+[19/27] Compiling GitHubPetCore Mascot.swift
+[20/27] Compiling GitHubPetCore GitHubCLI.swift
+[21/27] Compiling GitHubPetCore HoverPlacement.swift
+[22/27] Compiling GitHubPetCore InboxEngine.swift
+[23/27] Compiling GitHubPetCore Settings.swift
+[24/27] Compiling GitHubPetCore SourceGenerations.swift
+[25/37] Compiling GitHubPet MascotWindow.swift
+[26/37] Compiling GitHubPet InboxView.swift
+[27/37] Compiling GitHubPet IncidentMarkerView.swift
+[28/37] Compiling GitHubPet LaunchOptions.swift
+[29/37] Compiling GitHubPet SnapshotRenderer.swift
+[30/37] Compiling GitHubPet AppModel.swift
+[31/37] Compiling GitHubPet GitHubPetApp.swift
+[32/37] Emitting module GitHubPet
+[33/37] Compiling GitHubPet MascotView.swift
+[34/37] Compiling GitHubPet SettingsView.swift
+[35/38] Compiling GitHubPet WindowPresenter.swift
+[35/38] Write Objects.LinkFileList
+[36/38] Linking GitHubPet
+[37/38] Applying GitHubPet
+Build complete! (52.24s)

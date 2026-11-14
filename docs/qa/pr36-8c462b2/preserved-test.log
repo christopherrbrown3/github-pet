@@ -1,0 +1,776 @@
+[0/1] Planning build
+Building for debugging...
+[0/8] Write sources
+[1/8] /Users/chris/github-pet-worktrees/qa-verify-8c462b2/.build/arm64-apple-macosx/debug/GitHubPetPackageTests.derived/runner.swift
+[2/9] Write sources
+[3/9] Write swift-version--1AB21518FC5DEDBE.txt
+[5/27] Compiling GitHubPetCore ServiceStatusMonitor.swift
+[6/27] Compiling GitHubPetCore Session.swift
+[7/29] Compiling GitHubPetCore ServiceStatusClient.swift
+[8/29] Compiling GitHubPetCore ServiceStatusFixtures.swift
+[9/29] Compiling GitHubPetCore Settings.swift
+[10/29] Compiling GitHubPetCore SourceGenerations.swift
+[11/29] Emitting module GitHubPetCore
+[12/29] Compiling GitHubPetCore GitHubCLI.swift
+[13/29] Compiling GitHubPetCore HoverPlacement.swift
+[14/29] Compiling GitHubPetCore InboxEngine.swift
+[15/29] Compiling GitHubPetCore MascotPack.swift
+[16/29] Compiling GitHubPetCore Models.swift
+[17/29] Compiling GitHubPetCore SafeLink.swift
+[18/29] Compiling GitHubPetCore ServiceStatus.swift
+[19/29] Compiling GitHubPetCore EventTracker.swift
+[20/29] Compiling GitHubPetCore FixtureSimulator.swift
+[21/29] Compiling GitHubPetCore GestureCancellation.swift
+[22/29] Compiling GitHubPetCore IncidentMarker.swift
+[23/29] Compiling GitHubPetCore IncidentMarkerSpec.swift
+[24/29] Compiling GitHubPetCore Mascot.swift
+[25/49] Emitting module GitHubPet
+[26/50] Compiling GitHubPet WindowPresenter.swift
+[27/50] Compiling GitHubPet MascotWindow.swift
+[28/50] Compiling GitHubPet SettingsView.swift
+[29/50] Compiling GitHubPet LaunchOptions.swift
+[30/50] Compiling GitHubPet InboxView.swift
+[31/50] Compiling GitHubPet IncidentMarkerView.swift
+[32/50] Compiling GitHubPet MascotView.swift
+[33/50] Compiling GitHubPet AppModel.swift
+[34/50] Compiling GitHubPet GitHubPetApp.swift
+[35/50] Compiling GitHubPet SnapshotRenderer.swift
+[35/49] Linking GitHubPet
+[36/49] Applying GitHubPet
+[38/49] Compiling GitHubPetCoreTests ServiceStatusTests.swift
+[39/49] Compiling GitHubPetCoreTests MascotPackTests.swift
+[40/49] Compiling GitHubPetCoreTests IncidentMarkerTests.swift
+[41/49] Compiling GitHubPetCoreTests MascotTests.swift
+[42/49] Emitting module GitHubPetCoreTests
+[45/49] Compiling GitHubPetCoreTests InboxEngineTests.swift
+[48/50] Compiling GitHubPetCoreTests SettingsTests.swift
+[49/52] Compiling GitHubPetPackageTests runner.swift
+[50/52] Emitting module GitHubPetPackageTests
+[50/52] Write Objects.LinkFileList
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/Testing.framework/Versions/A/Testing' which was built for newer version 14.0
+[51/52] Linking GitHubPetPackageTests
+Build complete! (9.83s)
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite EventTrackerTests started.
+◇ Suite IncidentMarkerSpecTests started.
+◇ Suite EventClipQueueTests started.
+◇ Suite SafeLinkTests started.
+◇ Suite MascotPackLimitTests started.
+◇ Suite PrivacyTextTests started.
+◇ Suite SnoozeTests started.
+◇ Suite GhClientTests started.
+◇ Suite FrameClockTests started.
+◇ Suite SystemNotificationObserverTests started.
+◇ Suite MascotLayoutTests started.
+◇ Suite FixtureSimulatorTests started.
+◇ Suite QuietHoursTests started.
+◇ Suite StatusPageDecoderTests started.
+◇ Suite AccessibilitySourceTests started.
+◇ Suite GestureCancellationTests started.
+◇ Suite AccountSessionTests started.
+◇ Suite IncidentMarkerStateTests started.
+◇ Suite MascotAnimatorTests started.
+◇ Suite WorkflowFailureFixtureTests started.
+◇ Suite ServiceStatusPolicyTests started.
+◇ Suite SourceGenerationTests started.
+◇ Suite ServiceStatusMonitorTests started.
+◇ Suite CompactSummaryTests started.
+◇ Suite BundledPackTests started.
+◇ Suite GhLocatorTests started.
+◇ Suite ArtBoundsTests started.
+◇ Suite MascotPackTests started.
+◇ Suite HoverPlacementInputsTests started.
+◇ Suite URLSessionStatusTransportTests started.
+◇ Suite ServiceStatusLinkTests started.
+◇ Suite ServiceStatusSimulatorActionTests started.
+◇ Suite ProcessRunnerTests started.
+◇ Suite PanelPositionTests started.
+◇ Suite AttentionGestureTests started.
+◇ Suite MascotBadgeCapTests started.
+◇ Suite UnseenItemsTests started.
+◇ Suite ServiceStatusSimulatorTests started.
+◇ Suite DemoLabelTests started.
+◇ Suite ValidatedBytesTests started.
+◇ Suite IncidentMarkerTextTests started.
+◇ Suite IncidentMarkerGeometryTests started.
+◇ Suite MascotPolicyTests started.
+◇ Suite StatusTransportUnitTests started.
+◇ Suite HoverPlacementTests started.
+◇ Suite SettingsPersistenceTests started.
+◇ Suite ServiceStatusClientTests started.
+◇ Suite InboxEngineTests started.
+◇ Test arrivalsDuringAGestureMergeWithoutRestarting() started.
+◇ Test notPlayableQueuesNothingAndNeverReplays() started.
+◇ Test playsOnceThenSettles() started.
+◇ Test oneBatchIsOneGesture() started.
+◇ Test transcribedSpecMatchesDesignJSON() started.
+◇ Test easeMatchesTheCurveEnds() started.
+◇ Test urgentPreemptsAndTheInterruptedWaveIsNotReplayed() started.
+◇ Test everyPaletteTokenIsUsableInBothAppearances() started.
+◇ Test geometryStaysBelowTheKeepOut() started.
+◇ Test capacityIsBoundedAndEvictsOldestFirst() started.
+◇ Test snoozeExpiresExactlyAtDeadline() started.
+◇ Test oversizedImageIsRejectedBeforeDecoding() started.
+◇ Test quietHoursAlsoBlockAlerts() started.
+◇ Test headerOnlyPNGIsRejectedAsUndecodable() started.
+◇ Test sixtyFourOverrideAppliesBelowNinetySix() started.
+◇ Test emptyIDIsIgnored() started.
+◇ Test seedKeepsEarlierObservations() started.
+◇ Test newIDAfterBaselineIsReportedOnce() started.
+◇ Test overLimitFrameCountSkipsFileValidation() started.
+◇ Test fifoManifestAndFrameDoNotBlock() started.
+◇ Test oversizedManifestIsRejected() started.
+◇ Test nonComparableSnapshotRecordsSilently() started.
+◇ Test untilTomorrowMorning() started.
+◇ Test firstObservationBeforeBaselineIsNotReported() started.
+◇ Test rejectsEverythingElse(_:) started.
+◇ Test loopsThroughDurations() started.
+◇ Test wrongDimensionsAreRejectedBeforeDecoding() started.
+◇ Test deinitRemovesTheObservation() started.
+◇ Test reducedMotionPinsFirstFrame() started.
+◇ Test degradedStatesAreStatedInSummary() started.
+◇ Test oneShotHoldsLastFrame() started.
+◇ Test opaquePNGWithoutAlphaIsRejected() started.
+◇ Test privacyHidesRepositoryAndTitleEverywhere() started.
+◇ Test nilIsRejected() started.
+◇ Test moreMatchesThanTheCapIsPartial() started.
+◇ Test firesWhileAliveAndStopsAfterwards() started.
+◇ Test boundedReadAcceptsExactlyTheLimit() started.
+◇ Test repositoryRenameKeepsTheItemsIdentity() started.
+◇ Test injectedEntitlementFiresExactlyOneUniqueEvent() started.
+◇ Test durationsBelowMinimumAreRaised() started.
+◇ Test oneFailedSearchMakesSnapshotPartial() started.
+◇ Test nearTouchCountTracksEveryPoseAtTheGap() started.
+◇ Test resizingKeepsTheGroundPointOnScreen() started.
+◇ Test fullLabelsFitWithTheMinimumGapAtEverySize() started.
+◇ Test fixtureLinksAreSafe() started.
+◇ Test partialPollsStayPartialUntilTurnedOff() started.
+◇ Test allowsHTTPSGitHub(_:) started.
+◇ Test unknownArtKeepsLabelsAboveTheArtSquare() started.
+◇ Test eventInjectedWhileDisconnectedIsNotReplayedOnReconnect() started.
+◇ Test intermediateSizesInterpolateAndRoundUp() started.
+◇ Test designMetricsAtTheSpecifiedSizes() started.
+◇ Test launchFailureIsTreatedAsMissing() started.
+◇ Test withoutPrivacyShowsDetails() started.
+◇ Test authFailureOnTheRequestIsUnauthenticated() started.
+◇ Test exitCodeFourMeansAuthRequired() started.
+◇ Test wrapsPastMidnightWithHalfOpenBoundaries() started.
+◇ Test missingViewerIsAFailureNotAnEmptyInbox() started.
+◇ Test oneRequestReturnsAccountAndItemsWithStableIDs() started.
+◇ Test onlyTheActiveAccountIsChecked() started.
+◇ Test sameDayWindow() started.
+◇ Test oldGhWithoutActiveFlagLetsTheRequestDecide() started.
+◇ Test tooManyIncidentsIsRejected() started.
+◇ Test loggedOutGhIsUnauthenticated() started.
+◇ Test minutesAreClamped() started.
+◇ Test newerResolvedRecordRetiresOlderOpenOne() started.
+◇ Test invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test wallClockIsPreservedAcrossDaylightSavingFallBack() started.
+◇ Test equalStartAndEndMeansNoQuietTime() started.
+◇ Test maintenanceAndResolvedAreNeverIncidents() started.
+◇ Test disabledNeverQuiet() started.
+◇ Test accountAlwaysComesFromTheSameResponseAsItsItems() started.
+◇ Test clearanceFollowsTheCapsulesRoundedEnds() started.
+◇ Test namesAreSingleLineAndBounded() started.
+◇ Test missingGhIsReportedWithoutRunningAnything() started.
+◇ Test missingUpdatedAtFallsBackToCreated() started.
+◇ Test missingRequiredFieldIsMalformed() started.
+◇ Test sampleKeepsOnlyUnresolvedIncidents() started.
+◇ Test usesCalendarTimeZone() started.
+◇ Test liftingSnoozeOrMotionDoesNotCancelOrReplay() started.
+◇ Test snoozeAndReduceMotionCancelAtOnce() started.
+◇ Test quietHoursCancelOnlyWhenTheyCoverNow() started.
+◇ Test everyUnresolvedStatusIsAnIncident() started.
+◇ Test nodesWithoutAnIDAreSkipped() started.
+◇ Test switchingAccountsStartsAFreshBaselineWithoutEvents() started.
+◇ Test malformedPayloadsAreRejected(_:_:) started.
+◇ Test dedupesByIDKeepingLatestAndSortsBySeverity() started.
+◇ Test staticUnderReduceMotionQuietOrSnooze() started.
+◇ Test settleCrossfadesToStaticOverTheLastSixHundredMs() started.
+◇ Test onlyAFreshConfirmedIncidentShowsTheMarker() started.
+◇ Test tiersAreOrdered() started.
+◇ Test burstEndsWhenTheMarkerIsHidden() started.
+◇ Test bothSearchesFailingOrMalformedOutputIsAnError() started.
+◇ Test firstAccountAndFailedPollsAreNotChanges() started.
+◇ Test burstPlaysSixSecondsThenHoldsStatic() started.
+◇ Test monitorDrivenStates() started.
+◇ Test tierRiseFadesOnlyNewLayers() started.
+◇ Test newIncidentFadesEveryLayerInByOpacity() started.
+◇ Test layersPerTier() started.
+◇ Test suppressedClipsMeanStaticMoodPoses() started.
+◇ Test staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() started.
+◇ Test everyNewClipReplaysFromFirstFrameEvenInAttentionMood() started.
+◇ Test clipLastsTwoSecondsFromItsStart() started.
+◇ Test idleLoopsOnTheSuppliedClock() started.
+◇ Test clipTimingUsesTheSameClockAsTheQueue() started.
+◇ Test emptyListDecodesAsNone() started.
+◇ Test incidentRowsFollowPrivacy() started.
+◇ Test demoIncidentsOpenNothing() started.
+◇ Test urgentIncidentGesturePlaysUrgentAndRespectsMotionSettings() started.
+◇ Test tierFollowsTheMostSevereImpact() started.
+◇ Test everySliderHasAnAccessibilityLabel() started.
+◇ Test reducedMotionIgnoresClipAndIdleLoop() started.
+◇ Test majorIncidentMakesTheMascotUrgent() started.
+◇ Test inboxMoodIsKept() started.
+◇ Test switchingSourcesNeverLeaksRowsBetweenSessions() started.
+◇ Test atMostTwoLinesAndNoDetails() started.
+◇ Test failureNeverChangesTheMoodByItself() started.
+◇ Test unseenIncidentNeedsAlertsAllowed() started.
+◇ Test startsUnknownNotNone() started.
+◇ Test minorStraightToCriticalIsOneEvent() started.
+◇ Test injectedWorkflowFailureIsUniqueDemoAndUrgent() started.
+◇ Test staleReconnectDoesNotReplay() started.
+◇ Test duplicateIDsInOnePollAreOneIncident() started.
+◇ Test markStaleBreaksComparability() started.
+◇ Test recoveryLeavesWithoutAnimation() started.
+◇ Test oldLastSuccessIsNotComparableEvenWithoutAFreshnessTick() started.
+◇ Test freshNoneAndFreshIncidents() started.
+◇ Test minorIncidentAloneStaysIdle() started.
+◇ Test severityFollowsImpact() started.
+◇ Test repositoryPackIsValid() started.
+◇ Test genuinelyNewIncidentAnimatesOnce() started.
+◇ Test tierReachedWhileNotComparableIsNeverAnnounced() started.
+◇ Test countQualityStaysExplicit() started.
+◇ Test staleNeverAppliesBeforeASuccessOrAfterAnError() started.
+◇ Test resetBaselineKeepsRowsButReseedsSilently() started.
+◇ Test escalationIsAnnouncedOncePerTierReached() started.
+◇ Test snapshotLargerThanMemoryNeverReplays() started.
+◇ Test invalidIDsNeverEnterTheMonitor() started.
+◇ Test updatesReviseSilently() started.
+◇ Test overrideIsTheOnlyCandidate() started.
+◇ Test staleAfterThreshold() started.
+◇ Test failureKeepsLastKnownIncidentsButNotForMood() started.
+◇ Test newMajorIncidentEscalatesOnlyToCritical() started.
+◇ Test baselineDoesNotAnimate() started.
+◇ Test errorReconnectDoesNotReplay() started.
+◇ Test resetForgetsEverythingAndRebaselines() started.
+◇ Test boundedMemoryEvictsOldestNotCurrent() started.
+◇ Test reopeningAtHigherImpactIsNotAnEscalation() started.
+◇ Test loadedPackRecordsTheHighestStaticPose() started.
+◇ Test staleKeepsMajorIncidentUrgent() started.
+◇ Test validPackLoads() started.
+◇ Test failureBeforeAnySuccessIsNotNone() started.
+◇ Test topInsetIsTheFirstVisibleRow() started.
+◇ Test symlinkEscapingPackIsRejected() started.
+◇ Test searchesHomebrewThenAbsolutePathEntriesOnly() started.
+◇ Test symlinkedManifestIsRejected() started.
+◇ Test replacesOnContentPanelMoodOrGestureChanges() started.
+◇ Test urgentOnlyForMajorOrCritical() started.
+◇ Test noSymlinkInsideThePackIsFollowed() started.
+◇ Test ignoresSubPointJitter() started.
+◇ Test clientMapsTransportTimeout() started.
+◇ Test wrongSchemaIsRejected() started.
+◇ Test missingRequiredStateIsRejected() started.
+◇ Test oneShotSequencesMustFitTheirEventClip() started.
+◇ Test failureAfterNoneIsNotNone() started.
+◇ Test declaredOversizeIsRejectedBeforeReading() started.
+◇ Test redirectsAreNotFollowed() started.
+◇ Test exactlyMaxBytesIsAccepted() started.
+◇ Test returnsBodyAndSendsNoCookiesOrCredentials() started.
+◇ Test hangingServerTimesOut() started.
+◇ Test onlyTheV1GroundAnchorIsAccepted() started.
+◇ Test slowDripHitsTheTotalDeadline() started.
+◇ Test wrongFrameSizeAndNonPNGAreRejected() started.
+◇ Test hugeDurationsAreRejectedWithoutCrashing() started.
+◇ Test oversizeStreamIsAbandoned() started.
+◇ Test statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() started.
+◇ Test missingManifestIsRejected() started.
+◇ Test escalateAllToMajorStillWorks() started.
+◇ Test durationRulesAreEnforced() started.
+◇ Test injectEachTierIsANewUrgentOrAttentionEvent() started.
+◇ Test disconnectFailsTheServiceSourceToo() started.
+◇ Test pathTraversalAndAbsolutePathsAreRejected() started.
+◇ Test checksumsAreVerifiedWhenPresent() started.
+◇ Test animatorPlaysTheGestureAndReducedMotionIsStatic() started.
+◇ Test resolveIsQuietAndReopenIsSilent() started.
+◇ Test markStaleHidesTheMarkerAndRecoveryIsSilent() started.
+◇ Test pathsWithNulOrControlCharactersCantEscapeThePack() started.
+◇ Test scheduledMaintenanceIsNeverAnIncident() started.
+◇ Test storyboardFramesAndAngles() started.
+◇ Test escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() started.
+◇ Test leanIsContinuousBoundedAndEased() started.
+◇ Test mostlyVisiblePositionsAreClampedFullyOnScreen() started.
+◇ Test otherURLsAreRejected(_:) started.
+◇ Test mascotCapsAt99PlusAndKeepsSmallerCountsExact() started.
+◇ Test inboxAndAccessibilityKeepTheFullCount() started.
+◇ Test fetchFailureBeforeAnySuccessIsUnknown() started.
+◇ Test invalidIDsHaveNoURL() started.
+◇ Test mostlyOffscreenOrGoneDisplaysFallBack() started.
+◇ Test completeSnapshotPrunesItemsThatAreGone() started.
+◇ Test incidentURLIsTheOnlyAcceptedShape() started.
+◇ Test partialSnapshotKeepsMarkersForMissingItems() started.
+◇ Test disconnectEscalateAndResolve() started.
+◇ Test demoSurvivesPrivacyModeInRowsAndHover() started.
+◇ Test outlinesComeFromTheValidatedBytes() started.
+◇ Test argumentsAreNeverInterpretedByAShell() started.
+◇ Test packNeverReopensItsFilesAfterValidation() started.
+◇ Test accessibilityLabelNamesDemoAndQuality() started.
+◇ Test fixtureItemsAreDemo() started.
+◇ Test clampsIntoTheDisplayItMostlySitsOn() started.
+◇ Test authProblemsAreUrgent() started.
+◇ Test configurationKeepsNoState() started.
+◇ Test countDescriptionsMatchQuality() started.
+◇ Test criticalItemsAreUrgent() started.
+◇ Test unseenEventsNeedAlertsAllowed() started.
+◇ Test injectedIncidentsHaveUniqueValidIDs() started.
+◇ Test defaultFixtureIsDemoAndExcludesMaintenance() started.
+◇ Test redirectsAreRefused() started.
+◇ Test slotNeverOverlapsAnyLabel() started.
+◇ Test fullHoverPutsTheIncidentOnTop() started.
+◇ Test shippedPackEveryFrameIsClearAndWithinTwelvePoints() started.
+◇ Test onlyServerTrustIsHandled(_:_:) started.
+◇ Test unknownDataIsNeverAllClearOrZero() started.
+◇ Test hoverLineNamesThePublicIncident() started.
+◇ Test collectEnforcesTheCap() started.
+◇ Test accessibilityLabelCountsIncidentsSeparately() started.
+◇ Test hoverDuringTheGestureClearsTheSweptLean() started.
+◇ Test flipsLeftAtTheRightScreenEdge() started.
+◇ Test sitsBesideTheCharacterBelowTheTags() started.
+◇ Test leaningCountNeverCrossesTheExactlyRotatedArt() started.
+◇ Test badgeCountsActionableItemsOnly() started.
+◇ Test unionIsTheOutlineNoPoseCrosses() started.
+◇ Test screenWinsOverTheLaneOnlyWhenBothCannotHold() started.
+◇ Test compactHoverStaysTwoLines() started.
+◇ Test attentionOutlineCoversTheSwayEnvelope() started.
+◇ Test roundTripsEveryField() started.
+◇ Test corruptPayloadFallsBackToDefaults() started.
+◇ Test oversizeBodyIsAFailure() started.
+◇ Test defaultsWhenNothingStored() started.
+◇ Test jsonMediaTypeIsAccepted(_:) started.
+◇ Test unexpectedErrorsAreFailures() started.
+◇ Test outOfRangeValuesAreClamped() started.
+◇ Test endpointIsTheOfficialUnauthenticatedAPI() started.
+◇ Test privacyDefaultsOnButAnExplicitChoiceIsKept() started.
+◇ Test partialAndUnknownKeysAreTolerated() started.
+◇ Test nonJSONIsAFailure(_:) started.
+◇ Test successDecodesAndSendsNoCredentials() started.
+◇ Test httpErrorsAreFailures(_:) started.
+◇ Test undecodableBodyIsAFailureNotNone() started.
+◇ Test emptyIsAVerifiedNone() started.
+◇ Test transportErrorsAreFailures(_:_:) started.
+◇ Test redirectedResponseFromAnotherHostIsRejected() started.
+◇ Test endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+◇ Test case passing 1 argument string → "http://github.com/example/repo" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "https://github.com.evil.example/x" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "https://evil.example/github.com" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "https://github.com@evil.example/x" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "https://user:pass@github.com/x" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "https://github.com:8443/x" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "javascript:alert(1)" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "file:///etc/passwd" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "x-github-client://openRepo" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → " https://github.com/x" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "https://github.com/x
+https://evil.example" to rejectsEverythingElse(_:) started.
+◇ Test case passing 1 argument string → "" to rejectsEverythingElse(_:) started.
+◇ Test unchangedPollNeverRetriggers() started.
+◇ Test pollsFurtherApartThanStaleAfterAreNotComparable() started.
+◇ Test resetClearsItemsStateAndTimestamp() started.
+◇ Test genuinelyNewItemFiresExactlyOnce() started.
+◇ Test partialFirstSnapshotDoesNotEstablishBaseline() started.
+◇ Test partialSnapshotsNeverProduceEventsAndAreNotEmpty() started.
+◇ Test staleRecoveryDoesNotReplay() started.
+◇ Test case passing 1 argument string → "https://github.com/example/repo/pull/1" to allowsHTTPSGitHub(_:) started.
+◇ Test case passing 1 argument string → "https://GitHub.com/example/repo/issues/2?x=1#frag" to allowsHTTPSGitHub(_:) started.
+◇ Test case passing 1 argument string → "https://github.com:443/settings/copilot" to allowsHTTPSGitHub(_:) started.
+◇ Test itemThatDisappearsAndReturnsDoesNotReplay() started.
+◇ Test clockGoingBackwardsIsNotComparable() started.
+◇ Test firstSnapshotEstablishesBaselineWithoutEvents() started.
+◇ Test dedupeKeepsNewestPerStableID() started.
+◇ Test explicitResetStillForgetsObservations() started.
+◇ Test snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() started.
+◇ Test idsSeenInPartialPollsBeforeTheBaselineNeverFire() started.
+◇ Test evictionDuringASnapshotNeverReportsExistingIDs() started.
+◇ Test authAndMissingFailuresMapToDistinctStates() started.
+◇ Test resetBaselineReseedsSilently() started.
+◇ Test case passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"exploded","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "status" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"catastrophic","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "impact" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"A1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"../x","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"q́","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test reconnectAfterErrorDoesNotReplayEvenNewItems() started.
+◇ Test case passing 2 arguments incident → "{"id":"1⃣","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"ａ1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"yesterday","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "created_at" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"soon","resolved_at":null,"incident_updates":[],"components":[]}", field → "updated_at" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":"garbage","incident_updates":[],"components":[]}", field → "resolved_at" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments incident → "{"id":"a1","name":"  ","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "name" to invalidIncidentRejectsWholePayload(_:_:) started.
+◇ Test case passing 2 arguments text → "not json", expected → .malformed to malformedPayloadsAreRejected(_:_:) started.
+◇ Test case passing 2 arguments text → "{"incidents":[]}", expected → .malformed to malformedPayloadsAreRejected(_:_:) started.
+◇ Test case passing 2 arguments text → "{"page":{"id":"x"}}", expected → .malformed to malformedPayloadsAreRejected(_:_:) started.
+◇ Test case passing 2 arguments text → "{"page":{"id":""},"incidents":[]}", expected → .malformed to malformedPayloadsAreRejected(_:_:) started.
+◇ Test case passing 2 arguments text → "{"page":{"id":"x"},"incidents":{}}", expected → .malformed to malformedPayloadsAreRejected(_:_:) started.
+◇ Test case passing 2 arguments text → "[]", expected → .malformed to malformedPayloadsAreRejected(_:_:) started.
+◇ Test case passing 1 argument text → "http://www.githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com.evil.example/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://evil.example/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://github.com/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/incidents/abc123?x=1" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/incidents/abc123#top" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com:8443/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://user:pw@www.githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/incidents/abc123/extra" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/incidents/" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/incidents/ABC123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/history" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com/api/v2/incidents/abc123" to otherURLsAreRejected(_:) started.
+◇ Test case passing 1 argument text → "javascript:alert(1)" to otherURLsAreRejected(_:) started.
+◇ Test case passing 2 arguments method → "NSURLAuthenticationMethodHTTPBasic", expected → NSURLSessionAuthChallengeDisposition(rawValue: 2) to onlyServerTrustIsHandled(_:_:) started.
+◇ Test case passing 2 arguments method → "NSURLAuthenticationMethodClientCertificate", expected → NSURLSessionAuthChallengeDisposition(rawValue: 2) to onlyServerTrustIsHandled(_:_:) started.
+◇ Test case passing 2 arguments method → "NSURLAuthenticationMethodServerTrust", expected → NSURLSessionAuthChallengeDisposition(rawValue: 1) to onlyServerTrustIsHandled(_:_:) started.
+✔ Test playsOnceThenSettles() passed after 2.287 seconds.
+✔ Test arrivalsDuringAGestureMergeWithoutRestarting() passed after 2.287 seconds.
+✔ Test notPlayableQueuesNothingAndNeverReplays() passed after 2.287 seconds.
+✔ Test easeMatchesTheCurveEnds() passed after 2.287 seconds.
+✔ Test urgentPreemptsAndTheInterruptedWaveIsNotReplayed() passed after 2.287 seconds.
+✔ Test capacityIsBoundedAndEvictsOldestFirst() passed after 2.287 seconds.
+✔ Test oneBatchIsOneGesture() passed after 2.287 seconds.
+✔ Test geometryStaysBelowTheKeepOut() passed after 2.292 seconds.
+✔ Test emptyIDIsIgnored() passed after 2.292 seconds.
+✔ Test seedKeepsEarlierObservations() passed after 2.292 seconds.
+✔ Test sixtyFourOverrideAppliesBelowNinetySix() passed after 2.298 seconds.
+◇ Test case passing 1 argument type → "application/json" to jsonMediaTypeIsAccepted(_:) started.
+◇ Test case passing 1 argument type → "Application/JSON; charset=utf-8" to jsonMediaTypeIsAccepted(_:) started.
+◇ Test case passing 1 argument type → "application/json ;charset=UTF-8" to jsonMediaTypeIsAccepted(_:) started.
+✔ Test everyPaletteTokenIsUsableInBothAppearances() passed after 2.300 seconds.
+✔ Test newIDAfterBaselineIsReportedOnce() passed after 2.300 seconds.
+✔ Test quietHoursAlsoBlockAlerts() passed after 2.304 seconds.
+◇ Test case passing 1 argument type → nil to nonJSONIsAFailure(_:) started.
+◇ Test case passing 1 argument type → "text/html" to nonJSONIsAFailure(_:) started.
+◇ Test case passing 1 argument type → "application/jsonp" to nonJSONIsAFailure(_:) started.
+◇ Test case passing 1 argument type → "text/json" to nonJSONIsAFailure(_:) started.
+◇ Test case passing 1 argument code → 301 to httpErrorsAreFailures(_:) started.
+◇ Test case passing 1 argument code → 404 to httpErrorsAreFailures(_:) started.
+◇ Test case passing 1 argument code → 429 to httpErrorsAreFailures(_:) started.
+◇ Test case passing 1 argument type → "" to nonJSONIsAFailure(_:) started.
+◇ Test case passing 1 argument code → 500 to httpErrorsAreFailures(_:) started.
+◇ Test case passing 1 argument code → 503 to httpErrorsAreFailures(_:) started.
+◇ Test case passing 2 arguments code → Code(rawValue: -1001), message → "timed out" to transportErrorsAreFailures(_:_:) started.
+◇ Test case passing 2 arguments code → Code(rawValue: -1009), message → "offline" to transportErrorsAreFailures(_:_:) started.
+◇ Test case passing 2 arguments code → Code(rawValue: -1007), message → "unexpected host" to transportErrorsAreFailures(_:_:) started.
+✔ Test transcribedSpecMatchesDesignJSON() passed after 2.308 seconds.
+◇ Test case passing 2 arguments code → Code(rawValue: -1003), message → "network error -1003" to transportErrorsAreFailures(_:_:) started.
+✔ Test firstObservationBeforeBaselineIsNotReported() passed after 2.308 seconds.
+◇ Test case passing 1 argument text → "http://www.githubstatus.com/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+◇ Test case passing 1 argument text → "https://githubstatus.com/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+◇ Test case passing 1 argument text → "https://evil.example/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+✔ Test nonComparableSnapshotRecordsSilently() passed after 2.308 seconds.
+◇ Test case passing 1 argument text → "https://www.githubstatus.com:8443/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+✔ Test untilTomorrowMorning() passed after 2.308 seconds.
+✔ Test loopsThroughDurations() passed after 2.308 seconds.
+✔ Test rejectsEverythingElse(_:) with 12 test cases passed after 2.308 seconds.
+✔ Test reducedMotionPinsFirstFrame() passed after 2.308 seconds.
+✔ Test oneShotHoldsLastFrame() passed after 2.308 seconds.
+✔ Test degradedStatesAreStatedInSummary() passed after 2.308 seconds.
+✔ Test privacyHidesRepositoryAndTitleEverywhere() passed after 2.308 seconds.
+✔ Test nilIsRejected() passed after 2.308 seconds.
+✔ Test moreMatchesThanTheCapIsPartial() passed after 2.308 seconds.
+✔ Test boundedReadAcceptsExactlyTheLimit() passed after 2.308 seconds.
+✔ Test repositoryRenameKeepsTheItemsIdentity() passed after 2.308 seconds.
+✔ Test snoozeExpiresExactlyAtDeadline() passed after 2.308 seconds.
+✔ Test injectedEntitlementFiresExactlyOneUniqueEvent() passed after 2.308 seconds.
+✔ Test durationsBelowMinimumAreRaised() passed after 2.308 seconds.
+✔ Test oneFailedSearchMakesSnapshotPartial() passed after 2.308 seconds.
+✔ Test resizingKeepsTheGroundPointOnScreen() passed after 2.308 seconds.
+✔ Test wrongDimensionsAreRejectedBeforeDecoding() passed after 2.308 seconds.
+✔ Test fixtureLinksAreSafe() passed after 2.308 seconds.
+✔ Test oversizedManifestIsRejected() passed after 2.308 seconds.
+✔ Test allowsHTTPSGitHub(_:) with 3 test cases passed after 2.308 seconds.
+✔ Test partialPollsStayPartialUntilTurnedOff() passed after 2.308 seconds.
+✔ Test eventInjectedWhileDisconnectedIsNotReplayedOnReconnect() passed after 2.308 seconds.
+✔ Test headerOnlyPNGIsRejectedAsUndecodable() passed after 2.309 seconds.
+✔ Test oversizedImageIsRejectedBeforeDecoding() passed after 2.309 seconds.
+✔ Test launchFailureIsTreatedAsMissing() passed after 2.308 seconds.
+✔ Test withoutPrivacyShowsDetails() passed after 2.308 seconds.
+✔ Test authFailureOnTheRequestIsUnauthenticated() passed after 2.308 seconds.
+✔ Test exitCodeFourMeansAuthRequired() passed after 2.308 seconds.
+✔ Test wrapsPastMidnightWithHalfOpenBoundaries() passed after 2.308 seconds.
+✔ Test missingViewerIsAFailureNotAnEmptyInbox() passed after 2.308 seconds.
+✔ Test oneRequestReturnsAccountAndItemsWithStableIDs() passed after 2.308 seconds.
+✔ Test onlyTheActiveAccountIsChecked() passed after 2.308 seconds.
+✔ Test sameDayWindow() passed after 2.308 seconds.
+✔ Test oldGhWithoutActiveFlagLetsTheRequestDecide() passed after 2.308 seconds.
+✔ Test tooManyIncidentsIsRejected() passed after 2.308 seconds.
+✔ Test loggedOutGhIsUnauthenticated() passed after 2.308 seconds.
+✔ Test minutesAreClamped() passed after 2.308 seconds.
+✔ Test intermediateSizesInterpolateAndRoundUp() passed after 2.309 seconds.
+✔ Test opaquePNGWithoutAlphaIsRejected() passed after 2.309 seconds.
+✔ Test wallClockIsPreservedAcrossDaylightSavingFallBack() passed after 2.308 seconds.
+✔ Test equalStartAndEndMeansNoQuietTime() passed after 2.308 seconds.
+✔ Test unknownArtKeepsLabelsAboveTheArtSquare() passed after 2.309 seconds.
+✔ Test overLimitFrameCountSkipsFileValidation() passed after 2.309 seconds.
+✔ Test invalidIncidentRejectsWholePayload(_:_:) with 13 test cases passed after 2.309 seconds.
+✔ Test disabledNeverQuiet() passed after 2.309 seconds.
+✔ Test accountAlwaysComesFromTheSameResponseAsItsItems() passed after 2.309 seconds.
+✔ Test namesAreSingleLineAndBounded() passed after 2.308 seconds.
+✔ Test newerResolvedRecordRetiresOlderOpenOne() passed after 2.309 seconds.
+✔ Test missingGhIsReportedWithoutRunningAnything() passed after 2.309 seconds.
+✔ Test designMetricsAtTheSpecifiedSizes() passed after 2.309 seconds.
+✔ Test missingRequiredFieldIsMalformed() passed after 2.309 seconds.
+✔ Test clearanceFollowsTheCapsulesRoundedEnds() passed after 2.309 seconds.
+✔ Test liftingSnoozeOrMotionDoesNotCancelOrReplay() passed after 2.309 seconds.
+✔ Test usesCalendarTimeZone() passed after 2.309 seconds.
+✔ Test snoozeAndReduceMotionCancelAtOnce() passed after 2.309 seconds.
+✔ Test quietHoursCancelOnlyWhenTheyCoverNow() passed after 2.309 seconds.
+✔ Test missingUpdatedAtFallsBackToCreated() passed after 2.309 seconds.
+✔ Test nodesWithoutAnIDAreSkipped() passed after 2.309 seconds.
+✔ Test malformedPayloadsAreRejected(_:_:) with 6 test cases passed after 2.309 seconds.
+✔ Test switchingAccountsStartsAFreshBaselineWithoutEvents() passed after 2.309 seconds.
+✔ Test staticUnderReduceMotionQuietOrSnooze() passed after 2.309 seconds.
+✔ Test settleCrossfadesToStaticOverTheLastSixHundredMs() passed after 2.309 seconds.
+✔ Test onlyAFreshConfirmedIncidentShowsTheMarker() passed after 2.309 seconds.
+✔ Test tiersAreOrdered() passed after 2.309 seconds.
+✔ Test burstEndsWhenTheMarkerIsHidden() passed after 2.309 seconds.
+✔ Test bothSearchesFailingOrMalformedOutputIsAnError() passed after 2.309 seconds.
+✔ Test firstAccountAndFailedPollsAreNotChanges() passed after 2.309 seconds.
+✔ Test burstPlaysSixSecondsThenHoldsStatic() passed after 2.309 seconds.
+✔ Test monitorDrivenStates() passed after 2.309 seconds.
+✔ Test tierRiseFadesOnlyNewLayers() passed after 2.309 seconds.
+✔ Test newIncidentFadesEveryLayerInByOpacity() passed after 2.309 seconds.
+✔ Test layersPerTier() passed after 2.309 seconds.
+✔ Test suppressedClipsMeanStaticMoodPoses() passed after 2.309 seconds.
+✔ Test staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() passed after 2.309 seconds.
+✔ Test everyNewClipReplaysFromFirstFrameEvenInAttentionMood() passed after 2.309 seconds.
+✔ Test clipLastsTwoSecondsFromItsStart() passed after 2.309 seconds.
+✔ Test idleLoopsOnTheSuppliedClock() passed after 2.309 seconds.
+✔ Test clipTimingUsesTheSameClockAsTheQueue() passed after 2.309 seconds.
+✔ Test emptyListDecodesAsNone() passed after 2.309 seconds.
+✔ Test incidentRowsFollowPrivacy() passed after 2.309 seconds.
+✔ Test urgentIncidentGesturePlaysUrgentAndRespectsMotionSettings() passed after 2.309 seconds.
+✔ Test tierFollowsTheMostSevereImpact() passed after 2.309 seconds.
+✔ Test maintenanceAndResolvedAreNeverIncidents() passed after 2.309 seconds.
+✔ Test reducedMotionIgnoresClipAndIdleLoop() passed after 2.309 seconds.
+✔ Test majorIncidentMakesTheMascotUrgent() passed after 2.310 seconds.
+✔ Test inboxMoodIsKept() passed after 2.310 seconds.
+✔ Test switchingSourcesNeverLeaksRowsBetweenSessions() passed after 2.310 seconds.
+✔ Test atMostTwoLinesAndNoDetails() passed after 2.310 seconds.
+✔ Test failureNeverChangesTheMoodByItself() passed after 2.310 seconds.
+✔ Test unseenIncidentNeedsAlertsAllowed() passed after 2.310 seconds.
+✔ Test startsUnknownNotNone() passed after 2.310 seconds.
+✔ Test minorStraightToCriticalIsOneEvent() passed after 2.310 seconds.
+✔ Test injectedWorkflowFailureIsUniqueDemoAndUrgent() passed after 2.310 seconds.
+✔ Test staleReconnectDoesNotReplay() passed after 2.311 seconds.
+✔ Test duplicateIDsInOnePollAreOneIncident() passed after 2.311 seconds.
+✔ Test markStaleBreaksComparability() passed after 2.311 seconds.
+✔ Test recoveryLeavesWithoutAnimation() passed after 2.311 seconds.
+✔ Test oldLastSuccessIsNotComparableEvenWithoutAFreshnessTick() passed after 2.311 seconds.
+✔ Test freshNoneAndFreshIncidents() passed after 2.311 seconds.
+✔ Test minorIncidentAloneStaysIdle() passed after 2.311 seconds.
+✔ Test severityFollowsImpact() passed after 2.311 seconds.
+✔ Test everySliderHasAnAccessibilityLabel() passed after 2.311 seconds.
+✔ Test genuinelyNewIncidentAnimatesOnce() passed after 2.311 seconds.
+✔ Test tierReachedWhileNotComparableIsNeverAnnounced() passed after 2.311 seconds.
+✔ Test countQualityStaysExplicit() passed after 2.311 seconds.
+✔ Test staleNeverAppliesBeforeASuccessOrAfterAnError() passed after 2.311 seconds.
+✔ Test resetBaselineKeepsRowsButReseedsSilently() passed after 2.311 seconds.
+✔ Test escalationIsAnnouncedOncePerTierReached() passed after 2.311 seconds.
+✔ Test snapshotLargerThanMemoryNeverReplays() passed after 2.311 seconds.
+✔ Test invalidIDsNeverEnterTheMonitor() passed after 2.311 seconds.
+✔ Test updatesReviseSilently() passed after 2.311 seconds.
+✔ Test overrideIsTheOnlyCandidate() passed after 2.311 seconds.
+✔ Test staleAfterThreshold() passed after 2.311 seconds.
+✔ Test failureKeepsLastKnownIncidentsButNotForMood() passed after 2.311 seconds.
+✔ Test newMajorIncidentEscalatesOnlyToCritical() passed after 2.311 seconds.
+✔ Test baselineDoesNotAnimate() passed after 2.311 seconds.
+✔ Test errorReconnectDoesNotReplay() passed after 2.311 seconds.
+✔ Test resetForgetsEverythingAndRebaselines() passed after 2.311 seconds.
+✔ Test boundedMemoryEvictsOldestNotCurrent() passed after 2.311 seconds.
+✔ Test reopeningAtHigherImpactIsNotAnEscalation() passed after 2.311 seconds.
+✔ Test everyUnresolvedStatusIsAnIncident() passed after 2.312 seconds.
+✔ Test staleKeepsMajorIncidentUrgent() passed after 2.311 seconds.
+✔ Test sampleKeepsOnlyUnresolvedIncidents() passed after 2.312 seconds.
+✔ Test failureBeforeAnySuccessIsNotNone() passed after 2.311 seconds.
+✔ Test demoIncidentsOpenNothing() passed after 2.312 seconds.
+✔ Test dedupesByIDKeepingLatestAndSortsBySeverity() passed after 2.312 seconds.
+✔ Test searchesHomebrewThenAbsolutePathEntriesOnly() passed after 2.311 seconds.
+✔ Test symlinkedManifestIsRejected() passed after 2.311 seconds.
+✔ Test replacesOnContentPanelMoodOrGestureChanges() passed after 2.311 seconds.
+✔ Test urgentOnlyForMajorOrCritical() passed after 2.311 seconds.
+✔ Test symlinkEscapingPackIsRejected() passed after 2.311 seconds.
+✔ Test ignoresSubPointJitter() passed after 2.311 seconds.
+✔ Test noSymlinkInsideThePackIsFollowed() passed after 2.311 seconds.
+✔ Test wrongSchemaIsRejected() passed after 2.312 seconds.
+✔ Test missingRequiredStateIsRejected() passed after 2.311 seconds.
+✔ Test failureAfterNoneIsNotNone() passed after 2.312 seconds.
+✔ Test fullLabelsFitWithTheMinimumGapAtEverySize() passed after 2.313 seconds.
+✔ Test wrongFrameSizeAndNonPNGAreRejected() passed after 2.312 seconds.
+✔ Test hugeDurationsAreRejectedWithoutCrashing() passed after 2.312 seconds.
+✔ Test missingManifestIsRejected() passed after 2.312 seconds.
+✔ Test topInsetIsTheFirstVisibleRow() passed after 2.312 seconds.
+✔ Test statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() passed after 2.312 seconds.
+✔ Test durationRulesAreEnforced() passed after 2.312 seconds.
+✔ Test escalateAllToMajorStillWorks() passed after 2.312 seconds.
+✔ Test disconnectFailsTheServiceSourceToo() passed after 2.312 seconds.
+✔ Test pathTraversalAndAbsolutePathsAreRejected() passed after 2.312 seconds.
+✔ Test checksumsAreVerifiedWhenPresent() passed after 2.312 seconds.
+✔ Test animatorPlaysTheGestureAndReducedMotionIsStatic() passed after 2.312 seconds.
+✔ Test injectEachTierIsANewUrgentOrAttentionEvent() passed after 2.312 seconds.
+✔ Test resolveIsQuietAndReopenIsSilent() passed after 2.312 seconds.
+✔ Test markStaleHidesTheMarkerAndRecoveryIsSilent() passed after 2.312 seconds.
+✔ Test pathsWithNulOrControlCharactersCantEscapeThePack() passed after 2.312 seconds.
+✔ Test storyboardFramesAndAngles() passed after 2.312 seconds.
+✔ Test scheduledMaintenanceIsNeverAnIncident() passed after 2.312 seconds.
+✔ Test escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() passed after 2.312 seconds.
+✔ Test mostlyVisiblePositionsAreClampedFullyOnScreen() passed after 2.312 seconds.
+✔ Test otherURLsAreRejected(_:) with 15 test cases passed after 2.312 seconds.
+✔ Test mascotCapsAt99PlusAndKeepsSmallerCountsExact() passed after 2.313 seconds.
+✔ Test inboxAndAccessibilityKeepTheFullCount() passed after 2.313 seconds.
+✔ Test fetchFailureBeforeAnySuccessIsUnknown() passed after 2.313 seconds.
+✔ Test invalidIDsHaveNoURL() passed after 2.313 seconds.
+✔ Test mostlyOffscreenOrGoneDisplaysFallBack() passed after 2.313 seconds.
+✔ Test completeSnapshotPrunesItemsThatAreGone() passed after 2.313 seconds.
+✔ Test incidentURLIsTheOnlyAcceptedShape() passed after 2.313 seconds.
+✔ Test partialSnapshotKeepsMarkersForMissingItems() passed after 2.313 seconds.
+✔ Test disconnectEscalateAndResolve() passed after 2.313 seconds.
+✔ Test demoSurvivesPrivacyModeInRowsAndHover() passed after 2.313 seconds.
+✔ Test leanIsContinuousBoundedAndEased() passed after 2.313 seconds.
+✔ Test accessibilityLabelNamesDemoAndQuality() passed after 3.486 seconds.
+✔ Test fixtureItemsAreDemo() passed after 3.486 seconds.
+✔ Test clampsIntoTheDisplayItMostlySitsOn() passed after 3.486 seconds.
+✔ Test authProblemsAreUrgent() passed after 3.486 seconds.
+✔ Test configurationKeepsNoState() passed after 3.486 seconds.
+✔ Test countDescriptionsMatchQuality() passed after 3.486 seconds.
+✔ Test criticalItemsAreUrgent() passed after 3.486 seconds.
+✔ Test unseenEventsNeedAlertsAllowed() passed after 3.486 seconds.
+✔ Test injectedIncidentsHaveUniqueValidIDs() passed after 3.486 seconds.
+✔ Test defaultFixtureIsDemoAndExcludesMaintenance() passed after 3.486 seconds.
+✔ Test redirectsAreRefused() passed after 3.486 seconds.
+✔ Test fullHoverPutsTheIncidentOnTop() passed after 3.486 seconds.
+✔ Test onlyTheV1GroundAnchorIsAccepted() passed after 3.487 seconds.
+✔ Test validPackLoads() passed after 3.487 seconds.
+✔ Test onlyServerTrustIsHandled(_:_:) with 3 test cases passed after 3.486 seconds.
+✔ Test unknownDataIsNeverAllClearOrZero() passed after 3.486 seconds.
+✔ Test hoverLineNamesThePublicIncident() passed after 3.486 seconds.
+✔ Test collectEnforcesTheCap() passed after 3.486 seconds.
+✔ Test loadedPackRecordsTheHighestStaticPose() passed after 3.487 seconds.
+✔ Test accessibilityLabelCountsIncidentsSeparately() passed after 3.486 seconds.
+✔ Test flipsLeftAtTheRightScreenEdge() passed after 3.486 seconds.
+✔ Test outlinesComeFromTheValidatedBytes() passed after 3.487 seconds.
+✔ Test oneShotSequencesMustFitTheirEventClip() passed after 3.487 seconds.
+✔ Test badgeCountsActionableItemsOnly() passed after 3.486 seconds.
+✔ Test unionIsTheOutlineNoPoseCrosses() passed after 3.486 seconds.
+✔ Test sitsBesideTheCharacterBelowTheTags() passed after 3.486 seconds.
+✔ Test compactHoverStaysTwoLines() passed after 3.486 seconds.
+✔ Test screenWinsOverTheLaneOnlyWhenBothCannotHold() passed after 3.486 seconds.
+✔ Test roundTripsEveryField() passed after 3.486 seconds.
+✔ Test corruptPayloadFallsBackToDefaults() passed after 3.486 seconds.
+✔ Test oversizeBodyIsAFailure() passed after 3.486 seconds.
+✔ Test defaultsWhenNothingStored() passed after 3.486 seconds.
+✔ Test jsonMediaTypeIsAccepted(_:) with 3 test cases passed after 3.486 seconds.
+✔ Test unexpectedErrorsAreFailures() passed after 3.486 seconds.
+✔ Test outOfRangeValuesAreClamped() passed after 3.486 seconds.
+✔ Test endpointIsTheOfficialUnauthenticatedAPI() passed after 3.486 seconds.
+✔ Test privacyDefaultsOnButAnExplicitChoiceIsKept() passed after 3.486 seconds.
+✔ Test partialAndUnknownKeysAreTolerated() passed after 3.486 seconds.
+✔ Test nonJSONIsAFailure(_:) with 5 test cases passed after 3.486 seconds.
+✔ Test successDecodesAndSendsNoCredentials() passed after 3.486 seconds.
+✔ Test httpErrorsAreFailures(_:) with 5 test cases passed after 3.486 seconds.
+✔ Test undecodableBodyIsAFailureNotNone() passed after 3.486 seconds.
+✔ Test emptyIsAVerifiedNone() passed after 3.485 seconds.
+✔ Test transportErrorsAreFailures(_:_:) with 4 test cases passed after 3.485 seconds.
+✔ Test redirectedResponseFromAnotherHostIsRejected() passed after 3.485 seconds.
+✔ Test endpointOutsideTheAllowlistIsNeverRequested(_:) with 4 test cases passed after 3.485 seconds.
+✔ Test unchangedPollNeverRetriggers() passed after 3.485 seconds.
+✔ Test pollsFurtherApartThanStaleAfterAreNotComparable() passed after 3.484 seconds.
+✔ Test resetClearsItemsStateAndTimestamp() passed after 3.483 seconds.
+✔ Test genuinelyNewItemFiresExactlyOnce() passed after 3.483 seconds.
+✔ Test partialFirstSnapshotDoesNotEstablishBaseline() passed after 3.483 seconds.
+✔ Test partialSnapshotsNeverProduceEventsAndAreNotEmpty() passed after 3.483 seconds.
+✔ Test staleRecoveryDoesNotReplay() passed after 3.473 seconds.
+✔ Test itemThatDisappearsAndReturnsDoesNotReplay() passed after 3.462 seconds.
+✔ Test clockGoingBackwardsIsNotComparable() passed after 3.462 seconds.
+✔ Test firstSnapshotEstablishesBaselineWithoutEvents() passed after 3.462 seconds.
+✔ Test dedupeKeepsNewestPerStableID() passed after 3.459 seconds.
+✔ Test explicitResetStillForgetsObservations() passed after 3.459 seconds.
+✔ Test snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() passed after 3.459 seconds.
+✔ Test idsSeenInPartialPollsBeforeTheBaselineNeverFire() passed after 3.458 seconds.
+✔ Test evictionDuringASnapshotNeverReportsExistingIDs() passed after 3.458 seconds.
+✔ Test authAndMissingFailuresMapToDistinctStates() passed after 3.457 seconds.
+✔ Test resetBaselineReseedsSilently() passed after 3.457 seconds.
+✔ Test reconnectAfterErrorDoesNotReplayEvenNewItems() passed after 3.451 seconds.
+✔ Test declaredOversizeIsRejectedBeforeReading() passed after 3.488 seconds.
+✔ Test clientMapsTransportTimeout() passed after 3.490 seconds.
+✔ Suite EventClipQueueTests passed after 3.493 seconds.
+✔ Suite IncidentMarkerSpecTests passed after 3.493 seconds.
+✔ Suite EventTrackerTests passed after 3.493 seconds.
+✔ Suite SnoozeTests passed after 3.493 seconds.
+✔ Suite FrameClockTests passed after 3.493 seconds.
+✔ Suite SafeLinkTests passed after 3.493 seconds.
+✔ Suite PrivacyTextTests passed after 3.493 seconds.
+✔ Suite GhClientTests passed after 3.493 seconds.
+✔ Suite FixtureSimulatorTests passed after 3.493 seconds.
+✔ Suite QuietHoursTests passed after 3.493 seconds.
+✔ Suite StatusPageDecoderTests passed after 3.493 seconds.
+✔ Suite GestureCancellationTests passed after 3.493 seconds.
+✔ Suite AccountSessionTests passed after 3.493 seconds.
+✔ Suite IncidentMarkerStateTests passed after 3.493 seconds.
+✔ Suite MascotAnimatorTests passed after 3.493 seconds.
+✔ Suite SourceGenerationTests passed after 3.493 seconds.
+✔ Suite ServiceStatusPolicyTests passed after 3.493 seconds.
+✔ Suite CompactSummaryTests passed after 3.493 seconds.
+✔ Suite ServiceStatusMonitorTests passed after 3.493 seconds.
+✔ Suite WorkflowFailureFixtureTests passed after 3.493 seconds.
+✔ Suite AccessibilitySourceTests passed after 3.493 seconds.
+✔ Suite GhLocatorTests passed after 3.493 seconds.
+✔ Suite MascotPackTests passed after 3.493 seconds.
+✔ Suite HoverPlacementInputsTests passed after 3.493 seconds.
+✔ Suite ArtBoundsTests passed after 3.493 seconds.
+✔ Suite ServiceStatusSimulatorActionTests passed after 3.493 seconds.
+✔ Suite AttentionGestureTests passed after 3.493 seconds.
+✔ Suite PanelPositionTests passed after 3.493 seconds.
+✔ Suite ServiceStatusLinkTests passed after 3.493 seconds.
+✔ Suite MascotBadgeCapTests passed after 3.493 seconds.
+✔ Suite UnseenItemsTests passed after 3.493 seconds.
+✔ Suite ServiceStatusSimulatorTests passed after 3.493 seconds.
+✔ Suite DemoLabelTests passed after 3.493 seconds.
+✔ Test oversizeStreamIsAbandoned() passed after 3.491 seconds.
+✔ Test redirectsAreNotFollowed() passed after 3.491 seconds.
+✔ Suite MascotPolicyTests passed after 3.493 seconds.
+✔ Suite StatusTransportUnitTests passed after 3.493 seconds.
+✔ Suite IncidentMarkerTextTests passed after 3.494 seconds.
+✔ Suite SettingsPersistenceTests passed after 3.494 seconds.
+✔ Suite ServiceStatusClientTests passed after 3.494 seconds.
+✔ Suite InboxEngineTests passed after 3.494 seconds.
+✔ Test exactlyMaxBytesIsAccepted() passed after 3.491 seconds.
+✔ Test returnsBodyAndSendsNoCookiesOrCredentials() passed after 3.491 seconds.
+✔ Test fifoManifestAndFrameDoNotBlock() passed after 3.493 seconds.
+✔ Test argumentsAreNeverInterpretedByAShell() passed after 3.491 seconds.
+✔ Test packNeverReopensItsFilesAfterValidation() passed after 3.491 seconds.
+✔ Test hangingServerTimesOut() passed after 3.491 seconds.
+✔ Suite MascotPackLimitTests passed after 3.494 seconds.
+✔ Suite ValidatedBytesTests passed after 3.494 seconds.
+✔ Test deinitRemovesTheObservation() passed after 3.493 seconds.
+✔ Test firesWhileAliveAndStopsAfterwards() passed after 3.493 seconds.
+◇ Test nonzeroExitAndStderrAreCaptured() started.
+✔ Suite SystemNotificationObserverTests passed after 3.494 seconds.
+✔ Test nonzeroExitAndStderrAreCaptured() passed after 0.003 seconds.
+◇ Test missingExecutableThrowsLaunchFailed() started.
+✔ Test missingExecutableThrowsLaunchFailed() passed after 0.003 seconds.
+◇ Test searchesArePinnedToGitHubDotCom() started.
+✔ Test searchesArePinnedToGitHubDotCom() passed after 0.006 seconds.
+◇ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() started.
+✔ Test repositoryPackIsValid() passed after 5.598 seconds.
+✔ Suite BundledPackTests passed after 5.601 seconds.
+✔ Test slowDripHitsTheTotalDeadline() passed after 5.598 seconds.
+✔ Suite URLSessionStatusTransportTests passed after 5.601 seconds.
+✘ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() recorded an issue at GitHubCLITests.swift:272:9: Expectation failed: (Date().timeIntervalSince(started) → 386.40320909023285) < 4.5
+↳ collector deadline, not the descendant, bounds the wait
+✘ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() failed after 4.061 seconds with 1 issue.
+◇ Test timeoutTerminatesTheChild() started.
+✔ Test timeoutTerminatesTheChild() passed after 0.311 seconds.
+✘ Suite ProcessRunnerTests failed after 7.881 seconds with 1 issue.
+✔ Test attentionOutlineCoversTheSwayEnvelope() passed after 8.142 seconds.
+✔ Test slotNeverOverlapsAnyLabel() passed after 9.509 seconds.
+✔ Suite IncidentMarkerGeometryTests passed after 9.512 seconds.
+✔ Test hoverDuringTheGestureClearsTheSweptLean() passed after 10.757 seconds.
+✔ Test shippedPackEveryFrameIsClearAndWithinTwelvePoints() passed after 24.534 seconds.
+✔ Test leaningCountNeverCrossesTheExactlyRotatedArt() passed after 28.513 seconds.
+✔ Suite HoverPlacementTests passed after 28.516 seconds.
+✔ Test nearTouchCountTracksEveryPoseAtTheGap() passed after 30.562 seconds.
+✔ Suite MascotLayoutTests passed after 30.563 seconds.
+✘ Test run with 274 tests in 48 suites failed after 30.564 seconds with 1 issue.

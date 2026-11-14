@@ -1,0 +1,10 @@
+Building for production...
+[0/5] Write sources
+[2/5] Write swift-version--1AB21518FC5DEDBE.txt
+[4/6] Compiling GitHubPetCore EventTracker.swift
+[5/7] Compiling GitHubPet AppModel.swift
+[5/7] Write Objects.LinkFileList
+[6/7] Linking GitHubPet
+Build of product 'GitHubPet' complete! (73.86s)
+.build/app/GitHubPet.app: replacing existing signature
+Built .build/app/GitHubPet.app (release, ad-hoc signed)
