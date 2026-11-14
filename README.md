@@ -6,7 +6,7 @@ GitHub Pet is a native macOS app built with SwiftUI and AppKit. An optional anim
 
 No hosted backend. All authenticated GitHub access goes through your locally installed **GitHub CLI (`gh`)**. The app does not own or store GitHub tokens. It opens validated GitHub item links in your browser and performs no approval mutations.
 
-> **In development:** the application prototype is in [PR #18](https://github.com/christopherrbrown3/github-pet/pull/18). The default branch currently contains project setup, artwork, and design specifications. There is no packaged release or working Homebrew install command yet.
+> **In development:** the application is a working prototype on `main` (merged in [PR #18](https://github.com/christopherrbrown3/github-pet/pull/18)). There is no tagged release or Homebrew cask yet; development builds are available as described under [Install a development build](#install-a-development-build).
 
 ## A look at the prototype
 
