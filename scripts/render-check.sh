@@ -130,6 +130,10 @@ for size in 64 128 256; do
     else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
   done
 done
+for case_name in transparent no-candidate; do
+  check_in "hover placement failure diagnostics" "hover failure $case_name logs without crashing" \
+    "^hover failure $case_name: meets-target=false infinite-gap=true report-completed=true"
+done
 check_in "badge stays on screen (real mascot window controller)" "saved half-offscreen position keeps the badge visible" \
   '^badge on screen: panel-inside=true labels-inside=true'
 check_in "badge stays on screen (real mascot window controller)" "a drop past the edge saves where it settles" \

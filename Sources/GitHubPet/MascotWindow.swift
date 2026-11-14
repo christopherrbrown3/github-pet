@@ -195,7 +195,7 @@ final class MascotWindowController {
     static func reportIfUnclear(_ placement: HoverPlacement) {
         guard !placement.meetsTarget else { return }
         FileHandle.standardError.write(Data(("GitHubPet: hover summary has no clear placement "
-            + "(labels clear: \(placement.laneClear), arrow \(Int(placement.arrowGap.rounded())) pt from the art)\n").utf8))
+            + "(labels clear: \(placement.laneClear), arrow \(placement.arrowGap.rounded()) pt from the art)\n").utf8))
     }
 
     /// Beside the visible character (#27): above it, the arrow either covered the DEMO/count

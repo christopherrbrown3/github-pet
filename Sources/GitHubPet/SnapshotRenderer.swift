@@ -152,6 +152,8 @@ enum SnapshotRenderer {
         }
 
 
+        report.append("## hover placement failure diagnostics")
+        report += hoverFailureDiagnostics()
         report.append("## badge stays on screen (real mascot window controller)")
         report.append(await offscreenBadgeProbe(model: model))
         report.append("## hover follows content growth (real mascot window controller)")
@@ -268,6 +270,21 @@ enum SnapshotRenderer {
         let clicked = clicks == 1 && window.frame.origin == CGPoint(x: 2038, y: 2008)
         return "mascot pointer: drop-without-drag-events=\(moved ? "moved" : "FAILED \(window.frame.origin)") "
             + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
+    }
+
+    /// No-candidate placements have an infinite distance: exercise the actual app diagnostic,
+    /// which must log the failure without trapping on an integer conversion (Copilot 4570228227).
+    private static func hoverFailureDiagnostics() -> [String] {
+        let transparent = ArtProfile(canvas: 256, rows: Array(repeating: nil, count: 256))
+        let screen = CGRect(x: 0, y: 0, width: 1440, height: 875)
+        return [("transparent", transparent, CGPoint(x: 600, y: 300)),
+                ("no-candidate", ArtProfile.placeholder, CGPoint(x: 600, y: -1000))].map { name, art, origin in
+            let placement = HoverPlacement.place(art: art, layout: MascotLayout(artSide: 128),
+                                                 popover: CGSize(width: 144, height: 51),
+                                                 panelOrigin: origin, screen: screen)
+            MascotWindowController.reportIfUnclear(placement)
+            return "hover failure \(name): meets-target=\(placement.meetsTarget) infinite-gap=\(placement.arrowGap == .infinity) report-completed=true"
+        }
     }
 
     /// A saved position with 60% of the panel on screen and its badge corner past the right edge

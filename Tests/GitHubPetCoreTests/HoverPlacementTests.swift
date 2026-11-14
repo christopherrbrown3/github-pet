@@ -125,6 +125,19 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
 }
 
 @Suite struct HoverPlacementTests {
+    @Test func missingPlacementCandidatesHaveAnUnknownGapAndFiniteAnchor() {
+        let transparent = ArtProfile(canvas: 256, rows: Array(repeating: nil, count: 256))
+        for (art, origin) in [(transparent, CGPoint(x: 600, y: 300)),
+                              (block, CGPoint(x: 600, y: -1000))] {
+            let placement = HoverPlacement.place(art: art, layout: MascotLayout(artSide: 128), popover: short,
+                                                 panelOrigin: origin, screen: screen)
+            #expect(!placement.meetsTarget)
+            #expect(!placement.laneClear)
+            #expect(placement.arrowGap == .infinity)
+            #expect(placement.tip.x.isFinite && placement.tip.y.isFinite)
+        }
+    }
+
     @Test func sitsBesideTheCharacterBelowTheTags() {
         for side in [CGFloat(64), 128, 256] {
             for popover in [short, tall] {
