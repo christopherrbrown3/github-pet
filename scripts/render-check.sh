@@ -137,7 +137,11 @@ done
 check_in "badge stays on screen (real mascot window controller)" "saved half-offscreen position keeps the badge visible" \
   '^badge on screen: panel-inside=true labels-inside=true'
 check_in "badge stays on screen (real mascot window controller)" "a drop past the edge saves where it settles" \
-  '^dropped past edge: panel-inside=true saved-equals-shown=true'
+  '^dropped past edge: panel-inside=true saved-equals-shown=true expected-origin=true'
+check_in "badge stays on screen (real mascot window controller)" "repeat edge drop repositions despite identical saved settings" \
+  '^dropped past saved edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=true'
+check_in "badge stays on screen (real mascot window controller)" "drop beyond every display saves the displayed default" \
+  '^dropped beyond all displays: panel-inside=true saved-equals-shown=true expected-origin=true'
 check_in "hover follows content growth (real mascot window controller)" "hover re-placed when content grows" \
   '^hover growth: grew=true before-side=right after-side=left art-clear=true labels-clear=true on-screen=true'
 for step in '128->64' '64->256' '256->128'; do

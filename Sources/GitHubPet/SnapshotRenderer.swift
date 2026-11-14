@@ -312,20 +312,32 @@ enum SnapshotRenderer {
         model.settings.mascotOriginY = Double(screen.minY + 200)
         try? await Task.sleep(nanoseconds: 300_000_000)
         if let container = controller?.panelContentView as? MascotContainerView, let window = container.window {
-            let start = window.frame
-            let dx = screen.maxX - start.minX - size.width * 0.6
             func event(_ type: NSEvent.EventType, _ point: CGPoint) -> NSEvent {
                 NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
                                    windowNumber: window.windowNumber, context: nil, eventNumber: 0,
                                    clickCount: 1, pressure: 1)!
             }
-            container.mouseDown(with: event(.leftMouseDown, CGPoint(x: 40, y: 40)))
-            container.mouseUp(with: event(.leftMouseUp, CGPoint(x: 40 + dx, y: 40)))
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            let settled = controller?.panelFrame ?? .null
-            let saved = CGPoint(x: model.settings.mascotOriginX ?? .nan, y: model.settings.mascotOriginY ?? .nan)
-            line += "\ndropped past edge: panel-inside=\(inside.contains(settled)) saved-equals-shown=\(saved == settled.origin) "
-                + "dropped-x-offscreen=\(Int(size.width * 0.4))pt"
+            let edgeDrop = CGPoint(x: screen.maxX - size.width * 0.6, y: screen.minY + 200)
+            let edgeSettled = CGPoint(x: screen.maxX - size.width, y: edgeDrop.y)
+            let beyondEveryDisplay = (NSScreen.screens.map { $0.visibleFrame.maxX }.max() ?? screen.maxX) + size.width
+            let defaultSpot = CGPoint(x: screen.maxX - size.width - 24, y: screen.minY + 24)
+            // The second drop starts at the already-saved edge (same settings after clamping).
+            // The third is wholly off every display and must save the displayed default, not raw input.
+            for (name, target, expected) in [
+                ("dropped past edge", edgeDrop, edgeSettled),
+                ("dropped past saved edge", edgeDrop, edgeSettled),
+                ("dropped beyond all displays", CGPoint(x: beyondEveryDisplay, y: edgeDrop.y), defaultSpot),
+            ] {
+                let start = window.frame.origin
+                let savedBefore = CGPoint(x: model.settings.mascotOriginX ?? .nan, y: model.settings.mascotOriginY ?? .nan)
+                container.mouseDown(with: event(.leftMouseDown, CGPoint(x: 40, y: 40)))
+                container.mouseUp(with: event(.leftMouseUp, CGPoint(x: 40 + target.x - start.x, y: 40 + target.y - start.y)))
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                let settled = controller?.panelFrame ?? .null
+                let saved = CGPoint(x: model.settings.mascotOriginX ?? .nan, y: model.settings.mascotOriginY ?? .nan)
+                line += "\n\(name): panel-inside=\(inside.contains(settled)) saved-equals-shown=\(saved == settled.origin) "
+                    + "expected-origin=\(settled.origin == expected) saved-before-equals-settled=\(savedBefore == expected)"
+            }
         }
         model.settings.mascotVisible = false
         try? await Task.sleep(nanoseconds: 200_000_000)

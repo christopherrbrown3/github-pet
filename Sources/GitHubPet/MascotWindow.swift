@@ -101,8 +101,11 @@ final class MascotWindowController {
         // Save where the panel actually settles: the drop point moved fully on screen (#39), so the
         // saved origin is the one shown and restored.
         container.onDragEnded = { [weak self] origin in
-            guard let self, let size = self.panel?.frame.size else { return }
-            self.saveOrigin(Self.settledOrigin(origin, size: size))
+            guard let self else { return }
+            // Move even if the settled origin equals the last saved value: the settings stream
+            // deduplicates that value, but the dragged window is currently somewhere else.
+            self.update(visible: self.model.settings.mascotVisible, size: self.model.settings.mascotSize, origin: origin)
+            if let actual = self.panel?.frame.origin { self.saveOrigin(actual) }
         }
         container.onHover = { [weak self] inside in
             if inside { self?.showSummary(from: container) } else { self?.hideSummary() }
@@ -260,12 +263,6 @@ final class MascotWindowController {
         Self.reportIfUnclear(placement)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         summaryInputs = inputs(popover: popover, panelFrame: window.frame)
-    }
-
-    /// Where a dropped panel settles: fully on the display it mostly sits on, else unchanged (the
-    /// next update falls back to the default spot).
-    static func settledOrigin(_ origin: CGPoint, size: CGSize) -> CGPoint {
-        PanelPosition.accepted(origin: origin, size: size, visibleFrames: NSScreen.screens.map(\.visibleFrame)) ?? origin
     }
 
     /// The frame's origin moved fully inside the display it mostly sits on (so the count/quality
