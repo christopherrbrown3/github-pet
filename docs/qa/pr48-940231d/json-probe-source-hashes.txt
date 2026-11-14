@@ -1,0 +1,4 @@
+244124c7510cb19963f60629a84128f271f4a7934229e85a0cbd856a42dd6176 /Users/chris/github-pet-worktrees/qa-verify-940231d/Sources/GitHubPetCore/MonitoringScope.swift
+d10938f5625917cef04d73b18962f0c1d3a5a09c03fdad25c75dd6a78572a6f3 /Users/chris/github-pet-worktrees/qa-verify-940231d/Sources/GitHubPetCore/ScopedGitHub.swift
+b2e3de3107d8b9c9f8ea9b90c47b1bfccaff3d74a3c5c03a1dc32564d1d62d81 /Users/chris/github-pet-worktrees/qa-verify-940231d/Sources/GitHubPetCore/CommandBudget.swift
+9c595c3515ae0f169308d9bfcfc1fdceda11b838201c57eb10b22842359a318a /Users/chris/github-pet-worktrees/qa-verify-940231d/Sources/GitHubPetCore/GitHubCLI.swift

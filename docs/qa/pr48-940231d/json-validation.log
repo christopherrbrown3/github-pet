@@ -1,0 +1,13 @@
+EXACT source940231dc1a794dcf221449e8df1a441718b1ca3f; four original declarations files +module imports only; held47 unchanged dependencies; no mutable48objects
+CONTROL selected-targets=1 aliases=["reviews0", "assigned0"] complete=true
+LF: raw-native-account-accepted=false JSON-metadata-complete=true JSON-fresh-Everything-complete=true JSON-fresh-viewer-ID="U_fixture_A\n" JSON-selected-issues=[probe.ScopedFetchIssue.identityMismatch] selected-items=0
+CR: raw-native-account-accepted=false JSON-metadata-complete=true JSON-fresh-Everything-complete=true JSON-fresh-viewer-ID="U_fixture_A\r" JSON-selected-issues=[probe.ScopedFetchIssue.identityMismatch] selected-items=0
+CRLF: raw-native-account-accepted=false JSON-metadata-complete=true JSON-fresh-Everything-complete=true JSON-fresh-viewer-ID="U_fixture_A\r\n" JSON-selected-issues=[probe.ScopedFetchIssue.identityMismatch] selected-items=0
+NEL: raw-native-account-accepted=false JSON-metadata-complete=true JSON-fresh-Everything-complete=true JSON-fresh-viewer-ID="U_fixture_A" JSON-selected-issues=[probe.ScopedFetchIssue.identityMismatch] selected-items=0
+LS: raw-native-account-accepted=false JSON-metadata-complete=true JSON-fresh-Everything-complete=true JSON-fresh-viewer-ID="U_fixture_A " JSON-selected-issues=[probe.ScopedFetchIssue.identityMismatch] selected-items=0
+PS: raw-native-account-accepted=false JSON-metadata-complete=true JSON-fresh-Everything-complete=true JSON-fresh-viewer-ID="U_fixture_A " JSON-selected-issues=[probe.ScopedFetchIssue.identityMismatch] selected-items=0
+CONTROL invalid metadata "" rejected
+CONTROL invalid metadata "R_fixture!" rejected
+RESULT metadata-accepted=6/6 fresh-Everything-viewer-accepted=6/6 selected-mismatch-discard=6/6; probe execution complete, not product PASS
+
+PROBE EXIT 0
