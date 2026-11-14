@@ -125,6 +125,19 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
 }
 
 @Suite struct HoverPlacementTests {
+    @Test func missingPlacementCandidatesHaveAnUnknownGapAndFiniteAnchor() {
+        let transparent = ArtProfile(canvas: 256, rows: Array(repeating: nil, count: 256))
+        for (art, origin) in [(transparent, CGPoint(x: 600, y: 300)),
+                              (block, CGPoint(x: 600, y: -1000))] {
+            let placement = HoverPlacement.place(art: art, layout: MascotLayout(artSide: 128), popover: short,
+                                                 panelOrigin: origin, screen: screen)
+            #expect(!placement.meetsTarget)
+            #expect(!placement.laneClear)
+            #expect(placement.arrowGap == .infinity)
+            #expect(placement.tip.x.isFinite && placement.tip.y.isFinite)
+        }
+    }
+
     @Test func sitsBesideTheCharacterBelowTheTags() {
         for side in [CGFloat(64), 128, 256] {
             for popover in [short, tall] {
@@ -132,7 +145,14 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
                 let placement = HoverPlacement.place(art: block, layout: layout, popover: popover,
                                                      panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
                 let rect = window(placement, popover)
-                #expect(placement.side == .right)
+                // Right by default; the left only when the right can't meet the target there (#39).
+                if placement.side == .left {
+                    let right = HoverPlacement.place(art: block, layout: layout, popover: popover,
+                                                     panelOrigin: CGPoint(x: 600, y: 300),
+                                                     screen: CGRect(x: 600, y: 0, width: 840, height: 875))
+                    #expect(!right.meetsTarget, "left chosen only when the right misses the target at \(side)")
+                }
+                #expect(placement.meetsTarget)
                 #expect(placement.laneClear && !layout.labelRects.contains { $0.intersects(rect) }, "tags clear at \(side)")
                 #expect(pixels(block, layout).allSatisfy { !$0.intersects(rect) }, "no overlap at \(side)")
                 let nearest = pixels(block, layout).map { gap($0, rect) }.min()!
@@ -322,5 +342,56 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         let second = CGRect(x: 1440, y: 0, width: 1920, height: 1080)
         let origin = PanelPosition.accepted(origin: CGPoint(x: 1440 - 30, y: 300), size: size, visibleFrames: [main, second])
         #expect(origin == CGPoint(x: 1440, y: 300), "mostly on the second display: moved fully onto it")
+    }
+}
+
+@Suite struct HoverSideChoiceTests {
+    private func placement(_ side: HoverPlacement.Side, clear: Bool) -> HoverPlacement {
+        HoverPlacement(side: side, tip: .zero, laneClear: clear, arrowGap: 3)
+    }
+
+    @Test func prefersAClearSideAmongThoseWithRoom() {
+        let choose = { (rightClear: Bool, roomRight: CGFloat, leftClear: Bool, roomLeft: CGFloat) in
+            HoverPlacement.choose(right: placement(.right, clear: rightClear), roomRight: roomRight,
+                                  left: placement(.left, clear: leftClear), roomLeft: roomLeft, needed: 200).side
+        }
+        #expect(choose(true, 500, true, 500) == .right, "both fine: the default right")
+        #expect(choose(false, 500, true, 500) == .left, "right covers a label: the clear left (#39)")
+        #expect(choose(true, 500, false, 500) == .right)
+        #expect(choose(true, 100, true, 500) == .left, "no room on the right")
+        #expect(choose(false, 500, true, 100) == .right, "the clear side has no room: the side with room")
+        #expect(choose(true, 50, true, 100) == .left, "no room anywhere: the roomier side")
+    }
+
+    @Test func tallerSummariesAlwaysEndClearAfterTheCompactFallback() throws {
+        // #39: one more summary line (developer-2's #37) reached the labels at 128 pt by the right
+        // edge. Whatever the height, the app's full-then-compact choice must end clear.
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        for state in MascotState.allCases {
+            let art = try #require(pack.artProfiles[state]), poses = try #require(pack.poseProfiles[state])
+            for side in [CGFloat(64), 128, 256] {
+                let layout = MascotLayout(artSide: side, contours: pack.allContours)
+                let size = layout.panelSize
+                let origins = [CGPoint(x: 600, y: 300), CGPoint(x: screen.maxX - size.width - 24, y: 300),
+                               CGPoint(x: screen.minX, y: 300)]
+                for origin in origins {
+                    for height in stride(from: CGFloat(51), through: 199, by: 8) {
+                        func place(_ popover: CGSize) -> HoverPlacement {
+                            HoverPlacement.place(art: art, poses: poses, layout: layout, popover: popover,
+                                                 panelOrigin: origin, screen: screen)
+                        }
+                        let full = CGSize(width: 220, height: height)
+                        let first = side < 80 ? nil : place(full)
+                        let chosen = first?.meetsTarget == true ? first! : place(short)
+                        let popover = first?.meetsTarget == true ? full : short
+                        #expect(chosen.meetsTarget, "\(state) \(side) at \(origin.x) height \(height)")
+                        let rect = window(chosen, popover)
+                        #expect(!layout.labelRects.contains { $0.intersects(rect) }, "labels clear: \(state) \(side) \(height)")
+                    }
+                }
+            }
+        }
     }
 }

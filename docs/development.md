@@ -125,6 +125,64 @@ the app, proving shallow histories fail before reaching Swift.
   render-check drives the live model (one gesture, merge, end, Reduce Motion) and writes
   `gesture-{64,128,256}.png` filmstrips and `near-touch-*.png` contact sheets.
 
+### GitHub service incidents (#11)
+- Source: GitHub's public Statuspage API, `https://www.githubstatus.com/api/v2/incidents/unresolved.json`,
+  fetched only when the data source is **GitHub CLI** (Fixtures mode uses demo incidents decoded from a
+  Statuspage-shaped sample). It needs no sign-in, so it never uses `gh` or any token; authenticated
+  GitHub calls stay with `gh`. URLSession is ephemeral with no cookies, credential store or cache;
+  only `https://www.githubstatus.com` is allowed, redirects are refused, requests time out after 15 s,
+  and bodies over 512 KB are abandoned while streaming. Decoding is strict: an unknown status or impact,
+  a non-Statuspage ID or an unreadable date fails the whole fetch rather than shortening the list.
+- Confirmed incident: status `investigating`, `identified` or `monitoring`, not resolved and not
+  `maintenance` impact. Scheduled maintenance and resolved incidents are never shown as incidents.
+- Quality is separate from the inbox's: *Checking GitHub status…* (unknown), *No active GitHub
+  incidents* (fresh, verified none), *N active GitHub incidents* (fresh), *GitHub status is stale*
+  (no success for 10 minutes) and *GitHub status unavailable: …* (failure). Only the fresh-none state
+  says there are no incidents; stale and failed checks keep last-known incidents dimmed.
+- Severity: impact `none`/`minor` → actionable (attention), `major`/`critical` → critical (urgent mood
+  while the data is fresh or stale, like a critical inbox item).
+- Events: deduped by incident ID. The first success, and the first success after an error or stale
+  period, record incidents silently; a new ID on a comparable poll animates once. Updates revise rows
+  silently. Escalation of a known open incident to a tier it has never reached (minor → major, minor →
+  critical, major → critical) is announced once per tier, as urgent; downgrades and returns to a tier
+  already reached are silent (#37 parity). Resolved incidents leave
+  the list without animation, and a reopened ID is not announced again (even at a higher impact). Gestures follow the same snooze,
+  quiet-hours and Reduce Motion rules as inbox events; privacy mode hides incident names.
+- GitHub Status is public, so a `gh auth switch` re-baselines only the inbox; switching the data source
+  resets both.
+- Rows open only `https://www.githubstatus.com/incidents/<id>` (lowercase alphanumeric ID, no query,
+  fragment, port or credentials).
+
+### Incident marker (#37)
+- Shown behind the mascot art only for a fresh, confirmed unresolved incident (`IncidentMarker.current`);
+  loading, stale and failed status never show it. Tiers: `none`/`minor` → minor, `major` → major,
+  `critical` → critical.
+- Escalation parity: a known open incident rising to a tier it has never reached (minor → major,
+  minor → critical, major → critical) emits one urgent event; returning to a tier already reached,
+  downgrades, reopens and baseline/reconnect stay silent.
+- Each incident event starts a 6 s burst; otherwise, and always under Reduce Motion, quiet hours or
+  snooze, the marker shows its static frame (it stays visible). The first 300 ms fades in, by opacity
+  only, the layers that were not showing before the burst (all of them for a first incident; flames on
+  minor → major; smoke on major → critical), so nothing already visible blinks. The last 600 ms
+  crossfades the parameters (sweep angle and alpha, flame height and lean, smoke puffs) to the static
+  frame.
+- Every layer is clipped to `IncidentMarker.frame(in:)`: the art square below the design keep-out
+  (top 64 of 256 units) and below the whole label zone (`MascotLayout.labelRects`, including the
+  count's lowest tracking position) less the minimum gap. render-check rasterises every tier
+  (static and burst frames) against every pose's labels at 64/128/256 and 1×/2×: no shared pixels.
+- Hover: a top line `GitHub incident: <name>` (public name, kept in privacy mode; `Demo` prefix for
+  fixtures). The full hover previews one item fewer so its size, and placement, is unchanged; the
+  compact hover stays at two lines. Menu-bar and mascot label: `…, N items, 1 active GitHub incident`.
+  The badge counts actionable items only.
+- Drawing: `IncidentMarkerView` ports design's spec (docs/design/incidents/incident-marker.json,
+  PR #38): beacon sweep, smoke (critical), flames (major/critical) and siren, in the 256-unit art canvas,
+  upright and ground-anchored, behind the art. Values live in `IncidentMarkerSpec.standard`; the
+  drift test decodes the canonical json into the same type and fails on any difference
+  (`GITHUB_PET_INCIDENT_SPEC=<path>` checks another copy; a missing file fails the test). The 64 pt size override applies to art below 96 pt.
+- render-check writes `incident-<size>-<tier>-<static|0.05s|1.2s|2.6s>[-dark].png` (72 files) for
+  comparison with design's previews, and checks that no marker pixel lands in the keep-out band.
+- Demo incident rows are shown but disabled ("No status page"); they open nothing.
+
 ### Settings
 Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`). Missing or invalid
 fields fall back to defaults, and values outside their range are clamped. They survive relaunch.
@@ -132,7 +190,8 @@ fields fall back to defaults, and values outside their range are clamped. They s
 - Mascot visibility, size (64–256 pt), and position (saved after each drag; reset in Settings;
   ignored if mostly off-screen). An accepted position is moved just enough that the whole panel,
   including its count/quality badge, is on the display's visible area; near a screen edge this
-  takes precedence over keeping the ground point fixed when resizing.
+  takes precedence over keeping the ground point fixed when resizing. A drop saves that settled
+  position, so what is saved is what is shown.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox
@@ -173,7 +232,10 @@ summary; its press action opens the Inbox, the same as a click.
   uses its upright frames until #29 adds the lean), stays below the tags and on
   screen; within that its height minimises the worst gap to any frame. If a small mascot sits so
   low that a tall summary can't be both on screen and below the tags, staying on screen wins.
-  The arrow tip is kept within 12 pt of the static pose. Below 80 pt the hover is a compact
+  The arrow tip is kept within 12 pt of the static pose. Between the two sides, it prefers one
+  that keeps the DEMO and count labels clear (judged by their own rects, not the band between
+  them); if neither the full nor the compact summary can be placed clear, the app logs
+  "hover summary has no clear placement" instead of falling back silently. Below 80 pt the hover is a compact
   two-line summary (Demo or count, plus the count's quality; details in the Inbox), and so is
   any size where the full summary can't meet these limits (e.g. 80 pt).
   render-check shows the real windows on screen for 11 cases (64/128/256, left edge, centre,
@@ -202,7 +264,22 @@ In Fixtures mode the inbox footer has a **Simulator** menu:
 | Partial data (toggle) | While it's on, every poll is partial: "Partial data", badge `N+`, assigned-issue fixture missing, no events. It stays on across the 30-second fixture poll until you turn it off. |
 | Mark data stale | "Stale · last updated …", rows dimmed |
 | Simulate disconnect / Reconnect | "Error: simulated disconnect" with rows dimmed. Reconnecting replays nothing, even an entitlement injected while disconnected. |
-| Reset baseline | Next snapshot re-seeds silently |
+| Reset baseline | Next snapshot re-seeds silently (inbox and service incidents) |
+| GitHub service incident → Inject minor / major / critical | One new incident (Demo names "Actions degraded", "Git operations outage", "Major outage: github.com"); one event, minor = attention, major/critical = urgent; marker at that tier. |
+| GitHub service incident → Escalate one level | Every open incident one tier up (minor → major → critical): one urgent event and burst per tier reached; nothing once critical. |
+| GitHub service incident → De-escalate one level (silent) | One tier down; no event. Escalating back to a tier already reached is silent too. |
+| GitHub service incident → Escalate all to major | Open incidents below major become major (one event each, first time only). |
+| GitHub service incident → Resolve all incidents | Rows leave quietly; "No active GitHub incidents"; no marker. |
+| GitHub service incident → Reopen last resolved (silent) | The last resolved incident returns under its old ID; no event, marker at its tier. |
+| GitHub service incident → Inject scheduled maintenance (ignored) | Reported by the (simulated) Statuspage payload but filtered by the real decoder: no row, no count, no marker. |
+| GitHub service incident → Status fetch fails / recovers | Service status only: "GitHub status unavailable: simulated status fetch failure", last-known incidents dimmed, no marker, never "no incidents". Recovery re-baselines silently. The inbox is unaffected. |
+| GitHub service incident → Mark status stale | Service status only: "GitHub status is stale", no marker; the next poll recovers silently. |
+
+Simulated polls go through the real `StatusPageDecoder` as a Statuspage JSON payload. The submenu lists
+each open incident with its current tier.
+
+Mark data stale and Simulate disconnect also apply to service incidents ("GitHub status is stale",
+"GitHub status unavailable: simulated disconnect", last-known incidents dimmed); reconnecting replays nothing.
 
 Launch arguments and environment variables:
 

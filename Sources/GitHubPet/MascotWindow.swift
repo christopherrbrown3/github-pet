@@ -98,7 +98,15 @@ final class MascotWindowController {
         ])
         container.onClick = openInbox
         container.accessibilityText = { [weak self] in self.map { MascotView.accessibilityLabel($0.model) } ?? "" }
-        container.onDragEnded = { [weak self] origin in self?.saveOrigin(origin) }
+        // Save where the panel actually settles: the drop point moved fully on screen (#39), so the
+        // saved origin is the one shown and restored.
+        container.onDragEnded = { [weak self] origin in
+            guard let self else { return }
+            // Move even if the settled origin equals the last saved value: the settings stream
+            // deduplicates that value, but the dragged window is currently somewhere else.
+            self.update(visible: self.model.settings.mascotVisible, size: self.model.settings.mascotSize, origin: origin)
+            if let actual = self.panel?.frame.origin { self.saveOrigin(actual) }
+        }
         container.onHover = { [weak self] inside in
             if inside { self?.showSummary(from: container) } else { self?.hideSummary() }
         }
@@ -123,6 +131,7 @@ final class MascotWindowController {
         guard let window = view.window else { return }
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
         let (popover, placement) = Self.prepareHover(model: model, panelFrame: window.frame, screen: screen)
+        Self.reportIfUnclear(placement)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
         summaryInputs = inputs(popover: popover, panelFrame: window.frame)
@@ -184,6 +193,14 @@ final class MascotWindowController {
         return attempt(true)
     }
 
+    /// Neither the full nor the compact summary could be placed clear of the labels with its arrow
+    /// near the art (a tiny screen or extreme position): say so in the log rather than silently (#39).
+    static func reportIfUnclear(_ placement: HoverPlacement) {
+        guard !placement.meetsTarget else { return }
+        FileHandle.standardError.write(Data(("GitHubPet: hover summary has no clear placement "
+            + "(labels clear: \(placement.laneClear), arrow \(placement.arrowGap.rounded()) pt from the art)\n").utf8))
+    }
+
     /// Beside the visible character (#27): above it, the arrow either covered the DEMO/count
     /// tags or sat more than 12 pt from the art. See `HoverPlacement`.
     /// An attention gesture with a lean is playing: hover placement then clears its swept outline.
@@ -243,6 +260,7 @@ final class MascotWindowController {
               placed.needsReplacement(for: inputs(popover: popover, panelFrame: window.frame)) else { return }
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
         let placement = Self.placeHover(popover, model: model, panelFrame: window.frame, screen: screen)
+        Self.reportIfUnclear(placement)
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         summaryInputs = inputs(popover: popover, panelFrame: window.frame)
     }

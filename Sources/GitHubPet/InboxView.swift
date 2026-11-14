@@ -13,6 +13,8 @@ struct InboxView: View {
             header
             Divider()
             content
+            Divider()
+            ServiceStatusSection(model: model)
             if let note = model.blockedLinkNote {
                 Text(note).font(.caption).foregroundStyle(.red)
             }
@@ -219,7 +221,103 @@ struct InboxRow: View {
         case .authoredPullRequest: return "arrow.triangle.pull"
         case .ciFailure: return "xmark.octagon"
         case .entitlement: return "key"
+        case .serviceIncident: return "exclamationmark.icloud"
         }
+    }
+}
+
+/// GitHub Status (#11), with its own data quality. Only a fresh, verified success says there are
+/// no incidents; loading, stale and failed checks say so and keep last-known incidents dimmed.
+struct ServiceStatusSection: View {
+    @ObservedObject var model: AppModel
+    static let maxRows = 4
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                if let symbol {
+                    Image(systemName: symbol).symbolRenderingMode(.multicolor).accessibilityHidden(true)
+                }
+                Text(model.serviceState.statusText(count: model.serviceIncidents.count))
+                    .foregroundStyle(degraded ? .primary : .secondary)
+                    .fontWeight(degraded ? .semibold : .regular)
+                    .accessibilityIdentifier("inbox.serviceStatus")
+                if let last = model.serviceLastSuccess, !model.serviceState.isFresh {
+                    Text("· last checked \(last.formatted(date: .omitted, time: .shortened))")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption)
+            if !model.serviceIncidents.isEmpty {
+                let dimmed = !model.serviceState.isFresh
+                if dimmed {
+                    Text("Showing last known incidents").font(.caption).foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    // Most severe first; the rest are counted so the popover stays a fixed size.
+                    ForEach(model.serviceIncidents.prefix(Self.maxRows)) { incident in
+                        IncidentRow(incident: incident, privacy: model.inboxPrivacy,
+                                    unseen: model.isUnseen(incident)) { model.open(incident) }
+                    }
+                    if model.serviceIncidents.count > Self.maxRows {
+                        Text("and \(model.serviceIncidents.count - Self.maxRows) more")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("GitHub service incidents")
+                .opacity(dimmed ? 0.55 : 1)
+            }
+        }
+    }
+
+    private var degraded: Bool { symbol != nil }
+
+    private var symbol: String? {
+        switch model.serviceState {
+        case .loading, .operational: return nil
+        case .incidents, .stale: return "exclamationmark.triangle.fill"
+        case .error: return "xmark.octagon.fill"
+        }
+    }
+}
+
+struct IncidentRow: View {
+    let incident: ServiceIncident
+    let privacy: Bool
+    let unseen: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 8) {
+                Circle()
+                    .fill(unseen ? Color.accentColor : Color.clear)
+                    .frame(width: 7, height: 7)
+                    .padding(.top, 5)
+                Image(systemName: "exclamationmark.icloud").frame(width: 16)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(PrivacyText.title(item, privacy: privacy)).lineLimit(2)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        // Demo incidents have no status page: shown, but they open nothing.
+        .disabled(incident.isDemo)
+        .padding(.vertical, 3)
+        .accessibilityLabel((unseen ? "New. " : "") + PrivacyText.title(item, privacy: privacy) + ". " + subtitle)
+    }
+
+    private var item: InboxItem { incident.inboxItem }
+
+    /// Impact and status are public status-page facts, so they stay visible in privacy mode.
+    private var subtitle: String {
+        ([incident.isDemo ? PrivacyText.demoLabel : nil, incident.impact.label, incident.status.label,
+          incident.isDemo ? "No status page" : nil]
+            .compactMap { $0 }).joined(separator: " · ")
     }
 }
 
@@ -233,6 +331,34 @@ struct SimulatorMenu: View {
             Button("Replay current snapshot") { model.replaySnapshot() }
             Toggle("Partial data", isOn: Binding(get: { model.partialPolls },
                                                  set: { model.setPartialPolls($0) }))
+            Menu("GitHub service incident") {
+                Button("Inject minor incident") { model.injectServiceIncident(.minor) }
+                Button("Inject major incident (urgent)") { model.injectServiceIncident(.major) }
+                Button("Inject critical incident (urgent)") { model.injectServiceIncident(.critical) }
+                Divider()
+                Button("Escalate one level") { model.escalateServiceIncidentsOneLevel() }
+                Button("De-escalate one level (silent)") { model.deescalateServiceIncidentsOneLevel() }
+                Button("Escalate all to major") { model.escalateServiceIncidents() }
+                Divider()
+                Button("Resolve all incidents") { model.resolveServiceIncidents() }
+                Button("Reopen last resolved (silent)") { model.reopenLastResolvedIncident() }
+                    .disabled(!model.canReopenServiceIncident)
+                Button("Inject scheduled maintenance (ignored)") { model.injectScheduledMaintenance() }
+                Divider()
+                if model.serviceFetchFails {
+                    Button("Status fetch recovers") { model.setServiceFetchFails(false) }
+                } else {
+                    Button("Status fetch fails") { model.setServiceFetchFails(true) }
+                }
+                Button("Mark status stale") { model.markServiceStale() }
+                if !model.serviceIncidents.isEmpty {
+                    Divider()
+                    // Current tier per incident, for stepping through tier bursts.
+                    ForEach(model.serviceIncidents) { incident in
+                        Text("\(incident.name): \(IncidentMarker.Tier(impact: incident.impact).rawValue)")
+                    }
+                }
+            }
             Button("Mark data stale") { model.markStale() }
             if model.simulatorConnected {
                 Button("Simulate disconnect") { model.simulateDisconnect() }
