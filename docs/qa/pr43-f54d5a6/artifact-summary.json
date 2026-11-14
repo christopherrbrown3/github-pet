@@ -1,0 +1,22 @@
+{
+  "head": "f54d5a6deb1db6c6ec3e87361431d4222dbd6a64",
+  "run": "43606183925",
+  "zip": "GitHubPet-0.1.0-f54d5a6-universal.zip",
+  "sha256": "e0dd61f8207b30e7e08d8f737c69f11bcea87e0d0781e23a0933d80128aefeda",
+  "plist": {
+    "CFBundleDevelopmentRegion": "en",
+    "CFBundleDisplayName": "GitHub Pet",
+    "CFBundleExecutable": "GitHubPet",
+    "CFBundleIdentifier": "dev.github-pet.GitHubPet",
+    "CFBundleInfoDictionaryVersion": "6.0",
+    "CFBundleName": "GitHubPet",
+    "CFBundlePackageType": "APPL",
+    "CFBundleShortVersionString": "0.1.0",
+    "CFBundleVersion": "51",
+    "GitHubPetSourceRevision": "f54d5a6deb1db6c6ec3e87361431d4222dbd6a64",
+    "LSMinimumSystemVersion": "13.0",
+    "LSUIElement": true,
+    "NSHighResolutionCapable": true,
+    "NSHumanReadableCopyright": "GitHub Pet contributors"
+  }
+}
