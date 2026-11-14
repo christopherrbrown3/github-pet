@@ -16,6 +16,7 @@ It needs no Xcode project, and Xcode itself is optional.
 swift build                       # debug build of the library and app
 scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
+scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
 ```
 
@@ -24,9 +25,27 @@ swift-testing on its own, so the script adds the CLT framework search paths and 
 copy of the Testing/Foundation cross-import overlay, which is incomplete. If you have Xcode,
 a plain `swift test` works too.
 
-`scripts/build-app.sh [debug|release]` puts the bundle together from the SwiftPM binary and an
-`Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). The bundle is for local
-use only: it isn't notarized or Developer ID signed.
+`scripts/build-app.sh [debug|release] [--universal]` puts the bundle together from the SwiftPM
+binary and an `Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). It isn't
+notarized or Developer ID signed. `--universal` builds arm64 and x86_64 separately with `--triple`
+(SwiftPM's multi-`--arch` build needs Xcode's xcbuild) and merges them with `lipo`. The version
+(`CFBundleShortVersionString`) comes from the `VERSION` file; the build number (`CFBundleVersion`)
+is the commit count from complete Git history. A shallow or missing Git checkout is rejected
+before compilation; for a shallow clone, run `git fetch --unshallow` first.
+`GitHubPetSourceRevision` in the signed `Info.plist` records the full checked-out commit SHA.
+
+`scripts/package-zip.sh` builds the universal app, zips it with
+`ditto -c -k --sequesterRsrc --keepParent` as `GitHubPet-<version>-<shortsha>-universal.zip`, writes
+the `.sha256` beside it, then unpacks a copy and checks the checksum, signature, version, build
+number, architectures and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
+(14 days for PRs, 90 for `main`). `scripts/intel-smoke.sh` runs the x86_64 slice under Rosetta
+(skipped, and says so, where Rosetta is absent). End-user steps are in [install.md](install.md).
+
+On PRs, CI first builds/tests GitHub's combined branch, then checks out the exact PR head with
+full history for packaging and render checks. The ZIP's short SHA and the bundle's full SHA
+therefore identify the source actually packaged. CI asserts that checkout and history before
+packaging. `scripts/test-packaging.sh` exercises full and depth-1/depth-2 clones without compiling
+the app, proving shallow histories fail before reaching Swift.
 
 `swift run GitHubPet` also works for quick iteration.
 
@@ -37,7 +56,7 @@ use only: it isn't notarized or Developer ID signed.
 | `Sources/GitHubPetCore` | UI-free logic: inbox engine, event baseline/dedupe, settings, quiet hours/snooze, `gh` client, link safety, mascot pack validation |
 | `Sources/GitHubPet` | App: `MenuBarExtra` inbox, Inbox and Settings windows, transparent mascot `NSPanel` |
 | `Tests/GitHubPetCoreTests` | swift-testing suites for everything in Core |
-| `scripts/` | `test.sh`, `build-app.sh` |
+| `scripts/` | `test.sh`, `build-app.sh`, `package-zip.sh`, `intel-smoke.sh` |
 
 ## Behaviour contracts
 
@@ -106,6 +125,64 @@ use only: it isn't notarized or Developer ID signed.
   render-check drives the live model (one gesture, merge, end, Reduce Motion) and writes
   `gesture-{64,128,256}.png` filmstrips and `near-touch-*.png` contact sheets.
 
+### GitHub service incidents (#11)
+- Source: GitHub's public Statuspage API, `https://www.githubstatus.com/api/v2/incidents/unresolved.json`,
+  fetched only when the data source is **GitHub CLI** (Fixtures mode uses demo incidents decoded from a
+  Statuspage-shaped sample). It needs no sign-in, so it never uses `gh` or any token; authenticated
+  GitHub calls stay with `gh`. URLSession is ephemeral with no cookies, credential store or cache;
+  only `https://www.githubstatus.com` is allowed, redirects are refused, requests time out after 15 s,
+  and bodies over 512 KB are abandoned while streaming. Decoding is strict: an unknown status or impact,
+  a non-Statuspage ID or an unreadable date fails the whole fetch rather than shortening the list.
+- Confirmed incident: status `investigating`, `identified` or `monitoring`, not resolved and not
+  `maintenance` impact. Scheduled maintenance and resolved incidents are never shown as incidents.
+- Quality is separate from the inbox's: *Checking GitHub status…* (unknown), *No active GitHub
+  incidents* (fresh, verified none), *N active GitHub incidents* (fresh), *GitHub status is stale*
+  (no success for 10 minutes) and *GitHub status unavailable: …* (failure). Only the fresh-none state
+  says there are no incidents; stale and failed checks keep last-known incidents dimmed.
+- Severity: impact `none`/`minor` → actionable (attention), `major`/`critical` → critical (urgent mood
+  while the data is fresh or stale, like a critical inbox item).
+- Events: deduped by incident ID. The first success, and the first success after an error or stale
+  period, record incidents silently; a new ID on a comparable poll animates once. Updates revise rows
+  silently. Escalation of a known open incident to a tier it has never reached (minor → major, minor →
+  critical, major → critical) is announced once per tier, as urgent; downgrades and returns to a tier
+  already reached are silent (#37 parity). Resolved incidents leave
+  the list without animation, and a reopened ID is not announced again (even at a higher impact). Gestures follow the same snooze,
+  quiet-hours and Reduce Motion rules as inbox events; privacy mode hides incident names.
+- GitHub Status is public, so a `gh auth switch` re-baselines only the inbox; switching the data source
+  resets both.
+- Rows open only `https://www.githubstatus.com/incidents/<id>` (lowercase alphanumeric ID, no query,
+  fragment, port or credentials).
+
+### Incident marker (#37)
+- Shown behind the mascot art only for a fresh, confirmed unresolved incident (`IncidentMarker.current`);
+  loading, stale and failed status never show it. Tiers: `none`/`minor` → minor, `major` → major,
+  `critical` → critical.
+- Escalation parity: a known open incident rising to a tier it has never reached (minor → major,
+  minor → critical, major → critical) emits one urgent event; returning to a tier already reached,
+  downgrades, reopens and baseline/reconnect stay silent.
+- Each incident event starts a 6 s burst; otherwise, and always under Reduce Motion, quiet hours or
+  snooze, the marker shows its static frame (it stays visible). The first 300 ms fades in, by opacity
+  only, the layers that were not showing before the burst (all of them for a first incident; flames on
+  minor → major; smoke on major → critical), so nothing already visible blinks. The last 600 ms
+  crossfades the parameters (sweep angle and alpha, flame height and lean, smoke puffs) to the static
+  frame.
+- Every layer is clipped to `IncidentMarker.frame(in:)`: the art square below the design keep-out
+  (top 64 of 256 units) and below the whole label zone (`MascotLayout.labelRects`, including the
+  count's lowest tracking position) less the minimum gap. render-check rasterises every tier
+  (static and burst frames) against every pose's labels at 64/128/256 and 1×/2×: no shared pixels.
+- Hover: a top line `GitHub incident: <name>` (public name, kept in privacy mode; `Demo` prefix for
+  fixtures). The full hover previews one item fewer so its size, and placement, is unchanged; the
+  compact hover stays at two lines. Menu-bar and mascot label: `…, N items, 1 active GitHub incident`.
+  The badge counts actionable items only.
+- Drawing: `IncidentMarkerView` ports design's spec (docs/design/incidents/incident-marker.json,
+  PR #38): beacon sweep, smoke (critical), flames (major/critical) and siren, in the 256-unit art canvas,
+  upright and ground-anchored, behind the art. Values live in `IncidentMarkerSpec.standard`; the
+  drift test decodes the canonical json into the same type and fails on any difference
+  (`GITHUB_PET_INCIDENT_SPEC=<path>` checks another copy; a missing file fails the test). The 64 pt size override applies to art below 96 pt.
+- render-check writes `incident-<size>-<tier>-<static|0.05s|1.2s|2.6s>[-dark].png` (72 files) for
+  comparison with design's previews, and checks that no marker pixel lands in the keep-out band.
+- Demo incident rows are shown but disabled ("No status page"); they open nothing.
+
 ### Settings
 Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`). Missing or invalid
 fields fall back to defaults, and values outside their range are clamped. They survive relaunch.
@@ -113,7 +190,8 @@ fields fall back to defaults, and values outside their range are clamped. They s
 - Mascot visibility, size (64–256 pt), and position (saved after each drag; reset in Settings;
   ignored if mostly off-screen). An accepted position is moved just enough that the whole panel,
   including its count/quality badge, is on the display's visible area; near a screen edge this
-  takes precedence over keeping the ground point fixed when resizing.
+  takes precedence over keeping the ground point fixed when resizing. A drop saves that settled
+  position, so what is saved is what is shown.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox
@@ -154,7 +232,10 @@ summary; its press action opens the Inbox, the same as a click.
   uses its upright frames until #29 adds the lean), stays below the tags and on
   screen; within that its height minimises the worst gap to any frame. If a small mascot sits so
   low that a tall summary can't be both on screen and below the tags, staying on screen wins.
-  The arrow tip is kept within 12 pt of the static pose. Below 80 pt the hover is a compact
+  The arrow tip is kept within 12 pt of the static pose. Between the two sides, it prefers one
+  that keeps the DEMO and count labels clear (judged by their own rects, not the band between
+  them); if neither the full nor the compact summary can be placed clear, the app logs
+  "hover summary has no clear placement" instead of falling back silently. Below 80 pt the hover is a compact
   two-line summary (Demo or count, plus the count's quality; details in the Inbox), and so is
   any size where the full summary can't meet these limits (e.g. 80 pt).
   render-check shows the real windows on screen for 11 cases (64/128/256, left edge, centre,
@@ -183,7 +264,22 @@ In Fixtures mode the inbox footer has a **Simulator** menu:
 | Partial data (toggle) | While it's on, every poll is partial: "Partial data", badge `N+`, assigned-issue fixture missing, no events. It stays on across the 30-second fixture poll until you turn it off. |
 | Mark data stale | "Stale · last updated …", rows dimmed |
 | Simulate disconnect / Reconnect | "Error: simulated disconnect" with rows dimmed. Reconnecting replays nothing, even an entitlement injected while disconnected. |
-| Reset baseline | Next snapshot re-seeds silently |
+| Reset baseline | Next snapshot re-seeds silently (inbox and service incidents) |
+| GitHub service incident → Inject minor / major / critical | One new incident (Demo names "Actions degraded", "Git operations outage", "Major outage: github.com"); one event, minor = attention, major/critical = urgent; marker at that tier. |
+| GitHub service incident → Escalate one level | Every open incident one tier up (minor → major → critical): one urgent event and burst per tier reached; nothing once critical. |
+| GitHub service incident → De-escalate one level (silent) | One tier down; no event. Escalating back to a tier already reached is silent too. |
+| GitHub service incident → Escalate all to major | Open incidents below major become major (one event each, first time only). |
+| GitHub service incident → Resolve all incidents | Rows leave quietly; "No active GitHub incidents"; no marker. |
+| GitHub service incident → Reopen last resolved (silent) | The last resolved incident returns under its old ID; no event, marker at its tier. |
+| GitHub service incident → Inject scheduled maintenance (ignored) | Reported by the (simulated) Statuspage payload but filtered by the real decoder: no row, no count, no marker. |
+| GitHub service incident → Status fetch fails / recovers | Service status only: "GitHub status unavailable: simulated status fetch failure", last-known incidents dimmed, no marker, never "no incidents". Recovery re-baselines silently. The inbox is unaffected. |
+| GitHub service incident → Mark status stale | Service status only: "GitHub status is stale", no marker; the next poll recovers silently. |
+
+Simulated polls go through the real `StatusPageDecoder` as a Statuspage JSON payload. The submenu lists
+each open incident with its current tier.
+
+Mark data stale and Simulate disconnect also apply to service incidents ("GitHub status is stale",
+"GitHub status unavailable: simulated disconnect", last-known incidents dimmed); reconnecting replays nothing.
 
 Launch arguments and environment variables:
 
@@ -229,8 +325,10 @@ goes to stderr: `GitHubPet: mascot pack mona-pet-v1 loaded from …`, or
 the placeholder.
 
 ## Known limitations (M1)
-- The app is ad-hoc signed only, so it isn't notarized. Gatekeeper may need a right-click → Open
-  when it's copied to another Mac.
+- The app is ad-hoc signed only, so it isn't notarized. For a downloaded copy, follow the
+  [first-launch approval steps](install.md#4-first-launch-approve-the-app-once), including
+  **Open Anyway** in System Settings on macOS 15 or later. Clean-Mac quarantined first launch
+  remains unverified.
 - The live `gh` source covers review requests and assigned issues. Entitlement data and
   configurable entitlement repositories exist only in fixtures for now.
 - The event baseline lives in memory. A relaunch re-baselines silently, which is safe but means

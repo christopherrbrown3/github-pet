@@ -14,6 +14,8 @@ struct MascotView: View {
     var badgeOverride: String?
     var drawsArt = true
     var drawsLabels = true
+    /// Incident marker (#37); by default only in full renders, not in single-layer probes.
+    var drawsMarker: Bool?
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
@@ -23,7 +25,9 @@ struct MascotView: View {
                 scene(at: model.clock(), reduced: true, layout: layout)
             } else {
                 // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
-                TimelineView(.animation(minimumInterval: model.activeClip == nil ? 1.0 / 8.0 : 1.0 / 30.0)) { context in
+                TimelineView(.animation(minimumInterval: model.activeClip == nil
+                                        && model.markerPhase(at: model.now, reduced: false).time == nil
+                                        ? 1.0 / 8.0 : 1.0 / 30.0)) { context in
                     scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
                 }
             }
@@ -47,6 +51,10 @@ struct MascotView: View {
         } ?? 0
         let demo = layout.demoFrame
         return ZStack(alignment: .topLeading) {
+            if let marker = model.incidentMarker, drawsMarker ?? (drawsArt && drawsLabels) {
+                IncidentMarkerView(marker: marker, layout: layout,
+                                   phase: model.markerPhase(at: date, reduced: reduced))
+            }
             figure(pose: pose, date: date, reduced: reduced)
                 .frame(width: layout.artSide, height: layout.artSide)
                 // Art-layer lean about the ground anchor (#29); labels stay upright.
