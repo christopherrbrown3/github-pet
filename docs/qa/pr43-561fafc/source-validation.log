@@ -1,0 +1,16 @@
+['git', 'show', '-s', '--format=%H %P']
+561fafc6705b4e587aa23327fc029f965edac33a f1cfada8aeb28588e86952d39496f0cfeee03c34 b10d329e0036bc67a927a4b7e561765ef37312fd
+EXIT 0
+['git', 'merge-tree', '--write-tree', 'f1cfada8aeb28588e86952d39496f0cfeee03c34', 'b10d329e0036bc67a927a4b7e561765ef37312fd']
+c69eba8f2eab2696a11f9597e499e842ffaa70dc
+EXIT 0
+['git', 'rev-parse', 'HEAD^{tree}']
+c69eba8f2eab2696a11f9597e499e842ffaa70dc
+EXIT 0
+['git', 'rev-list', '--count', 'HEAD']
+70
+EXIT 0
+['git', 'diff', '--exit-code', 'b10d329', 'HEAD', '--', 'Sources', 'Tests', 'assets', 'scripts/render-check.sh']
+EXIT 0
+['git', 'diff', '--exit-code', 'f1cfada', 'HEAD', '--', '.github/workflows/swift.yml', 'scripts/build-app.sh', 'scripts/package-zip.sh', 'scripts/intel-smoke.sh', 'scripts/test-packaging.sh', 'docs/install.md']
+EXIT 0
