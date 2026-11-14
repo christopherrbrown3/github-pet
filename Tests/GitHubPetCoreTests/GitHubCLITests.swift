@@ -265,11 +265,12 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
             (try? FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count) ?? 0
         }
         let before = openDescriptors()
-        let started = Date()
+        let clock = ContinuousClock()
+        let started = clock.now
         // The shell exits at once; its background child keeps stdout and stderr open for 5 s.
         let result = try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"),
                                                     arguments: ["-c", "sleep 5 & echo hi"], timeout: 5)
-        #expect(Date().timeIntervalSince(started) < 4.5, "collector deadline, not the descendant, bounds the wait")
+        #expect(started.duration(to: clock.now) < .milliseconds(4500), "collector deadline, not the descendant, bounds the wait")
         #expect(String(decoding: result.stdout, as: UTF8.self) == "hi\n", "bytes read before the deadline are kept")
         #expect(openDescriptors() <= before, "both pipe read ends are closed")
     }
