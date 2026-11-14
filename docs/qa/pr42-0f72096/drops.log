@@ -1,0 +1,7 @@
+HEAD 0f720962d549185c0a04d928c2952ef7e9bc3da0
+GitHubPet: mascot placeholder (no pack)
+PASS already-saved edge drop inside=true saved-equals-shown=true shown=(1582.0, 289.0) saved=(1582.0, 289.0)
+PASS off-all-displays fallback inside=true saved-equals-shown=true shown=(1558.0, 113.0) saved=(1558.0, 113.0)
+RESULT failures=0
+
+EXIT 0

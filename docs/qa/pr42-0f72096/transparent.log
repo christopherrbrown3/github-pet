@@ -1,0 +1,6 @@
+HEAD 0f720962d549185c0a04d928c2952ef7e9bc3da0
+transparent finite=false meetsTarget=false
+GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+PASS diagnostic returned without trap
+
+EXIT 0

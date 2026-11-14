@@ -1,0 +1,13 @@
+HEAD 0f720962d549185c0a04d928c2952ef7e9bc3da0
+GitHubPet: mascot pack mona-pet-v1 loaded from /Users/chris/github-pet-worktrees/developer-hover-integration/assets/mascots/mona-pet-v1
+PASS tier=minor size=64 edge=false arrow=4.25 clear=true side=right measured=(320.0, 51.0) lines=2
+PASS tier=minor size=64 edge=true arrow=3.25 clear=true side=left measured=(320.0, 51.0) lines=2
+PASS tier=minor size=128 edge=false arrow=6.020797289396148 clear=true side=right measured=(320.0, 115.0) lines=5
+PASS tier=minor size=128 edge=true arrow=4.5 clear=true side=left measured=(320.0, 115.0) lines=5
+PASS tier=critical size=64 edge=false arrow=3.3541019662496847 clear=true side=right measured=(320.0, 51.0) lines=2
+PASS tier=critical size=64 edge=true arrow=3.0 clear=true side=left measured=(320.0, 51.0) lines=2
+PASS tier=critical size=128 edge=false arrow=4.0 clear=true side=right measured=(320.0, 115.0) lines=5
+PASS tier=critical size=128 edge=true arrow=4.0 clear=true side=left measured=(320.0, 115.0) lines=5
+RESULT cases=8 failures=0
+
+EXIT 0
