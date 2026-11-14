@@ -91,6 +91,7 @@ while IFS= read -r line; do
   worst=$(sed -E 's/.* window-gap-max=([0-9.]+|none) .*/\1/' <<< "$line")
   arrow=$(sed -E 's/.* arrow-anchor-to-static-art=([0-9.]+|none) .*/\1/' <<< "$line")
   if [[ $line == *" overlap=0 "* && $line == *" lane=clear "* && $line == *" on-screen=true "* \
+        && $line == *" meets-target=true "* \
         && $worst != none && $arrow != none ]] && (( ${worst%.*} < 12 || ${worst} == 12.0 )) \
         && (( ${arrow%.*} < 12 || ${arrow} == 12.0 )); then
     echo "ok   hover $name: worst window-boundary gap $worst pt, arrow anchor $arrow pt from art, no overlap, tags clear"
@@ -129,8 +130,18 @@ for size in 64 128 256; do
     else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
   done
 done
+for case_name in transparent no-candidate; do
+  check_in "hover placement failure diagnostics" "hover failure $case_name logs without crashing" \
+    "^hover failure $case_name: meets-target=false infinite-gap=true report-completed=true"
+done
 check_in "badge stays on screen (real mascot window controller)" "saved half-offscreen position keeps the badge visible" \
   '^badge on screen: panel-inside=true labels-inside=true'
+check_in "badge stays on screen (real mascot window controller)" "a drop past the edge saves where it settles" \
+  '^dropped past edge: panel-inside=true saved-equals-shown=true expected-origin=true'
+check_in "badge stays on screen (real mascot window controller)" "repeat edge drop repositions despite identical saved settings" \
+  '^dropped past saved edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=true'
+check_in "badge stays on screen (real mascot window controller)" "drop beyond every display saves the displayed default" \
+  '^dropped beyond all displays: panel-inside=true saved-equals-shown=true expected-origin=true'
 check_in "hover follows content growth (real mascot window controller)" "hover re-placed when content grows" \
   '^hover growth: grew=true before-side=right after-side=left art-clear=true labels-clear=true on-screen=true'
 for step in '128->64' '64->256' '256->128'; do

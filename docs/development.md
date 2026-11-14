@@ -171,7 +171,8 @@ fields fall back to defaults, and values outside their range are clamped. They s
 - Mascot visibility, size (64–256 pt), and position (saved after each drag; reset in Settings;
   ignored if mostly off-screen). An accepted position is moved just enough that the whole panel,
   including its count/quality badge, is on the display's visible area; near a screen edge this
-  takes precedence over keeping the ground point fixed when resizing.
+  takes precedence over keeping the ground point fixed when resizing. A drop saves that settled
+  position, so what is saved is what is shown.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox
@@ -212,7 +213,10 @@ summary; its press action opens the Inbox, the same as a click.
   uses its upright frames until #29 adds the lean), stays below the tags and on
   screen; within that its height minimises the worst gap to any frame. If a small mascot sits so
   low that a tall summary can't be both on screen and below the tags, staying on screen wins.
-  The arrow tip is kept within 12 pt of the static pose. Below 80 pt the hover is a compact
+  The arrow tip is kept within 12 pt of the static pose. Between the two sides, it prefers one
+  that keeps the DEMO and count labels clear (judged by their own rects, not the band between
+  them); if neither the full nor the compact summary can be placed clear, the app logs
+  "hover summary has no clear placement" instead of falling back silently. Below 80 pt the hover is a compact
   two-line summary (Demo or count, plus the count's quality; details in the Inbox), and so is
   any size where the full summary can't meet these limits (e.g. 80 pt).
   render-check shows the real windows on screen for 11 cases (64/128/256, left edge, centre,

@@ -436,12 +436,21 @@ public struct HoverPlacement: Equatable, Sendable {
         }
 
         let (rightTip, rightClear, rightGap) = best(right: true), (leftTip, leftClear, leftGap) = best(right: false)
-        let needed = popover.width + chrome.width
-        let roomRight = screen.maxX - (panelOrigin.x + rightTip.x)
-        let roomLeft = panelOrigin.x + leftTip.x - screen.minX
-        return roomRight >= needed || roomRight >= roomLeft
-            ? HoverPlacement(side: .right, tip: rightTip, laneClear: rightClear, arrowGap: rightGap)
-            : HoverPlacement(side: .left, tip: leftTip, laneClear: leftClear, arrowGap: leftGap)
+        let right = HoverPlacement(side: .right, tip: rightTip, laneClear: rightClear, arrowGap: rightGap)
+        let left = HoverPlacement(side: .left, tip: leftTip, laneClear: leftClear, arrowGap: leftGap)
+        return choose(right: right, roomRight: screen.maxX - (panelOrigin.x + rightTip.x),
+                      left: left, roomLeft: panelOrigin.x + leftTip.x - screen.minX,
+                      needed: popover.width + chrome.width)
+    }
+
+    /// Among the sides with room, prefer one meeting the target (labels clear, arrow close), then
+    /// the right (#27 default); without room on either side, the roomier one (#39).
+    static func choose(right: HoverPlacement, roomRight: CGFloat, left: HoverPlacement, roomLeft: CGFloat,
+                       needed: CGFloat) -> HoverPlacement {
+        let fitting = [(right, roomRight), (left, roomLeft)].filter { $0.1 >= needed }.map(\.0)
+        if let good = fitting.first(where: \.meetsTarget) { return good }
+        if let any = fitting.first { return any }
+        return roomRight >= roomLeft ? right : left
     }
 }
 
