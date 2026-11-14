@@ -4,7 +4,7 @@ GitHub Projects V2 is the durable system of record: https://github.com/users/chr
 
 ## Bootstrap sessions
 
-Herdr Core 0.1.20 (`hc`), Codex 0.167.2, Claude Code 2.1.311. The old `herdr` executable is absent. Existing PM t8 displays GPT-6-Astra. Developer t9 uses claude-opus-5-5; designer t10 uses gpt-6.1-sol; QA t11 uses gpt-6-luna. All three replied through hc send t8. Designer exercised actual image generation and alpha validation. Generation/edit tools are exposed; editing must be verified when used.
+Herdr Core 0.1.20 (`hc`), Codex 0.167.2, Claude Code 2.1.311. The old `herdr` executable is absent. At bootstrap, the team observed PM t8, developer t9, designer t10 and QA t11; these historical model/session observations have since changed. The current roles.json and live Herdr state take precedence. All three replied through hc send t8. The original Codex Designer t10 exercised actual image generation and alpha validation. That historical capability does not establish generation or editing access for the Claude replacement.
 
 All four appear in one GitHub Pet Team tab, in a 2×2 arrangement. Session addresses are observations, not permanent identities. Inspect `hc ls`, `hc get` and `herdr-app ls` before routing. A stale inherited HC_TERMINAL_ID was observed (t2 rather than live PM t8); use the observed current parent explicitly.
 
@@ -40,8 +40,8 @@ For a dead specialist, inspect its saved CLI session, worktree status and issue 
 
 Example runtime commands (append the saved role/task instructions):
 - Developer: `claude --model claude-opus-5-5 --name developer --permission-mode auto`
-- Designer: `codex --no-daemon -m gpt-6.1-terra`
-- QA: `codex --no-daemon -m gpt-6-luna`
+- Designer: `claude --model claude-opus-5-5 --name graphic-designer --permission-mode auto`
+- QA: `claude --model claude-opus-5-5 --name qa-engineer --permission-mode auto`
 
 Verify launch argv, displayed model and an actual response before reporting operational. Trust prompts may be resolved only within the user's authorized project. Read blocked/error screens; do not force past permission decisions. No service restarts or usage-limit workarounds.
 
@@ -60,3 +60,9 @@ The first two PRs (#16 workflow, #17 QA plan) were already merged externally whe
 ## Model-selection reminder hazard
 
 During low allowance, Codex showed an idle popup whose default action was to switch from Sol to Luna. A pasted prompt followed by Enter can accept that default before the task reaches the agent. This explains an observed Designer model mismatch. Inspect the visible screen when readiness or model identity is uncertain; dismiss the suggestion with Keep current model (never show again) rather than accepting the default. Verify the model after dismissal. This changes reminder behavior only; usage limits remain in force. Never use a model switch to bypass an allowance.
+
+## Claude specialist takeover
+
+Chris requested Claude replacements for QA and Designer. Both now run Opus5.5 in dedicated role worktrees; see [handoff](handoffs/claude-specialists.md) and roles.json. Original Codex sessions ended cleanly and their worktrees/evidence remain. Both replacements verified gh, Swift, hc and image inspection; neither has CUA enabled, and Designer image generation is unavailable/unverified. Do not infer old Codex tools carry across runtimes. Chris authorized PM to launch a scoped Codex artist if image generation or editing is needed; no artist is currently required.
+
+Chris then requested a Claude Product Manager. Claude Code t1p (claude-opus-5-5) accepted the handoff from Codex t8 and is now sole PM. Specialists report through `hc send product-manager`. Their Herdr parent is still t8, so do not rely on parent notifications.

@@ -195,9 +195,9 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
             .deletingLastPathComponent().appendingPathComponent("docs/design/incidents/incident-marker.json")
     }()
 
-    @Test(.enabled(if: FileManager.default.fileExists(atPath: specURL.path),
-                   "design's spec is not on this branch yet (PR #38)"))
-    func transcribedSpecMatchesDesignJSON() throws {
+    /// Enforced: the canonical spec is on main (PR #38); a missing or moved file fails here.
+    @Test func transcribedSpecMatchesDesignJSON() throws {
+        #expect(FileManager.default.fileExists(atPath: Self.specURL.path), "missing \(Self.specURL.path)")
         let decoded = try JSONDecoder().decode(IncidentMarkerSpec.self, from: Data(contentsOf: Self.specURL))
         #expect(decoded == IncidentMarkerSpec.standard)
         // Field by field too, so a drift names its section.

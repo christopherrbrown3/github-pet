@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="74" viewBox="-8 178 72 74">
+  <title>GitHub incident siren</title>
+  <!-- Coordinates are 256-unit art-canvas units (docs/design/incidents/incident-marker.json, "siren"); light palette. -->
+  <defs>
+    <linearGradient id="dome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF5A4E"/>
+      <stop offset="1" stop-color="#B3261E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="28" cy="214" r="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF3B30" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#FF3B30" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="28" cy="214" r="34" fill="url(#glow)"/>
+  <path d="M14 236 V216 A14 14 0 0 1 42 216 V236 Z" fill="url(#dome)" stroke="#2B1B1B" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="14" y="226" width="28" height="4" fill="#B3261E"/>
+  <ellipse cx="22" cy="214" rx="3.5" ry="7" fill="#FFFFFF" fill-opacity="0.8"/>
+  <rect x="10" y="236" width="36" height="12" rx="3" fill="#3A2A2A" stroke="#2B1B1B" stroke-width="2.5"/>
+</svg>

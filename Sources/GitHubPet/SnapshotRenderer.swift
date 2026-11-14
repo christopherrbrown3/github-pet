@@ -143,6 +143,8 @@ enum SnapshotRenderer {
         }
 
 
+        report.append("## badge stays on screen (real mascot window controller)")
+        report.append(await offscreenBadgeProbe(model: model))
         report.append("## hover follows content growth (real mascot window controller)")
         report.append(await hoverGrowthProbe(model: model))
         report.append("## resize (real mascot window controller, as the Settings slider does)")
@@ -259,6 +261,29 @@ enum SnapshotRenderer {
             + "click=\(clicked ? "opens-inbox" : "FAILED clicks=\(clicks)")"
     }
 
+    /// A saved position with 60% of the panel on screen and its badge corner past the right edge
+    /// (Copilot 4568085580): the real controller must show the whole panel, badge included.
+    private static func offscreenBadgeProbe(model: AppModel) async -> String {
+        let saved = model.settings
+        defer { model.settings = saved }
+        guard let screen = NSScreen.main?.visibleFrame else { return "badge on screen: no screen" }
+        let size = model.layout(128).panelSize
+        model.settings.mascotSize = 128
+        model.settings.mascotOriginX = Double(screen.maxX - size.width * 0.6)
+        model.settings.mascotOriginY = Double(screen.minY + 200)
+        model.settings.mascotVisible = true
+        var controller: MascotWindowController? = MascotWindowController(model: model)
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        let frame = controller?.panelFrame ?? .null
+        let labels = model.layout(128).labelRects.map { $0.offsetBy(dx: frame.minX, dy: frame.minY) }
+        let inside = screen.insetBy(dx: -0.5, dy: -0.5)
+        model.settings.mascotVisible = false
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        controller = nil
+        return "badge on screen: panel-inside=\(inside.contains(frame)) labels-inside=\(labels.allSatisfy { inside.contains($0) }) "
+            + "saved-x-offscreen=\(Int(size.width * 0.4))pt panel=(\(Int(frame.minX)),\(Int(frame.minY)))"
+    }
+
     /// Opens the real controller's hover summary while Loading (narrow), then lets a refresh fill
     /// it with titles (privacy off: much wider). The panel sits so the narrow summary fits on the
     /// right but the wide one doesn't: the grown summary must be re-placed on the left, clear of
@@ -313,8 +338,11 @@ enum SnapshotRenderer {
     /// and checks that the panel follows the setting and the ground point stays put.
     private static func resizeProbe(model: AppModel, directory: URL) async -> [String] {
         let saved = model.settings
-        model.settings.mascotOriginX = nil
-        model.settings.mascotOriginY = nil
+        // Start mid-screen: near an edge, keeping the whole panel (badge) on screen takes
+        // precedence over keeping the ground point fixed (checked by the badge probe).
+        let screen = NSScreen.main?.visibleFrame ?? .zero
+        model.settings.mascotOriginX = Double(screen.midX - 64)
+        model.settings.mascotOriginY = Double(screen.minY + 200)
         model.settings.mascotSize = 128
         model.settings.mascotVisible = true
         var controller: MascotWindowController? = MascotWindowController(model: model)

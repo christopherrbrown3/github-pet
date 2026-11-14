@@ -41,6 +41,7 @@ final class AppModel: ObservableObject {
 
     private let store: SettingsStore
     let clockOffset: TimeInterval
+    private let pollsPeriodically: Bool
     private let engine = InboxEngine()
     private let simulator = FixtureSimulator()
     private let ghClient = GhClient()
@@ -58,6 +59,9 @@ final class AppModel: ObservableObject {
     init(options: LaunchOptions) {
         store = SettingsStore(defaults: options.userDefaults)
         clockOffset = options.clockOffset
+        // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
+        // would refresh a step it just made stale (flaky render-check).
+        pollsPeriodically = options.snapshotDirectory == nil
         if options.resetSettings { store.reset() }
         var loaded = store.load()
         switch options.forcedSource {
@@ -206,8 +210,10 @@ final class AppModel: ObservableObject {
         resetSession()
         resetServiceStatus()
         pollTimer?.invalidate()
-        pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+        if pollsPeriodically {
+            pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.refresh() }
+            }
         }
         sync(now: clock())
         refresh()

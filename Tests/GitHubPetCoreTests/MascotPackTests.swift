@@ -104,6 +104,83 @@ private struct PackFixture {
         #expect(fixture.errors().contains(.missingState("urgent")))
     }
 
+    @Test func oneShotSequencesMustFitTheirEventClip() throws {
+        let fixture = try PackFixture()
+        func durations(_ state: String, _ values: [Int]) throws {
+            try fixture.manifest { json in
+                var states = json["states"] as! [String: Any]
+                var spec = states[state] as! [String: Any]
+                spec["durationMs"] = values
+                states[state] = spec
+                json["states"] = states
+            }
+        }
+        try durations("urgent", [2000, 2000])
+        #expect(fixture.errors() == [.clipTooLong("urgent", 4000, 2000)], "the second frame would never play")
+        try durations("attention", [1000, 1000])
+        #expect(fixture.errors() == [.clipTooLong("attention", 2000, 1900)])
+        try durations("urgent", [1000, 1000])
+        #expect(fixture.errors().isEmpty, "exactly the clip length fits")
+        try durations("idle", [2000, 2000])
+        #expect(fixture.errors().isEmpty, "idle loops, so it has no clip limit")
+    }
+
+    @Test func pathsWithNulOrControlCharactersCantEscapeThePack() throws {
+        // Copilot 4569991795: "..\0ignored/outside.png" reached openat as ".." (C stops at NUL).
+        let fixture = try PackFixture()
+        let outside = fixture.directory.deletingLastPathComponent().appendingPathComponent("outside.png")
+        try validFrame.write(to: outside)
+        defer { try? FileManager.default.removeItem(at: outside) }
+        let escaping = "..\u{0}ignored/outside.png"
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            idle["staticFallback"] = escaping
+            states["idle"] = idle
+            json["states"] = states
+        }
+        #expect(fixture.errors() == [.unsafePath(escaping)])
+        for path in ["frames/a\u{0}.png", "frames/a\nb.png", "frames/\u{7F}.png", "frames/\tidle_0.png"] {
+            #expect(!MascotPack.isSafeRelativePath(path), "\(path.debugDescription)")
+        }
+        // The openat walk refuses such components itself, even if a caller skipped the check.
+        let root = open(fixture.directory.path, O_RDONLY | O_DIRECTORY)
+        defer { close(root) }
+        for path in [escaping, "../outside.png", "./frames/idle_0.png", "frames//idle_0.png", ""] {
+            #expect(throws: MascotPack.ReadError.unsafeComponent) {
+                try MascotPack.readInPack(root: root, path: path, limit: MascotPack.maxImageBytes)
+            }
+        }
+        #expect(try MascotPack.readInPack(root: root, path: "frames/idle_0.png", limit: MascotPack.maxImageBytes) == validFrame)
+    }
+
+    @Test func hugeDurationsAreRejectedWithoutCrashing() throws {
+        // Copilot 4569991771: summing [Int.max, 125] used to trap during app init.
+        let fixture = try PackFixture()
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var urgent = states["urgent"] as! [String: Any]
+            urgent["durationMs"] = [Int.max, 125]
+            states["urgent"] = urgent
+            json["states"] = states
+        }
+        let errors = fixture.errors()
+        #expect(errors.contains(.durationOutOfRange("urgent", Int.max)))
+        #expect(errors.contains(.clipTooLong("urgent", Int.max, 2000)))
+        #expect(MascotPack.saturatingSum([Int.max, Int.max, 1]) == Int.max)
+        #expect(MascotPack.saturatingSum([-5, 300, 400]) == 700, "negative values (already rejected) don't reduce the total")
+    }
+
+    @Test func onlyTheV1GroundAnchorIsAccepted() throws {
+        let fixture = try PackFixture()
+        for anchor in [[64, 128], [128, 231], [0, 0], [128]] {
+            try fixture.manifest { $0["anchor"] = anchor }
+            #expect(fixture.errors() == [.badAnchor], "anchor \(anchor)")
+        }
+        try fixture.manifest { $0["anchor"] = [128, 232] }
+        #expect(fixture.errors().isEmpty)
+    }
+
     @Test func pathTraversalAndAbsolutePathsAreRejected() throws {
         #expect(!MascotPack.isSafeRelativePath("../escape.png"))
         #expect(!MascotPack.isSafeRelativePath("frames/../../escape.png"))
@@ -128,6 +205,39 @@ private struct PackFixture {
             json["states"] = states
         }
         #expect(fixture.errors().contains(.unsafePath("frames/link.png")))
+    }
+
+    @Test func noSymlinkInsideThePackIsFollowed() throws {
+        // Even links that point inside the pack are rejected: reads walk the pack directory with
+        // O_NOFOLLOW, so a checked path can't be swapped for a link out of the pack before reading.
+        let fixture = try PackFixture()
+        try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("frames/same.png"),
+                                                   withDestinationURL: fixture.directory.appendingPathComponent("frames/idle_0.png"))
+        try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("linked"),
+                                                   withDestinationURL: fixture.directory.appendingPathComponent("frames"))
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            idle["staticFallback"] = "frames/same.png"
+            states["idle"] = idle
+            var urgent = states["urgent"] as! [String: Any]
+            urgent["staticFallback"] = "linked/urgent_0.png"
+            states["urgent"] = urgent
+            json["states"] = states
+        }
+        let errors = fixture.errors()
+        #expect(errors.contains(.unsafePath("frames/same.png")), "file symlink")
+        #expect(errors.contains(.unsafePath("linked/urgent_0.png")), "directory symlink component")
+    }
+
+    @Test func symlinkedManifestIsRejected() throws {
+        let fixture = try PackFixture()
+        try fixture.manifest()
+        let real = fixture.directory.appendingPathComponent("real.json")
+        try FileManager.default.moveItem(at: fixture.directory.appendingPathComponent("manifest.json"), to: real)
+        try FileManager.default.createSymbolicLink(at: fixture.directory.appendingPathComponent("manifest.json"),
+                                                   withDestinationURL: real)
+        #expect(fixture.errors() == [.unreadableManifest])
     }
 
     @Test func durationRulesAreEnforced() throws {

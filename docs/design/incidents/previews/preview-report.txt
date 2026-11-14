@@ -1,0 +1,21 @@
+Design previews of incident-marker.json drawn with CoreGraphics behind real mona-pet-v1 frames.
+Not native MascotView renders; labels (DEMO/count) are not drawn. Columns: static, burst 0.05/1.2/2.6 s (0.05 s is mid fade-in of a new incident). Rows: minor, major, critical.
+keep-out @64 minor: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @64 major: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @64 critical: topmost marker row y=70 (band y<64) PASS over static + 180 burst frames
+keep-out @128 minor: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @128 major: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @128 critical: topmost marker row y=70 (band y<64) PASS over static + 180 burst frames
+keep-out @256 minor: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @256 major: topmost marker row y=94 (band y<64) PASS over static + 180 burst frames
+keep-out @256 critical: topmost marker row y=70 (band y<64) PASS over static + 180 burst frames
+fade-in @128 minor: summed alpha at 0 / 150 / 300 ms = 0 / 606806 / 640052 PASS
+fade-in @128 major: summed alpha at 0 / 150 / 300 ms = 0 / 3304559 / 3326571 PASS
+fade-in @128 critical: summed alpha at 0 / 150 / 300 ms = 0 / 5659460 / 5852143 PASS
+siren svg vs json: 8/8 attributes agree PASS
+flame tips @64 major: analytic min y=142.00 sampled min y=142.00 (maxTip majorMinY 142) PASS
+flame tips @64 critical: analytic min y=88.00 sampled min y=88.00 (maxTip criticalMinY 88) PASS
+flame tips @128 major: analytic min y=142.00 sampled min y=142.00 (maxTip majorMinY 142) PASS
+flame tips @128 critical: analytic min y=88.00 sampled min y=88.00 (maxTip criticalMinY 88) PASS
+flame tips @256 major: analytic min y=142.00 sampled min y=142.00 (maxTip majorMinY 142) PASS
+flame tips @256 critical: analytic min y=88.00 sampled min y=88.00 (maxTip criticalMinY 88) PASS

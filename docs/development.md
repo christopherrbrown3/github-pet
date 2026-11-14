@@ -159,8 +159,7 @@ use only: it isn't notarized or Developer ID signed.
   PR #38): beacon sweep, smoke (critical), flames (major/critical) and siren, in the 256-unit art canvas,
   upright and ground-anchored, behind the art. Values live in `IncidentMarkerSpec.standard`; the
   drift test decodes the canonical json into the same type and fails on any difference
-  (`GITHUB_PET_INCIDENT_SPEC=<path>` checks another copy; until PR #38 is merged into this branch the
-  test is skipped). The 64 pt size override applies to art below 96 pt.
+  (`GITHUB_PET_INCIDENT_SPEC=<path>` checks another copy; a missing file fails the test). The 64 pt size override applies to art below 96 pt.
 - render-check writes `incident-<size>-<tier>-<static|0.05s|1.2s|2.6s>[-dark].png` (72 files) for
   comparison with design's previews, and checks that no marker pixel lands in the keep-out band.
 - Demo incident rows are shown but disabled ("No status page"); they open nothing.
@@ -170,7 +169,9 @@ Settings are stored as one JSON blob in `UserDefaults` (`GitHubPet.settings.v1`)
 fields fall back to defaults, and values outside their range are clamped. They survive relaunch.
 
 - Mascot visibility, size (64–256 pt), and position (saved after each drag; reset in Settings;
-  ignored if mostly off-screen).
+  ignored if mostly off-screen). An accepted position is moved just enough that the whole panel,
+  including its count/quality badge, is on the display's visible area; near a screen edge this
+  takes precedence over keeping the ground point fixed when resizing.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox

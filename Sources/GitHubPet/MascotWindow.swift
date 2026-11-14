@@ -247,13 +247,10 @@ final class MascotWindowController {
         summaryInputs = inputs(popover: popover, panelFrame: window.frame)
     }
 
-    /// Returns `frame.origin` if the frame is mostly on some screen, else nil.
+    /// The frame's origin moved fully inside the display it mostly sits on (so the count/quality
+    /// badge stays visible), or nil if it isn't mostly on any display.
     private func onScreen(_ frame: CGRect) -> CGPoint? {
-        let visible = NSScreen.screens.contains { screen in
-            let overlap = screen.visibleFrame.intersection(frame)
-            return !overlap.isNull && overlap.width * overlap.height >= frame.width * frame.height * 0.5
-        }
-        return visible ? frame.origin : nil
+        PanelPosition.accepted(origin: frame.origin, size: frame.size, visibleFrames: NSScreen.screens.map(\.visibleFrame))
     }
 
     private func defaultOrigin(size: CGSize) -> CGPoint {

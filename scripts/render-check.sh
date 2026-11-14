@@ -129,6 +129,8 @@ for size in 64 128 256; do
     else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
   done
 done
+check_in "badge stays on screen (real mascot window controller)" "saved half-offscreen position keeps the badge visible" \
+  '^badge on screen: panel-inside=true labels-inside=true'
 check_in "hover follows content growth (real mascot window controller)" "hover re-placed when content grows" \
   '^hover growth: grew=true before-side=right after-side=left art-clear=true labels-clear=true on-screen=true'
 for step in '128->64' '64->256' '256->128'; do

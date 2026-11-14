@@ -44,13 +44,14 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case tooLarge(String)
     case undecodable(String)
     case notRegularFile(String)
+    case clipTooLong(String, Int, Int)
 
     public var description: String {
         switch self {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .badCanvas: return "canvas must be 256×256"
-        case .badAnchor: return "anchor must be [x, y] inside the canvas"
+        case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
         case .missingState(let s): return "required state '\(s)' missing"
         case .frameCount(let s): return "state '\(s)' needs 1–\(MascotPack.maxFrames) frames"
         case .durationMismatch(let s): return "state '\(s)' durationMs count differs from frames"
@@ -63,6 +64,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .tooLarge(let p): return "'\(p)' exceeds the size limit"
         case .undecodable(let p): return "'\(p)' is not a decodable RGBA PNG"
         case .notRegularFile(let p): return "'\(p)' is not a regular file"
+        case .clipTooLong(let s, let total, let limit):
+            return "state '\(s)' plays \(total)ms once, longer than its \(limit)ms event clip"
         }
     }
 }
@@ -77,6 +80,8 @@ public struct MascotPack: Equatable, Sendable {
     /// Pack bundled with the app (`assets/mascots/<id>` in the repository).
     public static let defaultPackID = "mona-pet-v1"
     public static let canvasSize = 256
+    /// The only supported ground anchor (schema v1), in canvas pixels.
+    public static let anchor = [128, 232]
     public static let maxFrames = 12
     public static let durationRange = 125...2000
     /// Read limits, enforced before decoding or hashing.
@@ -169,12 +174,17 @@ public struct MascotPack: Equatable, Sendable {
 
     /// Load and validate; on any error the caller keeps the native placeholder.
     public static func load(from directory: URL) -> Result<MascotPack, MascotPackErrors> {
-        let manifestURL = directory.appendingPathComponent("manifest.json")
-        guard let data = try? readBounded(manifestURL, limit: maxManifestBytes),
+        // Everything is read relative to one descriptor for the pack directory, never following a
+        // symlink below it, so files can't be swapped for links out of the pack between a check
+        // and the read: what is validated is what is read.
+        let root = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard root >= 0 else { return .failure(MascotPackErrors(errors: [.unreadableManifest])) }
+        defer { close(root) }
+        guard let data = try? readInPack(root: root, path: "manifest.json", limit: maxManifestBytes),
               let manifest = try? JSONDecoder().decode(MascotPackManifest.self, from: data) else {
             return .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }
-        let (errors, validated) = validateReading(manifest, in: directory)
+        let (errors, validated) = validateReading(manifest, root: root)
         guard errors.isEmpty else { return .failure(MascotPackErrors(errors: errors)) }
         var pack = MascotPack(directory: directory, manifest: manifest)
         pack.imageData = validated
@@ -212,19 +222,22 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     public static func validate(_ manifest: MascotPackManifest, in directory: URL) -> [MascotPackError] {
-        validateReading(manifest, in: directory).errors
+        let root = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard root >= 0 else { return [.unreadableManifest] }
+        defer { close(root) }
+        return validateReading(manifest, root: root).errors
     }
 
     /// Validates the manifest and every image, returning the errors and the bytes that passed.
-    static func validateReading(_ manifest: MascotPackManifest, in directory: URL)
+    static func validateReading(_ manifest: MascotPackManifest, root: Int32)
         -> (errors: [MascotPackError], data: [String: Data]) {
         var errors: [MascotPackError] = []
         var validated: [String: Data] = [:]
         guard manifest.schemaVersion == schemaVersion else { return ([.unsupportedSchema(manifest.schemaVersion)], [:]) }
         if manifest.canvas.width != canvasSize || manifest.canvas.height != canvasSize { errors.append(.badCanvas) }
-        if manifest.anchor.count != 2 || !manifest.anchor.allSatisfy({ (0...canvasSize).contains($0) }) {
-            errors.append(.badAnchor)
-        }
+        // Rendering, the attention lean and ground-preserving resizes all use the v1 ground point;
+        // a pack declaring another one would be drawn and resized wrongly, so it is rejected.
+        if manifest.anchor != anchor { errors.append(.badAnchor) }
         var checked: Set<String> = []
         for state in MascotState.allCases {
             guard let spec = manifest.states[state.rawValue] else {
@@ -240,8 +253,15 @@ public struct MascotPack: Equatable, Sendable {
             for duration in spec.durationMs where !durationRange.contains(duration) {
                 errors.append(.durationOutOfRange(state.rawValue, duration))
             }
+            // Attention and urgent play once per event clip; a longer sequence would be cut off
+            // (its last frames never shown), so it is rejected rather than truncated.
+            if state != .idle {
+                let limit = Int((EventClipQueue.duration(of: state) * 1000).rounded())
+                let total = saturatingSum(spec.durationMs)
+                if total > limit { errors.append(.clipTooLong(state.rawValue, total, limit)) }
+            }
             for path in spec.frames + [spec.staticFallback] where checked.insert(path).inserted {
-                let (fileErrors, data) = validateFile(path, in: directory, checksums: manifest.frameSha256 ?? [:])
+                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:])
                 errors += fileErrors
                 if fileErrors.isEmpty, let data { validated[path] = data }
             }
@@ -249,23 +269,35 @@ public struct MascotPack: Equatable, Sendable {
         return (errors, validated)
     }
 
+    /// Sum of manifest durations that saturates instead of trapping on overflow (a manifest may
+    /// declare e.g. Int.max; such values are rejected as out of range, never crash the app).
+    static func saturatingSum(_ values: [Int]) -> Int {
+        var total = 0
+        for value in values {
+            let (sum, overflow) = total.addingReportingOverflow(max(value, 0))
+            total = overflow ? .max : sum
+        }
+        return total
+    }
+
     /// Relative, `.png`, no `..`, and resolving inside the pack directory.
     public static func isSafeRelativePath(_ path: String) -> Bool {
-        guard !path.isEmpty, !path.hasPrefix("/"), !path.hasPrefix("~"),
-              path.lowercased().hasSuffix(".png"), !path.contains("\\") else { return false }
+        // No NUL or other control characters: C APIs stop at NUL, so "..\0x/a.png" would reach
+        // openat as "..".
+        guard !path.isEmpty, !path.unicodeScalars.contains(where: isControl), !path.hasPrefix("/"),
+              !path.hasPrefix("~"), path.lowercased().hasSuffix(".png"), !path.contains("\\") else { return false }
         return !path.split(separator: "/", omittingEmptySubsequences: false).contains { $0 == ".." || $0.isEmpty || $0 == "." }
     }
 
     /// Validates one image and returns the bytes it checked (nil if it couldn't be read).
-    static func validateFile(_ path: String, in directory: URL, checksums: [String: String])
+    static func validateFile(_ path: String, root: Int32, checksums: [String: String])
         -> (errors: [MascotPackError], data: Data?) {
         guard isSafeRelativePath(path) else { return ([.unsafePath(path)], nil) }
-        let root = directory.standardizedFileURL.resolvingSymlinksInPath().path
-        let fileURL = directory.appendingPathComponent(path).standardizedFileURL.resolvingSymlinksInPath()
-        guard fileURL.path.hasPrefix(root + "/") else { return ([.unsafePath(path)], nil) }
         let data: Data
         do {
-            data = try readBounded(fileURL, limit: maxImageBytes)
+            data = try readInPack(root: root, path: path, limit: maxImageBytes)
+        } catch ReadError.symlink, ReadError.unsafeComponent {
+            return ([.unsafePath(path)], nil)
         } catch ReadError.tooLarge {
             return ([.tooLarge(path)], nil)
         } catch ReadError.notRegularFile {
@@ -288,7 +320,34 @@ public struct MascotPack: Equatable, Sendable {
         return (errors, data)
     }
 
-    enum ReadError: Error { case tooLarge, unreadable, notRegularFile }
+    enum ReadError: Error { case tooLarge, unreadable, notRegularFile, symlink, unsafeComponent }
+
+    static func isControl(_ scalar: Unicode.Scalar) -> Bool { scalar.value < 0x20 || scalar.value == 0x7F }
+
+    /// Opens `path` (a safe relative path) under the pack's directory descriptor one component at a
+    /// time with O_NOFOLLOW, so no symlink anywhere below the pack is followed, and reads it
+    /// bounded from that same descriptor.
+    static func readInPack(root: Int32, path: String, limit: Int) throws -> Data {
+        let components = path.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        // Defence in depth, whatever the caller checked: every component must be a plain name that
+        // means the same thing to openat as it does here.
+        guard !components.isEmpty, components.allSatisfy({ component in
+            !component.isEmpty && component != "." && component != ".." && !component.unicodeScalars.contains(where: isControl)
+        }) else { throw ReadError.unsafeComponent }
+        guard let name = components.last else { throw ReadError.unreadable }
+        var directory = root
+        defer { if directory != root { close(directory) } }
+        func fail(_ code: Int32) -> ReadError { code == ELOOP || code == ENOTDIR ? .symlink : .unreadable }
+        for component in components.dropLast() {
+            let next = openat(directory, component, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard next >= 0 else { throw fail(errno) }
+            if directory != root { close(directory) }
+            directory = next
+        }
+        let fd = openat(directory, name, O_RDONLY | O_NONBLOCK | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw fail(errno) }
+        return try readBounded(fd: fd, limit: limit)
+    }
 
     /// Reads at most `limit` bytes from a regular file; larger files are rejected without
     /// reading them whole. Opened non-blocking and checked with fstat, so a FIFO or device
@@ -296,6 +355,11 @@ public struct MascotPack: Equatable, Sendable {
     static func readBounded(_ url: URL, limit: Int) throws -> Data {
         let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
         guard fd >= 0 else { throw ReadError.unreadable }
+        return try readBounded(fd: fd, limit: limit)
+    }
+
+    /// `readBounded` on an already open descriptor, which it takes ownership of.
+    static func readBounded(fd: Int32, limit: Int) throws -> Data {
         let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
         defer { try? handle.close() }
         var info = stat()
