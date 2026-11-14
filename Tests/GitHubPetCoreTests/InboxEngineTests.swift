@@ -119,6 +119,28 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(engine.state == .ready)
     }
 
+    @Test func refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() {
+        // #44: advance domain time past staleAfter (including the reported 17.7 minute delay),
+        // without sleeping or changing the system clock. Snapshot rendering must re-poll the
+        // unchanged fixtures before it injects; production stale recovery must still be silent.
+        let gaps: [TimeInterval] = [InboxEngine.defaultStaleAfter + 1, 17 * 60 + 42]
+        for gap in gaps {
+            let fixtures = FixtureSimulator(makeID: { "after-render" })
+            let refreshed = InboxEngine(), unrefreshed = InboxEngine()
+            for engine in [refreshed, unrefreshed] {
+                #expect(engine.apply(fixtures.poll(), now: t0).isEmpty)
+            }
+            let resumed = t0 + gap
+            #expect(refreshed.apply(fixtures.poll(), now: resumed).isEmpty, "recovery announces nothing")
+            #expect(refreshed.state == .ready)
+            let injected = fixtures.injectEntitlementEvent(now: resumed)
+            #expect(unrefreshed.apply(fixtures.poll(), now: resumed).isEmpty,
+                    "without the unchanged refresh, this would still be silent stale recovery")
+            #expect(refreshed.apply(fixtures.poll(), now: resumed).map(\.item.id) == [injected.id])
+            #expect(refreshed.apply(fixtures.poll(), now: resumed + 1).isEmpty, "unchanged poll never replays")
+        }
+    }
+
     @Test func partialSnapshotsNeverProduceEventsAndAreNotEmpty() {
         let engine = InboxEngine()
         engine.apply(.snapshot(items: [item("a")], complete: true), now: t0)

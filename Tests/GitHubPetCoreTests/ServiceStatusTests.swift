@@ -849,7 +849,7 @@ private func stubURL(_ name: String) -> URL {
         #expect(data.count == 4096)
     }
 
-    // Wall-clock guard: a broken timeout fails the test instead of hanging CI.
+    // Timeout guard: a broken timeout fails the test instead of hanging CI.
     @Test(.timeLimit(.minutes(1))) func hangingServerTimesOut() async {
         let url = stubURL("hang")
         StubRegistry.shared.set(.hang, for: url)
@@ -864,14 +864,15 @@ private func stubURL(_ name: String) -> URL {
     @Test(.timeLimit(.minutes(1))) func slowDripHitsTheTotalDeadline() async {
         let url = stubURL("drip")
         StubRegistry.shared.set(.drip(0.3), for: url)
-        let started = Date()
+        let clock = ContinuousClock()
+        let started = clock.now
         await #expect {
             _ = try await stubTransport(timeout: 2).get(URLRequest(url: url, timeoutInterval: 2), maxBytes: 1 << 20)
         } throws: { error in
             (error as? URLError)?.code == .timedOut
         }
         // At least the deadline; the upper bound is the time limit (CI stalls make a tight bound flaky).
-        #expect(Date().timeIntervalSince(started) >= 1.9)
+        #expect(started.duration(to: clock.now) >= .milliseconds(1900))
     }
 
     @Test func redirectsAreNotFollowed() async throws {
