@@ -327,6 +327,8 @@ final class AppModel: ObservableObject {
         if serviceState != serviceMonitor.state { serviceState = serviceMonitor.state }
         if serviceIncidents != serviceMonitor.incidents { serviceIncidents = serviceMonitor.incidents }
         if serviceLastSuccess != serviceMonitor.lastSuccess { serviceLastSuccess = serviceMonitor.lastSuccess }
+        let burst = IncidentMarker.retained(markerBurst, marker: incidentMarker)
+        if burst != markerBurst { markerBurst = burst }
         if activeClip != clips.active { activeClip = clips.active }
     }
 
@@ -499,6 +501,8 @@ final class AppModel: ObservableObject {
         unseen.removeAll()
         unseenIncidents.removeAll()
         clips.clear()
+        // The re-seeded baseline is static: no burst carries over.
+        markerBurst = nil
         refresh()
     }
 

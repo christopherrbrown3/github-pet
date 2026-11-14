@@ -111,6 +111,12 @@ public struct IncidentMarker: Equatable, Sendable {
         return Phase(time: elapsed, staticWeight: min(max(weight, 0), 1), fading: fading, envelope: envelope)
     }
 
+    /// A burst only lives while the marker shows: once the marker is hidden (failure, stale, loading
+    /// or resolved) the burst ends, so a silent recovery or reopen never resumes an old animation.
+    public static func retained(_ burst: Burst?, marker: IncidentMarker?) -> Burst? {
+        marker == nil ? nil : burst
+    }
+
     /// CSS-style cubic Bezier ease (x1, y1, x2, y2): y for x in 0...1.
     public static func ease(_ x: Double, _ c: [Double]) -> Double {
         guard c.count == 4 else { return x }

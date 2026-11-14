@@ -97,6 +97,17 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
         #expect(phase(.major, at: 5.99).staticWeight > 0.98)
     }
 
+    @Test func burstEndsWhenTheMarkerIsHidden() {
+        let burst = IncidentMarker.Burst(start: t0, fromTier: nil)
+        let marker = IncidentMarker.current(state: .incidents, incidents: [incident("a1")])
+        #expect(IncidentMarker.retained(burst, marker: marker) == burst)   // unchanged fresh polls keep it
+        // Failure, stale or resolved hide the marker and end the burst, so a silent recovery or a
+        // quick reopen shows the static frame, not the rest of the old animation.
+        for state in [ServiceStatusState.error("x"), .stale, .loading, .operational] {
+            #expect(IncidentMarker.retained(burst, marker: IncidentMarker.current(state: state, incidents: [incident("a1")])) == nil)
+        }
+    }
+
     @Test func layersPerTier() {
         #expect(IncidentMarker.layers(.minor) == [.beaconSweep, .siren])
         #expect(IncidentMarker.layers(.major) == [.beaconSweep, .siren, .flames])

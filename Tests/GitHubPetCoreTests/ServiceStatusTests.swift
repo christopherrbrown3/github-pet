@@ -104,6 +104,9 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         (raw("a1", impact: "catastrophic"), "impact"),
         (raw("A1"), "id"),
         (raw("../x"), "id"),
+        (raw("q\u{301}"), "id"),
+        (raw("1\u{20E3}"), "id"),
+        (raw("ａ1"), "id"),
         (raw(""), "id"),
         (raw(String(repeating: "a", count: 33)), "id"),
         (raw("a1", created: "yesterday"), "created_at"),
@@ -167,7 +170,8 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
     }
 
     @Test func invalidIDsHaveNoURL() {
-        for id in ["", "A1", "a/b", "a.b", "a b", "%2e%2e", String(repeating: "a", count: 33)] {
+        for id in ["", "A1", "a/b", "a.b", "a b", "%2e%2e", String(repeating: "a", count: 33),
+                   "q\u{301}", "1\u{20E3}", "ａ1", "a\u{200B}b"] {
             #expect(ServiceStatusLink.incidentURL(id: id) == nil)
         }
         #expect(ServiceStatusLink.validated(nil as URL?) == nil)
@@ -429,6 +433,17 @@ private func raw(_ id: String, status: String = "investigating", impact: String 
         monitor.apply(.incidents([]), now: t0)
         #expect(monitor.apply(.incidents([incident("../evil"), incident("")]), now: t0 + 60).isEmpty)
         #expect(monitor.incidents.isEmpty)
+    }
+
+    @Test func snapshotLargerThanMemoryNeverReplays() {
+        // Three active incidents, memory for two: eviction must not make an active ID new again.
+        let monitor = ServiceStatusMonitor(capacity: 2)
+        let minor = [incident("a1"), incident("b2"), incident("c3")]
+        monitor.apply(.incidents(minor), now: t0)
+        for step in 1...4 { #expect(monitor.apply(.incidents(minor), now: t0 + Double(step) * 10).isEmpty) }
+        let major = minor.map { incident($0.id, .major) }
+        #expect(monitor.apply(.incidents(major), now: t0 + 60).count == 3)   // each escalation once
+        for step in 1...4 { #expect(monitor.apply(.incidents(major), now: t0 + 60 + Double(step) * 10).isEmpty) }
     }
 
     @Test func boundedMemoryEvictsOldestNotCurrent() {

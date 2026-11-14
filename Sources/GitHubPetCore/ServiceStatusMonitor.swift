@@ -86,7 +86,8 @@ public final class ServiceStatusMonitor {
             // Escalation is only a change within one open incident: a reopened ID stays silent.
             let previousIDs = Set(incidents.map(\.id))
             for incident in current {
-                let isNew = !knownSet.contains(incident.id)
+                // Still in the previous snapshot is never new, even if the bounded memory evicted it.
+                let isNew = !knownSet.contains(incident.id) && !previousIDs.contains(incident.id)
                 let tier = IncidentMarker.Tier(incident.impact)
                 let escalated = previousIDs.contains(incident.id) && tier >= .major
                     && tier > (highestTier[incident.id] ?? .minor)
@@ -97,7 +98,9 @@ public final class ServiceStatusMonitor {
                 let tier = IncidentMarker.Tier(incident.impact)
                 if tier > (highestTier[incident.id] ?? .minor) { highestTier[incident.id] = tier }
             }
-            highestTier = highestTier.filter { knownSet.contains($0.key) }
+            // Keep tiers for active incidents even past capacity, so eviction never replays an escalation.
+            let currentIDs = Set(current.map(\.id))
+            highestTier = highestTier.filter { knownSet.contains($0.key) || currentIDs.contains($0.key) }
             incidents = current
             baselineEstablished = true
             previousWasComparable = true

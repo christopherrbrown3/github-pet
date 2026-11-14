@@ -92,9 +92,12 @@ public struct ServiceIncident: Identifiable, Hashable, Sendable {
 public enum ServiceStatusLink {
     public static let host = "www.githubstatus.com"
 
-    /// Statuspage IDs are short lowercase alphanumerics (e.g. `kctbh9vrtdwd`).
+    /// Statuspage IDs are short lowercase ASCII alphanumerics (e.g. `kctbh9vrtdwd`). Checked byte by
+    /// byte: `Character` ranges would also accept graphemes such as "q\u{301}" or "1\u{20E3}".
     public static func isValidIncidentID(_ id: String) -> Bool {
-        (1...32).contains(id.count) && id.allSatisfy { ("a"..."z").contains($0) || ("0"..."9").contains($0) }
+        (1...32).contains(id.utf8.count)
+            && id.utf8.allSatisfy { (UInt8(ascii: "a")...UInt8(ascii: "z")).contains($0)
+                || (UInt8(ascii: "0")...UInt8(ascii: "9")).contains($0) }
     }
 
     public static func incidentURL(id: String) -> URL? {
