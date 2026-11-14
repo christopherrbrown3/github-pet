@@ -1,0 +1,12 @@
+{"children":[],"ended":true,"exit_code":0,"reason":"exit","signal":null,"status":null,"terminal":"t2j","turn":0}
+PASS packaged-binary render report: hover failure transparent: meets-target=false infinite-gap=true report-completed=true
+PASS packaged-binary render report: hover failure no-candidate: meets-target=false infinite-gap=true report-completed=true
+PASS packaged-binary render report: dropped past saved edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=true
+PASS packaged-binary render report: dropped beyond all displays: panel-inside=true saved-equals-shown=true expected-origin=true
+PASS packaged-binary render report: hover growth: grew=true before-side=right after-side=left art-clear=true labels-clear=true on-screen=true
+PASS packaged-binary render report: incident-marker=minor 
+PASS packaged-binary render report: incident-marker=major 
+PASS packaged-binary render report: incident-marker=critical 
+PASS packaged-binary render report: service=GitHub status unavailable: simulated status fetch failure
+PASS packaged-binary render report: service=No active GitHub incidents incident-rows=0 unseen-incidents=0
+PASS integrated incidents/hover behavior in actual CI packaged binary
