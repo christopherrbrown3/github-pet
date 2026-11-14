@@ -2,47 +2,66 @@
   "roles": [
     {
       "name": "product-manager",
-      "terminal": "t1p",
-      "runtime": "claude",
-      "assignment": "#5",
-      "intendedModel": "claude-opus-5-5",
-      "observedModel": "claude-opus-5-5",
+      "terminal": "t1r",
+      "runtime": "codex",
+      "assignment": "Maintain authoritative board and handoff; feature integration complete; PR45 documentation review",
+      "intendedModel": "gpt-6.1-sol",
+      "observedModel": null,
       "sessionId": null,
       "previousCodexTerminal": "t8",
       "previousCodexSessionId": "01a1d07b-522b-7370-9477-72b1b877c355",
-      "previousCodexObservedModel": "gpt-6.1-terra"
+      "previousCodexObservedModel": "gpt-6.1-terra",
+      "previousClaudeTerminal": "t1p",
+      "previousClaudeModel": "claude-opus-5-5",
+      "previousClaudeSessionId": "509dc436-e621-4025-b7f4-b02119a92a5b",
+      "reasoningEffort": "high",
+      "verification": "PM local configuration is Sol/high; no explicit model in launch argv"
     },
     {
       "name": "developer",
-      "terminal": "t9",
-      "runtime": "claude",
-      "assignment": "PR18 six Copilot findings (one commit each), then QA defects",
-      "intendedModel": "claude-opus-5-5",
-      "observedModel": "claude-opus-5-5",
-      "sessionId": null
+      "terminal": "t1s",
+      "runtime": "codex",
+      "assignment": "Idle after verified mainb0127f0 universal app/ZIP handoff; no backlog expansion",
+      "intendedModel": "gpt-6.1-sol",
+      "observedModel": "gpt-6.1-sol",
+      "sessionId": null,
+      "previousClaudeTerminal": "t9",
+      "previousClaudeModel": "claude-opus-5-5",
+      "previousClaudeSessionId": null,
+      "reasoningEffort": "high",
+      "verification": "launch argv, visible TUI, READY response"
     },
     {
       "name": "graphic-designer",
-      "terminal": "t1n",
-      "runtime": "claude",
-      "assignment": "#28, #29 visual review",
-      "intendedModel": "claude-opus-5-5",
-      "observedModel": "claude-opus-5-5",
+      "terminal": null,
+      "runtime": null,
+      "assignment": "Idle; prior design review delivered. Launch only for a scoped need.",
+      "intendedModel": "gpt-6.1-sol",
+      "observedModel": null,
       "previousCodexSessionId": "01a1d082-9e39-7740-99d9-f9df99831e41",
-      "sessionId": null
+      "sessionId": null,
+      "previousClaudeTerminal": "t1n",
+      "previousClaudeModel": "claude-opus-5-5",
+      "previousClaudeSessionId": null,
+      "reasoningEffort": "medium"
     },
     {
       "name": "qa-engineer",
-      "terminal": "t1m",
-      "runtime": "claude",
-      "assignment": "#4, #27, #28, #29",
-      "intendedModel": "claude-opus-5-5",
-      "observedModel": "claude-opus-5-5",
+      "terminal": "t1t",
+      "runtime": "codex",
+      "assignment": "Final mainb0127f0 artifact sanity, then idle; PR45 documentation review only if dispatched",
+      "intendedModel": "gpt-6.1-sol",
+      "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
-      "sessionId": "75c23127-a4b1-4819-bc22-3f78b1b19d9e"
+      "sessionId": null,
+      "previousClaudeTerminal": "t1m",
+      "previousClaudeModel": "claude-opus-5-5",
+      "previousClaudeSessionId": "75c23127-a4b1-4819-bc22-3f78b1b19d9e",
+      "reasoningEffort": "medium",
+      "verification": "launch argv, visible TUI, READY response"
     }
   ],
-  "observedDate": "2026-11-13",
+  "observedDate": "2026-11-14",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly requested replacing Codex QA, Designer and then PM with Claude. PM t1p (Opus5.5) accepted HANDOFF_GRANTED from Codex t8 on 2026-11-13; specialists route reports via hc send product-manager. Their Herdr parent remains t8 (launched --outlive-parent). Inspect Herdr before routing. Chris authorizes PM merges after readiness and review; releases remain separate."
+  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history."
 }

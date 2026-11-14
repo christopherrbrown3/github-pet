@@ -1,37 +1,32 @@
-# Team checkpoint — 2026-11-13
+# Team checkpoint — 2026-11-14 completed feature integration
 
-Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . The project is private and requires owner access. GitHub issue/PR comments and live state supersede this snapshot.
+Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . Live state and exact-head evidence supersede this snapshot.
 
-## Sessions
+## Team
 
-| Role | Terminal | Actual model | Work |
-|---|---|---|---|
-| product-manager | t1p | claude-opus-5-5 | Chris requested Claude takeover from Codex t8 (gpt-6.1-terra); board, coordination, review and authorized merges |
-| developer | t9 | claude-opus-5-5 | PR18 six Copilot findings, then QA defects |
-| graphic-designer | t1n | claude-opus-5-5 | Chris requested Claude takeover; #29/badge visual review |
-| qa-engineer | t1m | claude-opus-5-5 | Chris requested Claude takeover; independent exact-SHA verification; no CUA tool |
+Sole PM t1r; reports use `hc send t1r`. Developer t1s `codex-developer` GPT-6.1 Sol/high; QA t1t `codex-qa` GPT-6.1 Sol/medium. Specialist models/efforts verified by argv, TUI and READY. PM local config is Sol/high; launch argv did not explicitly select its model. Designer/developer-2 idle. Old Claude sessions exited cleanly, history preserved; do not restart them. Chris authorized Codex takeover and token-conscious choices; see roles.json and [initial takeover](handoffs/codex-takeover-2026-11-14.md).
 
-Saved conversations and launch mappings are in roles.json. All resumed specialists responded. Keep dedicated worktrees; inspect live Herdr before recovery.
+## Merged and verified
 
-## Deliverables and remaining work
+- PR36 incidents/marker/outage simulator: accepted head `8c462b2673af0b6cafae7018d3e132f0b906d2d8`, merged as `9a533ec209eb703a2120a03c44fee6c409da748a`. Current-head CI/review and independent functional/still QA PASS (comment6879047123). #11/#37 Done.
+- PR42 hover placement and settled drop: accepted head `0f720962d549185c0a04d928c2952ef7e9bc3da0`, merged as `b10d329e0036bc67a927a4b7e561765ef37312fd`. Separate fixes for non-finite diagnostics and repeated/far edge drops independently reproduced before/fixed after. CI43607798711 green277tests/render, final Copilot no open issues, independent actual-artifact QA PASS (comment6879421128). #39 Done.
+- PR43 universal ZIP and provenance: accepted head `561fafc6705b4e587aa23327fc029f965edac33a`, merged as **`b0127f00e4dec92b5b9111a46b76c7191334706f`**. Full history/exact packaged SHA, push-only main artifact lookup and failed Intel-child smoke fixed. Independent actual integrated artifact QA PASS (comment6879599808); exact-head CI/review green.
 
-- PR #18 implementation: current checkpoint SHA 10228d045860d73d33dc919f2df99917594aff0e; CI 43472908487 succeeded, 131 developer tests. Developer reports real-host resizing regressions fixed and compact hover placement. The near-touching badge revision is still pending. Earlier QA at a3d7aa7 found size64 retained a128 panel and badge256 clipped; those are not independently reverified on this head. No current-head full acceptance claim.
-- PR #19 artwork/design: checkpoint head 05ea2cde6f6e242be694d6705b6b78836f7d3bb7. Original generated assets are already cherry-picked into PR18. Newer docs specify responsive badges and a finite double-wave; Chris subsequently requested approximately1pt visible-art badge clearance, so another design revision is pending.
-- #25 drag/click/persisted origin and #26 fresh Settings geometry passed independent QA on3db865e. These reports remain scoped to their SHAs.
-- #27 actual native popover-arrow capture remains blocked. Window bounds and render reports cannot be called native-arrow visual proof.
-- #28 remains In Progress; QA source comments6859936842/6859937291 preserve latest interrupted results and CUA native-pipe failure. Preserve the one QA app/worktree; no permission changes or forced cleanup.
-- #29 attention animation runtime implementation remains pending.
-- #30 repo/org/everything scope selection is Backlog. #11 service incident monitoring remains unimplemented. Current live sources cover review requests and assigned issues; fixtures are the default.
-- #15 distribution is free only: Homebrew tap/cask plus GitHub Release app ZIP, ad-hoc signed, no paid Apple Developer account or notarization requirement. Verify/document Gatekeeper first-launch behavior. No release is authorized.
+## Saved app and ZIP
 
-## Merge authorization and constraints
+Actual push-to-main CI **43609749683 SUCCESS**:277 tests,8 packaging regressions, universal bundle, packaged-app render and actual x86_64 Rosetta smoke PASS. Entire source tree matches accepted561fafc exactly. Developer saved stable files without overwrite:
 
-Chris now explicitly authorizes merging ready PRs after Copilot findings are reviewed/handled. Check current immutable head, conflicts, relevant checks and acceptance; do not merge an incomplete application just because it is conflict-free. Releases and auto-merge are not authorized. Native SwiftUI/AppKit, gh-only authenticated access, read-only product and no hardcoded internal repositories remain mandatory. Unknown/stale/partial/error never means empty. Do not bypass model limits or overwrite other worktrees.
+- `/Users/chris/github-pet-builds/b0127f0/GitHubPet.app`
+- `/Users/chris/github-pet-builds/b0127f0/GitHubPet-0.1.0-b0127f0-universal.zip` and checksum sidecar
+- `REPORT.md`, `VERIFICATION.json`, `codesign.txt`, `main-ci.log` alongside
+- Version0.1.0, build71, full source revisionb0127f00e4dec92b5b9111a46b76c7191334706f; x86_64+arm64; strict ad-hoc signature;13 pack files match source.
+- ZIP SHA256 `f427650c9624b64dc6a89871ffd952342dea429df10441c34ccf5968cf6952a5`.
+- [Main artifact](https://github.com/christopherrbrown3/github-pet/actions/runs/43609749683/artifacts/14120062080).
 
-## Takeover update
+QA dispatched a final independent main-artifact provenance/signature/checksum sanity check; see latest PR43 comments for final result. No duplicate local build or app launch; no user settings, permissions, quarantine or unrelated processes changed.
 
-QA and Designer responded from Claude Opus5.5 sessions t1m/t1n with clean dedicated worktrees. Current PR18 head at takeover is f22deaf336c94140e10bcbc207df5649e7b3aee4, CI43487323700 green138tests. #29 double-wave implementation is included; CI has system Reduce Motion enabled, so the positive gesture probe is SKIPPED while suppression is verified. QA independently completed this exact head: build/signing,138 tests, render-check, a positive model-level gesture probe with local system Reduce Motion off and seven focused gesture checks passed; native desktop motion remains unverified because CUA is unavailable. Designer reviewed selected stills/filmstrips; natural motion remains unverified. Developer is implementing immediate cancellation on explicit snooze/quiet changes and system Reduce Motion notifications; clock-driven quiet-hour boundaries remain tick-driven. README PR32/33 are merged. New #29 code needs Copilot review. See handoff for prior exact-SHA evidence and constraints.
+## Remaining scope
 
-## PM takeover
+#15 stays open: app/ZIP packaging is delivered, broader native install/login/accessibility/distribution acceptance is not complete. Clean-Mac quarantined first launch and settings preservation, physical Intel, actual native popover chrome/manual pointer/VoiceOver and live motion remain unverified (#4/#15). Rosetta CI execution is not physical Intel evidence. No release, tag, Homebrew publication or auto-merge authorized/performed. #35/#40/#41/#44 remain Backlog; agents idle after handoff, no unsolicited expansion.
 
-Chris requested a Claude Product Manager. Claude Code t1p (claude-opus-5-5) sent PM_READY, received HANDOFF_GRANTED from Codex PM t8 and accepted it on 2026-11-13. Specialists route reports via `hc send product-manager`; their Herdr parent remains t8, so notifications to the parent do not reach the new PM. Use role names and `hc ls`. At transfer, PR18 head e0789eec8a877bf7b68de7ee6607f2fcf63a4c7b had CI43490177306 green with 143 Developer tests. Developer implements immediate cancellation on snooze, quiet hours and Reduce Motion. QA was verifying it in qa-verify-e0789ee. Developer triaged six new Copilot threads as valid and was dispatched one commit per finding. The gh account-switch finding uses a single request-bound GraphQL query, because identity checks before and after the searches would miss an A->B->A switch. The Designer flagged the mascot's resemblance to GitHub's Octocat for owner review before #15 public distribution. Live motion remains unverified.
+PM documentation PR45 records takeover and this checkpoint; review/checks on its current SHA govern that documentation merge. Earlier handoff sections are historical, not current active assignments.
