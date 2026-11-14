@@ -4,7 +4,7 @@
       "name": "product-manager",
       "terminal": "t1r",
       "runtime": "codex",
-      "assignment": "PM takeover, board and PR36 \u2192 PR42 \u2192 PR43 integration",
+      "assignment": "Maintain authoritative board and handoff; feature integration complete; PR45 documentation review",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": null,
       "sessionId": null,
@@ -13,7 +13,7 @@
       "previousCodexObservedModel": "gpt-6.1-terra",
       "previousClaudeTerminal": "t1p",
       "previousClaudeModel": "claude-opus-5-5",
-      "previousClaudeSessionId": null,
+      "previousClaudeSessionId": "509dc436-e621-4025-b7f4-b02119a92a5b",
       "reasoningEffort": "high",
       "verification": "PM local configuration is Sol/high; no explicit model in launch argv"
     },
@@ -21,7 +21,7 @@
       "name": "developer",
       "terminal": "t1s",
       "runtime": "codex",
-      "assignment": "PR43 QA D1 + Copilot findings, then wait for scoped integration",
+      "assignment": "Idle after verified mainb0127f0 universal app/ZIP handoff; no backlog expansion",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -49,7 +49,7 @@
       "name": "qa-engineer",
       "terminal": "t1t",
       "runtime": "codex",
-      "assignment": "Independent PR36 exact-head QA, then PR43 fixed-head verification",
+      "assignment": "Final mainb0127f0 artifact sanity, then idle; PR45 documentation review only if dispatched",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -63,5 +63,5 @@
   ],
   "observedDate": "2026-11-14",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is the sole dispatcher. Use hc send t1r; role names product-manager/developer/qa-engineer still point to preserved retired Claude terminals. New names codex-developer and codex-qa. Previous Claude sessions remain for audit; quota auto-resume cancelled on t1p/t9/t1m. No release or auto-merge. Designer and developer-2 idle, no duplicate writers. Prior ready-merge authorization recorded in Claude PM history; validate gates first."
+  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history."
 }

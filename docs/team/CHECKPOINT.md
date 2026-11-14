@@ -1,25 +1,32 @@
-# Team checkpoint — 2026-11-14 Codex takeover
+# Team checkpoint — 2026-11-14 completed feature integration
 
-Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . Live board and exact-head GitHub evidence supersede this snapshot.
+Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . Live state and exact-head evidence supersede this snapshot.
 
-## Active team
+## Team
 
-- Sole PM: t1r, current Codex session, local config Sol/high (launch did not explicitly select a model). Branch `docs/codex-pm-takeover-20261114`, worktree `product-manager`.
-- Developer: t1s `codex-developer`, **gpt-6.1-sol / high**, verified argv/TUI/READY. Worktree `developer`, branch `feat/15-zip-packaging`.
-- QA: t1t `codex-qa`, **gpt-6.1-sol / medium**, verified argv/TUI/READY. Worktree `qa-engineer`, detached verification worktrees preserved.
-- Designer and developer-2 idle; no extra agent launched for delivered work. Plan Sol/medium for a future scoped design review.
+Sole PM t1r; reports use `hc send t1r`. Developer t1s `codex-developer` GPT-6.1 Sol/high; QA t1t `codex-qa` GPT-6.1 Sol/medium. Specialist models/efforts verified by argv, TUI and READY. PM local config is Sol/high; launch argv did not explicitly select its model. Designer/developer-2 idle. Old Claude sessions exited cleanly, history preserved; do not restart them. Chris authorized Codex takeover and token-conscious choices; see roles.json and [initial takeover](handoffs/codex-takeover-2026-11-14.md).
 
-Chris explicitly requested Codex takeover and token-conscious model selection. See [handoff](handoffs/codex-takeover-2026-11-14.md) and roles.json. Preserved Claude terminals t1p/t9/t1m/t1n/t1q are historical, not active owners. Cancelled automatic quota retry on t1p/t9/t1m. Reports MUST use `hc send t1r`, not the retired `product-manager` name.
+## Merged and verified
 
-## Work and gates
+- PR36 incidents/marker/outage simulator: accepted head `8c462b2673af0b6cafae7018d3e132f0b906d2d8`, merged as `9a533ec209eb703a2120a03c44fee6c409da748a`. Current-head CI/review and independent functional/still QA PASS (comment6879047123). #11/#37 Done.
+- PR42 hover placement and settled drop: accepted head `0f720962d549185c0a04d928c2952ef7e9bc3da0`, merged as `b10d329e0036bc67a927a4b7e561765ef37312fd`. Separate fixes for non-finite diagnostics and repeated/far edge drops independently reproduced before/fixed after. CI43607798711 green277tests/render, final Copilot no open issues, independent actual-artifact QA PASS (comment6879421128). #39 Done.
+- PR43 universal ZIP and provenance: accepted head `561fafc6705b4e587aa23327fc029f965edac33a`, merged as **`b0127f00e4dec92b5b9111a46b76c7191334706f`**. Full history/exact packaged SHA, push-only main artifact lookup and failed Intel-child smoke fixed. Independent actual integrated artifact QA PASS (comment6879599808); exact-head CI/review green.
 
-- Main: PR18 merged as `83b7b5c`; prototype exists. No release/tag authorized.
-- PR36 merged as `9a533ec209eb703a2120a03c44fee6c409da748a` from `8c462b2673af0b6cafae7018d3e132f0b906d2d8`. CI43579009400 green274 tests; QA55 assertions/10 targeted tests/nine stills PASS (comment6879047123), final current-head Copilot no open code issues; four threads resolved. #11/#37 Done. Desktop motion/popover/VoiceOver limitations remain under#4.
-- PR42: `56b071ca6050f30e95327d460cdd69fed984de2c`, prior independent QA PASS including negative overlap probe. Developer dispatched to integrate main9a533ec in a separate worktree; await exact resulting SHA/CI/delta QA. #39 In QA.
-- PR43: current `f1cfada8aeb28588e86952d39496f0cfeee03c34`, CI43606856503 pending. D1 fixed atf54d5a6; its actual artifact independently passed provenance/signature/universal/checksum/build51. Additional D2 (Intel smoke discarded child failure) reproduced independently and fixed atf1cfada; independent fixture exits0/86 correctly, eight regressions PASS. Await new CI/artifact and Copilot. #15 In Progress.
-- Integration order retained: PR36, then42, then43. Refresh current-head reviews/CI/QA and conflicts before each authorized ready merge. No auto-merge or release.
-- #35/#40/#41/#44 remain Backlog; no unsolicited expansion.
+## Saved app and ZIP
 
-## Evidence limits
+Actual push-to-main CI **43609749683 SUCCESS**:277 tests,8 packaging regressions, universal bundle, packaged-app render and actual x86_64 Rosetta smoke PASS. Entire source tree matches accepted561fafc exactly. Developer saved stable files without overwrite:
 
-Offscreen render checks and static review are not native popover, pointer, VoiceOver or live motion proof. No current claim of clean-Mac quarantined first-launch verification or physical Intel validation. Intel Rosetta smoke did run successfully in manual CI43569471978 (prior QA comment lacked this later evidence). No system settings, permission, quarantine or unrelated process changes authorized. Avoid heavy dense QA sweeps; save logs/checkpoints and reuse valid exact-SHA evidence.
+- `/Users/chris/github-pet-builds/b0127f0/GitHubPet.app`
+- `/Users/chris/github-pet-builds/b0127f0/GitHubPet-0.1.0-b0127f0-universal.zip` and checksum sidecar
+- `REPORT.md`, `VERIFICATION.json`, `codesign.txt`, `main-ci.log` alongside
+- Version0.1.0, build71, full source revisionb0127f00e4dec92b5b9111a46b76c7191334706f; x86_64+arm64; strict ad-hoc signature;13 pack files match source.
+- ZIP SHA256 `f427650c9624b64dc6a89871ffd952342dea429df10441c34ccf5968cf6952a5`.
+- [Main artifact](https://github.com/christopherrbrown3/github-pet/actions/runs/43609749683/artifacts/14120062080).
+
+QA dispatched a final independent main-artifact provenance/signature/checksum sanity check; see latest PR43 comments for final result. No duplicate local build or app launch; no user settings, permissions, quarantine or unrelated processes changed.
+
+## Remaining scope
+
+#15 stays open: app/ZIP packaging is delivered, broader native install/login/accessibility/distribution acceptance is not complete. Clean-Mac quarantined first launch and settings preservation, physical Intel, actual native popover chrome/manual pointer/VoiceOver and live motion remain unverified (#4/#15). Rosetta CI execution is not physical Intel evidence. No release, tag, Homebrew publication or auto-merge authorized/performed. #35/#40/#41/#44 remain Backlog; agents idle after handoff, no unsolicited expansion.
+
+PM documentation PR45 records takeover and this checkpoint; review/checks on its current SHA govern that documentation merge. Earlier handoff sections are historical, not current active assignments.
