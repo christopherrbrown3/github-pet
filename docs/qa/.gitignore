@@ -1,0 +1,5 @@
+# Preserve downloaded CI evidence locally without committing executables or app bundles.
+**/download/
+**/extracted/
+**/focused-probe
+**/stills-probe

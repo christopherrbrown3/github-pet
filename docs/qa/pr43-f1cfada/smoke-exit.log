@@ -1,0 +1,8 @@
+HEAD f1cfada8aeb28588e86952d39496f0cfeee03c34
+child=0 smoke-exit=0
+intel-smoke: x86_64 slice ran the snapshot scenario under Rosetta
+
+child=86 smoke-exit=86
+intel-smoke: x86_64 slice exited unsuccessfully (86)
+
+RESULT PASS: failed child rejected

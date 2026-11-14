@@ -1,0 +1,10 @@
+PASS intel-smoke child=0 with usable report (exit 0)
+PASS intel-smoke child=86 with usable report (exit 86)
+PASS build-app depth=full (exit 86)
+PASS package-zip depth=full (exit 86)
+PASS build-app depth=1 (exit 65)
+PASS package-zip depth=1 (exit 65)
+PASS build-app depth=2 (exit 65)
+PASS package-zip depth=2 (exit 65)
+
+EXIT 0
