@@ -1,0 +1,22 @@
+['zsh', '-n', 'scripts/build-app.sh', 'scripts/package-zip.sh', 'scripts/test-packaging.sh']
+EXIT 0
+['zsh', 'scripts/test-packaging.sh']
+PASS build-app depth=full (exit 86)
+PASS package-zip depth=full (exit 86)
+PASS build-app depth=1 (exit 65)
+PASS package-zip depth=1 (exit 65)
+PASS build-app depth=2 (exit 65)
+PASS package-zip depth=2 (exit 65)
+EXIT 0
+['zsh', 'scripts/build-app.sh']
+build-app: requires a Git checkout with complete history; for a shallow clone, run git fetch --unshallow
+EXIT 65
+PASS missing Git history build-app.sh: rejected before Swift/output
+['zsh', 'scripts/package-zip.sh']
+build-app: requires a Git checkout with complete history; for a shallow clone, run git fetch --unshallow
+EXIT 65
+PASS missing Git history package-zip.sh: rejected before Swift/output
+['git', 'rev-list', '--count', 'HEAD']
+51
+EXIT 0
+PASS independent complete-history count=51
