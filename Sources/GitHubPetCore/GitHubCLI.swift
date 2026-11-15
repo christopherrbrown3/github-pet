@@ -4,11 +4,14 @@ public struct CommandResult: Equatable, Sendable {
     public var exitCode: Int32
     public var stdout: Data
     public var stderr: Data
+    /// False if a descendant kept a pipe open beyond the bounded post-exit drain.
+    public var outputComplete: Bool
 
-    public init(exitCode: Int32, stdout: Data = Data(), stderr: Data = Data()) {
+    public init(exitCode: Int32, stdout: Data = Data(), stderr: Data = Data(), outputComplete: Bool = true) {
         self.exitCode = exitCode
         self.stdout = stdout
         self.stderr = stderr
+        self.outputComplete = outputComplete
     }
 
     public var stderrText: String { String(decoding: stderr, as: UTF8.self) }
@@ -17,117 +20,14 @@ public struct CommandResult: Equatable, Sendable {
 public enum CommandError: Error, Equatable {
     case launchFailed(String)
     case timedOut
+    case outputLimitExceeded
+    case cancelled
 }
 
 /// Runs a program with an explicit argv. Implementations must never go through a shell.
 public protocol CommandRunner: Sendable {
     func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult
-}
-
-/// `Process`-backed runner: argv only, no shell, stdin closed, bounded by a timeout.
-public struct ProcessCommandRunner: CommandRunner {
-    public var extraEnvironment: [String: String]
-
-    /// `GH_HOST` is pinned so searches use the same host as `auth status --hostname github.com`,
-    /// whatever the launching shell has configured.
-    public init(extraEnvironment: [String: String] = [
-        "GH_HOST": "github.com",
-        "GH_PROMPT_DISABLED": "1",
-        "GH_NO_UPDATE_NOTIFIER": "1",
-        "GH_SPINNER_DISABLED": "1",
-        "NO_COLOR": "1",
-    ]) {
-        self.extraEnvironment = extraEnvironment
-    }
-
-    public func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult {
-        let process = Process()
-        process.executableURL = executable
-        process.arguments = arguments
-        process.environment = ProcessInfo.processInfo.environment.merging(extraEnvironment) { _, new in new }
-        let stdout = Pipe()
-        let stderr = Pipe()
-        process.standardOutput = stdout
-        process.standardError = stderr
-        process.standardInput = FileHandle.nullDevice
-
-        // Every wait below is bounded: a hung child, or a grandchild holding a pipe open,
-        // can never block the caller past the timeout plus a short grace period.
-        let exited = DispatchSemaphore(value: 0)
-        process.terminationHandler = { _ in exited.signal() }
-        do {
-            try process.run()
-        } catch {
-            throw CommandError.launchFailed(error.localizedDescription)
-        }
-
-        let output = PipeCollector(stdout.fileHandleForReading)
-        let errors = PipeCollector(stderr.fileHandleForReading)
-        if exited.wait(timeout: .now() + timeout) == .timedOut {
-            process.terminate()
-            if exited.wait(timeout: .now() + 2) == .timedOut { kill(process.processIdentifier, SIGKILL) }
-            output.cancel()
-            errors.cancel()
-            throw CommandError.timedOut
-        }
-        let outData = output.finish(within: 2)
-        let errData = errors.finish(within: 2)
-        return CommandResult(exitCode: process.terminationStatus, stdout: outData, stderr: errData)
-    }
-}
-
-/// Drains a pipe with non-blocking reads from a dispatch source, so a chatty child never
-/// blocks on a full pipe and no thread is ever parked in `read`. Cancelling (on EOF, a
-/// collector deadline or a command timeout) closes the descriptor, even if a descendant
-/// still holds the write end open.
-final class PipeCollector: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "GitHubPet.PipeCollector")
-    private let source: DispatchSourceRead
-    private let closed = DispatchSemaphore(value: 0)
-    private let fd: Int32
-    private var data = Data()   // only touched on `queue`
-
-    init(_ handle: FileHandle) {
-        fd = handle.fileDescriptor
-        _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
-        source = DispatchSource.makeReadSource(fileDescriptor: fd, queue: queue)
-        source.setEventHandler { [weak self] in self?.drain() }
-        source.setCancelHandler { [closed] in
-            try? handle.close()
-            closed.signal()
-        }
-        source.resume()
-    }
-
-    private func drain() {
-        var buffer = [UInt8](repeating: 0, count: 64 * 1024)
-        while true {
-            let count = read(fd, &buffer, buffer.count)
-            if count > 0 {
-                data.append(buffer, count: count)
-            } else if count < 0 && errno == EINTR {
-                continue
-            } else {
-                if count == 0 || errno != EAGAIN { source.cancel() }   // EOF or a real error
-                return
-            }
-        }
-    }
-
-    /// Stops reading and closes the pipe. Safe to call more than once.
-    func cancel() {
-        source.cancel()
-    }
-
-    /// Bytes read until EOF, or what arrived within `seconds` if the pipe stays open longer.
-    /// Either way the descriptor is closed before this returns.
-    func finish(within seconds: TimeInterval) -> Data {
-        if closed.wait(timeout: .now() + seconds) == .timedOut {
-            source.cancel()
-            closed.wait()
-        }
-        return queue.sync { data }
-    }
+    func run(executable: URL, arguments: [String], budget: CommandBudget) throws -> CommandResult
 }
 
 /// Finds the `gh` executable without consulting a shell.
@@ -193,9 +93,14 @@ public struct GhClient: Sendable {
     static let authStatusArguments = ["auth", "status", "--active", "--hostname", "github.com"]
 
     public func authState() -> GhAuthState {
+        authState(budget: CommandBudget(timeout: timeout))
+    }
+
+    private func authState(budget: CommandBudget) -> GhAuthState {
         guard let gh = locator.locate() else { return .missing }
         do {
-            let result = try runner.run(executable: gh, arguments: Self.authStatusArguments, timeout: timeout)
+            let result = try runner.run(executable: gh, arguments: Self.authStatusArguments, budget: budget)
+            guard result.outputComplete else { return .error("gh output incomplete") }
             if result.exitCode == 0 { return .authenticated }
             // A gh too old for --active: the preflight is only advisory then; the GraphQL request
             // still maps exit 4 / "gh auth login" to signed out.
@@ -204,6 +109,10 @@ public struct GhClient: Sendable {
             return .error("gh auth status exited \(result.exitCode)")
         } catch CommandError.timedOut {
             return .error("gh timed out")
+        } catch CommandError.outputLimitExceeded {
+            return .error("gh output limit exceeded")
+        } catch CommandError.cancelled {
+            return .error("gh cancelled")
         } catch {
             return .missing
         }
@@ -246,7 +155,8 @@ public struct GhClient: Sendable {
     /// failed or hit the cap makes the snapshot partial; both failing is an error. The account lets
     /// the caller start a fresh baseline when `gh auth switch` changes who is signed in.
     public func fetchWithAccount() -> AccountFetch {
-        switch authState() {
+        let budget = CommandBudget(timeout: timeout)
+        switch authState(budget: budget) {
         case .missing: return AccountFetch(account: nil, outcome: .failure(.ghMissing))
         case .unauthenticated: return AccountFetch(account: nil, outcome: .failure(.unauthenticated))
         case .error(let message): return AccountFetch(account: nil, outcome: .failure(.failed(message)))
@@ -255,20 +165,25 @@ public struct GhClient: Sendable {
         guard let gh = locator.locate() else { return AccountFetch(account: nil, outcome: .failure(.ghMissing)) }
         let result: CommandResult
         do {
-            result = try runner.run(executable: gh, arguments: Self.requestArguments, timeout: timeout)
+            result = try runner.run(executable: gh, arguments: Self.requestArguments, budget: budget)
         } catch {
             return AccountFetch(account: nil, outcome: .failure(.failed("GitHub search failed")))
         }
         if Self.isAuthFailure(result) { return AccountFetch(account: nil, outcome: .failure(.unauthenticated)) }
+        guard result.outputComplete else { return AccountFetch(account: nil, outcome: .failure(.failed("GitHub output incomplete"))) }
         // gh exits non-zero when GraphQL reports errors but still prints the response, which may
-        // hold one search's data: parse whatever arrived.
+        // hold one search's data: retain proven pages, but never certify them complete on failure.
         guard let response = GhGraphQLParser.parse(result.stdout), let account = response.account else {
             return AccountFetch(account: nil, outcome: .failure(.failed("GitHub search failed")))
+        }
+        do { try budget.check() } catch {
+            return AccountFetch(account: nil, outcome: .failure(.failed("GitHub request budget exhausted")))
         }
         let pages = [response.reviews, response.assigned]
         let found = pages.compactMap { $0 }
         guard !found.isEmpty else { return AccountFetch(account: account, outcome: .failure(.failed("GitHub search failed"))) }
-        let complete = found.count == pages.count && found.allSatisfy { $0.total <= $0.items.count }
+        let complete = result.exitCode == 0 && !response.hasErrorEnvelope
+            && found.count == pages.count && found.allSatisfy { $0.total <= $0.items.count }
         return AccountFetch(account: account, outcome: .snapshot(items: found.flatMap(\.items), complete: complete))
     }
 }
@@ -284,6 +199,8 @@ public enum GhGraphQLParser {
         public var account: String?
         public var reviews: Page?
         public var assigned: Page?
+        /// An errors member, even malformed/null/empty, cannot certify a complete response.
+        public var hasErrorEnvelope: Bool = false
     }
 
     private struct Envelope: Decodable {
@@ -307,6 +224,15 @@ public enum GhGraphQLParser {
             var repository: Repository?
         }
         var data: DataField?
+        var hasErrorEnvelope: Bool
+        private enum CodingKeys: String, CodingKey { case data, errors }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            data = try c.decodeIfPresent(DataField.self, forKey: .data)
+            // Inspect presence without decoding error contents: valid pages remain available
+            // as partial even if the errors value itself has an unexpected JSON shape.
+            hasErrorEnvelope = c.contains(.errors)
+        }
     }
 
     /// Parses the GraphQL response, or nil if it isn't one. IDs are `<kind>:<node id>`: GitHub's
@@ -329,6 +255,6 @@ public enum GhGraphQLParser {
         }
         let login = body.viewer?.login.flatMap { $0.isEmpty ? nil : $0 }
         return Response(account: login, reviews: page(body.reviews, kind: .reviewRequest),
-                        assigned: page(body.assigned, kind: .assignedIssue))
+                        assigned: page(body.assigned, kind: .assignedIssue), hasErrorEnvelope: envelope.hasErrorEnvelope)
     }
 }

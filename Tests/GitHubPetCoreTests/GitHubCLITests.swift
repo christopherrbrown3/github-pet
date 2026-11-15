@@ -7,14 +7,35 @@ private final class FakeRunner: CommandRunner, @unchecked Sendable {
     var replies: [String: CommandResult] = [:]
     /// Answers before `replies` when it returns a result (full argv in hand).
     var handler: (([String]) -> CommandResult?)?
+    var beforeReply: (([String], TimeInterval) -> Void)?
     var throwing: Error?
     private(set) var calls: [(URL, [String])] = []
 
     func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult {
         calls.append((executable, arguments))
+        beforeReply?(arguments, timeout)
         if let throwing { throw throwing }
         if let answer = handler?(arguments) { return answer }
         return replies[arguments.prefix(2).joined(separator: " ")] ?? CommandResult(exitCode: 127)
+    }
+}
+
+/// Records the client's actual shared budget while forwarding accounting to the shipped
+/// protocol implementation on the existing in-memory runner (no duplicate budget logic).
+private final class RecordingLegacyBudgetRunner: CommandRunner, @unchecked Sendable {
+    let fixture: FakeRunner
+    private(set) var budgets: [CommandBudget] = []
+    private(set) var remainingBeforeCommand: [TimeInterval] = []
+    private(set) var bytesBeforeCommand: [Int] = []
+    init(_ fixture: FakeRunner) { self.fixture = fixture }
+    func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult {
+        try fixture.run(executable: executable, arguments: arguments, timeout: timeout)
+    }
+    func run(executable: URL, arguments: [String], budget: CommandBudget) throws -> CommandResult {
+        budgets.append(budget) // Keep references alive so pointer reuse cannot fake shared identity.
+        remainingBeforeCommand.append(budget.remaining)
+        bytesBeforeCommand.append(budget.consumedBytes)
+        return try fixture.run(executable: executable, arguments: arguments, budget: budget)
     }
 }
 
@@ -37,6 +58,11 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
     let link = url ?? "https://github.com/\(repo)/pull/\(number)"
     let nodeID = id ?? "N_\(repo.replacingOccurrences(of: "/", with: "_"))_\(number)"
     return #"{"id":"\#(nodeID)","number":\#(number),"title":"Item \#(number)","url":"\#(link)","updatedAt":"2026-11-12T10:00:00Z","repository":{"nameWithOwner":"\#(repo)"}}"#
+}
+
+private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> Data {
+    let json = String(decoding: graphQL(reviews: reviews), as: UTF8.self)
+    return Data((json.dropLast() + ",\"errors\":" + rawErrors + "}").utf8)
 }
 
 
@@ -182,6 +208,134 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
             return
         }
         #expect(items.count == 1)
+    }
+
+    @Test func nonzeroExitNeverMakesValidPagesComplete() {
+        for rows in [[], [node(12)]] as [[String]] {
+            let fetch = client(CommandResult(exitCode: 7, stdout: graphQL(reviews: rows))).0.fetchWithAccount()
+            #expect(fetch.account == "first-user", "identity still belongs to the same response")
+            guard case .snapshot(let items, let complete) = fetch.outcome else {
+                Issue.record("valid response pages should remain available as partial data"); continue
+            }
+            #expect(!complete && items.count == rows.count)
+            let engine = InboxEngine()
+            engine.apply(fetch.outcome, now: Date(timeIntervalSince1970: 1000))
+            #expect(engine.state == .partial && !engine.state.countIsKnown, "never verified empty")
+        }
+    }
+
+    @Test func graphQLErrorMemberCannotMakeCompleteDataEvenAtExitZero() {
+        // Presence fails closed, including malformed/null/empty errors members. Proven data
+        // remains usable; the server's raw error messages never become source success.
+        for errors in [#"[{"message":"fixture failure"}]"#, #""malformed""#, "{}", "null", "[]", "[null]", "[{}]", "true", "0"] {
+            for rows in [[], [node(12)]] as [[String]] {
+                let fetch = client(CommandResult(exitCode: 0, stdout: graphQLWithErrors(errors, reviews: rows))).0.fetchWithAccount()
+                #expect(fetch.account == "first-user")
+                guard case .snapshot(let items, false) = fetch.outcome else {
+                    Issue.record("errors member must preserve valid pages only as partial: \(errors)"); continue
+                }
+                #expect(items.count == rows.count)
+            }
+        }
+    }
+
+    @Test func realGhFixtureExitAndErrorQualityKeepsValidZeroControl() throws {
+        let cases: [(exit: Int, rows: [String], errors: String?, complete: Bool)] = [
+            (7, [], nil, false), (7, [node(12)], nil, false),
+            (0, [], #"[{"message":"fixture error"}]"#, false), (0, [], nil, true),
+        ]
+        for fixture in cases {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let executable = directory.appendingPathComponent("gh")
+            let payload = fixture.errors.map { graphQLWithErrors($0, reviews: fixture.rows) } ?? graphQL(reviews: fixture.rows)
+            try payload.write(to: directory.appendingPathComponent("payload.json"))
+            let script = "#!/bin/sh\nif [ \"$1\" = auth ]; then exit 0; fi\n/bin/cat \"${0%/*}/payload.json\"\nexit \(fixture.exit)\n"
+            try script.write(to: executable, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+            let gh = GhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: executable.path]))
+            let fetch = gh.fetchWithAccount()
+            #expect(fetch.account == "first-user")
+            guard case .snapshot(let items, let complete) = fetch.outcome else {
+                Issue.record("expected fixture pages"); continue
+            }
+            #expect(complete == fixture.complete && items.count == fixture.rows.count)
+        }
+    }
+
+    @Test func legacyIncompleteAuthOrQueryCannotAcceptValidEmptyPayload() {
+        for incompleteAuth in [true, false] {
+            let fixture = FakeRunner()
+            fixture.replies["auth status"] = CommandResult(exitCode: 0, stdout: graphQL(), outputComplete: !incompleteAuth)
+            fixture.replies["api graphql"] = CommandResult(exitCode: 0, stdout: graphQL(), outputComplete: incompleteAuth)
+            let gh = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: fixture)
+            let fetch = gh.fetchWithAccount()
+            #expect(fetch.account == nil)
+            if case .failure(.failed) = fetch.outcome {} else { Issue.record("incomplete output must fail, not return an empty snapshot") }
+            #expect(fixture.calls.count == (incompleteAuth ? 1 : 2))
+            if incompleteAuth {
+                #expect(!fixture.calls.contains { $0.1.starts(with: ["api", "graphql"]) }, "incomplete auth cannot launch query")
+            }
+        }
+    }
+
+    @Test func legacyAggregatePreflightQueryBytesShareOneBudgetAndKeepExactControl() {
+        let payload = graphQL(), preflightBytes = CommandBudget.maximumBytes / 2
+        for extraByte in [0, 1] {
+            let fixture = FakeRunner()
+            fixture.replies["auth status"] = CommandResult(exitCode: 0,
+                stdout: Data(count: preflightBytes / 2), stderr: Data(count: preflightBytes / 2))
+            fixture.replies["api graphql"] = CommandResult(exitCode: 0, stdout: payload,
+                stderr: Data(count: CommandBudget.maximumBytes - preflightBytes - payload.count + extraByte))
+            let recorded = RecordingLegacyBudgetRunner(fixture)
+            let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: recorded).fetchWithAccount()
+            #expect(recorded.budgets.count == 2 && recorded.budgets[0] === recorded.budgets[1])
+            #expect(recorded.remainingBeforeCommand.count == 2 && recorded.remainingBeforeCommand[1] <= recorded.remainingBeforeCommand[0])
+            #expect(recorded.bytesBeforeCommand == [0, preflightBytes], "preflight stdout+stderr debit carries into query")
+            if extraByte == 0 {
+                #expect(fetch.account == "first-user" && fetch.outcome == .snapshot(items: [], complete: true),
+                        "full valid zero-row control at exact aggregate limit remains complete")
+            } else {
+                #expect(fetch.account == nil)
+                if case .failure(.failed) = fetch.outcome {} else { Issue.record("aggregate +1 byte must fail before parsing valid JSON") }
+            }
+        }
+    }
+
+    @Test func legacyExhaustedPreflightDeadlineNeverLaunchesQuery() {
+        let fixture = FakeRunner()
+        fixture.replies["auth status"] = CommandResult(exitCode: 0)
+        fixture.replies["api graphql"] = CommandResult(exitCode: 0, stdout: graphQL())
+        fixture.beforeReply = { arguments, remaining in
+            if arguments.starts(with: ["auth", "status"]) {
+                // Consume the supplied remaining monotonic budget synchronously. No cooperative
+                // continuation or cancellation ordering; scheduler overshoot is also exhaustion.
+                _ = DispatchSemaphore(value: 0).wait(timeout: .now() + remaining)
+            }
+        }
+        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: fixture, timeout: 0.05).fetchWithAccount()
+        #expect(fetch.account == nil)
+        if case .failure(.failed) = fetch.outcome {} else { Issue.record("exhausted preflight must fail") }
+        #expect(fixture.calls.count <= 1 && !fixture.calls.contains { $0.1.starts(with: ["api", "graphql"]) })
+    }
+
+    @Test func legacyQueryDeadlineCannotTurnLateValidJSONIntoCompleteEmpty() {
+        let fixture = FakeRunner()
+        fixture.replies["auth status"] = CommandResult(exitCode: 0)
+        fixture.replies["api graphql"] = CommandResult(exitCode: 0, stdout: graphQL())
+        fixture.beforeReply = { arguments, remaining in
+            if arguments.starts(with: ["api", "graphql"]) {
+                _ = DispatchSemaphore(value: 0).wait(timeout: .now() + remaining)
+            }
+        }
+        let recorded = RecordingLegacyBudgetRunner(fixture)
+        let fetch = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: recorded, timeout: 0.05).fetchWithAccount()
+        #expect(fetch.account == nil)
+        if case .failure(.failed) = fetch.outcome {} else { Issue.record("expired query must reject its superficially valid empty JSON") }
+        if recorded.budgets.count == 2 { #expect(recorded.budgets[0] === recorded.budgets[1]) }
+        // If load exhausted the budget before query launch, failing without the query is correct.
+        #expect(fixture.calls.filter { $0.1.starts(with: ["api", "graphql"]) }.count <= 1)
     }
 
     @Test func moreMatchesThanTheCapIsPartial() {
