@@ -1,0 +1,49 @@
+HEAD 4b9130f82b1299929b1bc0c14d1f446cab4f91a1
+NORMAL import; exact completed held build
+PASS absent errors valid control rows=false
+PASS client absent errors valid control rows=false
+PASS errors=reported rows=false partial with proven rows
+PASS client errors=reported rows=false partial with proven rows
+PASS errors=string rows=false partial with proven rows
+PASS client errors=string rows=false partial with proven rows
+PASS errors=object rows=false partial with proven rows
+PASS client errors=object rows=false partial with proven rows
+PASS errors=null rows=false partial with proven rows
+PASS client errors=null rows=false partial with proven rows
+PASS errors=emptyarray rows=false partial with proven rows
+PASS client errors=emptyarray rows=false partial with proven rows
+PASS errors=nullentry rows=false partial with proven rows
+PASS client errors=nullentry rows=false partial with proven rows
+PASS errors=emptyentry rows=false partial with proven rows
+PASS client errors=emptyentry rows=false partial with proven rows
+PASS errors=boolean rows=false partial with proven rows
+PASS client errors=boolean rows=false partial with proven rows
+PASS errors=number rows=false partial with proven rows
+PASS client errors=number rows=false partial with proven rows
+PASS rate limit typed/proven rows retained rows=false
+PASS client rate limit typed/proven rows retained rows=false
+PASS absent errors valid control rows=true
+PASS client absent errors valid control rows=true
+PASS errors=reported rows=true partial with proven rows
+PASS client errors=reported rows=true partial with proven rows
+PASS errors=string rows=true partial with proven rows
+PASS client errors=string rows=true partial with proven rows
+PASS errors=object rows=true partial with proven rows
+PASS client errors=object rows=true partial with proven rows
+PASS errors=null rows=true partial with proven rows
+PASS client errors=null rows=true partial with proven rows
+PASS errors=emptyarray rows=true partial with proven rows
+PASS client errors=emptyarray rows=true partial with proven rows
+PASS errors=nullentry rows=true partial with proven rows
+PASS client errors=nullentry rows=true partial with proven rows
+PASS errors=emptyentry rows=true partial with proven rows
+PASS client errors=emptyentry rows=true partial with proven rows
+PASS errors=boolean rows=true partial with proven rows
+PASS client errors=boolean rows=true partial with proven rows
+PASS errors=number rows=true partial with proven rows
+PASS client errors=number rows=true partial with proven rows
+PASS rate limit typed/proven rows retained rows=true
+PASS client rate limit typed/proven rows retained rows=true
+RESULT checks=44 failures=0 mode=fixed
+
+EXIT 0

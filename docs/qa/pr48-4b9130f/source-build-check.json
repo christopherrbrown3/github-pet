@@ -1,0 +1,32 @@
+{
+  "head": "4b9130f82b1299929b1bc0c14d1f446cab4f91a1",
+  "changed_files": [
+    "Sources/GitHubPetCore/ScopedGitHub.swift",
+    "Tests/GitHubPetCoreTests/MonitoringScopeTests.swift"
+  ],
+  "hashes": {
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/CommandBudget.swift.o": "b47dbbbcf2ab7f63dc45b2a88d0fc68876766ca45b8f28c858e0948f0a9edc0b",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/EventTracker.swift.o": "7d37a053ff61c0a7e8908761178015972962cc2a54c6da48682091db943c014a",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/FixtureSimulator.swift.o": "5492c26178fbb898657cc8b9e1ece34da87078da785a4cf563c19f551a81f969",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/GestureCancellation.swift.o": "650b8d4a688f89b6d41f63b99641167b9ff648c1043029d704ede0416ecde237",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/GitHubCLI.swift.o": "df09f404edf0463b1bf1f693db5624a27bfe759fa53a44e69c1d34ebd9b2c1a6",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/HoverPlacement.swift.o": "d470af13197ead417fb2ba2d7c02a858001bccdce83c7512ba94ed837eabf7c1",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/InboxEngine.swift.o": "9aa8774c76802806d1514565dabb3005281a7fad9eaa6ef5dbf83f5ee8da0815",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/IncidentMarker.swift.o": "cee03ca8286bee4e402e33f42aa55c18ea628b44f102c266ca49f3a0a4b8dde7",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/IncidentMarkerSpec.swift.o": "b7ef3e37a84d1e652dd1d45bb69aad4fc2fecd7884b306432f2c2ce72189a738",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/Mascot.swift.o": "c2a809e16ffb970d3d188d15b18526fcd9a397b9722c5a2799484e8013e776cd",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/MascotPack.swift.o": "f0f0563b6d9bea8699cd55856c9e3c4aa61ca3b4775bf7c524e574f5321a3637",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/Models.swift.o": "885f7d7cc94baf217abb7b8fc3555a89d438ef59b2782d001fa692191c8ce4fa",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/MonitoringScope.swift.o": "d082b518c3301cd624fa21b2137e68e426884a37b729fca92ab6c8d18d37e7fa",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/SafeLink.swift.o": "b48fb35b13ef7e270b9dfa57d2bce6653f00eaec8de8117f7c2fd3142c915d3b",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/ScopedGitHub.swift.o": "6f45f7c1f39539188c6a94b34c598c75eea806a0850f212ad6933b64272aa092",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/ServiceStatus.swift.o": "a376467af50a28f31ccbc586bffc79910aa78c5bf5e6fa46c8240f0e26adb0dc",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/ServiceStatusClient.swift.o": "3760ecea752fbd5dca444cf43ad06686b521682f4c0a89c24771790c6815cefb",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/ServiceStatusFixtures.swift.o": "be7787322f284667cfc64c2664cf3541a5afe0135f814433ff913e1b19ce497f",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/ServiceStatusMonitor.swift.o": "99abe7ee90198a255fc5754e37e67174bbda3c3a30a8212bdcd3008de34d8208",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/Session.swift.o": "defd38c47d26aa6ad51a80411199bb5614bb61e1f80a675a7ad978d72998fcb8",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/Settings.swift.o": "6109e373ca62ccfe93eab73613d62436e50aa7305eb1cc84bf5732750421acb9",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/GitHubPetCore.build/SourceGenerations.swift.o": "c71ba13c01133b424e054e8735a1bb9edea12b77625175ffa2d5b77c7a8bbe60",
+    "/Users/chris/github-pet-worktrees/developer-scope-core/.build/debug/Modules/GitHubPetCore.swiftmodule": "baab8a78dcad312712ba40040ebecee2a779c866962f7c185f19741a18d7696d"
+  }
+}

@@ -1,6 +1,6 @@
 # PR48 exact-head independent QA checkpoint
 
-Head **`97e797a32598dfd02624de35f19cb4af09fe209c`**, CI43739236182 pending. **FAIL/HOLD: scoped `errors:[]` quality gap independently confirmed; superseded-head CI will be supporting only.** New CI-owned legacy coverage passes, but does not waive the scoped policy inconsistency.
+Head **`97e797a32598dfd02624de35f19cb4af09fe209c`**, CI43739236182 **CANCELLED** during render on superseding push; ZIP upload skipped, no accepted new app artifact. **FAIL/HOLD: scoped `errors:[]` quality gap independently confirmed.** New CI-owned legacy coverage passes, but does not waive the scoped policy inconsistency. The old GitHub-only helper exited1 on the cancelled watch, not on a product regression check.
 
 - Exact pushed/held clean HEAD verified. Diff from1d5a911 contains **only Tests/GitHubPetCoreTests/GitHubCLITests.swift**. Production Sources, workflow, scripts, docs and package files are unchanged.
 - Every linked core object and module byte hash equals the prior held1d5 build, before and after QA. No rebuild, normal-import fixture relink or production mutation was needed.
