@@ -1,0 +1,7 @@
+HEAD 97e797a32598dfd02624de35f19cb4af09fe209c
+NORMAL import; held exact objects
+PASS absent errors valid control rows=false
+NEGATIVE-BEFORE errors=[] rows=false complete=true items=0 issues=[]
+PASS absent errors valid control rows=true
+NEGATIVE-BEFORE errors=[] rows=true complete=true items=1 issues=[]
+RESULT checks=2 failures=0 mode=negative-before evidence only

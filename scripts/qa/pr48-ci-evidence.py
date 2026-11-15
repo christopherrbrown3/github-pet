@@ -22,4 +22,4 @@ assert "render-check: all checks passed" in ci
 summary = [json.dumps(metadata), "PASS actual current-head render artifact; fixtures do not test scoped live transport"]
 summary += [line for line in ci.splitlines() if any(text in line for text in ["Test run with", "PASS external normal-import", "prelaunchCancellation", "inFlightCancellation", "SKIP live gesture", "render-check: all"]) ]
 (out / "ci-summary.log").write_text("\n".join(summary) + "\n")
-print("PR48 actual green CI/render evidence saved; independent legacy defect remains separate")
+print("PR48 actual current-head green CI/render evidence saved; final verdict requires scoped QA report")

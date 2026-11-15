@@ -1,6 +1,6 @@
 # PR48 exact-head independent QA checkpoint
 
-Head **`97e797a32598dfd02624de35f19cb4af09fe209c`**, CI43739236182 pending. **New CI-owned legacy coverage PASS; final acceptance awaits actual current-head CI/review.**
+Head **`97e797a32598dfd02624de35f19cb4af09fe209c`**, CI43739236182 pending. **FAIL/HOLD: scoped `errors:[]` quality gap independently confirmed; superseded-head CI will be supporting only.** New CI-owned legacy coverage passes, but does not waive the scoped policy inconsistency.
 
 - Exact pushed/held clean HEAD verified. Diff from1d5a911 contains **only Tests/GitHubPetCoreTests/GitHubCLITests.swift**. Production Sources, workflow, scripts, docs and package files are unchanged.
 - Every linked core object and module byte hash equals the prior held1d5 build, before and after QA. No rebuild, normal-import fixture relink or production mutation was needed.
@@ -8,3 +8,7 @@ Head **`97e797a32598dfd02624de35f19cb4af09fe209c`**, CI43739236182 pending. **Ne
 - Retain prior **98 independent quality assertions** (1d5), **18 full-JSON-path rejection assertions** and the **36 passing e2 adversarial checks** by unchanged production/module identity. The previously failing legacy exit7 case is fixed and verified by the unchanged negative-before fixture's positive-after execution at1d5; original940 JSON negative-before evidence remains preserved. These checks were not wastefully repeated or represented as newly executed on97.
 
 Scope remains core/transport only; legacy live caller and opt-in scoped API tested, no Settings/AppModel/engine/clip/discovery/UI wiring. No real gh auth/account settings, saved app/process, system clock/preferences or release/merge changes. Need current97 CI log/artifact and exact-head review before final verdict; earlier1d5/e2 green runs support unchanged behavior but do not satisfy the new-head merge gate.
+
+## Additional negative-before evidence
+
+Exact normal-import scoped parser probe with full JSON response independently gives **complete=true, issues=[]** for a present `errors:[]` member, both with zero rows and one proven row. Absent-errors controls remain complete as intended. This violates the PM's consistent any-present-errors-member quality policy already applied to legacy GhClient. See scoped-empty-errors-before.log / SCOPED-ERRORS-DEFECT.md. Core hashes unchanged. All97 object links were finished and explicitly released to Developer before the narrow parser/test mutation; no further97 linking or acceptance. Await new exact held SHA for only the scoped nine-shape matrix, source equality and new CI evidence.
