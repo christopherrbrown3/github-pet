@@ -388,20 +388,32 @@ struct ScopeSimulationMenu: View {
             Text(model.scopeSimulationStatus)
             Text("Discarded late replies: \(model.discardedScopeReplies)")
             Button("Account A") { model.simulateScopeAccount(false) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Account B") { model.simulateScopeAccount(true) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Divider()
             Button("Apply Selected (simulated validation)") { model.simulateScopeApply(true) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Apply Everything (simulated validation)") { model.simulateScopeApply(false) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Hold next repository reply") { model.simulateScopeHold() }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Deliver held replies") { model.simulateScopeDeliver() }
             Button("Inject new repository row") { model.simulateScopeInject() }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Partial replies") { model.simulateScopePartial(true) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Complete replies / recover") { model.simulateScopePartial(false) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Divider()
             Button("Reload saved A (known viewer)") { model.simulateScopeReload() }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Reload saved A (unknown viewer)") { model.simulateScopeReload(forgetViewer: true) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Corrupt saved A and reload") { model.simulateScopeReload(corrupt: true) }
+                .disabled(model.settings.dataSource != .githubCLI)
             Button("Repair saved selections") { model.simulateScopeRepair() }
+                .disabled(model.settings.dataSource != .githubCLI)
             Divider()
             Button("Inject minor public incident") { model.injectServiceIncident(.minor) }
             Button("Inject major public incident") { model.injectServiceIncident(.major) }

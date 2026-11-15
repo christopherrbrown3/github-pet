@@ -16,10 +16,12 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         var reducedMotion = false
         let budgetClock = FixtureBudgetClock()
         var expireNextBudget = false
+        var defaultsSuite: String?
     }
     private func model(inputs: Inputs = Inputs()) -> AppModel {
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
+        inputs.defaultsSuite = options.defaultsSuite
         return AppModel(options: options, runtime: AppModel.Runtime(now: { inputs.date },
             systemReducedMotion: { inputs.reducedMotion }, schedulesTimers: false,
             repositoryBudget: {
@@ -134,6 +136,36 @@ private final class FixtureBudgetClock: @unchecked Sendable {
             #expect(app.markerBurst == nil)
         }
         print("Actual host motion=\(app.effectiveReducedMotion), normal production fixture path: repository unseen=\(app.unseenCount), incident unseen=\(app.unseenIncidents.count)")
+    }
+    @Test func simulatedLiveControlsCannotChangeFixtureIdentityOrScope() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
+        app.settings.dataSource = .fixtures
+        let generation = app.monitoringScopeGeneration, scope = app.activeMonitoringScope, rows = app.items
+        app.simulateScopeReload(corrupt: true, forgetViewer: true)
+        app.simulateScopeAccount(true)
+        app.simulateScopeApply(true)
+        app.simulateScopeHold()
+        app.simulateScopeInject()
+        app.simulateScopePartial(true)
+        app.simulateScopeRepair()
+        #expect(app.monitoringScopeIdentity == .demo)
+        #expect(app.monitoringScopeGeneration == generation && app.activeMonitoringScope == scope)
+        #expect(app.items == rows && !app.repositoryFetchInFlight)
+        app.settings.dataSource = .githubCLI; try await settled(app)
+        #expect(app.activeMonitoringScope == ScopeSimulation.selectedA && app.items.count == 1)
+    }
+    @Test func teardownRejectsHeldReplyBeforeDeletingIsolatedDefaults() async throws {
+        let inputs = Inputs(), app = model(inputs: inputs)
+        try await settled(app)
+        app.simulateScopeHold(); try await wait { app.simulatedHeldReplies == 1 }
+        let calls = app.simulatedRequests.count, received = app.receivedScopeReplies
+        let suite = try #require(inputs.defaultsSuite)
+        app.cleanupScopeSimulation()
+        try await wait { app.receivedScopeReplies == received + 1 }
+        #expect(app.discardedScopeReplies == 1)
+        #expect(!app.repositoryFetchInFlight && app.simulatedRequests.count == calls)
+        #expect(UserDefaults(suiteName: suite)?.persistentDomain(forName: suite)?.isEmpty != false,
+                "late replies cannot resurrect a deleted simulation domain")
     }
     @Test func launchFlagIsExplicitAndIsolatedAndKnownSelectedIsFirstRequest() async throws {
         #expect(!LaunchOptions.parse(arguments: ["app"], environment: [:]).simulatesMonitoringScope)

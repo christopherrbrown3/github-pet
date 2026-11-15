@@ -20,6 +20,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var scopeQuality: String?
     @Published private(set) var scopeSimulationStatus = ""
     @Published private(set) var discardedScopeReplies = 0
+    @Published private(set) var receivedScopeReplies = 0
     @Published private(set) var lastSuccess: Date?
     @Published private(set) var unseen = UnseenItems()
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
@@ -298,6 +299,7 @@ final class AppModel: ObservableObject {
 
     private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
                                        budget: CommandBudget, refetches: Int) {
+        if scopeSimulation != nil { receivedScopeReplies += 1 }
         guard scopeSession.isCurrent(request) else {
             if scopeSimulation != nil { discardedScopeReplies += 1 }
             return
@@ -486,6 +488,7 @@ final class AppModel: ObservableObject {
 
     func cleanupScopeSimulation() {
         guard let suite = simulationDefaultsSuite, suite.hasPrefix("dev.github-pet.scope-simulation.") else { return }
+        scopeSession.invalidate()
         repositoryTask?.cancel(); repositoryTask = nil
         scopeSimulation?.releaseReplies()
         pollTimer?.invalidate(); tickTimer?.invalidate()
@@ -494,25 +497,31 @@ final class AppModel: ObservableObject {
 
     // Explicit offline launch only; these controls never exist in a normal session.
     func simulateScopeAccount(_ isB: Bool) {
-        guard let simulation = scopeSimulation else { return }
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.switchAccount(isB ? ScopeSimulation.accountB : ScopeSimulation.accountA)
         repositoryTask?.cancel(); scopeSession.invalidate()
         refreshRepositoriesOnly()
     }
     func simulateScopeApply(_ selected: Bool) {
-        guard scopeSimulation != nil, let identity = scopeSession.identity else { return }
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil, let identity = scopeSession.identity else { return }
         let scope = identity == .github(ScopeSimulation.accountB) ? ScopeSimulation.selectedB : ScopeSimulation.selectedA
         _ = applyRepositoryScope(selected ? scope : .everything, identity: identity, generation: scopeSession.generation)
     }
     func simulateScopeHold() {
-        guard let simulation = scopeSimulation else { return }
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.holdNextReply(); refreshRepositoriesOnly()
     }
     func simulateScopeDeliver() { scopeSimulation?.releaseReplies() }
-    func simulateScopeInject() { scopeSimulation?.inject(); refreshRepositoriesOnly() }
-    func simulateScopePartial(_ on: Bool) { scopeSimulation?.setPartial(on); refreshRepositoriesOnly() }
+    func simulateScopeInject() {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.inject(); refreshRepositoriesOnly()
+    }
+    func simulateScopePartial(_ on: Bool) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.setPartial(on); refreshRepositoriesOnly()
+    }
     func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false) {
-        guard let simulation = scopeSimulation else { return }
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         if corrupt { ScopeSimulation.corruptA(scopeDefaults) }
         if forgetViewer { scopeStore.rememberAccount(nil) }
         simulation.switchAccount(ScopeSimulation.accountA)
@@ -520,7 +529,7 @@ final class AppModel: ObservableObject {
         sync(now: clock()); refreshRepositoriesOnly()
     }
     func simulateScopeRepair() {
-        guard scopeSimulation != nil else { return }
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }
         try? ScopeSimulation.seed(scopeDefaults)
         simulateScopeReload()
     }
