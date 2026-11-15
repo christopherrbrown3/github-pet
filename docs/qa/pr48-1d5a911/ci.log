@@ -1,0 +1,1424 @@
+build-and-test	Set up job	﻿2026-11-15T16:53:08.6071690Z Current runner version: '2.338.2'
+build-and-test	Set up job	2026-11-15T16:53:08.6104770Z ##[group]Runner Image Provisioner
+build-and-test	Set up job	2026-11-15T16:53:08.6105500Z Hosted Compute Agent
+build-and-test	Set up job	2026-11-15T16:53:08.6106100Z Version: 20261103.629
+build-and-test	Set up job	2026-11-15T16:53:08.6106570Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+build-and-test	Set up job	2026-11-15T16:53:08.6107200Z Build Date: 2026-11-03T17:26:59Z
+build-and-test	Set up job	2026-11-15T16:53:08.6107660Z Worker ID: {e69d0a71-5c31-49d1-adf9-c32637accb42}
+build-and-test	Set up job	2026-11-15T16:53:08.6108140Z Region: westus
+build-and-test	Set up job	2026-11-15T16:53:08.6108590Z Cloud: MacCloud
+build-and-test	Set up job	2026-11-15T16:53:08.6109130Z ##[endgroup]
+build-and-test	Set up job	2026-11-15T16:53:08.6110350Z ##[group]Operating System
+build-and-test	Set up job	2026-11-15T16:53:08.6110760Z macOS
+build-and-test	Set up job	2026-11-15T16:53:08.6111110Z 15.8.2
+build-and-test	Set up job	2026-11-15T16:53:08.6111530Z 24H232
+build-and-test	Set up job	2026-11-15T16:53:08.6112110Z ##[endgroup]
+build-and-test	Set up job	2026-11-15T16:53:08.6112590Z ##[group]Runner Image
+build-and-test	Set up job	2026-11-15T16:53:08.6113130Z Image: macos-15-arm64
+build-and-test	Set up job	2026-11-15T16:53:08.6113670Z Version: 20261104.0514.1
+build-and-test	Set up job	2026-11-15T16:53:08.6114560Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20261104.0514/images/macos/macos-15-arm64-Readme.md
+build-and-test	Set up job	2026-11-15T16:53:08.6115940Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20261104.0514
+build-and-test	Set up job	2026-11-15T16:53:08.6116710Z ##[endgroup]
+build-and-test	Set up job	2026-11-15T16:53:08.6119110Z ##[group]GITHUB_TOKEN Permissions
+build-and-test	Set up job	2026-11-15T16:53:08.6124370Z Contents: read
+build-and-test	Set up job	2026-11-15T16:53:08.6125680Z Metadata: read
+build-and-test	Set up job	2026-11-15T16:53:08.6126640Z ##[endgroup]
+build-and-test	Set up job	2026-11-15T16:53:08.6130940Z Secret source: Actions
+build-and-test	Set up job	2026-11-15T16:53:08.6132650Z Cache mode: write
+build-and-test	Set up job	2026-11-15T16:53:08.6134030Z Prepare workflow directory
+build-and-test	Set up job	2026-11-15T16:53:08.6435990Z Prepare all required actions
+build-and-test	Set up job	2026-11-15T16:53:08.6493710Z Getting action download info
+build-and-test	Set up job	2026-11-15T16:53:09.0886220Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+build-and-test	Set up job	2026-11-15T16:53:09.4696610Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+build-and-test	Set up job	2026-11-15T16:53:09.8199770Z Complete job name: build-and-test
+build-and-test	Run actions/checkout@v4	﻿2026-11-15T16:53:09.9029760Z ##[group]Run actions/checkout@v4
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9030430Z with:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9030820Z   fetch-depth: 0
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9031200Z   repository: christopherrbrown3/github-pet
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9034040Z   token: ***
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9034420Z   ssh-strict: true
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9034750Z   ssh-user: git
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9035060Z   persist-credentials: true
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9035410Z   clean: true
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9035730Z   sparse-checkout-cone-mode: true
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9036100Z   fetch-tags: false
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9036420Z   show-progress: true
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9036770Z   lfs: false
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9037140Z   submodules: false
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9037470Z   set-safe-directory: true
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9037820Z   allow-unsafe-pr-checkout: false
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:09.9038390Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.4836670Z Syncing repository: christopherrbrown3/github-pet
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.4839390Z ##[group]Getting Git version info
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.4840200Z Working directory is '/Users/runner/work/github-pet/github-pet'
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.4841710Z [command]/opt/homebrew/bin/git version
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5394570Z git version 2.56.0
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5526630Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5531890Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/93e7c3ba-2ed9-4072-a032-a806b7671142/.gitconfig'
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5533070Z Temporarily overriding HOME='/Users/runner/work/_temp/93e7c3ba-2ed9-4072-a032-a806b7671142' before making global git config changes
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5534230Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5535280Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5751230Z Deleting the contents of '/Users/runner/work/github-pet/github-pet'
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5754560Z ##[group]Initializing the repository
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.5759580Z [command]/opt/homebrew/bin/git init /Users/runner/work/github-pet/github-pet
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6266650Z hint: Using 'master' as the name for the initial branch. This default branch name
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6268960Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6269930Z hint: to use in all of your new repositories, which will suppress this warning,
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6270540Z hint: call:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6270880Z hint:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6271410Z hint: 	git config --global init.defaultBranch <name>
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6272000Z hint:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6272460Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6273210Z hint: 'development'. The just-created branch can be renamed via this command:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6273810Z hint:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6274160Z hint: 	git branch -m <name>
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6274550Z hint:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6275060Z hint: Disable this message with "git config set advice.defaultBranchName false"
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6293840Z Initialized empty Git repository in /Users/runner/work/github-pet/github-pet/.git/
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6309130Z [command]/opt/homebrew/bin/git remote add origin https://github.com/christopherrbrown3/github-pet
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6424380Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6425280Z ##[group]Disabling automatic garbage collection
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6427530Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6527080Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6537530Z ##[group]Setting up auth
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6538630Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.6628170Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.8315360Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.8369220Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:10.9921680Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:11.0022210Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:11.1081730Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:11.1183690Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:11.1185800Z ##[group]Fetching the repository
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:11.1192860Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +6a8d78c6af25e867c0bf0a48df8f428f698bbf5b:refs/remotes/pull/48/merge
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0637700Z From https://github.com/christopherrbrown3/github-pet
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0639960Z  * [new branch]      bootstrap/agent-team-kickoff             -> origin/bootstrap/agent-team-kickoff
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0641510Z  * [new branch]      design/37-incident-marker                -> origin/design/37-incident-marker
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0642810Z  * [new branch]      docs/30-monitoring-scope-brief           -> origin/docs/30-monitoring-scope-brief
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0644270Z  * [new branch]      docs/claude-specialist-handoff           -> origin/docs/claude-specialist-handoff
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0645960Z  * [new branch]      docs/codex-pm-takeover-20261114          -> origin/docs/codex-pm-takeover-20261114
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0647670Z  * [new branch]      docs/readme-clarifications               -> origin/docs/readme-clarifications
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0649360Z  * [new branch]      docs/readme-project-overview             -> origin/docs/readme-project-overview
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0650970Z  * [new branch]      docs/team-recovery-2026-11-13            -> origin/docs/team-recovery-2026-11-13
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0653200Z  * [new branch]      feat/15-zip-packaging                    -> origin/feat/15-zip-packaging
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0654850Z  * [new branch]      feat/30-scope-core                       -> origin/feat/30-scope-core
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0656540Z  * [new branch]      feature/11-service-incidents             -> origin/feature/11-service-incidents
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0658470Z  * [new branch]      fix/39-hover-label-clearance             -> origin/fix/39-hover-label-clearance
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0660610Z  * [new branch]      fix/44-monotonic-test-timing             -> origin/fix/44-monotonic-test-timing
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0662390Z  * [new branch]      main                                     -> origin/main
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0664120Z  * [new branch]      sprint1/mascot-design                    -> origin/sprint1/mascot-design
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0665990Z  * [new branch]      sprint1/native-prototype                 -> origin/sprint1/native-prototype
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0667900Z  * [new branch]      sprint1/qa-acceptance                    -> origin/sprint1/qa-acceptance
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0669560Z  * [new ref]         6a8d78c6af25e867c0bf0a48df8f428f698bbf5b -> pull/48/merge
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0672560Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0673910Z ##[group]Determining the checkout info
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0675440Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0676510Z [command]/opt/homebrew/bin/git sparse-checkout disable
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0750810Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0818010Z ##[group]Checking out the ref
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.0825840Z [command]/opt/homebrew/bin/git checkout --progress --force refs/remotes/pull/48/merge
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.1826710Z HEAD is now at 6a8d78c Merge 1d5a9115d6ff338a308813cb01e1a2422824e606 into c91c250f176afca5090d17c82c4205ecffe5c793
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.1835860Z ##[endgroup]
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.2002370Z [command]/opt/homebrew/bin/git log -1 --format=%H
+build-and-test	Run actions/checkout@v4	2026-11-15T16:53:12.2141620Z 6a8d78c6af25e867c0bf0a48df8f428f698bbf5b
+build-and-test	Toolchain	﻿2026-11-15T16:53:12.2464300Z ##[group]Run xcodebuild -version
+build-and-test	Toolchain	2026-11-15T16:53:12.2465350Z ^[[36;1mxcodebuild -version^[[0m
+build-and-test	Toolchain	2026-11-15T16:53:12.2466200Z ^[[36;1mswift --version^[[0m
+build-and-test	Toolchain	2026-11-15T16:53:12.2519730Z shell: /bin/bash -e {0}
+build-and-test	Toolchain	2026-11-15T16:53:12.2520630Z ##[endgroup]
+build-and-test	Toolchain	2026-11-15T16:53:12.9396830Z Xcode 16.4
+build-and-test	Toolchain	2026-11-15T16:53:12.9422690Z Build version 16F6
+build-and-test	Toolchain	2026-11-15T16:53:16.7759290Z Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)
+build-and-test	Toolchain	2026-11-15T16:53:16.7760830Z Target: arm64-apple-macosx15.0
+build-and-test	Toolchain	2026-11-15T16:53:16.7832310Z swift-driver version: 1.120.5 
+build-and-test	Build	﻿2026-11-15T16:53:16.8010670Z ##[group]Run swift build
+build-and-test	Build	2026-11-15T16:53:16.8011030Z ^[[36;1mswift build^[[0m
+build-and-test	Build	2026-11-15T16:53:16.8057000Z shell: /bin/bash -e {0}
+build-and-test	Build	2026-11-15T16:53:16.8057330Z ##[endgroup]
+build-and-test	Build	2026-11-15T16:53:22.4366890Z Building for debugging...
+build-and-test	Build	2026-11-15T16:53:22.4521200Z [0/7] Write sources
+build-and-test	Build	2026-11-15T16:53:22.4522650Z [1/7] Write GitHubPet-entitlement.plist
+build-and-test	Build	2026-11-15T16:53:22.7112400Z [3/7] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	Build	2026-11-15T16:53:31.1279230Z [5/23] Emitting module GitHubPetCore
+build-and-test	Build	2026-11-15T16:53:36.8040250Z [6/30] Compiling GitHubPetCore ServiceStatus.swift
+build-and-test	Build	2026-11-15T16:53:36.8201650Z [7/30] Compiling GitHubPetCore ServiceStatusClient.swift
+build-and-test	Build	2026-11-15T16:53:36.8363480Z [8/30] Compiling GitHubPetCore ServiceStatusFixtures.swift
+build-and-test	Build	2026-11-15T16:53:36.8471730Z [9/30] Compiling GitHubPetCore ServiceStatusMonitor.swift
+build-and-test	Build	2026-11-15T16:53:36.8534440Z [10/30] Compiling GitHubPetCore Session.swift
+build-and-test	Build	2026-11-15T16:53:36.8535340Z [11/30] Compiling GitHubPetCore Settings.swift
+build-and-test	Build	2026-11-15T16:53:36.8540890Z [12/30] Compiling GitHubPetCore SourceGenerations.swift
+build-and-test	Build	2026-11-15T16:53:37.4249390Z [13/30] Compiling GitHubPetCore IncidentMarkerSpec.swift
+build-and-test	Build	2026-11-15T16:53:37.4251850Z [14/30] Compiling GitHubPetCore Mascot.swift
+build-and-test	Build	2026-11-15T16:53:37.4252270Z [15/30] Compiling GitHubPetCore MascotPack.swift
+build-and-test	Build	2026-11-15T16:53:37.4252660Z [16/30] Compiling GitHubPetCore Models.swift
+build-and-test	Build	2026-11-15T16:53:37.4267640Z [17/30] Compiling GitHubPetCore MonitoringScope.swift
+build-and-test	Build	2026-11-15T16:53:37.4268000Z [18/30] Compiling GitHubPetCore SafeLink.swift
+build-and-test	Build	2026-11-15T16:53:37.4268410Z [19/30] Compiling GitHubPetCore ScopedGitHub.swift
+build-and-test	Build	2026-11-15T16:53:37.4268870Z [20/30] Compiling GitHubPetCore CommandBudget.swift
+build-and-test	Build	2026-11-15T16:53:37.4269300Z [21/30] Compiling GitHubPetCore EventTracker.swift
+build-and-test	Build	2026-11-15T16:53:37.4269760Z [22/30] Compiling GitHubPetCore FixtureSimulator.swift
+build-and-test	Build	2026-11-15T16:53:37.4270140Z [23/30] Compiling GitHubPetCore GestureCancellation.swift
+build-and-test	Build	2026-11-15T16:53:37.4270570Z [24/30] Compiling GitHubPetCore GitHubCLI.swift
+build-and-test	Build	2026-11-15T16:53:37.4270930Z [25/30] Compiling GitHubPetCore HoverPlacement.swift
+build-and-test	Build	2026-11-15T16:53:37.4271340Z [26/30] Compiling GitHubPetCore InboxEngine.swift
+build-and-test	Build	2026-11-15T16:53:37.4271700Z [27/30] Compiling GitHubPetCore IncidentMarker.swift
+build-and-test	Build	2026-11-15T16:53:42.4861370Z [28/38] Emitting module GitHubPet
+build-and-test	Build	2026-11-15T16:53:46.2961010Z [29/41] Compiling GitHubPet LaunchOptions.swift
+build-and-test	Build	2026-11-15T16:53:46.3072670Z [30/41] Compiling GitHubPet MascotView.swift
+build-and-test	Build	2026-11-15T16:53:46.3073140Z [31/41] Compiling GitHubPet MascotWindow.swift
+build-and-test	Build	2026-11-15T16:53:46.3073640Z [32/41] Compiling GitHubPet AppModel.swift
+build-and-test	Build	2026-11-15T16:53:46.3074100Z [33/41] Compiling GitHubPet GitHubPetApp.swift
+build-and-test	Build	2026-11-15T16:53:46.3074430Z [34/41] Compiling GitHubPet InboxView.swift
+build-and-test	Build	2026-11-15T16:53:46.3074860Z [35/41] Compiling GitHubPet IncidentMarkerView.swift
+build-and-test	Build	2026-11-15T16:53:46.7788500Z [36/41] Compiling GitHubPet SettingsView.swift
+build-and-test	Build	2026-11-15T16:53:46.7789660Z [37/41] Compiling GitHubPet SnapshotRenderer.swift
+build-and-test	Build	2026-11-15T16:53:46.7790540Z [38/41] Compiling GitHubPet WindowPresenter.swift
+build-and-test	Build	2026-11-15T16:53:46.8108850Z [38/41] Write Objects.LinkFileList
+build-and-test	Build	2026-11-15T16:53:47.9406690Z [39/41] Linking GitHubPet
+build-and-test	Build	2026-11-15T16:53:47.9910220Z [40/41] Applying GitHubPet
+build-and-test	Build	2026-11-15T16:53:47.9943020Z Build complete! (25.64s)
+build-and-test	Test	﻿2026-11-15T16:53:48.0154390Z ##[group]Run scripts/test.sh --disable-xctest
+build-and-test	Test	2026-11-15T16:53:48.0155040Z ^[[36;1mscripts/test.sh --disable-xctest^[[0m
+build-and-test	Test	2026-11-15T16:53:48.0244310Z shell: /bin/bash -e {0}
+build-and-test	Test	2026-11-15T16:53:48.0244610Z ##[endgroup]
+build-and-test	Test	2026-11-15T16:53:49.5673850Z [0/1] Planning build
+build-and-test	Test	2026-11-15T16:53:49.5722150Z Building for debugging...
+build-and-test	Test	2026-11-15T16:53:49.5739200Z [0/8] /Users/runner/work/github-pet/github-pet/.build/arm64-apple-macosx/debug/GitHubPetPackageTests.derived/runner.swift
+build-and-test	Test	2026-11-15T16:53:49.5740950Z [1/8] Write sources
+build-and-test	Test	2026-11-15T16:53:49.7912550Z [3/8] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	Test	2026-11-15T16:53:59.9521930Z [5/15] Emitting module GitHubPetCoreTests
+build-and-test	Test	2026-11-15T16:54:07.4490810Z [6/19] Compiling GitHubPetCoreTests HoverPlacementTests.swift
+build-and-test	Test	2026-11-15T16:54:07.4599440Z [7/19] Compiling GitHubPetCoreTests InboxEngineTests.swift
+build-and-test	Test	2026-11-15T16:54:07.4702760Z [8/19] Compiling GitHubPetCoreTests IncidentMarkerTests.swift
+build-and-test	Test	2026-11-15T16:54:07.4806560Z [9/19] Compiling GitHubPetCoreTests MascotPackTests.swift
+build-and-test	Test	2026-11-15T16:54:07.4808190Z [10/19] Compiling GitHubPetCoreTests AccessibilitySourceTests.swift
+build-and-test	Test	2026-11-15T16:54:07.4809540Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.4810340Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	Test	2026-11-15T16:54:07.4811070Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.4811950Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.4812970Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.4813530Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.4813830Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.4814030Z 
+build-and-test	Test	2026-11-15T16:54:07.4814410Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.4869640Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	Test	2026-11-15T16:54:07.4872540Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.4874350Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.4875610Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.4876990Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.4881700Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	Test	2026-11-15T16:54:07.4883200Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.4884810Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.4886650Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.4899570Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	Test	2026-11-15T16:54:07.4966920Z     +-------------------------------------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.4968210Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.4969040Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	Test	2026-11-15T16:54:07.5171630Z [11/19] Compiling GitHubPetCoreTests BoundedCommandTests.swift
+build-and-test	Test	2026-11-15T16:54:07.5273760Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5351460Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	Test	2026-11-15T16:54:07.5361890Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5362910Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5363780Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5364330Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.5364770Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.5365810Z 
+build-and-test	Test	2026-11-15T16:54:07.5366180Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5367360Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	Test	2026-11-15T16:54:07.5445040Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5445910Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5446950Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.5450750Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.5453340Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	Test	2026-11-15T16:54:07.5454820Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5456770Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5458680Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5459980Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	Test	2026-11-15T16:54:07.5462710Z     +-------------------------------------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.5463450Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.5464220Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	Test	2026-11-15T16:54:07.5658260Z [12/19] Compiling GitHubPetCoreTests GestureCancellationTests.swift
+build-and-test	Test	2026-11-15T16:54:07.5661090Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5663360Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	Test	2026-11-15T16:54:07.5665020Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5666930Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5668680Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5669740Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.5670300Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.5671610Z 
+build-and-test	Test	2026-11-15T16:54:07.5672410Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5674620Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	Test	2026-11-15T16:54:07.5676850Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5680140Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5681380Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.5682330Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.5683720Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	Test	2026-11-15T16:54:07.5685250Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5687360Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.5689130Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.5692920Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	Test	2026-11-15T16:54:07.5696350Z     +-------------------------------------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.5697400Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.5698410Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	Test	2026-11-15T16:54:07.6258080Z [13/19] Compiling GitHubPetCoreTests GitHubCLITests.swift
+build-and-test	Test	2026-11-15T16:54:07.6360100Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.6460260Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	Test	2026-11-15T16:54:07.6561930Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.6663860Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.6766210Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.6796300Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.6797000Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.6797990Z 
+build-and-test	Test	2026-11-15T16:54:07.6798430Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.6799330Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	Test	2026-11-15T16:54:07.6800800Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.6811460Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.6812060Z  48 |         }
+build-and-test	Test	2026-11-15T16:54:07.6812610Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.6813210Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	Test	2026-11-15T16:54:07.6813980Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.6814660Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	Test	2026-11-15T16:54:07.6815410Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	Test	2026-11-15T16:54:07.6816760Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	Test	2026-11-15T16:54:07.6819410Z     +-------------------------------------------------------------------
+build-and-test	Test	2026-11-15T16:54:07.6819900Z  49 |     }
+build-and-test	Test	2026-11-15T16:54:07.6820320Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	Test	2026-11-15T16:54:12.8432080Z [14/19] Compiling GitHubPetCoreTests MascotTests.swift
+build-and-test	Test	2026-11-15T16:54:12.8433480Z [15/19] Compiling GitHubPetCoreTests MonitoringScopeTests.swift
+build-and-test	Test	2026-11-15T16:54:12.8434490Z [16/19] Compiling GitHubPetCoreTests ServiceStatusTests.swift
+build-and-test	Test	2026-11-15T16:54:12.8435640Z [17/19] Compiling GitHubPetCoreTests SettingsTests.swift
+build-and-test	Test	2026-11-15T16:54:13.2681550Z [18/21] Emitting module GitHubPetPackageTests
+build-and-test	Test	2026-11-15T16:54:13.2682670Z [19/21] Compiling GitHubPetPackageTests runner.swift
+build-and-test	Test	2026-11-15T16:54:13.2735230Z [19/21] Write Objects.LinkFileList
+build-and-test	Test	2026-11-15T16:54:14.1504670Z [20/21] Linking GitHubPetPackageTests
+build-and-test	Test	2026-11-15T16:54:14.1590300Z Build complete! (24.67s)
+build-and-test	Test	2026-11-15T16:54:14.2357090Z ◇ Test run started.
+build-and-test	Test	2026-11-15T16:54:14.2447140Z ↳ Testing Library Version: 124.4
+build-and-test	Test	2026-11-15T16:54:14.2571890Z ↳ Target Platform: arm64e-apple-macos14.0
+build-and-test	Test	2026-11-15T16:54:14.2691040Z ◇ Suite GestureCancellationTests started.
+build-and-test	Test	2026-11-15T16:54:14.2808060Z ◇ Suite GhLocatorTests started.
+build-and-test	Test	2026-11-15T16:54:14.2931910Z ◇ Suite HoverPlacementTests started.
+build-and-test	Test	2026-11-15T16:54:14.3033630Z ◇ Suite ServiceStatusPolicyTests started.
+build-and-test	Test	2026-11-15T16:54:14.3136680Z ◇ Suite SystemNotificationObserverTests started.
+build-and-test	Test	2026-11-15T16:54:14.3236150Z ◇ Suite EventClipQueueTests started.
+build-and-test	Test	2026-11-15T16:54:14.3339790Z ◇ Suite MascotPackLimitTests started.
+build-and-test	Test	2026-11-15T16:54:14.3440460Z ◇ Suite MascotPolicyTests started.
+build-and-test	Test	2026-11-15T16:54:14.3558390Z ◇ Suite ProcessRunnerTests started.
+build-and-test	Test	2026-11-15T16:54:14.3659950Z ◇ Suite HoverSideChoiceTests started.
+build-and-test	Test	2026-11-15T16:54:14.3761810Z ◇ Suite IncidentMarkerStateTests started.
+build-and-test	Test	2026-11-15T16:54:14.3865120Z ◇ Suite ServiceStatusMonitorTests started.
+build-and-test	Test	2026-11-15T16:54:14.3968280Z ◇ Suite URLSessionStatusTransportTests started.
+build-and-test	Test	2026-11-15T16:54:14.4070340Z ◇ Suite MascotLayoutTests started.
+build-and-test	Test	2026-11-15T16:54:14.4173360Z ◇ Suite AttentionGestureTests started.
+build-and-test	Test	2026-11-15T16:54:14.4276020Z ◇ Suite IncidentMarkerTextTests started.
+build-and-test	Test	2026-11-15T16:54:14.4377970Z ◇ Suite BoundedCommandTests started.
+build-and-test	Test	2026-11-15T16:54:14.4479580Z ◇ Suite IncidentMarkerGeometryTests started.
+build-and-test	Test	2026-11-15T16:54:14.4581660Z ◇ Suite MonitoringScopeTests started.
+build-and-test	Test	2026-11-15T16:54:14.4684030Z ◇ Suite IncidentMarkerSpecTests started.
+build-and-test	Test	2026-11-15T16:54:14.4786120Z ◇ Suite GhClientTests started.
+build-and-test	Test	2026-11-15T16:54:14.4890320Z ◇ Suite SettingsPersistenceTests started.
+build-and-test	Test	2026-11-15T16:54:14.4991720Z ◇ Suite FixtureSimulatorTests started.
+build-and-test	Test	2026-11-15T16:54:14.5093970Z ◇ Suite SafeLinkTests started.
+build-and-test	Test	2026-11-15T16:54:14.5196420Z ◇ Suite InboxEngineTests started.
+build-and-test	Test	2026-11-15T16:54:14.5297910Z ◇ Suite ServiceStatusSimulatorActionTests started.
+build-and-test	Test	2026-11-15T16:54:14.5399470Z ◇ Suite MascotPackTests started.
+build-and-test	Test	2026-11-15T16:54:14.5501560Z ◇ Suite ScopedQueryTests started.
+build-and-test	Test	2026-11-15T16:54:14.5610010Z ◇ Suite StatusPageDecoderTests started.
+build-and-test	Test	2026-11-15T16:54:14.5712240Z ◇ Suite ArtBoundsTests started.
+build-and-test	Test	2026-11-15T16:54:14.5813780Z ◇ Suite ServiceStatusLinkTests started.
+build-and-test	Test	2026-11-15T16:54:14.5916070Z ◇ Suite ValidatedBytesTests started.
+build-and-test	Test	2026-11-15T16:54:14.6017850Z ◇ Suite QuietHoursTests started.
+build-and-test	Test	2026-11-15T16:54:14.6119730Z ◇ Suite BundledPackTests started.
+build-and-test	Test	2026-11-15T16:54:14.6221930Z ◇ Suite MascotBadgeCapTests started.
+build-and-test	Test	2026-11-15T16:54:14.6323840Z ◇ Suite DemoLabelTests started.
+build-and-test	Test	2026-11-15T16:54:14.6425340Z ◇ Suite PrivacyTextTests started.
+build-and-test	Test	2026-11-15T16:54:14.6531640Z ◇ Suite ServiceStatusSimulatorTests started.
+build-and-test	Test	2026-11-15T16:54:14.6632900Z ◇ Suite CompactSummaryTests started.
+build-and-test	Test	2026-11-15T16:54:14.6734640Z ◇ Suite AccessibilitySourceTests started.
+build-and-test	Test	2026-11-15T16:54:14.6842510Z ◇ Suite AccountSessionTests started.
+build-and-test	Test	2026-11-15T16:54:14.6944190Z ◇ Suite UnseenItemsTests started.
+build-and-test	Test	2026-11-15T16:54:14.7045680Z ◇ Suite StatusTransportUnitTests started.
+build-and-test	Test	2026-11-15T16:54:14.7146770Z ◇ Suite SourceGenerationTests started.
+build-and-test	Test	2026-11-15T16:54:14.7249210Z ◇ Suite EventTrackerTests started.
+build-and-test	Test	2026-11-15T16:54:14.7350400Z ◇ Suite MascotAnimatorTests started.
+build-and-test	Test	2026-11-15T16:54:14.7451590Z ◇ Suite HoverPlacementInputsTests started.
+build-and-test	Test	2026-11-15T16:54:14.7552540Z ◇ Suite SnoozeTests started.
+build-and-test	Test	2026-11-15T16:54:14.7654170Z ◇ Suite FrameClockTests started.
+build-and-test	Test	2026-11-15T16:54:14.7755630Z ◇ Suite ScopedClientTests started.
+build-and-test	Test	2026-11-15T16:54:14.7858150Z ◇ Suite PanelPositionTests started.
+build-and-test	Test	2026-11-15T16:54:14.7960290Z ◇ Suite WorkflowFailureFixtureTests started.
+build-and-test	Test	2026-11-15T16:54:14.8062530Z ◇ Suite ServiceStatusClientTests started.
+build-and-test	Test	2026-11-15T16:54:14.8164510Z ◇ Test snoozeAndReduceMotionCancelAtOnce() started.
+build-and-test	Test	2026-11-15T16:54:14.8266680Z ◇ Test quietHoursCancelOnlyWhenTheyCoverNow() started.
+build-and-test	Test	2026-11-15T16:54:14.8368840Z ◇ Test liftingSnoozeOrMotionDoesNotCancelOrReplay() started.
+build-and-test	Test	2026-11-15T16:54:14.8470020Z ◇ Test overrideIsTheOnlyCandidate() started.
+build-and-test	Test	2026-11-15T16:54:14.8572430Z ◇ Test sitsBesideTheCharacterBelowTheTags() started.
+build-and-test	Test	2026-11-15T16:54:14.8674800Z ◇ Test flipsLeftAtTheRightScreenEdge() started.
+build-and-test	Test	2026-11-15T16:54:14.8777530Z ◇ Test hoverDuringTheGestureClearsTheSweptLean() started.
+build-and-test	Test	2026-11-15T16:54:14.8877060Z ◇ Test searchesHomebrewThenAbsolutePathEntriesOnly() started.
+build-and-test	Test	2026-11-15T16:54:14.8979860Z ◇ Test attentionOutlineCoversTheSwayEnvelope() started.
+build-and-test	Test	2026-11-15T16:54:14.9081200Z ◇ Test shippedPackEveryFrameIsClearAndWithinTwelvePoints() started.
+build-and-test	Test	2026-11-15T16:54:14.9182310Z ◇ Test screenWinsOverTheLaneOnlyWhenBothCannotHold() started.
+build-and-test	Test	2026-11-15T16:54:14.9284140Z ◇ Test leaningCountNeverCrossesTheExactlyRotatedArt() started.
+build-and-test	Test	2026-11-15T16:54:14.9384680Z ◇ Test missingPlacementCandidatesHaveAnUnknownGapAndFiniteAnchor() started.
+build-and-test	Test	2026-11-15T16:54:14.9485870Z ◇ Test firesWhileAliveAndStopsAfterwards() started.
+build-and-test	Test	2026-11-15T16:54:14.9587400Z ◇ Test unionIsTheOutlineNoPoseCrosses() started.
+build-and-test	Test	2026-11-15T16:54:14.9689240Z ◇ Test inboxMoodIsKept() started.
+build-and-test	Test	2026-11-15T16:54:14.9790370Z ◇ Test deinitRemovesTheObservation() started.
+build-and-test	Test	2026-11-15T16:54:14.9892100Z ◇ Test notPlayableQueuesNothingAndNeverReplays() started.
+build-and-test	Test	2026-11-15T16:54:14.9994110Z ◇ Test urgentIncidentGesturePlaysUrgentAndRespectsMotionSettings() started.
+build-and-test	Test	2026-11-15T16:54:15.0095870Z ◇ Test majorIncidentMakesTheMascotUrgent() started.
+build-and-test	Test	2026-11-15T16:54:15.0196710Z ◇ Test unseenIncidentNeedsAlertsAllowed() started.
+build-and-test	Test	2026-11-15T16:54:15.0297960Z ◇ Test playsOnceThenSettles() started.
+build-and-test	Test	2026-11-15T16:54:15.0399050Z ◇ Test arrivalsDuringAGestureMergeWithoutRestarting() started.
+build-and-test	Test	2026-11-15T16:54:15.0501080Z ◇ Test incidentRowsFollowPrivacy() started.
+build-and-test	Test	2026-11-15T16:54:15.0604990Z ◇ Test oneBatchIsOneGesture() started.
+build-and-test	Test	2026-11-15T16:54:15.0705760Z ◇ Test failureNeverChangesTheMoodByItself() started.
+build-and-test	Test	2026-11-15T16:54:15.0806090Z ◇ Test demoIncidentsOpenNothing() started.
+build-and-test	Test	2026-11-15T16:54:15.0907600Z ◇ Test urgentPreemptsAndTheInterruptedWaveIsNotReplayed() started.
+build-and-test	Test	2026-11-15T16:54:15.1008320Z ◇ Test minorIncidentAloneStaysIdle() started.
+build-and-test	Test	2026-11-15T16:54:15.1110390Z ◇ Test oversizedImageIsRejectedBeforeDecoding() started.
+build-and-test	Test	2026-11-15T16:54:15.1210430Z ◇ Test headerOnlyPNGIsRejectedAsUndecodable() started.
+build-and-test	Test	2026-11-15T16:54:15.1311360Z ◇ Test oversizedManifestIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:15.1412840Z ◇ Test fifoManifestAndFrameDoNotBlock() started.
+build-and-test	Test	2026-11-15T16:54:15.1514440Z ◇ Test opaquePNGWithoutAlphaIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:15.1615860Z ◇ Test criticalItemsAreUrgent() started.
+build-and-test	Test	2026-11-15T16:54:15.1722500Z ◇ Test boundedReadAcceptsExactlyTheLimit() started.
+build-and-test	Test	2026-11-15T16:54:15.1818520Z ◇ Test overLimitFrameCountSkipsFileValidation() started.
+build-and-test	Test	2026-11-15T16:54:15.1921490Z ◇ Test wrongDimensionsAreRejectedBeforeDecoding() started.
+build-and-test	Test	2026-11-15T16:54:15.2022220Z ◇ Test countDescriptionsMatchQuality() started.
+build-and-test	Test	2026-11-15T16:54:15.2123490Z ◇ Test unseenEventsNeedAlertsAllowed() started.
+build-and-test	Test	2026-11-15T16:54:15.2225110Z ◇ Test prefersAClearSideAmongThoseWithRoom() started.
+build-and-test	Test	2026-11-15T16:54:15.2325330Z ◇ Test unknownDataIsNeverAllClearOrZero() started.
+build-and-test	Test	2026-11-15T16:54:15.2427110Z ◇ Test argumentsAreNeverInterpretedByAShell() started.
+build-and-test	Test	2026-11-15T16:54:15.2529470Z ◇ Test authProblemsAreUrgent() started.
+build-and-test	Test	2026-11-15T16:54:15.2629370Z ◇ Test tallerSummariesAlwaysEndClearAfterTheCompactFallback() started.
+build-and-test	Test	2026-11-15T16:54:15.2729670Z ◇ Test newIncidentFadesEveryLayerInByOpacity() started.
+build-and-test	Test	2026-11-15T16:54:15.2831230Z ◇ Test onlyAFreshConfirmedIncidentShowsTheMarker() started.
+build-and-test	Test	2026-11-15T16:54:15.2932510Z ◇ Test tierFollowsTheMostSevereImpact() started.
+build-and-test	Test	2026-11-15T16:54:15.3034300Z ◇ Test layersPerTier() started.
+build-and-test	Test	2026-11-15T16:54:15.3135670Z ◇ Test tierRiseFadesOnlyNewLayers() started.
+build-and-test	Test	2026-11-15T16:54:15.3238230Z ◇ Test tiersAreOrdered() started.
+build-and-test	Test	2026-11-15T16:54:15.3340970Z ◇ Test burstPlaysSixSecondsThenHoldsStatic() started.
+build-and-test	Test	2026-11-15T16:54:15.3441360Z ◇ Test monitorDrivenStates() started.
+build-and-test	Test	2026-11-15T16:54:15.3543580Z ◇ Test settleCrossfadesToStaticOverTheLastSixHundredMs() started.
+build-and-test	Test	2026-11-15T16:54:15.3643630Z ◇ Test staticUnderReduceMotionQuietOrSnooze() started.
+build-and-test	Test	2026-11-15T16:54:15.3746830Z ◇ Test burstEndsWhenTheMarkerIsHidden() started.
+build-and-test	Test	2026-11-15T16:54:15.3847340Z ◇ Test genuinelyNewIncidentAnimatesOnce() started.
+build-and-test	Test	2026-11-15T16:54:15.3947580Z ◇ Test updatesReviseSilently() started.
+build-and-test	Test	2026-11-15T16:54:15.4047880Z ◇ Test escalationIsAnnouncedOncePerTierReached() started.
+build-and-test	Test	2026-11-15T16:54:15.4149780Z ◇ Test resetBaselineKeepsRowsButReseedsSilently() started.
+build-and-test	Test	2026-11-15T16:54:15.4250920Z ◇ Test recoveryLeavesWithoutAnimation() started.
+build-and-test	Test	2026-11-15T16:54:15.4351390Z ◇ Test minorStraightToCriticalIsOneEvent() started.
+build-and-test	Test	2026-11-15T16:54:15.4452970Z ◇ Test oldLastSuccessIsNotComparableEvenWithoutAFreshnessTick() started.
+build-and-test	Test	2026-11-15T16:54:15.4552440Z ◇ Test severityFollowsImpact() started.
+build-and-test	Test	2026-11-15T16:54:15.4653970Z ◇ Test staleNeverAppliesBeforeASuccessOrAfterAnError() started.
+build-and-test	Test	2026-11-15T16:54:15.4754000Z ◇ Test tierReachedWhileNotComparableIsNeverAnnounced() started.
+build-and-test	Test	2026-11-15T16:54:15.4862900Z ◇ Test boundedMemoryEvictsOldestNotCurrent() started.
+build-and-test	Test	2026-11-15T16:54:15.4963840Z ◇ Test failureBeforeAnySuccessIsNotNone() started.
+build-and-test	Test	2026-11-15T16:54:15.5063570Z ◇ Test staleReconnectDoesNotReplay() started.
+build-and-test	Test	2026-11-15T16:54:15.5163990Z ◇ Test startsUnknownNotNone() started.
+build-and-test	Test	2026-11-15T16:54:15.5265790Z ◇ Test freshNoneAndFreshIncidents() started.
+build-and-test	Test	2026-11-15T16:54:15.5365690Z ◇ Test markStaleBreaksComparability() started.
+build-and-test	Test	2026-11-15T16:54:15.5466020Z ◇ Test resetForgetsEverythingAndRebaselines() started.
+build-and-test	Test	2026-11-15T16:54:15.5567420Z ◇ Test failureAfterNoneIsNotNone() started.
+build-and-test	Test	2026-11-15T16:54:15.5667770Z ◇ Test duplicateIDsInOnePollAreOneIncident() started.
+build-and-test	Test	2026-11-15T16:54:15.5768400Z ◇ Test staleAfterThreshold() started.
+build-and-test	Test	2026-11-15T16:54:15.5869850Z ◇ Test reopeningAtHigherImpactIsNotAnEscalation() started.
+build-and-test	Test	2026-11-15T16:54:15.5971020Z ◇ Test urgentOnlyForMajorOrCritical() started.
+build-and-test	Test	2026-11-15T16:54:15.6071470Z ◇ Test snapshotLargerThanMemoryNeverReplays() started.
+build-and-test	Test	2026-11-15T16:54:15.6172240Z ◇ Test newMajorIncidentEscalatesOnlyToCritical() started.
+build-and-test	Test	2026-11-15T16:54:15.6273110Z ◇ Test staleKeepsMajorIncidentUrgent() started.
+build-and-test	Test	2026-11-15T16:54:15.6374780Z ◇ Test errorReconnectDoesNotReplay() started.
+build-and-test	Test	2026-11-15T16:54:15.6475680Z ◇ Test baselineDoesNotAnimate() started.
+build-and-test	Test	2026-11-15T16:54:15.6576190Z ◇ Test hangingServerTimesOut() started.
+build-and-test	Test	2026-11-15T16:54:15.6677710Z ◇ Test failureKeepsLastKnownIncidentsButNotForMood() started.
+build-and-test	Test	2026-11-15T16:54:15.6778610Z ◇ Test invalidIDsNeverEnterTheMonitor() started.
+build-and-test	Test	2026-11-15T16:54:15.6880330Z ◇ Test clientMapsTransportTimeout() started.
+build-and-test	Test	2026-11-15T16:54:15.6981310Z ◇ Test returnsBodyAndSendsNoCookiesOrCredentials() started.
+build-and-test	Test	2026-11-15T16:54:15.7082730Z ◇ Test declaredOversizeIsRejectedBeforeReading() started.
+build-and-test	Test	2026-11-15T16:54:15.7182960Z ◇ Test oversizeStreamIsAbandoned() started.
+build-and-test	Test	2026-11-15T16:54:15.7283270Z ◇ Test intermediateSizesInterpolateAndRoundUp() started.
+build-and-test	Test	2026-11-15T16:54:15.7384550Z ◇ Test designMetricsAtTheSpecifiedSizes() started.
+build-and-test	Test	2026-11-15T16:54:15.7448760Z ◇ Test slowDripHitsTheTotalDeadline() started.
+build-and-test	Test	2026-11-15T16:54:15.7606030Z ◇ Test exactlyMaxBytesIsAccepted() started.
+build-and-test	Test	2026-11-15T16:54:15.7708100Z ◇ Test clearanceFollowsTheCapsulesRoundedEnds() started.
+build-and-test	Test	2026-11-15T16:54:15.7808550Z ◇ Test nearTouchCountTracksEveryPoseAtTheGap() started.
+build-and-test	Test	2026-11-15T16:54:15.7909940Z ◇ Test resizingKeepsTheGroundPointOnScreen() started.
+build-and-test	Test	2026-11-15T16:54:15.8010230Z ◇ Test fullLabelsFitWithTheMinimumGapAtEverySize() started.
+build-and-test	Test	2026-11-15T16:54:15.8110840Z ◇ Test redirectsAreNotFollowed() started.
+build-and-test	Test	2026-11-15T16:54:15.8232550Z ◇ Test compactHoverStaysTwoLines() started.
+build-and-test	Test	2026-11-15T16:54:15.8334960Z ◇ Test fullHoverPutsTheIncidentOnTop() started.
+build-and-test	Test	2026-11-15T16:54:15.8455280Z ◇ Test hoverLineNamesThePublicIncident() started.
+build-and-test	Test	2026-11-15T16:54:15.8557550Z ◇ Test badgeCountsActionableItemsOnly() started.
+build-and-test	Test	2026-11-15T16:54:15.8657880Z ◇ Test slotNeverOverlapsAnyLabel() started.
+build-and-test	Test	2026-11-15T16:54:15.8759370Z ◇ Test unknownArtKeepsLabelsAboveTheArtSquare() started.
+build-and-test	Test	2026-11-15T16:54:15.8861670Z ◇ Test accessibilityLabelCountsIncidentsSeparately() started.
+build-and-test	Test	2026-11-15T16:54:15.8963710Z ◇ Test rejectsQualifierGraphQLAndHostInjectionIncludingDecodedValues() started.
+build-and-test	Test	2026-11-15T16:54:15.9065220Z ◇ Test storyboardFramesAndAngles() started.
+build-and-test	Test	2026-11-15T16:54:15.9173550Z ◇ Test leanIsContinuousBoundedAndEased() started.
+build-and-test	Test	2026-11-15T16:54:15.9282420Z ◇ Test animatorPlaysTheGestureAndReducedMotionIsStatic() started.
+build-and-test	Test	2026-11-15T16:54:15.9398480Z ◇ Test offlineFixturesUnionWithoutDuplicateRowsAndMarkDemo() started.
+build-and-test	Test	2026-11-15T16:54:15.9500910Z ◇ Test exactBoundarySucceedsAndOneExtraByteIsTypedOverflow() started.
+build-and-test	Test	2026-11-15T16:54:15.9603830Z ◇ Test normalizedValidatedUnionAndBounds() started.
+build-and-test	Test	2026-11-15T16:54:15.9706970Z ◇ Test byteValidationRejectsLineSeparatorsAndPreservesIntentionalInputTrimming() started.
+build-and-test	Test	2026-11-15T16:54:15.9809980Z ◇ Test geometryStaysBelowTheKeepOut() started.
+build-and-test	Test	2026-11-15T16:54:15.9912000Z ◇ Test easeMatchesTheCurveEnds() started.
+build-and-test	Test	2026-11-15T16:54:16.0012520Z ◇ Test accountAndDemoRecordsAreIsolatedAndCorruptionNeverBroadens() started.
+build-and-test	Test	2026-11-15T16:54:16.0113510Z ◇ Test transcribedSpecMatchesDesignJSON() started.
+build-and-test	Test	2026-11-15T16:54:16.0215190Z ◇ Test sixtyFourOverrideAppliesBelowNinetySix() started.
+build-and-test	Test	2026-11-15T16:54:16.0325190Z ◇ Test everyPaletteTokenIsUsableInBothAppearances() started.
+build-and-test	Test	2026-11-15T16:54:16.0426540Z ◇ Test loggedOutGhIsUnauthenticated() started.
+build-and-test	Test	2026-11-15T16:54:16.0427040Z ◇ Test oldGhWithoutActiveFlagLetsTheRequestDecide() started.
+build-and-test	Test	2026-11-15T16:54:16.0427500Z ◇ Test bothSearchesFailingOrMalformedOutputIsAnError() started.
+build-and-test	Test	2026-11-15T16:54:16.0427980Z ◇ Test oneRequestReturnsAccountAndItemsWithStableIDs() started.
+build-and-test	Test	2026-11-15T16:54:16.0428410Z ◇ Test missingViewerIsAFailureNotAnEmptyInbox() started.
+build-and-test	Test	2026-11-15T16:54:16.0428810Z ◇ Test exitCodeFourMeansAuthRequired() started.
+build-and-test	Test	2026-11-15T16:54:16.0429230Z ◇ Test accountAlwaysComesFromTheSameResponseAsItsItems() started.
+build-and-test	Test	2026-11-15T16:54:16.0429670Z ◇ Test launchFailureIsTreatedAsMissing() started.
+build-and-test	Test	2026-11-15T16:54:16.0430080Z ◇ Test nonzeroExitNeverMakesValidPagesComplete() started.
+build-and-test	Test	2026-11-15T16:54:16.0430450Z ◇ Test nodesWithoutAnIDAreSkipped() started.
+build-and-test	Test	2026-11-15T16:54:16.0430890Z ◇ Test repositoryRenameKeepsTheItemsIdentity() started.
+build-and-test	Test	2026-11-15T16:54:16.0431280Z ◇ Test authFailureOnTheRequestIsUnauthenticated() started.
+build-and-test	Test	2026-11-15T16:54:16.0431840Z ◇ Test graphQLErrorMemberCannotMakeCompleteDataEvenAtExitZero() started.
+build-and-test	Test	2026-11-15T16:54:16.0533190Z ◇ Test missingGhIsReportedWithoutRunningAnything() started.
+build-and-test	Test	2026-11-15T16:54:16.0634420Z ◇ Test oneFailedSearchMakesSnapshotPartial() started.
+build-and-test	Test	2026-11-15T16:54:16.0767900Z ◇ Test onlyTheActiveAccountIsChecked() started.
+build-and-test	Test	2026-11-15T16:54:16.0954120Z ◇ Test roundTripsEveryField() started.
+build-and-test	Test	2026-11-15T16:54:16.0989490Z ◇ Test realGhFixtureExitAndErrorQualityKeepsValidZeroControl() started.
+build-and-test	Test	2026-11-15T16:54:16.1108460Z ◇ Test moreMatchesThanTheCapIsPartial() started.
+build-and-test	Test	2026-11-15T16:54:16.1211300Z ◇ Test outOfRangeValuesAreClamped() started.
+build-and-test	Test	2026-11-15T16:54:16.1332930Z ◇ Test partialAndUnknownKeysAreTolerated() started.
+build-and-test	Test	2026-11-15T16:54:16.1435190Z ◇ Test corruptPayloadFallsBackToDefaults() started.
+build-and-test	Test	2026-11-15T16:54:16.1538540Z ◇ Test privacyDefaultsOnButAnExplicitChoiceIsKept() started.
+build-and-test	Test	2026-11-15T16:54:16.1649390Z ◇ Test defaultsWhenNothingStored() started.
+build-and-test	Test	2026-11-15T16:54:16.1751360Z ◇ Test nilIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.1861790Z ◇ Test injectedEntitlementFiresExactlyOneUniqueEvent() started.
+build-and-test	Test	2026-11-15T16:54:16.1963750Z ◇ Test allowsHTTPSGitHub(_:) started.
+build-and-test	Test	2026-11-15T16:54:16.2066050Z ◇ Test staleRecoveryDoesNotReplay() started.
+build-and-test	Test	2026-11-15T16:54:16.2168250Z ◇ Test fixtureLinksAreSafe() started.
+build-and-test	Test	2026-11-15T16:54:16.2270240Z ◇ Test partialPollsStayPartialUntilTurnedOff() started.
+build-and-test	Test	2026-11-15T16:54:16.2393320Z ◇ Test eventInjectedWhileDisconnectedIsNotReplayedOnReconnect() started.
+build-and-test	Test	2026-11-15T16:54:16.2511820Z ◇ Test partialSnapshotsNeverProduceEventsAndAreNotEmpty() started.
+build-and-test	Test	2026-11-15T16:54:16.2622660Z ◇ Test clockGoingBackwardsIsNotComparable() started.
+build-and-test	Test	2026-11-15T16:54:16.2735310Z ◇ Test explicitResetStillForgetsObservations() started.
+build-and-test	Test	2026-11-15T16:54:16.2837870Z ◇ Test rejectsEverythingElse(_:) started.
+build-and-test	Test	2026-11-15T16:54:16.2939750Z ◇ Test unchangedPollNeverRetriggers() started.
+build-and-test	Test	2026-11-15T16:54:16.3043640Z ◇ Test pollsFurtherApartThanStaleAfterAreNotComparable() started.
+build-and-test	Test	2026-11-15T16:54:16.3144930Z ◇ Test genuinelyNewItemFiresExactlyOnce() started.
+build-and-test	Test	2026-11-15T16:54:16.3274480Z ◇ Test refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() started.
+build-and-test	Test	2026-11-15T16:54:16.3376960Z ◇ Test snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() started.
+build-and-test	Test	2026-11-15T16:54:16.3476720Z ◇ Test firstSnapshotEstablishesBaselineWithoutEvents() started.
+build-and-test	Test	2026-11-15T16:54:16.3577110Z ◇ Test idsSeenInPartialPollsBeforeTheBaselineNeverFire() started.
+build-and-test	Test	2026-11-15T16:54:16.3677530Z ◇ Test itemThatDisappearsAndReturnsDoesNotReplay() started.
+build-and-test	Test	2026-11-15T16:54:16.3779540Z ◇ Test authAndMissingFailuresMapToDistinctStates() started.
+build-and-test	Test	2026-11-15T16:54:16.3879220Z ◇ Test resetClearsItemsStateAndTimestamp() started.
+build-and-test	Test	2026-11-15T16:54:16.3979900Z ◇ Test partialFirstSnapshotDoesNotEstablishBaseline() started.
+build-and-test	Test	2026-11-15T16:54:16.4081550Z ◇ Test dedupeKeepsNewestPerStableID() started.
+build-and-test	Test	2026-11-15T16:54:16.4182280Z ◇ Test evictionDuringASnapshotNeverReportsExistingIDs() started.
+build-and-test	Test	2026-11-15T16:54:16.4283720Z ◇ Test validPackLoads() started.
+build-and-test	Test	2026-11-15T16:54:16.4384440Z ◇ Test reconnectAfterErrorDoesNotReplayEvenNewItems() started.
+build-and-test	Test	2026-11-15T16:54:16.4484660Z ◇ Test pathTraversalAndAbsolutePathsAreRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.4585840Z ◇ Test oneShotSequencesMustFitTheirEventClip() started.
+build-and-test	Test	2026-11-15T16:54:16.4690960Z ◇ Test wrongFrameSizeAndNonPNGAreRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.4792210Z ◇ Test resetBaselineReseedsSilently() started.
+build-and-test	Test	2026-11-15T16:54:16.4894420Z ◇ Test missingRequiredStateIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.4994800Z ◇ Test durationRulesAreEnforced() started.
+build-and-test	Test	2026-11-15T16:54:16.5096700Z ◇ Test wrongSchemaIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.5197970Z ◇ Test statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() started.
+build-and-test	Test	2026-11-15T16:54:16.5299510Z ◇ Test pathsWithNulOrControlCharactersCantEscapeThePack() started.
+build-and-test	Test	2026-11-15T16:54:16.5418780Z ◇ Test noSymlinkInsideThePackIsFollowed() started.
+build-and-test	Test	2026-11-15T16:54:16.5520890Z ◇ Test missingManifestIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.5626950Z ◇ Test checksumsAreVerifiedWhenPresent() started.
+build-and-test	Test	2026-11-15T16:54:16.5729570Z ◇ Test hugeDurationsAreRejectedWithoutCrashing() started.
+build-and-test	Test	2026-11-15T16:54:16.5829820Z ◇ Test symlinkedManifestIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.5932410Z ◇ Test resolveIsQuietAndReopenIsSilent() started.
+build-and-test	Test	2026-11-15T16:54:16.6032200Z ◇ Test viewerMismatchNeverRelabelsSubmittedSelection() started.
+build-and-test	Test	2026-11-15T16:54:16.6133240Z ◇ Test onlyTheV1GroundAnchorIsAccepted() started.
+build-and-test	Test	2026-11-15T16:54:16.6234520Z ◇ Test malformedRowsCapsAndGraphQLErrorsCannotLookComplete() started.
+build-and-test	Test	2026-11-15T16:54:16.6335460Z ◇ Test verifiedEmptyDiffersFromUnavailableTarget() started.
+build-and-test	Test	2026-11-15T16:54:16.6436930Z ◇ Test oneOperationBindsViewerMetadataAndPerInclusionSearches() started.
+build-and-test	Test	2026-11-15T16:54:16.6538380Z ◇ Test malformedMetadataCountsDatesAndTitlesRemainIncomplete() started.
+build-and-test	Test	2026-11-15T16:54:16.6641250Z ◇ Test overlapProducesOneStableItemAndOneEvent() started.
+build-and-test	Test	2026-11-15T16:54:16.6741720Z ◇ Test metadataMismatchAndCrossScopeRowsAreNotVerified() started.
+build-and-test	Test	2026-11-15T16:54:16.6842890Z ◇ Test disconnectFailsTheServiceSourceToo() started.
+build-and-test	Test	2026-11-15T16:54:16.6972420Z ◇ Test symlinkEscapingPackIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.7074340Z ◇ Test escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() started.
+build-and-test	Test	2026-11-15T16:54:16.7176080Z ◇ Test fullJSONIdentifierSuffixesNeverProduceVerifiedEmptyOrCompleteData() started.
+build-and-test	Test	2026-11-15T16:54:16.7278690Z ◇ Test injectEachTierIsANewUrgentOrAttentionEvent() started.
+build-and-test	Test	2026-11-15T16:54:16.7380560Z ◇ Test fetchFailureBeforeAnySuccessIsUnknown() started.
+build-and-test	Test	2026-11-15T16:54:16.7497550Z ◇ Test malformedPayloadsAreRejected(_:_:) started.
+build-and-test	Test	2026-11-15T16:54:16.7608090Z ◇ Test scheduledMaintenanceIsNeverAnIncident() started.
+build-and-test	Test	2026-11-15T16:54:16.7710350Z ◇ Test markStaleHidesTheMarkerAndRecoveryIsSilent() started.
+build-and-test	Test	2026-11-15T16:54:16.7811230Z ◇ Test namesAreSingleLineAndBounded() started.
+build-and-test	Test	2026-11-15T16:54:16.7926940Z ◇ Test dedupesByIDKeepingLatestAndSortsBySeverity() started.
+build-and-test	Test	2026-11-15T16:54:16.8039810Z ◇ Test sampleKeepsOnlyUnresolvedIncidents() started.
+build-and-test	Test	2026-11-15T16:54:16.8141390Z ◇ Test escalateAllToMajorStillWorks() started.
+build-and-test	Test	2026-11-15T16:54:16.8242300Z ◇ Test missingRequiredFieldIsMalformed() started.
+build-and-test	Test	2026-11-15T16:54:16.8344270Z ◇ Test missingUpdatedAtFallsBackToCreated() started.
+build-and-test	Test	2026-11-15T16:54:16.8445970Z ◇ Test maintenanceAndResolvedAreNeverIncidents() started.
+build-and-test	Test	2026-11-15T16:54:16.8565840Z ◇ Test tooManyIncidentsIsRejected() started.
+build-and-test	Test	2026-11-15T16:54:16.8667570Z ◇ Test emptyListDecodesAsNone() started.
+build-and-test	Test	2026-11-15T16:54:16.8769760Z ◇ Test newerResolvedRecordRetiresOlderOpenOne() started.
+build-and-test	Test	2026-11-15T16:54:16.8877050Z ◇ Test loadedPackRecordsTheHighestStaticPose() started.
+build-and-test	Test	2026-11-15T16:54:16.8980970Z ◇ Test everyUnresolvedStatusIsAnIncident() started.
+build-and-test	Test	2026-11-15T16:54:16.9083920Z ◇ Test topInsetIsTheFirstVisibleRow() started.
+build-and-test	Test	2026-11-15T16:54:16.9187710Z ◇ Test invalidIncidentRejectsWholePayload(_:_:) started.
+build-and-test	Test	2026-11-15T16:54:16.9309740Z ◇ Test outlinesComeFromTheValidatedBytes() started.
+build-and-test	Test	2026-11-15T16:54:16.9430210Z ◇ Test usesCalendarTimeZone() started.
+build-and-test	Test	2026-11-15T16:54:16.9532500Z ◇ Test wallClockIsPreservedAcrossDaylightSavingFallBack() started.
+build-and-test	Test	2026-11-15T16:54:16.9654230Z ◇ Test equalStartAndEndMeansNoQuietTime() started.
+build-and-test	Test	2026-11-15T16:54:16.9768970Z ◇ Test packNeverReopensItsFilesAfterValidation() started.
+build-and-test	Test	2026-11-15T16:54:16.9875040Z ◇ Test disabledNeverQuiet() started.
+build-and-test	Test	2026-11-15T16:54:16.9987600Z ◇ Test minutesAreClamped() started.
+build-and-test	Test	2026-11-15T16:54:17.0088850Z ◇ Test wrapsPastMidnightWithHalfOpenBoundaries() started.
+build-and-test	Test	2026-11-15T16:54:17.0190200Z ◇ Test repositoryPackIsValid() started.
+build-and-test	Test	2026-11-15T16:54:17.0291260Z ◇ Test sameDayWindow() started.
+build-and-test	Test	2026-11-15T16:54:17.0392240Z ◇ Test invalidIDsHaveNoURL() started.
+build-and-test	Test	2026-11-15T16:54:17.0493410Z ◇ Test otherURLsAreRejected(_:) started.
+build-and-test	Test	2026-11-15T16:54:17.0595510Z ◇ Test incidentURLIsTheOnlyAcceptedShape() started.
+build-and-test	Test	2026-11-15T16:54:17.0707760Z ◇ Test inboxAndAccessibilityKeepTheFullCount() started.
+build-and-test	Test	2026-11-15T16:54:17.0812950Z ◇ Test degradedStatesAreStatedInSummary() started.
+build-and-test	Test	2026-11-15T16:54:17.0915420Z ◇ Test mascotCapsAt99PlusAndKeepsSmallerCountsExact() started.
+build-and-test	Test	2026-11-15T16:54:17.1017980Z ◇ Test privacyHidesRepositoryAndTitleEverywhere() started.
+build-and-test	Test	2026-11-15T16:54:17.1119730Z ◇ Test accessibilityLabelNamesDemoAndQuality() started.
+build-and-test	Test	2026-11-15T16:54:17.1220980Z ◇ Test demoSurvivesPrivacyModeInRowsAndHover() started.
+build-and-test	Test	2026-11-15T16:54:17.1322370Z ◇ Test fixtureItemsAreDemo() started.
+build-and-test	Test	2026-11-15T16:54:17.1424250Z ◇ Test injectedIncidentsHaveUniqueValidIDs() started.
+build-and-test	Test	2026-11-15T16:54:17.1552490Z ◇ Test withoutPrivacyShowsDetails() started.
+build-and-test	Test	2026-11-15T16:54:17.1658220Z ◇ Test disconnectEscalateAndResolve() started.
+build-and-test	Test	2026-11-15T16:54:17.1759360Z ◇ Test atMostTwoLinesAndNoDetails() started.
+build-and-test	Test	2026-11-15T16:54:17.1871090Z ◇ Test defaultFixtureIsDemoAndExcludesMaintenance() started.
+build-and-test	Test	2026-11-15T16:54:17.1974240Z ◇ Test countQualityStaysExplicit() started.
+build-and-test	Test	2026-11-15T16:54:17.2076890Z ◇ Test firstAccountAndFailedPollsAreNotChanges() started.
+build-and-test	Test	2026-11-15T16:54:17.2178700Z ◇ Test switchingAccountsStartsAFreshBaselineWithoutEvents() started.
+build-and-test	Test	2026-11-15T16:54:17.2280740Z ◇ Test everySliderHasAnAccessibilityLabel() started.
+build-and-test	Test	2026-11-15T16:54:17.2383300Z ◇ Test partialSnapshotKeepsMarkersForMissingItems() started.
+build-and-test	Test	2026-11-15T16:54:17.2517560Z ◇ Test redirectsAreRefused() started.
+build-and-test	Test	2026-11-15T16:54:17.2619610Z ◇ Test collectEnforcesTheCap() started.
+build-and-test	Test	2026-11-15T16:54:17.2723330Z ◇ Test onlyServerTrustIsHandled(_:_:) started.
+build-and-test	Test	2026-11-15T16:54:17.2825230Z ◇ Test completeSnapshotPrunesItemsThatAreGone() started.
+build-and-test	Test	2026-11-15T16:54:17.2947840Z ◇ Test switchingSourcesNeverLeaksRowsBetweenSessions() started.
+build-and-test	Test	2026-11-15T16:54:17.3085760Z ◇ Test configurationKeepsNoState() started.
+build-and-test	Test	2026-11-15T16:54:17.3188340Z ◇ Test capacityIsBoundedAndEvictsOldestFirst() started.
+build-and-test	Test	2026-11-15T16:54:17.3291630Z ◇ Test staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() started.
+build-and-test	Test	2026-11-15T16:55:21.1096720Z ◇ Test nonComparableSnapshotRecordsSilently() started.
+build-and-test	Test	2026-11-15T16:55:21.1199710Z ◇ Test seedKeepsEarlierObservations() started.
+build-and-test	Test	2026-11-15T16:55:21.1303950Z ◇ Test firstObservationBeforeBaselineIsNotReported() started.
+build-and-test	Test	2026-11-15T16:55:21.1414410Z ◇ Test newIDAfterBaselineIsReportedOnce() started.
+build-and-test	Test	2026-11-15T16:55:21.1520730Z ◇ Test suppressedClipsMeanStaticMoodPoses() started.
+build-and-test	Test	2026-11-15T16:55:21.1621490Z ◇ Test idleLoopsOnTheSuppliedClock() started.
+build-and-test	Test	2026-11-15T16:55:21.1723950Z ◇ Test emptyIDIsIgnored() started.
+build-and-test	Test	2026-11-15T16:55:21.1832260Z ◇ Test everyNewClipReplaysFromFirstFrameEvenInAttentionMood() started.
+build-and-test	Test	2026-11-15T16:55:21.1941210Z ◇ Test clipTimingUsesTheSameClockAsTheQueue() started.
+build-and-test	Test	2026-11-15T16:55:21.2042960Z ◇ Test clipLastsTwoSecondsFromItsStart() started.
+build-and-test	Test	2026-11-15T16:55:21.2163560Z ◇ Test reducedMotionIgnoresClipAndIdleLoop() started.
+build-and-test	Test	2026-11-15T16:55:21.2266350Z ◇ Test untilTomorrowMorning() started.
+build-and-test	Test	2026-11-15T16:55:21.2387690Z ◇ Test quietHoursAlsoBlockAlerts() started.
+build-and-test	Test	2026-11-15T16:55:21.2390470Z ◇ Test replacesOnContentPanelMoodOrGestureChanges() started.
+build-and-test	Test	2026-11-15T16:55:21.2492290Z ◇ Test snoozeExpiresExactlyAtDeadline() started.
+build-and-test	Test	2026-11-15T16:55:21.2595670Z ◇ Test oneShotHoldsLastFrame() started.
+build-and-test	Test	2026-11-15T16:55:21.2698240Z ◇ Test ignoresSubPointJitter() started.
+build-and-test	Test	2026-11-15T16:55:21.2800250Z ◇ Test reducedMotionPinsFirstFrame() started.
+build-and-test	Test	2026-11-15T16:55:21.2902220Z ◇ Test durationsBelowMinimumAreRaised() started.
+build-and-test	Test	2026-11-15T16:55:21.3003540Z ◇ Test loopsThroughDurations() started.
+build-and-test	Test	2026-11-15T16:55:21.3104960Z ◇ Test combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() started.
+build-and-test	Test	2026-11-15T16:55:21.3206400Z ◇ Test oneTotalDeadlineIncludesPreflight() started.
+build-and-test	Test	2026-11-15T16:55:21.3321160Z ◇ Test accountSwitchResponsesAreBoundToEachOperationIncludingReturnToA() started.
+build-and-test	Test	2026-11-15T16:55:21.3423750Z ◇ Test injectableSingleOperationAndCompleteDefaultEverything() started.
+build-and-test	Test	2026-11-15T16:55:21.3525410Z ◇ Test signedOutTransportAndRateLimitRemainDistinct() started.
+build-and-test	Test	2026-11-15T16:55:21.3627180Z ◇ Test mostlyOffscreenOrGoneDisplaysFallBack() started.
+build-and-test	Test	2026-11-15T16:55:21.3729690Z ◇ Test mostlyVisiblePositionsAreClampedFullyOnScreen() started.
+build-and-test	Test	2026-11-15T16:55:21.3833420Z ◇ Test realCollectorRejectsValidJSONBeforeEndlessStderrOverflow() started.
+build-and-test	Test	2026-11-15T16:55:21.3935580Z ◇ Test clampsIntoTheDisplayItMostlySitsOn() started.
+build-and-test	Test	2026-11-15T16:55:21.4038550Z ◇ Test injectedWorkflowFailureIsUniqueDemoAndUrgent() started.
+build-and-test	Test	2026-11-15T16:55:21.4140560Z ◇ Test redirectedResponseFromAnotherHostIsRejected() started.
+build-and-test	Test	2026-11-15T16:55:21.4242400Z ◇ Test httpErrorsAreFailures(_:) started.
+build-and-test	Test	2026-11-15T16:55:21.4344850Z ◇ Test nonJSONIsAFailure(_:) started.
+build-and-test	Test	2026-11-15T16:55:21.4476210Z ◇ Test unexpectedErrorsAreFailures() started.
+build-and-test	Test	2026-11-15T16:55:21.4577930Z ◇ Test jsonMediaTypeIsAccepted(_:) started.
+build-and-test	Test	2026-11-15T16:55:21.4679650Z ◇ Test oversizeBodyIsAFailure() started.
+build-and-test	Test	2026-11-15T16:55:21.4782680Z ◇ Test undecodableBodyIsAFailureNotNone() started.
+build-and-test	Test	2026-11-15T16:55:21.4884970Z ◇ Test transportErrorsAreFailures(_:_:) started.
+build-and-test	Test	2026-11-15T16:55:21.4987170Z ◇ Test emptyIsAVerifiedNone() started.
+build-and-test	Test	2026-11-15T16:55:21.5088630Z ◇ Test successDecodesAndSendsNoCredentials() started.
+build-and-test	Test	2026-11-15T16:55:21.5190200Z ◇ Test endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+build-and-test	Test	2026-11-15T16:55:21.5292090Z ◇ Test endpointIsTheOfficialUnauthenticatedAPI() started.
+build-and-test	Test	2026-11-15T16:55:21.5394970Z ◇ Passing 1 argument string → "https://github.com/example/repo/pull/1" to allowsHTTPSGitHub(_:)
+build-and-test	Test	2026-11-15T16:55:21.5499010Z ◇ Passing 1 argument string → "https://GitHub.com/example/repo/issues/2?x=1#frag" to allowsHTTPSGitHub(_:)
+build-and-test	Test	2026-11-15T16:55:21.5602410Z ◇ Passing 1 argument string → "https://github.com:443/settings/copilot" to allowsHTTPSGitHub(_:)
+build-and-test	Test	2026-11-15T16:55:21.5705790Z ◇ Passing 1 argument string → "http://github.com/example/repo" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.5809330Z ◇ Passing 1 argument string → "https://github.com.evil.example/x" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.5910900Z ◇ Passing 1 argument string → "https://evil.example/github.com" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6018200Z ◇ Passing 1 argument string → "***github.com/x" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6121640Z ◇ Passing 1 argument string → "https://github.com@evil.example/x" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6224640Z ◇ Passing 1 argument string → "https://github.com:8443/x" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6344130Z ◇ Passing 1 argument string → "javascript:alert(1)" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6445630Z ◇ Passing 1 argument string → "file:///etc/passwd" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6511050Z ◇ Passing 1 argument string → "x-github-client://openRepo" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6511920Z ◇ Passing 1 argument string → " https://github.com/x" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6513510Z ◇ Passing 1 argument string → "https://github.com/x
+build-and-test	Test	2026-11-15T16:55:21.6513990Z https://evil.example" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6514470Z ◇ Passing 1 argument string → "" to rejectsEverythingElse(_:)
+build-and-test	Test	2026-11-15T16:55:21.6515070Z ◇ Passing 2 arguments text → "not json", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6515950Z ◇ Passing 2 arguments text → "{"incidents":[]}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6516980Z ◇ Passing 2 arguments text → "{"page":{"id":"x"}}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6518030Z ◇ Passing 2 arguments text → "{"page":{"id":""},"incidents":[]}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6631620Z ◇ Passing 2 arguments text → "{"page":{"id":"x"},"incidents":{}}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6751870Z ◇ Passing 2 arguments text → "[]", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6854240Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"exploded","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "status" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.6957250Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"catastrophic","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "impact" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7087670Z ◇ Passing 2 arguments incident → "{"id":"A1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7195740Z ◇ Passing 2 arguments incident → "{"id":"../x","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7301550Z ◇ Passing 2 arguments incident → "{"id":"q́","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7404450Z ◇ Passing 2 arguments incident → "{"id":"1⃣","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7509930Z ◇ Passing 2 arguments incident → "{"id":"ａ1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7609080Z ◇ Passing 2 arguments incident → "{"id":"","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7712920Z ◇ Passing 2 arguments incident → "{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7816710Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"yesterday","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "created_at" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.7916730Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"soon","resolved_at":null,"incident_updates":[],"components":[]}", field → "updated_at" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.8019490Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":"garbage","incident_updates":[],"components":[]}", field → "resolved_at" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.8122310Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"  ","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "name" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.8224520Z ◇ Passing 1 argument text → "http://www.githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8325910Z ◇ Passing 1 argument text → "https://githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8427190Z ◇ Passing 1 argument text → "https://www.githubstatus.com.evil.example/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8528900Z ◇ Passing 1 argument text → "https://evil.example/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8631730Z ◇ Passing 1 argument text → "https://github.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8735770Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/abc123?x=1" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8839720Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/abc123#top" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.8940370Z ◇ Passing 1 argument text → "https://www.githubstatus.com:8443/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9044780Z ◇ Passing 1 argument text → "***www.githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9143720Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/abc123/extra" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9245500Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9347540Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/ABC123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9448770Z ◇ Passing 1 argument text → "https://www.githubstatus.com/history" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9551710Z ◇ Passing 1 argument text → "https://www.githubstatus.com/api/v2/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9651120Z ◇ Passing 1 argument text → "javascript:alert(1)" to otherURLsAreRejected(_:)
+build-and-test	Test	2026-11-15T16:55:21.9753230Z ◇ Passing 2 arguments method → "NSURLAuthenticationMethodHTTPBasic", expected → NSURLSessionAuthChallengeDisposition(rawValue: 2) to onlyServerTrustIsHandled(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.9855780Z ◇ Passing 2 arguments method → "NSURLAuthenticationMethodClientCertificate", expected → NSURLSessionAuthChallengeDisposition(rawValue: 2) to onlyServerTrustIsHandled(_:_:)
+build-and-test	Test	2026-11-15T16:55:21.9957290Z ◇ Passing 2 arguments method → "NSURLAuthenticationMethodServerTrust", expected → NSURLSessionAuthChallengeDisposition(rawValue: 1) to onlyServerTrustIsHandled(_:_:)
+build-and-test	Test	2026-11-15T16:55:22.0060390Z ✔ Test snoozeAndReduceMotionCancelAtOnce() passed after 66.789 seconds.
+build-and-test	Test	2026-11-15T16:55:22.0161920Z ✔ Test overrideIsTheOnlyCandidate() passed after 66.790 seconds.
+build-and-test	Test	2026-11-15T16:55:22.0270410Z ✔ Test liftingSnoozeOrMotionDoesNotCancelOrReplay() passed after 66.790 seconds.
+build-and-test	Test	2026-11-15T16:55:22.0372520Z ✔ Test quietHoursCancelOnlyWhenTheyCoverNow() passed after 66.790 seconds.
+build-and-test	Test	2026-11-15T16:55:22.0477320Z ✔ Test flipsLeftAtTheRightScreenEdge() passed after 66.790 seconds.
+build-and-test	Test	2026-11-15T16:55:22.0578890Z ◇ Passing 1 argument code → 301 to httpErrorsAreFailures(_:)
+build-and-test	Test	2026-11-15T16:55:22.0687200Z ◇ Passing 1 argument code → 404 to httpErrorsAreFailures(_:)
+build-and-test	Test	2026-11-15T16:55:22.0788560Z ◇ Passing 1 argument code → 429 to httpErrorsAreFailures(_:)
+build-and-test	Test	2026-11-15T16:55:22.0798110Z ◇ Passing 1 argument code → 500 to httpErrorsAreFailures(_:)
+build-and-test	Test	2026-11-15T16:55:22.0900450Z ◇ Passing 1 argument code → 503 to httpErrorsAreFailures(_:)
+build-and-test	Test	2026-11-15T16:55:22.1000160Z ◇ Passing 1 argument type → nil to nonJSONIsAFailure(_:)
+build-and-test	Test	2026-11-15T16:55:22.1102510Z ◇ Passing 1 argument type → "text/html" to nonJSONIsAFailure(_:)
+build-and-test	Test	2026-11-15T16:55:22.1201930Z ◇ Passing 1 argument type → "application/jsonp" to nonJSONIsAFailure(_:)
+build-and-test	Test	2026-11-15T16:55:22.1303260Z ◇ Passing 1 argument type → "text/json" to nonJSONIsAFailure(_:)
+build-and-test	Test	2026-11-15T16:55:22.1405730Z ◇ Passing 1 argument type → "" to nonJSONIsAFailure(_:)
+build-and-test	Test	2026-11-15T16:55:22.1505260Z ✔ Test searchesHomebrewThenAbsolutePathEntriesOnly() passed after 66.791 seconds.
+build-and-test	Test	2026-11-15T16:55:22.1607000Z ✔ Test sitsBesideTheCharacterBelowTheTags() passed after 66.791 seconds.
+build-and-test	Test	2026-11-15T16:55:22.1708650Z ✔ Test attentionOutlineCoversTheSwayEnvelope() passed after 66.791 seconds.
+build-and-test	Test	2026-11-15T16:55:22.1811540Z ◇ Passing 1 argument type → "application/json" to jsonMediaTypeIsAccepted(_:)
+build-and-test	Test	2026-11-15T16:55:22.1930070Z ◇ Passing 1 argument type → "Application/JSON; charset=utf-8" to jsonMediaTypeIsAccepted(_:)
+build-and-test	Test	2026-11-15T16:55:22.2032000Z ◇ Passing 1 argument type → "application/json ;charset=UTF-8" to jsonMediaTypeIsAccepted(_:)
+build-and-test	Test	2026-11-15T16:55:22.2134210Z ✔ Test screenWinsOverTheLaneOnlyWhenBothCannotHold() passed after 66.791 seconds.
+build-and-test	Test	2026-11-15T16:55:22.2235630Z ✔ Test hoverDuringTheGestureClearsTheSweptLean() passed after 66.791 seconds.
+build-and-test	Test	2026-11-15T16:55:22.2336910Z ◇ Passing 2 arguments code → Code(rawValue: -1001), message → "timed out" to transportErrorsAreFailures(_:_:)
+build-and-test	Test	2026-11-15T16:55:22.2439290Z ◇ Passing 2 arguments code → Code(rawValue: -1009), message → "offline" to transportErrorsAreFailures(_:_:)
+build-and-test	Test	2026-11-15T16:55:22.2543430Z ◇ Passing 2 arguments code → Code(rawValue: -1007), message → "unexpected host" to transportErrorsAreFailures(_:_:)
+build-and-test	Test	2026-11-15T16:55:22.2645840Z ◇ Passing 2 arguments code → Code(rawValue: -1003), message → "network error -1003" to transportErrorsAreFailures(_:_:)
+build-and-test	Test	2026-11-15T16:55:22.2746750Z ◇ Passing 1 argument text → "http://www.githubstatus.com/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	Test	2026-11-15T16:55:22.2849160Z ◇ Passing 1 argument text → "https://githubstatus.com/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	Test	2026-11-15T16:55:22.2951130Z ◇ Passing 1 argument text → "https://evil.example/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	Test	2026-11-15T16:55:22.3050730Z ◇ Passing 1 argument text → "https://www.githubstatus.com:8443/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	Test	2026-11-15T16:55:22.3152310Z ✔ Test missingPlacementCandidatesHaveAnUnknownGapAndFiniteAnchor() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3255320Z ✔ Test unionIsTheOutlineNoPoseCrosses() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3362240Z ✔ Test inboxMoodIsKept() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3465740Z ✔ Test notPlayableQueuesNothingAndNeverReplays() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3569730Z ✔ Test urgentIncidentGesturePlaysUrgentAndRespectsMotionSettings() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3672970Z ✔ Test unseenIncidentNeedsAlertsAllowed() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3786530Z ✔ Test majorIncidentMakesTheMascotUrgent() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3889560Z ✔ Test playsOnceThenSettles() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.3992970Z ✔ Test arrivalsDuringAGestureMergeWithoutRestarting() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4093370Z ✔ Test incidentRowsFollowPrivacy() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4201100Z ✔ Test oneBatchIsOneGesture() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4303080Z ✔ Test failureNeverChangesTheMoodByItself() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4405190Z ✔ Test demoIncidentsOpenNothing() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4508210Z ✔ Test urgentPreemptsAndTheInterruptedWaveIsNotReplayed() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4611140Z ✔ Test minorIncidentAloneStaysIdle() passed after 66.803 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4714480Z ✔ Test oversizedImageIsRejectedBeforeDecoding() passed after 66.804 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4816340Z ✔ Test headerOnlyPNGIsRejectedAsUndecodable() passed after 66.804 seconds.
+build-and-test	Test	2026-11-15T16:55:22.4917170Z ✔ Test oversizedManifestIsRejected() passed after 66.804 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5018930Z ✔ Test opaquePNGWithoutAlphaIsRejected() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5121480Z ✔ Test criticalItemsAreUrgent() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5183980Z ✔ Test boundedReadAcceptsExactlyTheLimit() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5250380Z ✔ Test overLimitFrameCountSkipsFileValidation() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5307480Z ✔ Test wrongDimensionsAreRejectedBeforeDecoding() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5411480Z ✔ Test countDescriptionsMatchQuality() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5512950Z ✔ Test unseenEventsNeedAlertsAllowed() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5615690Z ✔ Test prefersAClearSideAmongThoseWithRoom() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5718020Z ✔ Test unknownDataIsNeverAllClearOrZero() passed after 66.858 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5819000Z ✔ Test authProblemsAreUrgent() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.5920640Z ✔ Test shippedPackEveryFrameIsClearAndWithinTwelvePoints() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6021840Z ✔ Test newIncidentFadesEveryLayerInByOpacity() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6123530Z ✔ Test onlyAFreshConfirmedIncidentShowsTheMarker() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6225910Z ✔ Test tierFollowsTheMostSevereImpact() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6328580Z ✔ Test layersPerTier() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6430790Z ✔ Test tierRiseFadesOnlyNewLayers() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6532700Z ✔ Test tiersAreOrdered() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6634750Z ✔ Test burstPlaysSixSecondsThenHoldsStatic() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6737150Z ✔ Test monitorDrivenStates() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6838800Z ✔ Test settleCrossfadesToStaticOverTheLastSixHundredMs() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.6939230Z ✔ Test staticUnderReduceMotionQuietOrSnooze() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7041580Z ✔ Test burstEndsWhenTheMarkerIsHidden() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7143770Z ✔ Test genuinelyNewIncidentAnimatesOnce() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7244350Z ✔ Test updatesReviseSilently() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7347210Z ✔ Test escalationIsAnnouncedOncePerTierReached() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7447770Z ✔ Test resetBaselineKeepsRowsButReseedsSilently() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7549950Z ✔ Test recoveryLeavesWithoutAnimation() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7651780Z ✔ Test minorStraightToCriticalIsOneEvent() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7752130Z ✔ Test severityFollowsImpact() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7855020Z ✔ Test oldLastSuccessIsNotComparableEvenWithoutAFreshnessTick() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.7954360Z ✔ Test staleNeverAppliesBeforeASuccessOrAfterAnError() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8056050Z ✔ Test tierReachedWhileNotComparableIsNeverAnnounced() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8157590Z ✔ Test boundedMemoryEvictsOldestNotCurrent() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8258100Z ✔ Test failureBeforeAnySuccessIsNotNone() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8360490Z ✔ Test staleReconnectDoesNotReplay() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8459920Z ✔ Test freshNoneAndFreshIncidents() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8563320Z ✔ Test markStaleBreaksComparability() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8664110Z ✔ Test startsUnknownNotNone() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8766030Z ✔ Test resetForgetsEverythingAndRebaselines() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8866950Z ✔ Test failureAfterNoneIsNotNone() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.8969930Z ✔ Test duplicateIDsInOnePollAreOneIncident() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9069970Z ✔ Test staleAfterThreshold() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9173510Z ✔ Test urgentOnlyForMajorOrCritical() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9276310Z ✔ Test reopeningAtHigherImpactIsNotAnEscalation() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9377900Z ✔ Test snapshotLargerThanMemoryNeverReplays() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9478820Z ✔ Test newMajorIncidentEscalatesOnlyToCritical() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9579960Z ✔ Test errorReconnectDoesNotReplay() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9682220Z ✔ Test staleKeepsMajorIncidentUrgent() passed after 66.872 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9789160Z ✔ Test baselineDoesNotAnimate() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9891700Z ✔ Test failureKeepsLastKnownIncidentsButNotForMood() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:22.9992130Z ✔ Test invalidIDsNeverEnterTheMonitor() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0093490Z ✔ Test intermediateSizesInterpolateAndRoundUp() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0193960Z ✔ Test designMetricsAtTheSpecifiedSizes() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0295860Z ✔ Test clearanceFollowsTheCapsulesRoundedEnds() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0409270Z ✔ Test leaningCountNeverCrossesTheExactlyRotatedArt() passed after 66.875 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0511790Z ✔ Test resizingKeepsTheGroundPointOnScreen() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0614240Z ✔ Test fullLabelsFitWithTheMinimumGapAtEverySize() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0716640Z ✔ Test compactHoverStaysTwoLines() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0824420Z ✔ Test fullHoverPutsTheIncidentOnTop() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0926480Z ✔ Test hoverLineNamesThePublicIncident() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.0948720Z ✔ Test badgeCountsActionableItemsOnly() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1017230Z ✔ Test slotNeverOverlapsAnyLabel() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1077060Z ✔ Test unknownArtKeepsLabelsAboveTheArtSquare() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1143480Z ✔ Test accessibilityLabelCountsIncidentsSeparately() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1190080Z ✔ Test storyboardFramesAndAngles() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1246690Z ✔ Test rejectsQualifierGraphQLAndHostInjectionIncludingDecodedValues() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1348250Z ✔ Test animatorPlaysTheGestureAndReducedMotionIsStatic() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1406700Z ✔ Test leanIsContinuousBoundedAndEased() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1485630Z ✔ Test offlineFixturesUnionWithoutDuplicateRowsAndMarkDemo() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1585090Z ✔ Test normalizedValidatedUnionAndBounds() passed after 66.873 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1641180Z ✔ Test byteValidationRejectsLineSeparatorsAndPreservesIntentionalInputTrimming() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1742670Z ✔ Test geometryStaysBelowTheKeepOut() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1781060Z ✔ Test easeMatchesTheCurveEnds() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1895450Z ✔ Test accountAndDemoRecordsAreIsolatedAndCorruptionNeverBroadens() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.1995870Z ✔ Test transcribedSpecMatchesDesignJSON() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2097350Z ✔ Test sixtyFourOverrideAppliesBelowNinetySix() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2197750Z ✔ Test everyPaletteTokenIsUsableInBothAppearances() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2298040Z ✔ Test loggedOutGhIsUnauthenticated() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2400990Z ✔ Test oldGhWithoutActiveFlagLetsTheRequestDecide() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2500150Z ✔ Test bothSearchesFailingOrMalformedOutputIsAnError() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2605080Z ✔ Test oneRequestReturnsAccountAndItemsWithStableIDs() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2706550Z ✔ Test missingViewerIsAFailureNotAnEmptyInbox() passed after 66.893 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2807350Z ✔ Test exitCodeFourMeansAuthRequired() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.2907910Z ✔ Test accountAlwaysComesFromTheSameResponseAsItsItems() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3009160Z ✔ Test launchFailureIsTreatedAsMissing() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3110210Z ✔ Test nonzeroExitNeverMakesValidPagesComplete() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3211650Z ✔ Test nodesWithoutAnIDAreSkipped() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3313090Z ✔ Test repositoryRenameKeepsTheItemsIdentity() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3422150Z ✔ Test authFailureOnTheRequestIsUnauthenticated() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3524380Z ✔ Test graphQLErrorMemberCannotMakeCompleteDataEvenAtExitZero() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3625840Z ✔ Test missingGhIsReportedWithoutRunningAnything() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3727280Z ✔ Test oneFailedSearchMakesSnapshotPartial() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3828660Z ✔ Test onlyTheActiveAccountIsChecked() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.3929870Z ✔ Test roundTripsEveryField() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4031360Z ✔ Test realGhFixtureExitAndErrorQualityKeepsValidZeroControl() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4131650Z ✔ Test moreMatchesThanTheCapIsPartial() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4165790Z ✔ Test outOfRangeValuesAreClamped() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4239820Z ✔ Test partialAndUnknownKeysAreTolerated() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4332850Z ✔ Test privacyDefaultsOnButAnExplicitChoiceIsKept() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4448250Z ✔ Test defaultsWhenNothingStored() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4539680Z ✔ Test corruptPayloadFallsBackToDefaults() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4644510Z ✔ Test nilIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4747500Z ✔ Test injectedEntitlementFiresExactlyOneUniqueEvent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4849800Z ✔ Test allowsHTTPSGitHub(_:) passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.4925050Z ✔ Test staleRecoveryDoesNotReplay() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5003600Z ✔ Test fixtureLinksAreSafe() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5091840Z ✔ Test partialPollsStayPartialUntilTurnedOff() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5117970Z ✔ Test partialSnapshotsNeverProduceEventsAndAreNotEmpty() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5220400Z ✔ Test eventInjectedWhileDisconnectedIsNotReplayedOnReconnect() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5255940Z ✔ Test clockGoingBackwardsIsNotComparable() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5292290Z ✔ Test explicitResetStillForgetsObservations() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5310230Z ✔ Test unchangedPollNeverRetriggers() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5411650Z ✔ Test rejectsEverythingElse(_:) passed after 66.895 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5514040Z ✔ Test pollsFurtherApartThanStaleAfterAreNotComparable() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5616110Z ✔ Test genuinelyNewItemFiresExactlyOnce() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5660050Z ✔ Test refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5672500Z ✔ Test firstSnapshotEstablishesBaselineWithoutEvents() passed after 66.895 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5773970Z ✔ Test snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5876220Z ✔ Test idsSeenInPartialPollsBeforeTheBaselineNeverFire() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5902140Z ✔ Test authAndMissingFailuresMapToDistinctStates() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.5969400Z ✔ Test itemThatDisappearsAndReturnsDoesNotReplay() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6019960Z ✔ Test resetClearsItemsStateAndTimestamp() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6124530Z ✔ Test partialFirstSnapshotDoesNotEstablishBaseline() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6198830Z ✔ Test evictionDuringASnapshotNeverReportsExistingIDs() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6243800Z ✔ Test dedupeKeepsNewestPerStableID() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6254610Z ✔ Test validPackLoads() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6255320Z ✔ Test pathTraversalAndAbsolutePathsAreRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6256090Z ✔ Test reconnectAfterErrorDoesNotReplayEvenNewItems() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6257010Z ✔ Test oneShotSequencesMustFitTheirEventClip() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6257670Z ✔ Test resetBaselineReseedsSilently() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6264150Z ✔ Test wrongFrameSizeAndNonPNGAreRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6264860Z ✔ Test missingRequiredStateIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6266750Z ✔ Test wrongSchemaIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6267350Z ✔ Test durationRulesAreEnforced() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6268180Z ✔ Test statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6284650Z ✔ Test noSymlinkInsideThePackIsFollowed() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6287680Z ✔ Test pathsWithNulOrControlCharactersCantEscapeThePack() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6289470Z ✔ Test missingManifestIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6292280Z ✔ Test checksumsAreVerifiedWhenPresent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6292990Z ✔ Test hugeDurationsAreRejectedWithoutCrashing() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6294040Z ✔ Test resolveIsQuietAndReopenIsSilent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6294690Z ✔ Test symlinkedManifestIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6295380Z ✔ Test viewerMismatchNeverRelabelsSubmittedSelection() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6297280Z ✔ Test onlyTheV1GroundAnchorIsAccepted() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6298060Z ✔ Test malformedRowsCapsAndGraphQLErrorsCannotLookComplete() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6298830Z ✔ Test verifiedEmptyDiffersFromUnavailableTarget() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6300610Z ✔ Test oneOperationBindsViewerMetadataAndPerInclusionSearches() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6301430Z ✔ Test malformedMetadataCountsDatesAndTitlesRemainIncomplete() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6302370Z ✔ Test overlapProducesOneStableItemAndOneEvent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6303940Z ✔ Test metadataMismatchAndCrossScopeRowsAreNotVerified() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6304660Z ✔ Test disconnectFailsTheServiceSourceToo() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6306280Z ✔ Test symlinkEscapingPackIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6307010Z ✔ Test escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6307900Z ✔ Test fullJSONIdentifierSuffixesNeverProduceVerifiedEmptyOrCompleteData() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6309820Z ✔ Test injectEachTierIsANewUrgentOrAttentionEvent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6310600Z ✔ Test fetchFailureBeforeAnySuccessIsUnknown() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6311270Z ✔ Test malformedPayloadsAreRejected(_:_:) passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6313330Z ✔ Test scheduledMaintenanceIsNeverAnIncident() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6314150Z ✔ Test markStaleHidesTheMarkerAndRecoveryIsSilent() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6314810Z ✔ Test namesAreSingleLineAndBounded() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6315480Z ✔ Test dedupesByIDKeepingLatestAndSortsBySeverity() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6317380Z ✔ Test sampleKeepsOnlyUnresolvedIncidents() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6319370Z ✔ Test escalateAllToMajorStillWorks() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6321050Z ✔ Test missingRequiredFieldIsMalformed() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6321700Z ✔ Test missingUpdatedAtFallsBackToCreated() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6322380Z ✔ Test maintenanceAndResolvedAreNeverIncidents() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6324040Z ✔ Test tooManyIncidentsIsRejected() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6324670Z ✔ Test emptyListDecodesAsNone() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6326420Z ✔ Test newerResolvedRecordRetiresOlderOpenOne() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6340460Z ✔ Test loadedPackRecordsTheHighestStaticPose() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6342390Z ✔ Test everyUnresolvedStatusIsAnIncident() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6348610Z ✔ Test invalidIncidentRejectsWholePayload(_:_:) passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6356810Z ✔ Test topInsetIsTheFirstVisibleRow() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6358890Z ✔ Test outlinesComeFromTheValidatedBytes() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6359540Z ✔ Test usesCalendarTimeZone() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6360220Z ✔ Test wallClockIsPreservedAcrossDaylightSavingFallBack() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6360950Z ✔ Test equalStartAndEndMeansNoQuietTime() passed after 66.894 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6362010Z ✔ Test minutesAreClamped() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6362550Z ✔ Test disabledNeverQuiet() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6363110Z ✔ Test repositoryPackIsValid() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6363750Z ✔ Test wrapsPastMidnightWithHalfOpenBoundaries() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6364370Z ✔ Test sameDayWindow() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6365020Z ✔ Test invalidIDsHaveNoURL() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6365570Z ✔ Test otherURLsAreRejected(_:) passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6366190Z ✔ Test incidentURLIsTheOnlyAcceptedShape() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6366850Z ✔ Test inboxAndAccessibilityKeepTheFullCount() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6367520Z ✔ Test degradedStatesAreStatedInSummary() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6368220Z ✔ Test mascotCapsAt99PlusAndKeepsSmallerCountsExact() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6368990Z ✔ Test privacyHidesRepositoryAndTitleEverywhere() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6369680Z ✔ Test accessibilityLabelNamesDemoAndQuality() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6370350Z ✔ Test demoSurvivesPrivacyModeInRowsAndHover() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6370970Z ✔ Test fixtureItemsAreDemo() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6371580Z ✔ Test injectedIncidentsHaveUniqueValidIDs() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6372230Z ✔ Test withoutPrivacyShowsDetails() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6372830Z ✔ Test disconnectEscalateAndResolve() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6373430Z ✔ Test atMostTwoLinesAndNoDetails() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6374080Z ✔ Test defaultFixtureIsDemoAndExcludesMaintenance() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6374720Z ✔ Test countQualityStaysExplicit() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6375700Z ✔ Test firstAccountAndFailedPollsAreNotChanges() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6376430Z ✔ Test switchingAccountsStartsAFreshBaselineWithoutEvents() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6377150Z ✔ Test everySliderHasAnAccessibilityLabel() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6377830Z ✔ Test partialSnapshotKeepsMarkersForMissingItems() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6378460Z ✔ Test redirectsAreRefused() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6379020Z ✔ Test collectEnforcesTheCap() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6379610Z ✔ Test onlyServerTrustIsHandled(_:_:) passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6380250Z ✔ Test completeSnapshotPrunesItemsThatAreGone() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6380960Z ✔ Test switchingSourcesNeverLeaksRowsBetweenSessions() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6381630Z ✔ Test configurationKeepsNoState() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6382290Z ✔ Test capacityIsBoundedAndEvictsOldestFirst() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6383070Z ✔ Test staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6383840Z ✔ Test nonComparableSnapshotRecordsSilently() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6384490Z ✔ Test seedKeepsEarlierObservations() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6385160Z ✔ Test firstObservationBeforeBaselineIsNotReported() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6385840Z ✔ Test newIDAfterBaselineIsReportedOnce() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6386490Z ✔ Test suppressedClipsMeanStaticMoodPoses() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6387130Z ✔ Test idleLoopsOnTheSuppliedClock() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6387700Z ✔ Test emptyIDIsIgnored() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6388360Z ✔ Test everyNewClipReplaysFromFirstFrameEvenInAttentionMood() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6392230Z ✔ Test clipTimingUsesTheSameClockAsTheQueue() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6392990Z ✔ Test reducedMotionIgnoresClipAndIdleLoop() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6395100Z ✔ Test clipLastsTwoSecondsFromItsStart() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6397430Z ✔ Test untilTomorrowMorning() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6401780Z ✔ Test quietHoursAlsoBlockAlerts() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6403480Z ✔ Test replacesOnContentPanelMoodOrGestureChanges() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6405130Z ✔ Test snoozeExpiresExactlyAtDeadline() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6406550Z ✔ Test oneShotHoldsLastFrame() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6407880Z ✔ Test ignoresSubPointJitter() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6409740Z ✔ Test reducedMotionPinsFirstFrame() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6411310Z ✔ Test durationsBelowMinimumAreRaised() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6412770Z ✔ Test loopsThroughDurations() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6414560Z ✔ Test combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6416810Z ✔ Test accountSwitchResponsesAreBoundToEachOperationIncludingReturnToA() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6418970Z ✔ Test injectableSingleOperationAndCompleteDefaultEverything() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6420780Z ✔ Test oneTotalDeadlineIncludesPreflight() passed after 67.467 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6422510Z ✔ Test signedOutTransportAndRateLimitRemainDistinct() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:55:23.6425170Z ✔ Test mostlyVisiblePositionsAreClampedFullyOnScreen() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8116370Z ✔ Test mostlyOffscreenOrGoneDisplaysFallBack() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8118210Z ✔ Test clampsIntoTheDisplayItMostlySitsOn() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8132790Z ✔ Test realCollectorRejectsValidJSONBeforeEndlessStderrOverflow() passed after 67.466 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8133670Z ✔ Test injectedWorkflowFailureIsUniqueDemoAndUrgent() passed after 67.465 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8134320Z ✔ Test redirectedResponseFromAnotherHostIsRejected() passed after 67.465 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8134940Z ✔ Test httpErrorsAreFailures(_:) passed after 67.346 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8135430Z ✔ Test nonJSONIsAFailure(_:) passed after 67.346 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8135930Z ✔ Test unexpectedErrorsAreFailures() passed after 67.346 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8136480Z ✔ Test jsonMediaTypeIsAccepted(_:) passed after 60.384 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8137010Z ✔ Test oversizeBodyIsAFailure() passed after 60.384 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8137460Z ✔ Test undecodableBodyIsAFailureNotNone() passed after 60.231 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8137960Z ✔ Test transportErrorsAreFailures(_:_:) passed after 58.108 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8138400Z ✔ Test emptyIsAVerifiedNone() passed after 58.107 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8138890Z ✔ Test successDecodesAndSendsNoCredentials() passed after 58.107 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8139420Z ✔ Test endpointOutsideTheAllowlistIsNeverRequested(_:) passed after 58.107 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8140010Z ✔ Test endpointIsTheOfficialUnauthenticatedAPI() passed after 58.107 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8140540Z ✔ Test declaredOversizeIsRejectedBeforeReading() passed after 67.473 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8141070Z ✔ Test clientMapsTransportTimeout() passed after 67.473 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8141540Z ✔ Suite GestureCancellationTests passed after 67.478 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8141970Z ✔ Suite GhLocatorTests passed after 67.478 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8142420Z ✔ Suite HoverPlacementTests passed after 67.478 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8142800Z ✔ Suite ServiceStatusPolicyTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8143250Z ✔ Suite EventClipQueueTests passed after 67.478 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8155220Z ✔ Suite MascotPolicyTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8155730Z ✔ Suite IncidentMarkerStateTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8156160Z ✔ Suite ServiceStatusMonitorTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8156630Z ✔ Suite IncidentMarkerTextTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8157110Z ✔ Suite IncidentMarkerGeometryTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8157550Z ✔ Suite AttentionGestureTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8158010Z ✔ Suite MonitoringScopeTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8158410Z ✔ Test oversizeStreamIsAbandoned() passed after 67.477 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8158870Z ✔ Test redirectsAreNotFollowed() passed after 67.476 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8159280Z ✔ Suite IncidentMarkerSpecTests passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8159830Z ✔ Suite GhClientTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8160250Z ✔ Suite SettingsPersistenceTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8160670Z ✔ Suite SafeLinkTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8161080Z ✔ Suite FixtureSimulatorTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8161470Z ✔ Suite InboxEngineTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8161940Z ✔ Suite MascotPackTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8162490Z ✔ Suite ServiceStatusSimulatorActionTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8162950Z ✔ Suite ScopedQueryTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8163320Z ✔ Suite StatusPageDecoderTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8163760Z ✔ Suite ArtBoundsTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8164150Z ✔ Suite QuietHoursTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8164500Z ✔ Suite BundledPackTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8164920Z ✔ Suite ServiceStatusLinkTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8165800Z ✔ Suite MascotBadgeCapTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8166150Z ✔ Suite PrivacyTextTests passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8166580Z ✔ Suite DemoLabelTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8166970Z ✔ Suite ServiceStatusSimulatorTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8167470Z ✔ Suite CompactSummaryTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8167830Z ✔ Suite AccountSessionTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8168250Z ✔ Suite AccessibilitySourceTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8168670Z ✔ Suite UnseenItemsTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8169110Z ✔ Suite StatusTransportUnitTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8169560Z ✔ Suite SourceGenerationTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8169950Z ✔ Suite EventTrackerTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8170360Z ✔ Suite MascotAnimatorTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8170720Z ✔ Suite SnoozeTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8171180Z ✔ Suite HoverPlacementInputsTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8171560Z ✔ Suite FrameClockTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8171980Z ✔ Suite ScopedClientTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8172370Z ✔ Suite PanelPositionTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8172800Z ✔ Suite WorkflowFailureFixtureTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8173270Z ✔ Suite ServiceStatusClientTests passed after 67.481 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8173800Z ✔ Test returnsBodyAndSendsNoCookiesOrCredentials() passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8174320Z ✔ Test exactlyMaxBytesIsAccepted() passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8174770Z ✔ Test fifoManifestAndFrameDoNotBlock() passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8175290Z ✔ Test argumentsAreNeverInterpretedByAShell() passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8176260Z ✔ Test exactBoundarySucceedsAndOneExtraByteIsTypedOverflow() passed after 67.479 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8176940Z ✔ Test packNeverReopensItsFilesAfterValidation() passed after 67.475 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8177430Z ✔ Test hangingServerTimesOut() passed after 67.480 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8177830Z ✔ Suite MascotPackLimitTests passed after 67.482 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8178260Z ✔ Suite ValidatedBytesTests passed after 67.482 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8178710Z ◇ Test nonzeroExitAndStderrAreCaptured() started.
+build-and-test	Test	2026-11-15T16:56:16.8179130Z ◇ Test stdoutAndStderrShareOneCollectionBudget() started.
+build-and-test	Test	2026-11-15T16:56:16.8179550Z ✔ Test firesWhileAliveAndStopsAfterwards() passed after 67.516 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8180040Z ✔ Test deinitRemovesTheObservation() passed after 67.516 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8180540Z ✔ Suite SystemNotificationObserverTests passed after 67.518 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8180990Z ✔ Test nonzeroExitAndStderrAreCaptured() passed after 0.035 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8181580Z ✔ Test stdoutAndStderrShareOneCollectionBudget() passed after 0.035 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8182010Z ◇ Test missingExecutableThrowsLaunchFailed() started.
+build-and-test	Test	2026-11-15T16:56:16.8182480Z ◇ Test neverExitingChattyProducerIsStoppedDuringCollection() started.
+build-and-test	Test	2026-11-15T16:56:16.8182960Z ✔ Test missingExecutableThrowsLaunchFailed() passed after 0.015 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8183560Z ✔ Test neverExitingChattyProducerIsStoppedDuringCollection() passed after 0.015 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8184030Z ◇ Test searchesArePinnedToGitHubDotCom() started.
+build-and-test	Test	2026-11-15T16:56:16.8184480Z ◇ Test budgetSpansCommandsAndDoesNotResetAfterPreflight() started.
+build-and-test	Test	2026-11-15T16:56:16.8185000Z ✔ Test searchesArePinnedToGitHubDotCom() passed after 0.030 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8185520Z ✔ Test budgetSpansCommandsAndDoesNotResetAfterPreflight() passed after 0.030 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8186100Z ◇ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() started.
+build-and-test	Test	2026-11-15T16:56:16.8186830Z ◇ Test monotonicDeadlineSpansActualProcesses() started.
+build-and-test	Test	2026-11-15T16:56:16.8187390Z ✔ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() passed after 2.354 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8187950Z ✔ Test monotonicDeadlineSpansActualProcesses() passed after 2.354 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8188480Z ✔ Test slowDripHitsTheTotalDeadline() passed after 69.916 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8188990Z ✔ Suite URLSessionStatusTransportTests passed after 69.919 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8189370Z ◇ Test timeoutTerminatesTheChild() started.
+build-and-test	Test	2026-11-15T16:56:16.8189820Z ◇ Test descendantPipeDrainIsBoundedAndMarkedIncomplete() started.
+build-and-test	Test	2026-11-15T16:56:16.8190280Z ✔ Test timeoutTerminatesTheChild() passed after 2.402 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8190820Z ✔ Test descendantPipeDrainIsBoundedAndMarkedIncomplete() passed after 2.400 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8191280Z ✔ Suite ProcessRunnerTests passed after 72.323 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8191660Z ◇ Test deadlineTerminatesTheChild() started.
+build-and-test	Test	2026-11-15T16:56:16.8192040Z ✔ Test deadlineTerminatesTheChild() passed after 0.127 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8192490Z ◇ Test prelaunchCancellationDoesNotSpawnAChild() started.
+build-and-test	Test	2026-11-15T16:56:16.8193010Z ✔ Test prelaunchCancellationDoesNotSpawnAChild() passed after 0.001 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8193630Z ◇ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() started.
+build-and-test	Test	2026-11-15T16:56:16.8194400Z ✔ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() passed after 0.116 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8194990Z ✔ Suite BoundedCommandTests passed after 72.568 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8195430Z ✔ Test nearTouchCountTracksEveryPoseAtTheGap() passed after 73.906 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8195990Z ✔ Suite MascotLayoutTests passed after 73.909 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8196490Z ✔ Test tallerSummariesAlwaysEndClearAfterTheCompactFallback() passed after 122.572 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8197030Z ✔ Suite HoverSideChoiceTests passed after 122.574 seconds.
+build-and-test	Test	2026-11-15T16:56:16.8197690Z ✔ Test run with 309 tests passed after 122.575 seconds.
+build-and-test	External public CommandRunner API	﻿2026-11-15T16:56:16.8427780Z ##[group]Run scripts/test-public-budget.sh
+build-and-test	External public CommandRunner API	2026-11-15T16:56:16.8428360Z ^[[36;1mscripts/test-public-budget.sh^[[0m
+build-and-test	External public CommandRunner API	2026-11-15T16:56:16.8717290Z shell: /bin/bash -e {0}
+build-and-test	External public CommandRunner API	2026-11-15T16:56:16.8717950Z ##[endgroup]
+build-and-test	External public CommandRunner API	2026-11-15T16:56:22.9927160Z PASS external normal-import CommandRunner: shared stdout/stderr + commands, typed/latching overflow, atomic accounting and deadline
+build-and-test	Check out PR head for packaging	﻿2026-11-15T16:56:23.0168870Z ##[group]Run actions/checkout@v4
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0169310Z with:
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0169530Z   ref: 1d5a9115d6ff338a308813cb01e1a2422824e606
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0169770Z   fetch-depth: 0
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0169960Z   repository: christopherrbrown3/github-pet
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0171990Z   token: ***
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0172150Z   ssh-strict: true
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0172300Z   ssh-user: git
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0172490Z   persist-credentials: true
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0172670Z   clean: true
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0172920Z   sparse-checkout-cone-mode: true
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0173120Z   fetch-tags: false
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0173300Z   show-progress: true
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0173470Z   lfs: false
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0173620Z   submodules: false
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0173800Z   set-safe-directory: true
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0174010Z   allow-unsafe-pr-checkout: false
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.0174230Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.3944660Z Syncing repository: christopherrbrown3/github-pet
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.3945310Z ##[group]Getting Git version info
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.3945750Z Working directory is '/Users/runner/work/github-pet/github-pet'
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.3982870Z [command]/opt/homebrew/bin/git version
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4305850Z git version 2.56.0
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4317110Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4324860Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/5d254170-8f31-4c59-bf4f-f5b08a281bbc/.gitconfig'
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4340110Z Temporarily overriding HOME='/Users/runner/work/_temp/5d254170-8f31-4c59-bf4f-f5b08a281bbc' before making global git config changes
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4342980Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4344910Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4476670Z [command]/opt/homebrew/bin/git config --local --get remote.origin.url
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4539340Z https://github.com/christopherrbrown3/github-pet
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4554170Z ##[group]Removing previously created refs, to avoid conflicts
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4557120Z [command]/opt/homebrew/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4630660Z HEAD
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4709370Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.4710650Z [command]/opt/homebrew/bin/git submodule status
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.5846220Z ##[group]Cleaning the repository
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:23.5899170Z [command]/opt/homebrew/bin/git clean -ffdx
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1561290Z Removing .build/
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1864860Z [command]/opt/homebrew/bin/git reset --hard HEAD
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1895060Z HEAD is now at 6a8d78c Merge 1d5a9115d6ff338a308813cb01e1a2422824e606 into c91c250f176afca5090d17c82c4205ecffe5c793
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1949510Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1951770Z ##[group]Disabling automatic garbage collection
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1953730Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1959280Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1959710Z ##[group]Setting up auth
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.1960270Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.2012100Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.2994530Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.3059770Z http.https://github.com/.extraheader
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.3073500Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.3148590Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.4059820Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.4134720Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.5441610Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.5523950Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.5524930Z ##[group]Fetching the repository
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:24.5530480Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0757580Z [command]/opt/homebrew/bin/git rev-parse --verify --quiet 1d5a9115d6ff338a308813cb01e1a2422824e606^{object}
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0834790Z 1d5a9115d6ff338a308813cb01e1a2422824e606
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0841040Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0841990Z ##[group]Determining the checkout info
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0842930Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0845980Z [command]/opt/homebrew/bin/git sparse-checkout disable
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.0946860Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1013760Z ##[group]Checking out the ref
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1014870Z [command]/opt/homebrew/bin/git checkout --progress --force 1d5a9115d6ff338a308813cb01e1a2422824e606
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1117510Z Previous HEAD position was 6a8d78c Merge 1d5a9115d6ff338a308813cb01e1a2422824e606 into c91c250f176afca5090d17c82c4205ecffe5c793
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1143780Z HEAD is now at 1d5a911 Keep legacy gh responses partial on exit or GraphQL errors (refs #30)
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1153020Z ##[endgroup]
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1256060Z [command]/opt/homebrew/bin/git log -1 --format=%H
+build-and-test	Check out PR head for packaging	2026-11-15T16:56:25.1331410Z 1d5a9115d6ff338a308813cb01e1a2422824e606
+build-and-test	Verify packaging source and history	﻿2026-11-15T16:56:25.1472810Z ##[group]Run test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1473350Z ^[[36;1mtest "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"^[[0m
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1473740Z ^[[36;1mtest "$(git rev-parse --is-shallow-repository)" = false^[[0m
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1474060Z ^[[36;1mtest "$(git rev-list --count HEAD)" -gt 1^[[0m
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1512940Z shell: /bin/bash -e {0}
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1513210Z env:
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1513530Z   EXPECTED_SOURCE_SHA: 1d5a9115d6ff338a308813cb01e1a2422824e606
+build-and-test	Verify packaging source and history	2026-11-15T16:56:25.1513820Z ##[endgroup]
+build-and-test	Packaging provenance regression	﻿2026-11-15T16:56:25.2069740Z ##[group]Run scripts/test-packaging.sh
+build-and-test	Packaging provenance regression	2026-11-15T16:56:25.2070040Z ^[[36;1mscripts/test-packaging.sh^[[0m
+build-and-test	Packaging provenance regression	2026-11-15T16:56:25.2104370Z shell: /bin/bash -e {0}
+build-and-test	Packaging provenance regression	2026-11-15T16:56:25.2104620Z ##[endgroup]
+build-and-test	Packaging provenance regression	2026-11-15T16:56:26.4920140Z PASS intel-smoke child=0 with usable report (exit 0)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:27.5350870Z PASS intel-smoke child=86 with usable report (exit 86)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:27.6656950Z PASS build-app depth=full (exit 86)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:27.7185200Z PASS package-zip depth=full (exit 86)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:27.8384350Z PASS build-app depth=1 (exit 65)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:27.8819340Z PASS package-zip depth=1 (exit 65)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:27.9964160Z PASS build-app depth=2 (exit 65)
+build-and-test	Packaging provenance regression	2026-11-15T16:56:28.0276060Z PASS package-zip depth=2 (exit 65)
+build-and-test	Package app (universal ZIP)	﻿2026-11-15T16:56:28.0552860Z ##[group]Run scripts/package-zip.sh
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:28.0553850Z ^[[36;1mscripts/package-zip.sh^[[0m
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:28.0643490Z shell: /bin/bash -e {0}
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:28.0644050Z ##[endgroup]
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:29.6560770Z Building for production...
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:29.6678940Z [0/5] Write sources
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:29.9222580Z [2/5] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	Package app (universal ZIP)	2026-11-15T16:56:52.1274900Z [4/6] Compiling GitHubPetCore CommandBudget.swift
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:13.4851460Z [5/7] Compiling GitHubPet AppModel.swift
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:13.4953910Z [5/7] Write Objects.LinkFileList
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:14.5417610Z [6/7] Linking GitHubPet
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:14.5451230Z Build of product 'GitHubPet' complete! (44.96s)
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:16.2927610Z Building for production...
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:16.3005400Z [0/5] Write sources
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:16.5073220Z [2/5] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	Package app (universal ZIP)	2026-11-15T16:57:38.4815280Z [4/6] Compiling GitHubPetCore CommandBudget.swift
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:00.8107840Z [5/7] Compiling GitHubPet AppModel.swift
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:00.8202850Z [5/7] Write Objects.LinkFileList
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:02.1086940Z [6/7] Linking GitHubPet
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:02.1118490Z Build of product 'GitHubPet' complete! (45.88s)
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.1928080Z .build/app/GitHubPet.app: replacing existing signature
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.2402890Z Built .build/app/GitHubPet.app 0.1.0 (86), release, x86_64 arm64, ad-hoc signed
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.8062010Z Packaged .build/dist/GitHubPet-0.1.0-1d5a911-universal.zip
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.8208850Z   source: 1d5a9115d6ff338a308813cb01e1a2422824e606 (complete history, 86 commits)
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.8213910Z   architectures: x86_64 arm64
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.8371770Z   size: 2318639 bytes
+build-and-test	Package app (universal ZIP)	2026-11-15T16:58:04.8446910Z   sha256: c20dd851416ac5aef6e01ac02d9e700934e6cb648a5776548b7aae2ba275eb4a
+build-and-test	Verify bundle	﻿2026-11-15T16:58:04.8686070Z ##[group]Run plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
+build-and-test	Verify bundle	2026-11-15T16:58:04.8686650Z ^[[36;1mplutil -lint .build/app/GitHubPet.app/Contents/Info.plist^[[0m
+build-and-test	Verify bundle	2026-11-15T16:58:04.8687200Z ^[[36;1mcodesign --verify --strict .build/app/GitHubPet.app^[[0m
+build-and-test	Verify bundle	2026-11-15T16:58:04.8687900Z ^[[36;1mtest "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true^[[0m
+build-and-test	Verify bundle	2026-11-15T16:58:04.8688670Z ^[[36;1mtest -f .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/manifest.json^[[0m
+build-and-test	Verify bundle	2026-11-15T16:58:04.8689530Z ^[[36;1mtest "$(ls .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/frames/*.png | wc -l)" -eq 12^[[0m
+build-and-test	Verify bundle	2026-11-15T16:58:04.8922200Z shell: /bin/bash -e {0}
+build-and-test	Verify bundle	2026-11-15T16:58:04.8922910Z ##[endgroup]
+build-and-test	Verify bundle	2026-11-15T16:58:04.9421090Z .build/app/GitHubPet.app/Contents/Info.plist: OK
+build-and-test	GUI render check	﻿2026-11-15T16:58:04.9771990Z ##[group]Run scripts/render-check.sh
+build-and-test	GUI render check	2026-11-15T16:58:04.9772410Z ^[[36;1mscripts/render-check.sh^[[0m
+build-and-test	GUI render check	2026-11-15T16:58:04.9807840Z shell: /bin/bash -e {0}
+build-and-test	GUI render check	2026-11-15T16:58:04.9808160Z ##[endgroup]
+build-and-test	GUI render check	2026-11-15T16:58:05.3070190Z GitHubPet: mascot pack mona-pet-v1 loaded from /Users/runner/work/github-pet/github-pet/.build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1
+build-and-test	GUI render check	2026-11-15T17:01:32.1354210Z GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+build-and-test	GUI render check	2026-11-15T17:01:32.1371050Z GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+build-and-test	GUI render check	2026-11-15T17:01:44.5991110Z GitHubPet: snapshots written to /Users/runner/work/github-pet/github-pet/.build/render-check
+build-and-test	GUI render check	2026-11-15T17:01:45.4370590Z ok   01-baseline inbox height 347 >= 256
+build-and-test	GUI render check	2026-11-15T17:01:45.4436940Z ok   02-injected inbox height 399 >= 308
+build-and-test	GUI render check	2026-11-15T17:01:45.4437760Z ok   saved preferences untouched
+build-and-test	GUI render check	2026-11-15T17:01:45.4477000Z ok   settings window height 676 >= 660
+build-and-test	GUI render check	2026-11-15T17:01:45.4543350Z ok   forces fixtures, default privacy [00-loading]
+build-and-test	GUI render check	2026-11-15T17:01:45.4594320Z ok   details shown for the session [01b-details]
+build-and-test	GUI render check	2026-11-15T17:01:45.4683890Z ok   baseline count [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.4767940Z ok   injection uses the app clock [02-injected]
+build-and-test	GUI render check	2026-11-15T17:01:45.4843070Z ok   injected adds one row [02-injected]
+build-and-test	GUI render check	2026-11-15T17:01:45.4908140Z ok   replay adds nothing [03-replayed]
+build-and-test	GUI render check	2026-11-15T17:01:45.5002600Z ok   partial is labelled [04-partial]
+build-and-test	GUI render check	2026-11-15T17:01:45.5070310Z ok   stale count unknown [05-stale]
+build-and-test	GUI render check	2026-11-15T17:01:45.5149330Z ok   disconnect count unknown [06-disconnected]
+build-and-test	GUI render check	2026-11-15T17:01:45.5220240Z ok   status loading is not none [00-loading]
+build-and-test	GUI render check	2026-11-15T17:01:45.5289790Z ok   fixture incident, maintenance excluded [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.5375010Z ok   status stale keeps last known [05-stale]
+build-and-test	GUI render check	2026-11-15T17:01:45.5454440Z ok   status failure is not none [06-disconnected]
+build-and-test	GUI render check	2026-11-15T17:01:45.5576550Z ok   status recovery is silent [07-reconnected]
+build-and-test	GUI render check	2026-11-15T17:01:45.5622160Z ok   new major incident announced [10c-incident-major]
+build-and-test	GUI render check	2026-11-15T17:01:45.5691250Z ok   resolved incidents leave quietly [10d-incidents-resolved]
+build-and-test	GUI render check	2026-11-15T17:01:45.5751880Z ok   mascot is one AX button [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.5806910Z ok   mascot drag vs click [00-loading]
+build-and-test	GUI render check	2026-11-15T17:01:45.5924480Z ok   11 hover placements measured
+build-and-test	GUI render check	2026-11-15T17:01:45.6026220Z ok   hover idle-64-left-edge: worst window-boundary gap 2.2 pt, arrow anchor 4.2 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6121610Z ok   hover idle-64-center: worst window-boundary gap 2.2 pt, arrow anchor 4.2 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6225260Z ok   hover idle-128-center: worst window-boundary gap 2.5 pt, arrow anchor 6.0 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6317700Z ok   hover idle-256-center: worst window-boundary gap 3.0 pt, arrow anchor 3.0 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6413040Z ok   hover idle-128-right-edge: worst window-boundary gap 2.0 pt, arrow anchor 4.5 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6490000Z ok   hover attention-64-center: worst window-boundary gap 3.8 pt, arrow anchor 5.2 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6601890Z ok   hover attention-256-center: worst window-boundary gap 11.0 pt, arrow anchor 11.0 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6684040Z ok   hover urgent-64-left-edge: worst window-boundary gap 2.8 pt, arrow anchor 3.1 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6776620Z ok   hover urgent-64-center: worst window-boundary gap 2.8 pt, arrow anchor 3.1 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6853550Z ok   hover urgent-128-right-edge: worst window-boundary gap 4.5 pt, arrow anchor 4.5 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.6963250Z ok   hover urgent-256-center: worst window-boundary gap 6.0 pt, arrow anchor 6.0 pt from art, no overlap, tags clear
+build-and-test	GUI render check	2026-11-15T17:01:45.7001820Z ok   labels fit at 64
+build-and-test	GUI render check	2026-11-15T17:01:45.7032100Z ok   labels fit at 128
+build-and-test	GUI render check	2026-11-15T17:01:45.7069250Z ok   labels fit at 256
+build-and-test	GUI render check	2026-11-15T17:01:45.7205850Z ok   system Reduce Motion: nothing plays [attention gesture (#29, live model)]
+build-and-test	GUI render check	2026-11-15T17:01:45.7207720Z SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)
+build-and-test	GUI render check	2026-11-15T17:01:45.7209530Z ok   gesture-64.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:45.7210870Z ok   gesture-128.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:45.7211750Z ok   gesture-256.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:45.7213730Z ok   near-touch-64-1x.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:45.7214610Z ok   near-touch-128-2x.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:45.7215150Z ok   near-touch-256-2x.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:45.7347840Z ok   near-touch 64 1x: gap 1.0-3.0 pt, no overlap
+build-and-test	GUI render check	2026-11-15T17:01:45.7585140Z ok   near-touch 64 2x: gap 1.0-2.0 pt, no overlap
+build-and-test	GUI render check	2026-11-15T17:01:45.7834180Z ok   near-touch 128 1x: gap 1.0-3.0 pt, no overlap
+build-and-test	GUI render check	2026-11-15T17:01:45.7953930Z ok   near-touch 128 2x: gap 1.5-2.5 pt, no overlap
+build-and-test	GUI render check	2026-11-15T17:01:45.8069880Z ok   near-touch 256 1x: gap 1.0-3.5 pt, no overlap
+build-and-test	GUI render check	2026-11-15T17:01:45.8180730Z ok   near-touch 256 2x: gap 0.9-2.9 pt, no overlap
+build-and-test	GUI render check	2026-11-15T17:01:45.8231110Z ok   hover failure transparent logs without crashing [hover placement failure diagnostics]
+build-and-test	GUI render check	2026-11-15T17:01:45.8285930Z ok   hover failure no-candidate logs without crashing [hover placement failure diagnostics]
+build-and-test	GUI render check	2026-11-15T17:01:45.8351680Z ok   saved half-offscreen position keeps the badge visible [badge stays on screen (real mascot window controller)]
+build-and-test	GUI render check	2026-11-15T17:01:45.8409720Z ok   a drop past the edge saves where it settles [badge stays on screen (real mascot window controller)]
+build-and-test	GUI render check	2026-11-15T17:01:45.8466840Z ok   repeat edge drop repositions despite identical saved settings [badge stays on screen (real mascot window controller)]
+build-and-test	GUI render check	2026-11-15T17:01:45.8524900Z ok   drop beyond every display saves the displayed default [badge stays on screen (real mascot window controller)]
+build-and-test	GUI render check	2026-11-15T17:01:45.8569770Z ok   hover re-placed when content grows [hover follows content growth (real mascot window controller)]
+build-and-test	GUI render check	2026-11-15T17:01:45.8601650Z ok   resize 128->64 follows Settings, ground fixed
+build-and-test	GUI render check	2026-11-15T17:01:45.8631420Z ok   resize 64->256 follows Settings, ground fixed
+build-and-test	GUI render check	2026-11-15T17:01:45.8663790Z ok   resize 256->128 follows Settings, ground fixed
+build-and-test	GUI render check	2026-11-15T17:01:45.8697540Z ok   slider 128->256 follows Settings, ground fixed
+build-and-test	GUI render check	2026-11-15T17:01:45.8729000Z ok   slider 256->64 follows Settings, ground fixed
+build-and-test	GUI render check	2026-11-15T17:01:45.8777490Z ok   menu-bar names Demo [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.8834310Z ok   partial AX quality [04-partial]
+build-and-test	GUI render check	2026-11-15T17:01:45.8886300Z ok   loading count unknown [00-loading]
+build-and-test	GUI render check	2026-11-15T17:01:45.8944840Z ok   urgent fixture [10-urgent-static]
+build-and-test	GUI render check	2026-11-15T17:01:45.8998560Z ok   attention static pose [09-attention-static]
+build-and-test	GUI render check	2026-11-15T17:01:45.9033150Z ok   mascot panel has tag lane
+build-and-test	GUI render check	2026-11-15T17:01:45.9081740Z ok   mascot caps at 99+, inbox and AX keep the full count [count cap]
+build-and-test	GUI render check	2026-11-15T17:01:45.9130480Z ok   missing gh named [11-gh-override]
+build-and-test	GUI render check	2026-11-15T17:01:45.9197830Z ok   marker for a fresh minor incident [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.9248870Z ok   AX counts the incident apart [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.9297120Z ok   badge stays items only [01-baseline]
+build-and-test	GUI render check	2026-11-15T17:01:45.9363400Z ok   no marker when stale [05-stale]
+build-and-test	GUI render check	2026-11-15T17:01:45.9496020Z ok   no marker on failure [06-disconnected]
+build-and-test	GUI render check	2026-11-15T17:01:45.9597420Z ok   no marker while loading [00-loading]
+build-and-test	GUI render check	2026-11-15T17:01:45.9638380Z ok   major tier marker [10c-incident-major]
+build-and-test	GUI render check	2026-11-15T17:01:45.9728270Z ok   AX counts two incidents [10c-incident-major]
+build-and-test	GUI render check	2026-11-15T17:01:45.9776000Z ok   simulator critical announced [10e-incident-critical]
+build-and-test	GUI render check	2026-11-15T17:01:45.9822590Z ok   critical tier marker [10e-incident-critical]
+build-and-test	GUI render check	2026-11-15T17:01:45.9877210Z ok   maintenance is not an incident [10f-maintenance-ignored]
+build-and-test	GUI render check	2026-11-15T17:01:45.9931750Z ok   maintenance keeps the marker [10f-maintenance-ignored]
+build-and-test	GUI render check	2026-11-15T17:01:45.9981070Z ok   service fetch failure is not none [10g-status-fetch-fails]
+build-and-test	GUI render check	2026-11-15T17:01:46.0036440Z ok   no marker on service failure [10g-status-fetch-fails]
+build-and-test	GUI render check	2026-11-15T17:01:46.0088240Z ok   inbox unaffected by service failure [10g-status-fetch-fails]
+build-and-test	GUI render check	2026-11-15T17:01:46.0153020Z ok   marker leaves on resolve [10d-incidents-resolved]
+build-and-test	GUI render check	2026-11-15T17:01:46.0235940Z ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x
+build-and-test	GUI render check	2026-11-15T17:01:46.0272190Z ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)
+build-and-test	GUI render check	2026-11-15T17:01:46.0308580Z ok   incident renders for design (72 PNGs)
+build-and-test	GUI render check	2026-11-15T17:01:46.0369730Z ok   live status offline in snapshots [11-gh-override]
+build-and-test	GUI render check	2026-11-15T17:01:46.0419390Z ok   missing gh is not demo [11-gh-override]
+build-and-test	GUI render check	2026-11-15T17:01:46.0420860Z ok   02-injected-inbox.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0421580Z ok   04-partial-inbox.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0422400Z ok   04-partial-inbox-dark.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0423270Z ok   08-privacy-hover.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0424140Z ok   05-stale-mascot.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0424930Z ok   05-stale-mascot-dark.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0425650Z ok   10-urgent-static-mascot.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0426250Z ok   00-loading-inbox.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0426930Z ok   settings.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0427640Z ok   settings-dark.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0428280Z ok   lane-64-99plus.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0428870Z ok   lane-128-99plus.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0429780Z ok   lane-256-99plus.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0430340Z ok   lane-64-99plus-dark.png rendered
+build-and-test	GUI render check	2026-11-15T17:01:46.0431950Z render-check: all checks passed (.build/render-check)
+build-and-test	Upload app ZIP	﻿2026-11-15T17:01:46.0928880Z ##[group]Run actions/upload-artifact@v4
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0929330Z with:
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0929590Z   name: GitHubPet-app
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0929850Z   path: .build/dist/*.zip
+build-and-test	Upload app ZIP	.build/dist/*.zip.sha256
+build-and-test	Upload app ZIP	
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0930150Z   if-no-files-found: error
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0930690Z   retention-days: 14
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0931170Z   compression-level: 0
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0931400Z   overwrite: false
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0931690Z   include-hidden-files: false
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.0931920Z ##[endgroup]
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.6073840Z (node:12627) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.6075620Z (Use `node --trace-deprecation ...` to show where the warning was created)
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.6168210Z With the provided path, there will be 2 files uploaded
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.6174910Z Artifact name is valid!
+build-and-test	Upload app ZIP	2026-11-15T17:01:46.6175330Z Root directory input is valid!
+build-and-test	Upload app ZIP	2026-11-15T17:01:47.0208420Z Beginning upload of artifact content to blob storage
+build-and-test	Upload app ZIP	2026-11-15T17:01:47.0713630Z (node:12627) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+build-and-test	Upload app ZIP	2026-11-15T17:01:47.8655440Z Uploaded bytes 2319111
+build-and-test	Upload app ZIP	2026-11-15T17:01:47.9462570Z Finished uploading artifact content to blob storage!
+build-and-test	Upload app ZIP	2026-11-15T17:01:47.9543970Z SHA256 digest of uploaded artifact zip is 327c1a5ba61b13b317dbc701df8da8470f0999255d07bd2dddc13d07efd2c47a
+build-and-test	Upload app ZIP	2026-11-15T17:01:47.9544890Z Finalizing artifact upload
+build-and-test	Upload app ZIP	2026-11-15T17:01:48.3119480Z Artifact GitHubPet-app.zip successfully finalized. Artifact ID 14171436726
+build-and-test	Upload app ZIP	2026-11-15T17:01:48.3121210Z Artifact GitHubPet-app has been successfully uploaded! Final size is 2319111 bytes. Artifact ID is 14171436726
+build-and-test	Upload app ZIP	2026-11-15T17:01:48.3126440Z Artifact download URL: https://github.com/christopherrbrown3/github-pet/actions/runs/43737962079/artifacts/14171436726
+build-and-test	Upload render evidence	﻿2026-11-15T17:01:48.3259490Z ##[group]Run actions/upload-artifact@v4
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3259770Z with:
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3259920Z   name: render-check
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3260150Z   path: .build/render-check
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3260410Z   if-no-files-found: ignore
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3260590Z   compression-level: 6
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3260770Z   overwrite: false
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3260980Z   include-hidden-files: false
+build-and-test	Upload render evidence	2026-11-15T17:01:48.3261170Z ##[endgroup]
+build-and-test	Upload render evidence	2026-11-15T17:01:48.5186230Z (node:12633) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+build-and-test	Upload render evidence	2026-11-15T17:01:48.5187930Z (Use `node --trace-deprecation ...` to show where the warning was created)
+build-and-test	Upload render evidence	2026-11-15T17:01:48.5486130Z With the provided path, there will be 215 files uploaded
+build-and-test	Upload render evidence	2026-11-15T17:01:48.5486890Z Artifact name is valid!
+build-and-test	Upload render evidence	2026-11-15T17:01:48.5487100Z Root directory input is valid!
+build-and-test	Upload render evidence	2026-11-15T17:01:49.0329630Z Beginning upload of artifact content to blob storage
+build-and-test	Upload render evidence	2026-11-15T17:01:49.9244830Z (node:12633) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+build-and-test	Upload render evidence	2026-11-15T17:01:51.0341080Z Uploaded bytes 8388608
+build-and-test	Upload render evidence	2026-11-15T17:01:57.1047290Z Uploaded bytes 16777216
+build-and-test	Upload render evidence	2026-11-15T17:01:59.6267530Z Uploaded bytes 23634190
+build-and-test	Upload render evidence	2026-11-15T17:01:59.7068270Z Finished uploading artifact content to blob storage!
+build-and-test	Upload render evidence	2026-11-15T17:01:59.7072250Z SHA256 digest of uploaded artifact zip is f0d9da312b5eb9d02491d9c9a9e24daf86fe0bad7b084ed644225b646e04aa8f
+build-and-test	Upload render evidence	2026-11-15T17:01:59.7073130Z Finalizing artifact upload
+build-and-test	Upload render evidence	2026-11-15T17:02:00.2208290Z Artifact render-check.zip successfully finalized. Artifact ID 14170897954
+build-and-test	Upload render evidence	2026-11-15T17:02:00.2235960Z Artifact render-check has been successfully uploaded! Final size is 23634190 bytes. Artifact ID is 14170897954
+build-and-test	Upload render evidence	2026-11-15T17:02:00.2248240Z Artifact download URL: https://github.com/christopherrbrown3/github-pet/actions/runs/43737962079/artifacts/14170897954
+build-and-test	Post Check out PR head for packaging	﻿2026-11-15T17:02:00.2627990Z Post job cleanup.
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.4647210Z [command]/opt/homebrew/bin/git version
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.4944240Z git version 2.56.0
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.4977800Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/3b9149ed-24b7-4e32-9f7b-2a00f0c34ea6/.gitconfig'
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.4993980Z Temporarily overriding HOME='/Users/runner/work/_temp/3b9149ed-24b7-4e32-9f7b-2a00f0c34ea6' before making global git config changes
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.4996230Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.4998020Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.5147730Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.5243590Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.6784010Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.6864810Z http.https://github.com/.extraheader
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.6877420Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.6983700Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.8064000Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	Post Check out PR head for packaging	2026-11-15T17:02:00.8332480Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	Post Run actions/checkout@v4	﻿2026-11-15T17:02:00.9818750Z Post job cleanup.
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.0881200Z [command]/opt/homebrew/bin/git version
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1024660Z git version 2.56.0
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1159990Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/06634d1b-0d2a-4add-abf4-95cd7ea3dff8/.gitconfig'
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1177650Z Temporarily overriding HOME='/Users/runner/work/_temp/06634d1b-0d2a-4add-abf4-95cd7ea3dff8' before making global git config changes
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1178370Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1179100Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1274730Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.1361290Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.2350410Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.2472720Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.3992900Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	Post Run actions/checkout@v4	2026-11-15T17:02:01.4077900Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	Complete job	﻿2026-11-15T17:02:01.5215810Z Cleaning up orphan processes
+build-and-test	Complete job	2026-11-15T17:02:08.6522910Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

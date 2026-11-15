@@ -1,6 +1,6 @@
 # PR48 independent exact-head QA checkpoint
 
-Head **`1d5a9115d6ff338a308813cb01e1a2422824e606`**; CI43737962079 pending. **Legacy L1/L2 positive-after checks PASS; final acceptance waits current-head green CI/review evidence.**
+Head **`1d5a9115d6ff338a308813cb01e1a2422824e606`**; CI43737962079 SUCCESS. **Legacy L1/L2 positive-after checks PASS; superseded-head supporting evidence only, not final acceptance.** Actual green render artifact/log downloaded after the existing watcher completed; no source/object access was involved.
 
 **Superseded-head hold:** PM requires a test-only legacy-client transport coverage commit (Copilot4579267187) before acceptance. Repository guards must cover legacy incomplete preflight/query output and shared preflight/query bytes/deadline, since AppModel uses that client. Independent legacy adversarial evidence already passes and is retained; it does not replace CI-owned regression coverage. All1d5 object links/probes are finished and the held build was explicitly released to Developer before mutation. Any existing1d5 CI/helper output is supporting evidence only, not final acceptance. Await the new test-only exact SHA/held handoff; verify production-source equality and only the new focused regressions/current CI.
 
