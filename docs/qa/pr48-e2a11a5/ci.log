@@ -1,0 +1,1418 @@
+build-and-test	UNKNOWN STEP	﻿2026-11-14T20:47:09.1591970Z Current runner version: '2.338.2'
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1636860Z ##[group]Runner Image Provisioner
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1641780Z Hosted Compute Agent
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1642410Z Version: 20261103.629
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1642960Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1643700Z Build Date: 2026-11-03T17:26:59Z
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1644310Z Worker ID: {1c3287da-941e-4ca8-9768-90a8c7cb0dd8}
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1711950Z Region: westus
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1712570Z Cloud: MacCloud
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1713060Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1715010Z ##[group]Operating System
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1715470Z macOS
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1715940Z 15.8.2
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1716380Z 24H232
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1716890Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1717280Z ##[group]Runner Image
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1717710Z Image: macos-15-arm64
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1718340Z Version: 20261104.0514.1
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1719410Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20261104.0514/images/macos/macos-15-arm64-Readme.md
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1720630Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20261104.0514
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1721420Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1722390Z ##[group]GITHUB_TOKEN Permissions
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1724720Z Contents: read
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1725210Z Metadata: read
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1725760Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1727700Z Secret source: Actions
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1728590Z Cache mode: write
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.1729110Z Prepare workflow directory
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.2286370Z Prepare all required actions
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.2384410Z Getting action download info
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:09.7011230Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:10.4194470Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:10.8349470Z Complete job name: build-and-test
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1559230Z ##[group]Run actions/checkout@v4
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1560330Z with:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1560740Z   fetch-depth: 0
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1561180Z   repository: christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1564450Z   token: ***
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1564790Z   ssh-strict: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1565130Z   ssh-user: git
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1565460Z   persist-credentials: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1565850Z   clean: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1566310Z   sparse-checkout-cone-mode: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1566730Z   fetch-tags: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1567110Z   show-progress: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1567500Z   lfs: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1567840Z   submodules: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1568260Z   set-safe-directory: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1568790Z   allow-unsafe-pr-checkout: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:11.1569660Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.2338870Z Syncing repository: christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.2420300Z ##[group]Getting Git version info
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.2424880Z Working directory is '/Users/runner/work/github-pet/github-pet'
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.2441110Z [command]/opt/homebrew/bin/git version
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3029740Z git version 2.56.0
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3108780Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3198390Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/b468fc4a-aa23-41b7-850a-7e6e05272de6/.gitconfig'
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3305970Z Temporarily overriding HOME='/Users/runner/work/_temp/b468fc4a-aa23-41b7-850a-7e6e05272de6' before making global git config changes
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3339290Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3455390Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3768710Z Deleting the contents of '/Users/runner/work/github-pet/github-pet'
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3771260Z ##[group]Initializing the repository
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.3774620Z [command]/opt/homebrew/bin/git init /Users/runner/work/github-pet/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4164510Z hint: Using 'master' as the name for the initial branch. This default branch name
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4268540Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4372360Z hint: to use in all of your new repositories, which will suppress this warning,
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4481450Z hint: call:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4594510Z hint:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4713860Z hint: 	git config --global init.defaultBranch <name>
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4821520Z hint:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.4926690Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5057730Z hint: 'development'. The just-created branch can be renamed via this command:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5160180Z hint:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5282700Z hint: 	git branch -m <name>
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5395990Z hint:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5542040Z hint: Disable this message with "git config set advice.defaultBranchName false"
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5662060Z Initialized empty Git repository in /Users/runner/work/github-pet/github-pet/.git/
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.5986690Z [command]/opt/homebrew/bin/git remote add origin https://github.com/christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.6307850Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.6323940Z ##[group]Disabling automatic garbage collection
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.6466260Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.6950170Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.7055730Z ##[group]Setting up auth
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.7175790Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.7491250Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.7818620Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:12.8224070Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:13.0548380Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:13.0862240Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:13.2712780Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:13.2739290Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:13.2744340Z ##[group]Fetching the repository
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:13.2752120Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +e00d97d464103e61804942b98dae11aea2907ea7:refs/remotes/pull/48/merge
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5296170Z From https://github.com/christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5301900Z  * [new branch]      bootstrap/agent-team-kickoff             -> origin/bootstrap/agent-team-kickoff
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5304620Z  * [new branch]      design/37-incident-marker                -> origin/design/37-incident-marker
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5307420Z  * [new branch]      docs/30-monitoring-scope-brief           -> origin/docs/30-monitoring-scope-brief
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5309990Z  * [new branch]      docs/claude-specialist-handoff           -> origin/docs/claude-specialist-handoff
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5312630Z  * [new branch]      docs/codex-pm-takeover-20261114          -> origin/docs/codex-pm-takeover-20261114
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5315220Z  * [new branch]      docs/readme-clarifications               -> origin/docs/readme-clarifications
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5318020Z  * [new branch]      docs/readme-project-overview             -> origin/docs/readme-project-overview
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5320830Z  * [new branch]      docs/team-recovery-2026-11-13            -> origin/docs/team-recovery-2026-11-13
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5325090Z  * [new branch]      feat/15-zip-packaging                    -> origin/feat/15-zip-packaging
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5327540Z  * [new branch]      feat/30-scope-core                       -> origin/feat/30-scope-core
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5330250Z  * [new branch]      feature/11-service-incidents             -> origin/feature/11-service-incidents
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5331810Z  * [new branch]      fix/39-hover-label-clearance             -> origin/fix/39-hover-label-clearance
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5332960Z  * [new branch]      fix/44-monotonic-test-timing             -> origin/fix/44-monotonic-test-timing
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5334160Z  * [new branch]      main                                     -> origin/main
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5335440Z  * [new branch]      sprint1/mascot-design                    -> origin/sprint1/mascot-design
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5336590Z  * [new branch]      sprint1/native-prototype                 -> origin/sprint1/native-prototype
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5337930Z  * [new branch]      sprint1/qa-acceptance                    -> origin/sprint1/qa-acceptance
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5338970Z  * [new ref]         e00d97d464103e61804942b98dae11aea2907ea7 -> pull/48/merge
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5434860Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5438870Z ##[group]Determining the checkout info
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5444930Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5447870Z [command]/opt/homebrew/bin/git sparse-checkout disable
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5549980Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5633980Z ##[group]Checking out the ref
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.5639300Z [command]/opt/homebrew/bin/git checkout --progress --force refs/remotes/pull/48/merge
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.6618750Z HEAD is now at e00d97d Merge e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72 into c91c250f176afca5090d17c82c4205ecffe5c793
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.6630560Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.6746480Z [command]/opt/homebrew/bin/git log -1 --format=%H
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.6834830Z e00d97d464103e61804942b98dae11aea2907ea7
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.7277080Z ##[group]Run xcodebuild -version
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.7278090Z ^[[36;1mxcodebuild -version^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.7278870Z ^[[36;1mswift --version^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.7381680Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:14.7382520Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:15.3842220Z Xcode 16.4
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:15.3878850Z Build version 16F6
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0182720Z Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0183650Z Target: arm64-apple-macosx15.0
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0309450Z swift-driver version: 1.120.5 
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0492770Z ##[group]Run swift build
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0493310Z ^[[36;1mswift build^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0614390Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:20.0614780Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:26.8664400Z Building for debugging...
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:26.8775490Z [0/7] Write sources
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:26.8807440Z [2/7] Write GitHubPet-entitlement.plist
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:27.2389290Z [3/7] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9422900Z [5/23] Compiling GitHubPetCore IncidentMarkerSpec.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9473100Z [6/23] Compiling GitHubPetCore Mascot.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9474340Z [7/23] Compiling GitHubPetCore MascotPack.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9474870Z [8/23] Compiling GitHubPetCore Models.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9475520Z [9/23] Compiling GitHubPetCore MonitoringScope.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9477110Z [10/23] Compiling GitHubPetCore SafeLink.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9539370Z [11/23] Compiling GitHubPetCore ScopedGitHub.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9544980Z [12/23] Compiling GitHubPetCore CommandBudget.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9548100Z [13/23] Compiling GitHubPetCore EventTracker.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9549700Z [14/23] Compiling GitHubPetCore FixtureSimulator.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9551650Z [15/23] Compiling GitHubPetCore GestureCancellation.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9552800Z [16/23] Compiling GitHubPetCore GitHubCLI.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9568980Z [17/23] Compiling GitHubPetCore HoverPlacement.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9570000Z [18/23] Compiling GitHubPetCore InboxEngine.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9570860Z [19/23] Compiling GitHubPetCore IncidentMarker.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:42.9572850Z [20/23] Emitting module GitHubPetCore
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0260470Z [21/30] Compiling GitHubPetCore ServiceStatus.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0263640Z [22/30] Compiling GitHubPetCore ServiceStatusClient.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0265680Z [23/30] Compiling GitHubPetCore ServiceStatusFixtures.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0268230Z [24/30] Compiling GitHubPetCore ServiceStatusMonitor.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0301150Z [25/30] Compiling GitHubPetCore Session.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0339850Z [26/30] Compiling GitHubPetCore Settings.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:45.0340810Z [27/30] Compiling GitHubPetCore SourceGenerations.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:47:52.8855040Z [28/38] Emitting module GitHubPet
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.2781280Z [29/41] Compiling GitHubPet AppModel.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.2820860Z [30/41] Compiling GitHubPet GitHubPetApp.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.2943860Z [31/41] Compiling GitHubPet InboxView.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.3057710Z [32/41] Compiling GitHubPet IncidentMarkerView.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.3167000Z [33/41] Compiling GitHubPet LaunchOptions.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.3283240Z [34/41] Compiling GitHubPet MascotView.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.3387620Z [35/41] Compiling GitHubPet MascotWindow.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.9024450Z [36/41] Compiling GitHubPet SettingsView.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.9126200Z [37/41] Compiling GitHubPet SnapshotRenderer.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.9230020Z [38/41] Compiling GitHubPet WindowPresenter.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:02.9802850Z [38/41] Write Objects.LinkFileList
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.4785350Z [39/41] Linking GitHubPet
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.5573310Z [40/41] Applying GitHubPet
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.5631560Z Build complete! (38.84s)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.6656930Z ##[group]Run scripts/test.sh --disable-xctest
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.6657640Z ^[[36;1mscripts/test.sh --disable-xctest^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.7120430Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:05.7123390Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:08.7957330Z [0/1] Planning build
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:08.8014860Z Building for debugging...
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:08.8051300Z [0/8] /Users/runner/work/github-pet/github-pet/.build/arm64-apple-macosx/debug/GitHubPetPackageTests.derived/runner.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:08.8063420Z [0/8] Write sources
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:09.1508660Z [3/8] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5123250Z [5/15] Compiling GitHubPetCoreTests AccessibilitySourceTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5218540Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5321360Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5373650Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5375130Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5376310Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5376840Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5377270Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5429920Z 
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5431480Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5433990Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5437570Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5439760Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5450210Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5450530Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5451070Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5451660Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5452380Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5453060Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5454470Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5603180Z     +-------------------------------------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5603720Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5604280Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5802540Z [6/15] Compiling GitHubPetCoreTests BoundedCommandTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.5905660Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6006830Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6109710Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6114140Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6215550Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6317890Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6377830Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6378290Z 
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6378830Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6379790Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6381380Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6482740Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6528740Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6530210Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6633970Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6736960Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6838230Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.6939590Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7045240Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7151670Z     +-------------------------------------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7256030Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7358680Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7461900Z [7/15] Compiling GitHubPetCoreTests GestureCancellationTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7564220Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7666320Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7769830Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7874850Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.7977880Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8079300Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8180860Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8284260Z 
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8440930Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8548700Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8549690Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8651230Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8752310Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.8854130Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9061200Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9163140Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9266230Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9369990Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9482240Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9587030Z     +-------------------------------------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9689660Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9793120Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9895890Z [8/15] Compiling GitHubPetCoreTests GitHubCLITests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:33.9998740Z /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:47:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0101380Z  45 |         #expect(throws: CommandError.timedOut) {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0203450Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0313760Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0422410Z     |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0524110Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0626030Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0728860Z 
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0830440Z macro expansion #expect:3:24: warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.0934330Z `- /Users/runner/work/github-pet/github-pet/Tests/GitHubPetCoreTests/BoundedCommandTests.swift:48:10: note: expanded code originates here
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1038250Z  46 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1141840Z  47 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1245080Z  48 |         }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1347360Z     +--- macro expansion #expect ---------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1454800Z     |1 | Testing.__checkClosureCall(throws: CommandError.timedOut,performing: {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1556990Z     |2 |             _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1659360Z     |3 |             try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1761790Z     |  |                        `- warning: result of call to 'run(executable:arguments:budget:)' is unused
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1872870Z     |4 |         },expression: .__fromSyntaxNode(#"{\#n            _ = try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n            try runner.run(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["0.2"], budget: budget)\#n        }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1885680Z     +-------------------------------------------------------------------
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.1987900Z  49 |     }
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.2090480Z  50 |     @Test func descendantPipeDrainIsBoundedAndMarkedIncomplete() throws {
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.2193150Z [9/15] Compiling GitHubPetCoreTests HoverPlacementTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.2295900Z [10/15] Compiling GitHubPetCoreTests InboxEngineTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.2399110Z [11/15] Compiling GitHubPetCoreTests IncidentMarkerTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.2501350Z [12/15] Compiling GitHubPetCoreTests MascotPackTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:34.2604120Z [13/15] Emitting module GitHubPetCoreTests
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:51.6270510Z [14/19] Compiling GitHubPetCoreTests MascotTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:51.6369820Z [15/19] Compiling GitHubPetCoreTests MonitoringScopeTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:51.6471430Z [16/19] Compiling GitHubPetCoreTests ServiceStatusTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:51.6574450Z [17/19] Compiling GitHubPetCoreTests SettingsTests.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:52.3875440Z [18/21] Emitting module GitHubPetPackageTests
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:52.3876120Z [19/21] Compiling GitHubPetPackageTests runner.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:52.3939130Z [19/21] Write Objects.LinkFileList
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.7215470Z [20/21] Linking GitHubPetPackageTests
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.7278560Z Build complete! (45.10s)
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9326190Z ◇ Test run started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9330510Z ↳ Testing Library Version: 124.4
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9341550Z ↳ Target Platform: arm64e-apple-macos14.0
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9343150Z ◇ Suite QuietHoursTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9344400Z ◇ Suite ValidatedBytesTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9362540Z ◇ Suite SnoozeTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9369210Z ◇ Suite PanelPositionTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9488020Z ◇ Suite IncidentMarkerSpecTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9538080Z ◇ Suite MascotAnimatorTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9541800Z ◇ Suite ServiceStatusPolicyTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9543350Z ◇ Suite ServiceStatusClientTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9549770Z ◇ Suite GhLocatorTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9558170Z ◇ Suite SystemNotificationObserverTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9560330Z ◇ Suite ServiceStatusLinkTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9565080Z ◇ Suite ProcessRunnerTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9570750Z ◇ Suite SafeLinkTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9574670Z ◇ Suite FixtureSimulatorTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9591050Z ◇ Suite ServiceStatusSimulatorTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9592780Z ◇ Suite MonitoringScopeTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9595490Z ◇ Suite GestureCancellationTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9602360Z ◇ Suite AccessibilitySourceTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9706510Z ◇ Suite EventTrackerTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9737000Z ◇ Suite ServiceStatusSimulatorActionTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9738660Z ◇ Suite StatusPageDecoderTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9739430Z ◇ Suite ScopedQueryTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9739980Z ◇ Suite WorkflowFailureFixtureTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9741580Z ◇ Suite AccountSessionTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9743860Z ◇ Suite IncidentMarkerGeometryTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9752990Z ◇ Suite MascotPackLimitTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9757000Z ◇ Suite HoverPlacementTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9766990Z ◇ Suite HoverPlacementInputsTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9773590Z ◇ Suite BundledPackTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9874980Z ◇ Suite PrivacyTextTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9877190Z ◇ Suite EventClipQueueTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9877970Z ◇ Suite ScopedClientTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9886370Z ◇ Suite BoundedCommandTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9891960Z ◇ Suite IncidentMarkerStateTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:53.9975360Z ◇ Suite DemoLabelTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0086550Z ◇ Suite UnseenItemsTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0142290Z ◇ Suite SettingsPersistenceTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0246030Z ◇ Suite ServiceStatusMonitorTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0307390Z ◇ Suite FrameClockTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0409460Z ◇ Suite StatusTransportUnitTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0543370Z ◇ Suite GhClientTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0676370Z ◇ Suite MascotPackTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0777790Z ◇ Suite HoverSideChoiceTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0890640Z ◇ Suite MascotBadgeCapTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.0993950Z ◇ Suite InboxEngineTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1100900Z ◇ Suite URLSessionStatusTransportTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1207330Z ◇ Suite CompactSummaryTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1320170Z ◇ Suite SourceGenerationTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1427050Z ◇ Suite MascotLayoutTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1529840Z ◇ Suite ArtBoundsTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1633870Z ◇ Suite MascotPolicyTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1737200Z ◇ Suite IncidentMarkerTextTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1840000Z ◇ Suite AttentionGestureTests started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.1947130Z ◇ Test wrapsPastMidnightWithHalfOpenBoundaries() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2050390Z ◇ Test minutesAreClamped() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2152400Z ◇ Test sameDayWindow() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2255770Z ◇ Test disabledNeverQuiet() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2358280Z ◇ Test equalStartAndEndMeansNoQuietTime() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2461250Z ◇ Test wallClockIsPreservedAcrossDaylightSavingFallBack() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2562640Z ◇ Test packNeverReopensItsFilesAfterValidation() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2665120Z ◇ Test usesCalendarTimeZone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2766380Z ◇ Test snoozeExpiresExactlyAtDeadline() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2869290Z ◇ Test outlinesComeFromTheValidatedBytes() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.2969890Z ◇ Test untilTomorrowMorning() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3074680Z ◇ Test mostlyVisiblePositionsAreClampedFullyOnScreen() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3174090Z ◇ Test mostlyOffscreenOrGoneDisplaysFallBack() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3275790Z ◇ Test clipLastsTwoSecondsFromItsStart() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3378770Z ◇ Test suppressedClipsMeanStaticMoodPoses() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3492450Z ◇ Test quietHoursAlsoBlockAlerts() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3594830Z ◇ Test idleLoopsOnTheSuppliedClock() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3699390Z ◇ Test clipTimingUsesTheSameClockAsTheQueue() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3804660Z ◇ Test demoIncidentsOpenNothing() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.3910800Z ◇ Test everyNewClipReplaysFromFirstFrameEvenInAttentionMood() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4022410Z ◇ Test urgentIncidentGesturePlaysUrgentAndRespectsMotionSettings() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4123110Z ◇ Test clampsIntoTheDisplayItMostlySitsOn() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4233420Z ◇ Test majorIncidentMakesTheMascotUrgent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4283810Z ◇ Test failureNeverChangesTheMoodByItself() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4385310Z ◇ Test reducedMotionIgnoresClipAndIdleLoop() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4527330Z ◇ Test minorIncidentAloneStaysIdle() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4629930Z ◇ Test incidentRowsFollowPrivacy() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4738740Z ◇ Test unseenIncidentNeedsAlertsAllowed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4841660Z ◇ Test geometryStaysBelowTheKeepOut() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.4996140Z ◇ Test everyPaletteTokenIsUsableInBothAppearances() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5119650Z ◇ Test sixtyFourOverrideAppliesBelowNinetySix() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5228830Z ◇ Test inboxMoodIsKept() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5333810Z ◇ Test transcribedSpecMatchesDesignJSON() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5444560Z ◇ Test undecodableBodyIsAFailureNotNone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5547690Z ◇ Test successDecodesAndSendsNoCredentials() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5650860Z ◇ Test nonJSONIsAFailure(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5696310Z ◇ Test redirectedResponseFromAnotherHostIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5813570Z ◇ Test easeMatchesTheCurveEnds() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.5936660Z ◇ Test emptyIsAVerifiedNone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6038740Z ◇ Test jsonMediaTypeIsAccepted(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6158520Z ◇ Test transportErrorsAreFailures(_:_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6261350Z ◇ Test httpErrorsAreFailures(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6384370Z ◇ Test unexpectedErrorsAreFailures() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6489070Z ◇ Test deinitRemovesTheObservation() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6611410Z ◇ Test endpointIsTheOfficialUnauthenticatedAPI() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6717860Z ◇ Test firesWhileAliveAndStopsAfterwards() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6845870Z ◇ Test oversizeBodyIsAFailure() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.6956830Z ◇ Test overrideIsTheOnlyCandidate() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7074560Z ◇ Test searchesHomebrewThenAbsolutePathEntriesOnly() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7177480Z ◇ Test endpointOutsideTheAllowlistIsNeverRequested(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7281270Z ◇ Test otherURLsAreRejected(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7383180Z ◇ Test incidentURLIsTheOnlyAcceptedShape() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7486040Z ◇ Test allowsHTTPSGitHub(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7596360Z ◇ Test invalidIDsHaveNoURL() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7723720Z ◇ Test argumentsAreNeverInterpretedByAShell() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7825890Z ◇ Test nilIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.7928000Z ◇ Test eventInjectedWhileDisconnectedIsNotReplayedOnReconnect() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8030030Z ◇ Test injectedEntitlementFiresExactlyOneUniqueEvent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8131520Z ◇ Test fixtureLinksAreSafe() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8233770Z ◇ Test partialPollsStayPartialUntilTurnedOff() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8358610Z ◇ Test disconnectEscalateAndResolve() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8476260Z ◇ Test injectedIncidentsHaveUniqueValidIDs() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8592070Z ◇ Test rejectsEverythingElse(_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8694750Z ◇ Test offlineFixturesUnionWithoutDuplicateRowsAndMarkDemo() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8800500Z ◇ Test defaultFixtureIsDemoAndExcludesMaintenance() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.8901940Z ◇ Test accountAndDemoRecordsAreIsolatedAndCorruptionNeverBroadens() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9005440Z ◇ Test rejectsQualifierGraphQLAndHostInjectionIncludingDecodedValues() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9139330Z ◇ Test snoozeAndReduceMotionCancelAtOnce() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9240780Z ◇ Test liftingSnoozeOrMotionDoesNotCancelOrReplay() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9343140Z ◇ Test everySliderHasAnAccessibilityLabel() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9480740Z ◇ Test quietHoursCancelOnlyWhenTheyCoverNow() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9582140Z ◇ Test normalizedValidatedUnionAndBounds() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9684220Z ◇ Test byteValidationRejectsLineSeparatorsAndPreservesIntentionalInputTrimming() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9786630Z ◇ Test nonComparableSnapshotRecordsSilently() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9888210Z ◇ Test emptyIDIsIgnored() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:54.9989510Z ◇ Test capacityIsBoundedAndEvictsOldestFirst() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0090790Z ◇ Test seedKeepsEarlierObservations() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0196350Z ◇ Test newIDAfterBaselineIsReportedOnce() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0298170Z ◇ Test firstObservationBeforeBaselineIsNotReported() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0400050Z ◇ Test disconnectFailsTheServiceSourceToo() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0501930Z ◇ Test escalateAllToMajorStillWorks() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0604450Z ◇ Test markStaleHidesTheMarkerAndRecoveryIsSilent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0705800Z ◇ Test statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0807490Z ◇ Test injectEachTierIsANewUrgentOrAttentionEvent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.0910080Z ◇ Test fetchFailureBeforeAnySuccessIsUnknown() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1014000Z ◇ Test missingRequiredFieldIsMalformed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1116820Z ◇ Test everyUnresolvedStatusIsAnIncident() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1240030Z ◇ Test invalidIncidentRejectsWholePayload(_:_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1383510Z ◇ Test malformedPayloadsAreRejected(_:_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1510170Z ◇ Test emptyListDecodesAsNone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1617310Z ◇ Test dedupesByIDKeepingLatestAndSortsBySeverity() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1736620Z ◇ Test maintenanceAndResolvedAreNeverIncidents() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1855380Z ◇ Test missingUpdatedAtFallsBackToCreated() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.1957520Z ◇ Test tooManyIncidentsIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2060000Z ◇ Test newerResolvedRecordRetiresOlderOpenOne() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2178870Z ◇ Test namesAreSingleLineAndBounded() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2282090Z ◇ Test sampleKeepsOnlyUnresolvedIncidents() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2383970Z ◇ Test resolveIsQuietAndReopenIsSilent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2485950Z ◇ Test escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2588340Z ◇ Test overlapProducesOneStableItemAndOneEvent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2691340Z ◇ Test malformedMetadataCountsDatesAndTitlesRemainIncomplete() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2795870Z ◇ Test scheduledMaintenanceIsNeverAnIncident() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.2898700Z ◇ Test oneOperationBindsViewerMetadataAndPerInclusionSearches() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3001010Z ◇ Test verifiedEmptyDiffersFromUnavailableTarget() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3103540Z ◇ Test viewerMismatchNeverRelabelsSubmittedSelection() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3206650Z ◇ Test fullJSONIdentifierSuffixesNeverProduceVerifiedEmptyOrCompleteData() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3309800Z ◇ Test metadataMismatchAndCrossScopeRowsAreNotVerified() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3411800Z ◇ Test switchingAccountsStartsAFreshBaselineWithoutEvents() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3513610Z ◇ Test injectedWorkflowFailureIsUniqueDemoAndUrgent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3616480Z ◇ Test malformedRowsCapsAndGraphQLErrorsCannotLookComplete() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3718470Z ◇ Test boundedReadAcceptsExactlyTheLimit() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3820010Z ◇ Test firstAccountAndFailedPollsAreNotChanges() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.3921590Z ◇ Test wrongDimensionsAreRejectedBeforeDecoding() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4022680Z ◇ Test opaquePNGWithoutAlphaIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4125330Z ◇ Test oversizedImageIsRejectedBeforeDecoding() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4227370Z ◇ Test slotNeverOverlapsAnyLabel() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4329120Z ◇ Test headerOnlyPNGIsRejectedAsUndecodable() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4452430Z ◇ Test oversizedManifestIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4570000Z ◇ Test hoverDuringTheGestureClearsTheSweptLean() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4673170Z ◇ Test missingPlacementCandidatesHaveAnUnknownGapAndFiniteAnchor() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4775970Z ◇ Test overLimitFrameCountSkipsFileValidation() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4878050Z ◇ Test fifoManifestAndFrameDoNotBlock() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.4979490Z ◇ Test sitsBesideTheCharacterBelowTheTags() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5082510Z ◇ Test shippedPackEveryFrameIsClearAndWithinTwelvePoints() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5185630Z ◇ Test leaningCountNeverCrossesTheExactlyRotatedArt() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5302080Z ◇ Test screenWinsOverTheLaneOnlyWhenBothCannotHold() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5411430Z ◇ Test ignoresSubPointJitter() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5520840Z ◇ Test attentionOutlineCoversTheSwayEnvelope() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5521760Z ◇ Test unionIsTheOutlineNoPoseCrosses() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5624110Z ◇ Test flipsLeftAtTheRightScreenEdge() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5725940Z ◇ Test privacyHidesRepositoryAndTitleEverywhere() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5828070Z ◇ Test replacesOnContentPanelMoodOrGestureChanges() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.5930330Z ◇ Test playsOnceThenSettles() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6054440Z ◇ Test withoutPrivacyShowsDetails() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6178480Z ◇ Test notPlayableQueuesNothingAndNeverReplays() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6281260Z ◇ Test repositoryPackIsValid() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6384020Z ◇ Test oneTotalDeadlineIncludesPreflight() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6486720Z ◇ Test urgentPreemptsAndTheInterruptedWaveIsNotReplayed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6588910Z ◇ Test arrivalsDuringAGestureMergeWithoutRestarting() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6695540Z ◇ Test signedOutTransportAndRateLimitRemainDistinct() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6798550Z ◇ Test degradedStatesAreStatedInSummary() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.6901590Z ◇ Test combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7004120Z ◇ Test accountSwitchResponsesAreBoundToEachOperationIncludingReturnToA() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7111260Z ◇ Test injectableSingleOperationAndCompleteDefaultEverything() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7212880Z ◇ Test oneBatchIsOneGesture() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7315130Z ◇ Test accessibilityLabelNamesDemoAndQuality() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7417030Z ◇ Test demoSurvivesPrivacyModeInRowsAndHover() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7524740Z ◇ Test monitorDrivenStates() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7656030Z ◇ Test fixtureItemsAreDemo() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7758730Z ◇ Test realCollectorRejectsValidJSONBeforeEndlessStderrOverflow() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7873100Z ◇ Test staticUnderReduceMotionQuietOrSnooze() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.7983560Z ◇ Test onlyAFreshConfirmedIncidentShowsTheMarker() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8085560Z ◇ Test settleCrossfadesToStaticOverTheLastSixHundredMs() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8187130Z ◇ Test newIncidentFadesEveryLayerInByOpacity() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8289590Z ◇ Test tiersAreOrdered() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8391270Z ◇ Test burstEndsWhenTheMarkerIsHidden() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8497760Z ◇ Test exactBoundarySucceedsAndOneExtraByteIsTypedOverflow() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8604510Z ◇ Test tierFollowsTheMostSevereImpact() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8706360Z ◇ Test layersPerTier() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8809430Z ◇ Test burstPlaysSixSecondsThenHoldsStatic() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.8911800Z ◇ Test tierRiseFadesOnlyNewLayers() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9014590Z ◇ Test completeSnapshotPrunesItemsThatAreGone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9117490Z ◇ Test partialSnapshotKeepsMarkersForMissingItems() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9223210Z ◇ Test urgentOnlyForMajorOrCritical() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9326040Z ◇ Test snapshotLargerThanMemoryNeverReplays() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9430340Z ◇ Test escalationIsAnnouncedOncePerTierReached() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9533020Z ◇ Test defaultsWhenNothingStored() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9635660Z ◇ Test partialAndUnknownKeysAreTolerated() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9739140Z ◇ Test boundedMemoryEvictsOldestNotCurrent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9841150Z ◇ Test minorStraightToCriticalIsOneEvent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:55.9942870Z ◇ Test baselineDoesNotAnimate() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0044630Z ◇ Test resetForgetsEverythingAndRebaselines() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0147810Z ◇ Test newMajorIncidentEscalatesOnlyToCritical() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0249830Z ◇ Test duplicateIDsInOnePollAreOneIncident() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0352570Z ◇ Test reopeningAtHigherImpactIsNotAnEscalation() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0454640Z ◇ Test invalidIDsNeverEnterTheMonitor() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0556330Z ◇ Test recoveryLeavesWithoutAnimation() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0657950Z ◇ Test oldLastSuccessIsNotComparableEvenWithoutAFreshnessTick() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0760050Z ◇ Test genuinelyNewIncidentAnimatesOnce() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0861810Z ◇ Test staleKeepsMajorIncidentUrgent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.0963180Z ◇ Test startsUnknownNotNone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1064290Z ◇ Test severityFollowsImpact() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1197860Z ◇ Test oneShotHoldsLastFrame() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1300080Z ◇ Test errorReconnectDoesNotReplay() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1404410Z ◇ Test durationsBelowMinimumAreRaised() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1505940Z ◇ Test freshNoneAndFreshIncidents() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1607400Z ◇ Test updatesReviseSilently() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1708690Z ◇ Test reducedMotionPinsFirstFrame() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1810380Z ◇ Test loopsThroughDurations() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.1911880Z ◇ Test privacyDefaultsOnButAnExplicitChoiceIsKept() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2014440Z ◇ Test staleReconnectDoesNotReplay() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2115940Z ◇ Test corruptPayloadFallsBackToDefaults() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2217840Z ◇ Test outOfRangeValuesAreClamped() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2319460Z ◇ Test roundTripsEveryField() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2420430Z ◇ Test failureAfterNoneIsNotNone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2523110Z ◇ Test staleNeverAppliesBeforeASuccessOrAfterAnError() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2631750Z ◇ Test staleAfterThreshold() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2733850Z ◇ Test resetBaselineKeepsRowsButReseedsSilently() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2757940Z ◇ Test tierReachedWhileNotComparableIsNeverAnnounced() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2859360Z ◇ Test markStaleBreaksComparability() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.2960310Z ◇ Test configurationKeepsNoState() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3061430Z ◇ Test failureBeforeAnySuccessIsNotNone() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3159470Z ◇ Test redirectsAreRefused() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3260800Z ◇ Test onlyServerTrustIsHandled(_:_:) started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3362170Z ◇ Test collectEnforcesTheCap() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3462960Z ◇ Test exitCodeFourMeansAuthRequired() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3564850Z ◇ Test failureKeepsLastKnownIncidentsButNotForMood() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3680490Z ◇ Test nodesWithoutAnIDAreSkipped() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3783930Z ◇ Test repositoryRenameKeepsTheItemsIdentity() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.3898550Z ◇ Test launchFailureIsTreatedAsMissing() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4015410Z ◇ Test accountAlwaysComesFromTheSameResponseAsItsItems() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4125920Z ◇ Test moreMatchesThanTheCapIsPartial() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4244860Z ◇ Test loggedOutGhIsUnauthenticated() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4347710Z ◇ Test missingGhIsReportedWithoutRunningAnything() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4450840Z ◇ Test bothSearchesFailingOrMalformedOutputIsAnError() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4552870Z ◇ Test missingViewerIsAFailureNotAnEmptyInbox() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4665790Z ◇ Test oneRequestReturnsAccountAndItemsWithStableIDs() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4769670Z ◇ Test authFailureOnTheRequestIsUnauthenticated() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4872480Z ◇ Test onlyTheActiveAccountIsChecked() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.4981870Z ◇ Test oneFailedSearchMakesSnapshotPartial() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5084410Z ◇ Test symlinkedManifestIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5208950Z ◇ Test oldGhWithoutActiveFlagLetsTheRequestDecide() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5310010Z ◇ Test noSymlinkInsideThePackIsFollowed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5433200Z ◇ Test checksumsAreVerifiedWhenPresent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5533100Z ◇ Test validPackLoads() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5646090Z ◇ Test durationRulesAreEnforced() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5746980Z ◇ Test wrongFrameSizeAndNonPNGAreRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5849070Z ◇ Test prefersAClearSideAmongThoseWithRoom() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.5951750Z ◇ Test pathTraversalAndAbsolutePathsAreRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6053390Z ◇ Test pathsWithNulOrControlCharactersCantEscapeThePack() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6154820Z ◇ Test oneShotSequencesMustFitTheirEventClip() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6256160Z ◇ Test symlinkEscapingPackIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6357830Z ◇ Test missingManifestIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6458970Z ◇ Test hugeDurationsAreRejectedWithoutCrashing() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6559380Z ◇ Test wrongSchemaIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6661260Z ◇ Test onlyTheV1GroundAnchorIsAccepted() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6760870Z ◇ Test missingRequiredStateIsRejected() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6861810Z ◇ Test firstSnapshotEstablishesBaselineWithoutEvents() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.6963870Z ◇ Test tallerSummariesAlwaysEndClearAfterTheCompactFallback() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7082790Z ◇ Test genuinelyNewItemFiresExactlyOnce() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7183910Z ◇ Test partialSnapshotsNeverProduceEventsAndAreNotEmpty() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7316850Z ◇ Test explicitResetStillForgetsObservations() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7445840Z ◇ Test dedupeKeepsNewestPerStableID() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7546790Z ◇ Test evictionDuringASnapshotNeverReportsExistingIDs() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7667180Z ◇ Test itemThatDisappearsAndReturnsDoesNotReplay() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7767050Z ◇ Test idsSeenInPartialPollsBeforeTheBaselineNeverFire() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7868580Z ◇ Test reconnectAfterErrorDoesNotReplayEvenNewItems() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.7983200Z ◇ Test resetClearsItemsStateAndTimestamp() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.8101090Z ◇ Test authAndMissingFailuresMapToDistinctStates() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.8220110Z ◇ Test unchangedPollNeverRetriggers() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.8322560Z ◇ Test refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.8424620Z ◇ Test partialFirstSnapshotDoesNotEstablishBaseline() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:48:56.8526300Z ◇ Test clockGoingBackwardsIsNotComparable() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.0665510Z ◇ Test pollsFurtherApartThanStaleAfterAreNotComparable() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.0770120Z ◇ Test staleRecoveryDoesNotReplay() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.0873120Z ◇ Test mascotCapsAt99PlusAndKeepsSmallerCountsExact() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.0978260Z ◇ Test inboxAndAccessibilityKeepTheFullCount() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1094510Z ◇ Test resetBaselineReseedsSilently() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1212980Z ◇ Test snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1329970Z ◇ Test oversizeStreamIsAbandoned() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1436550Z ◇ Test redirectsAreNotFollowed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1539500Z ◇ Test exactlyMaxBytesIsAccepted() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1658120Z ◇ Test clientMapsTransportTimeout() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1761900Z ◇ Test declaredOversizeIsRejectedBeforeReading() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1866020Z ◇ Test slowDripHitsTheTotalDeadline() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.1972230Z ◇ Test returnsBodyAndSendsNoCookiesOrCredentials() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2107490Z ◇ Test atMostTwoLinesAndNoDetails() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2226370Z ◇ Test hangingServerTimesOut() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2351690Z ◇ Test fullLabelsFitWithTheMinimumGapAtEverySize() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2353850Z ◇ Test countQualityStaysExplicit() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2457480Z ◇ Test staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2561440Z ◇ Test switchingSourcesNeverLeaksRowsBetweenSessions() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2663710Z ◇ Test unknownArtKeepsLabelsAboveTheArtSquare() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2765250Z ◇ Test nearTouchCountTracksEveryPoseAtTheGap() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2868400Z ◇ Test resizingKeepsTheGroundPointOnScreen() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.2970190Z ◇ Test designMetricsAtTheSpecifiedSizes() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3072710Z ◇ Test loadedPackRecordsTheHighestStaticPose() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3174490Z ◇ Test topInsetIsTheFirstVisibleRow() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3275890Z ◇ Test hoverLineNamesThePublicIncident() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3377190Z ◇ Test accessibilityLabelCountsIncidentsSeparately() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3479560Z ◇ Test fullHoverPutsTheIncidentOnTop() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3582070Z ◇ Test badgeCountsActionableItemsOnly() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3684570Z ◇ Test intermediateSizesInterpolateAndRoundUp() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3785950Z ◇ Test criticalItemsAreUrgent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3887160Z ◇ Test countDescriptionsMatchQuality() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.3967630Z ◇ Test authProblemsAreUrgent() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4070640Z ◇ Test unseenEventsNeedAlertsAllowed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4171850Z ◇ Test compactHoverStaysTwoLines() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4273890Z ◇ Test clearanceFollowsTheCapsulesRoundedEnds() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4378950Z ◇ Test unknownDataIsNeverAllClearOrZero() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4482390Z ◇ Test animatorPlaysTheGestureAndReducedMotionIsStatic() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4585680Z ◇ Test storyboardFramesAndAngles() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4687640Z ◇ Test leanIsContinuousBoundedAndEased() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4791550Z ◇ Passing 1 argument type → nil to nonJSONIsAFailure(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4893670Z ◇ Passing 1 argument type → "text/html" to nonJSONIsAFailure(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.4998630Z ◇ Passing 1 argument type → "application/jsonp" to nonJSONIsAFailure(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5113300Z ◇ Passing 1 argument type → "text/json" to nonJSONIsAFailure(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5216730Z ◇ Passing 1 argument type → "" to nonJSONIsAFailure(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5323820Z ◇ Passing 1 argument type → "application/json" to jsonMediaTypeIsAccepted(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5425110Z ◇ Passing 1 argument type → "Application/JSON; charset=utf-8" to jsonMediaTypeIsAccepted(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5530680Z ◇ Passing 1 argument type → "application/json ;charset=UTF-8" to jsonMediaTypeIsAccepted(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5633380Z ◇ Passing 1 argument code → 301 to httpErrorsAreFailures(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5735580Z ◇ Passing 1 argument code → 404 to httpErrorsAreFailures(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5837400Z ◇ Passing 1 argument code → 500 to httpErrorsAreFailures(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.5939500Z ◇ Passing 1 argument code → 429 to httpErrorsAreFailures(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6040920Z ◇ Passing 1 argument code → 503 to httpErrorsAreFailures(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6211900Z ◇ Passing 2 arguments code → Code(rawValue: -1009), message → "offline" to transportErrorsAreFailures(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6244010Z ◇ Passing 2 arguments code → Code(rawValue: -1001), message → "timed out" to transportErrorsAreFailures(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6347290Z ◇ Passing 2 arguments code → Code(rawValue: -1007), message → "unexpected host" to transportErrorsAreFailures(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6451320Z ◇ Passing 2 arguments code → Code(rawValue: -1003), message → "network error -1003" to transportErrorsAreFailures(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6552510Z ◇ Passing 1 argument text → "http://www.githubstatus.com/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6658150Z ◇ Passing 1 argument text → "https://githubstatus.com/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6779490Z ◇ Passing 1 argument text → "https://evil.example/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6883310Z ◇ Passing 1 argument text → "https://www.githubstatus.com:8443/api/v2/incidents/unresolved.json" to endpointOutsideTheAllowlistIsNeverRequested(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.6983570Z ◇ Passing 1 argument text → "http://www.githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7086640Z ◇ Passing 1 argument text → "https://www.githubstatus.com.evil.example/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7190590Z ◇ Passing 1 argument text → "https://githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7292880Z ◇ Passing 1 argument text → "https://evil.example/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7400880Z ◇ Passing 1 argument text → "https://github.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7504480Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/abc123#top" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7604640Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/abc123?x=1" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7707680Z ◇ Passing 1 argument text → "https://www.githubstatus.com:8443/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7818830Z ◇ Passing 1 argument text → "***www.githubstatus.com/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.7911230Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8022590Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/abc123/extra" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8125860Z ◇ Passing 1 argument text → "https://www.githubstatus.com/incidents/ABC123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8227770Z ◇ Passing 1 argument text → "https://www.githubstatus.com/history" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8329650Z ◇ Passing 1 argument text → "https://www.githubstatus.com/api/v2/incidents/abc123" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8429940Z ◇ Passing 1 argument text → "javascript:alert(1)" to otherURLsAreRejected(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8533090Z ◇ Passing 1 argument string → "https://github.com/example/repo/pull/1" to allowsHTTPSGitHub(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8636030Z ◇ Passing 1 argument string → "https://GitHub.com/example/repo/issues/2?x=1#frag" to allowsHTTPSGitHub(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8739280Z ◇ Passing 1 argument string → "https://github.com:443/settings/copilot" to allowsHTTPSGitHub(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8840960Z ◇ Passing 1 argument string → "http://github.com/example/repo" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.8943200Z ◇ Passing 1 argument string → "https://github.com.evil.example/x" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9046010Z ◇ Passing 1 argument string → "https://evil.example/github.com" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9149830Z ◇ Passing 1 argument string → "***github.com/x" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9249210Z ◇ Passing 1 argument string → "https://github.com@evil.example/x" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9350960Z ◇ Passing 1 argument string → "https://github.com:8443/x" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9454440Z ◇ Passing 1 argument string → "javascript:alert(1)" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9556700Z ◇ Passing 1 argument string → "file:///etc/passwd" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9559530Z ◇ Passing 1 argument string → "x-github-client://openRepo" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9661300Z ◇ Passing 1 argument string → " https://github.com/x" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9764380Z ◇ Passing 1 argument string → "https://github.com/x
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9866420Z https://evil.example" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:51.9969810Z ◇ Passing 1 argument string → "" to rejectsEverythingElse(_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0075630Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"exploded","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "status" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0179510Z ◇ Passing 2 arguments incident → "{"id":"A1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0282610Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"catastrophic","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "impact" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0387040Z ◇ Passing 2 arguments incident → "{"id":"../x","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0506020Z ◇ Passing 2 arguments incident → "{"id":"q́","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0621990Z ◇ Passing 2 arguments incident → "{"id":"1⃣","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0725830Z ◇ Passing 2 arguments incident → "{"id":"ａ1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0828940Z ◇ Passing 2 arguments incident → "{"id":"","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.0936130Z ◇ Passing 2 arguments incident → "{"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "id" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1041150Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"yesterday","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "created_at" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1142040Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"soon","resolved_at":null,"incident_updates":[],"components":[]}", field → "updated_at" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1245170Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"Degraded Actions","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":"garbage","incident_updates":[],"components":[]}", field → "resolved_at" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1348200Z ◇ Passing 2 arguments incident → "{"id":"a1","name":"  ","status":"investigating","impact":"minor","created_at":"2026-11-13T09:10:00.000Z","updated_at":"2026-11-13T09:35:00.000Z","resolved_at":null,"incident_updates":[],"components":[]}", field → "name" to invalidIncidentRejectsWholePayload(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1449300Z ◇ Passing 2 arguments text → "not json", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1553590Z ◇ Passing 2 arguments text → "{"incidents":[]}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1654990Z ◇ Passing 2 arguments text → "{"page":{"id":"x"}}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1757660Z ◇ Passing 2 arguments text → "{"page":{"id":""},"incidents":[]}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1859000Z ◇ Passing 2 arguments text → "{"page":{"id":"x"},"incidents":{}}", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.1961080Z ◇ Passing 2 arguments text → "[]", expected → .malformed to malformedPayloadsAreRejected(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2062210Z ◇ Passing 2 arguments method → "NSURLAuthenticationMethodHTTPBasic", expected → NSURLSessionAuthChallengeDisposition(rawValue: 2) to onlyServerTrustIsHandled(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2165960Z ◇ Passing 2 arguments method → "NSURLAuthenticationMethodClientCertificate", expected → NSURLSessionAuthChallengeDisposition(rawValue: 2) to onlyServerTrustIsHandled(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2265700Z ◇ Passing 2 arguments method → "NSURLAuthenticationMethodServerTrust", expected → NSURLSessionAuthChallengeDisposition(rawValue: 1) to onlyServerTrustIsHandled(_:_:)
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2368280Z ✔ Test minutesAreClamped() passed after 56.218 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2469600Z ✔ Test disabledNeverQuiet() passed after 56.218 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2570670Z ✔ Test equalStartAndEndMeansNoQuietTime() passed after 56.218 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2671590Z ✔ Test wrapsPastMidnightWithHalfOpenBoundaries() passed after 56.219 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2773080Z ✔ Test sameDayWindow() passed after 57.072 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2874750Z ✔ Test usesCalendarTimeZone() passed after 57.109 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.2976370Z ✔ Test wallClockIsPreservedAcrossDaylightSavingFallBack() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3078850Z ✔ Test untilTomorrowMorning() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3181250Z ✔ Test mostlyOffscreenOrGoneDisplaysFallBack() passed after 57.109 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3282280Z ✔ Test mostlyVisiblePositionsAreClampedFullyOnScreen() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3385110Z ✔ Test clipLastsTwoSecondsFromItsStart() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3484820Z ✔ Test quietHoursAlsoBlockAlerts() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3587700Z ✔ Test suppressedClipsMeanStaticMoodPoses() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3689500Z ✔ Test idleLoopsOnTheSuppliedClock() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3791290Z ✔ Test clipTimingUsesTheSameClockAsTheQueue() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3894100Z ✔ Test demoIncidentsOpenNothing() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.3997480Z ✔ Test snoozeExpiresExactlyAtDeadline() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4100510Z ✔ Test everyNewClipReplaysFromFirstFrameEvenInAttentionMood() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4202000Z ✔ Test clampsIntoTheDisplayItMostlySitsOn() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4305730Z ✔ Test urgentIncidentGesturePlaysUrgentAndRespectsMotionSettings() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4404390Z ✔ Test majorIncidentMakesTheMascotUrgent() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4505150Z ✔ Test failureNeverChangesTheMoodByItself() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4608010Z ✔ Test reducedMotionIgnoresClipAndIdleLoop() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4712370Z ✔ Test minorIncidentAloneStaysIdle() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4814260Z ✔ Test incidentRowsFollowPrivacy() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.4915840Z ✔ Test unseenIncidentNeedsAlertsAllowed() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5021140Z ✔ Test geometryStaysBelowTheKeepOut() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5126690Z ✔ Test sixtyFourOverrideAppliesBelowNinetySix() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5234050Z ✔ Test inboxMoodIsKept() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5332340Z ✔ Test everyPaletteTokenIsUsableInBothAppearances() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5441510Z ✔ Test undecodableBodyIsAFailureNotNone() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5564450Z ✔ Test transcribedSpecMatchesDesignJSON() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5565330Z ✔ Test nonJSONIsAFailure(_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5674920Z ✔ Test easeMatchesTheCurveEnds() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5776060Z ✔ Test emptyIsAVerifiedNone() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5878870Z ✔ Test redirectedResponseFromAnotherHostIsRejected() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.5983030Z ✔ Test jsonMediaTypeIsAccepted(_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6086620Z ✔ Test httpErrorsAreFailures(_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6188120Z ✔ Test successDecodesAndSendsNoCredentials() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6289620Z ✔ Test transportErrorsAreFailures(_:_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6392030Z ✔ Test unexpectedErrorsAreFailures() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6494920Z ✔ Test endpointIsTheOfficialUnauthenticatedAPI() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6600540Z ✔ Test overrideIsTheOnlyCandidate() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6702320Z ✔ Test searchesHomebrewThenAbsolutePathEntriesOnly() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6803850Z ✔ Test endpointOutsideTheAllowlistIsNeverRequested(_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.6906650Z ✔ Test oversizeBodyIsAFailure() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7010160Z ✔ Test otherURLsAreRejected(_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7112680Z ✔ Test allowsHTTPSGitHub(_:) passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7214220Z ✔ Test incidentURLIsTheOnlyAcceptedShape() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7323930Z ✔ Test invalidIDsHaveNoURL() passed after 57.110 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7431730Z ✔ Test nilIsRejected() passed after 57.139 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7561530Z ✔ Test eventInjectedWhileDisconnectedIsNotReplayedOnReconnect() passed after 57.139 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7666680Z ✔ Test fixtureLinksAreSafe() passed after 57.139 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7769540Z ✔ Test injectedEntitlementFiresExactlyOneUniqueEvent() passed after 57.139 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.7877490Z ✔ Test partialPollsStayPartialUntilTurnedOff() passed after 57.139 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8000200Z ✔ Test injectedIncidentsHaveUniqueValidIDs() passed after 57.139 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8134440Z ✔ Test rejectsEverythingElse(_:) passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8243490Z ✔ Test offlineFixturesUnionWithoutDuplicateRowsAndMarkDemo() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8346900Z ✔ Test disconnectEscalateAndResolve() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8473590Z ✔ Test defaultFixtureIsDemoAndExcludesMaintenance() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8577510Z ✔ Test rejectsQualifierGraphQLAndHostInjectionIncludingDecodedValues() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8681860Z ✔ Test snoozeAndReduceMotionCancelAtOnce() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8784030Z ✔ Test liftingSnoozeOrMotionDoesNotCancelOrReplay() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8886070Z ✔ Test accountAndDemoRecordsAreIsolatedAndCorruptionNeverBroadens() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.8988350Z ✔ Test quietHoursCancelOnlyWhenTheyCoverNow() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9090380Z ✔ Test normalizedValidatedUnionAndBounds() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9193830Z ✔ Test byteValidationRejectsLineSeparatorsAndPreservesIntentionalInputTrimming() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9297300Z ✔ Test nonComparableSnapshotRecordsSilently() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9400110Z ✔ Test emptyIDIsIgnored() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9506080Z ✔ Test seedKeepsEarlierObservations() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9610530Z ✔ Test capacityIsBoundedAndEvictsOldestFirst() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9712550Z ✔ Test newIDAfterBaselineIsReportedOnce() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9814940Z ✔ Test firstObservationBeforeBaselineIsNotReported() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:52.9921690Z ✔ Test disconnectFailsTheServiceSourceToo() passed after 57.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0024330Z ✔ Test escalateAllToMajorStillWorks() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0127270Z ✔ Test everySliderHasAnAccessibilityLabel() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0128980Z ✔ Test markStaleHidesTheMarkerAndRecoveryIsSilent() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0232090Z ✔ Test statusFetchFailureIsNeverNoIncidentsAndRecoveryIsSilent() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0337430Z ✔ Test fetchFailureBeforeAnySuccessIsUnknown() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0439930Z ✔ Test missingRequiredFieldIsMalformed() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0542970Z ✔ Test injectEachTierIsANewUrgentOrAttentionEvent() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0657200Z ✔ Test everyUnresolvedStatusIsAnIncident() passed after 57.141 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0758700Z ✔ Test invalidIncidentRejectsWholePayload(_:_:) passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0862460Z ✔ Test malformedPayloadsAreRejected(_:_:) passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.0964630Z ✔ Test emptyListDecodesAsNone() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1041240Z ✔ Test dedupesByIDKeepingLatestAndSortsBySeverity() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1042150Z ✔ Test tooManyIncidentsIsRejected() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1043420Z ✔ Test missingUpdatedAtFallsBackToCreated() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1044110Z ✔ Test newerResolvedRecordRetiresOlderOpenOne() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1044950Z ✔ Test namesAreSingleLineAndBounded() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1045630Z ✔ Test sampleKeepsOnlyUnresolvedIncidents() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1046870Z ✔ Test maintenanceAndResolvedAreNeverIncidents() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1047610Z ✔ Test resolveIsQuietAndReopenIsSilent() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1048340Z ✔ Test escalateOneLevelBurstsOncePerTierAndDeescalateIsSilent() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1050670Z ✔ Test overlapProducesOneStableItemAndOneEvent() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1052590Z ✔ Test malformedMetadataCountsDatesAndTitlesRemainIncomplete() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1054640Z ✔ Test oneOperationBindsViewerMetadataAndPerInclusionSearches() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1056560Z ✔ Test verifiedEmptyDiffersFromUnavailableTarget() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1058290Z ✔ Test viewerMismatchNeverRelabelsSubmittedSelection() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1059460Z ✔ Test fullJSONIdentifierSuffixesNeverProduceVerifiedEmptyOrCompleteData() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1062030Z ✔ Test metadataMismatchAndCrossScopeRowsAreNotVerified() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1064060Z ✔ Test switchingAccountsStartsAFreshBaselineWithoutEvents() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1066010Z ✔ Test injectedWorkflowFailureIsUniqueDemoAndUrgent() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1068010Z ✔ Test malformedRowsCapsAndGraphQLErrorsCannotLookComplete() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1069670Z ✔ Test boundedReadAcceptsExactlyTheLimit() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1072110Z ✔ Test firstAccountAndFailedPollsAreNotChanges() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1073880Z ✔ Test scheduledMaintenanceIsNeverAnIncident() passed after 57.143 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1075850Z ✔ Test wrongDimensionsAreRejectedBeforeDecoding() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1077330Z ✔ Test opaquePNGWithoutAlphaIsRejected() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1078110Z ✔ Test oversizedImageIsRejectedBeforeDecoding() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1078880Z ✔ Test oversizedManifestIsRejected() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1079610Z ✔ Test headerOnlyPNGIsRejectedAsUndecodable() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1080310Z ✔ Test outlinesComeFromTheValidatedBytes() passed after 57.148 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1081200Z ✔ Test missingPlacementCandidatesHaveAnUnknownGapAndFiniteAnchor() passed after 57.142 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1081920Z ✔ Test overLimitFrameCountSkipsFileValidation() passed after 57.143 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1082640Z ✔ Test sitsBesideTheCharacterBelowTheTags() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1083350Z ✔ Test slotNeverOverlapsAnyLabel() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1084540Z ✔ Test hoverDuringTheGestureClearsTheSweptLean() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1085330Z ✔ Test screenWinsOverTheLaneOnlyWhenBothCannotHold() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1086130Z ✔ Test ignoresSubPointJitter() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1086710Z ✔ Test attentionOutlineCoversTheSwayEnvelope() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1087760Z ✔ Test unionIsTheOutlineNoPoseCrosses() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1088340Z ✔ Test flipsLeftAtTheRightScreenEdge() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1089010Z ✔ Test privacyHidesRepositoryAndTitleEverywhere() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1089720Z ✔ Test replacesOnContentPanelMoodOrGestureChanges() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1090310Z ✔ Test playsOnceThenSettles() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1090950Z ✔ Test withoutPrivacyShowsDetails() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1091550Z ✔ Test notPlayableQueuesNothingAndNeverReplays() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1092180Z ✔ Test repositoryPackIsValid() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1092960Z ✔ Test oneTotalDeadlineIncludesPreflight() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1093600Z ✔ Test arrivalsDuringAGestureMergeWithoutRestarting() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1094440Z ✔ Test urgentPreemptsAndTheInterruptedWaveIsNotReplayed() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1095190Z ✔ Test signedOutTransportAndRateLimitRemainDistinct() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1096280Z ✔ Test degradedStatesAreStatedInSummary() passed after 57.155 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1097010Z ✔ Test combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1097950Z ✔ Test accountSwitchResponsesAreBoundToEachOperationIncludingReturnToA() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1098770Z ✔ Test injectableSingleOperationAndCompleteDefaultEverything() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1099520Z ✔ Test oneBatchIsOneGesture() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1100100Z ✔ Test accessibilityLabelNamesDemoAndQuality() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1101160Z ✔ Test demoSurvivesPrivacyModeInRowsAndHover() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1102410Z ✔ Test monitorDrivenStates() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1125320Z ✔ Test realCollectorRejectsValidJSONBeforeEndlessStderrOverflow() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1126030Z ✔ Test fixtureItemsAreDemo() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1126610Z ✔ Test staticUnderReduceMotionQuietOrSnooze() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1183460Z ✔ Test onlyAFreshConfirmedIncidentShowsTheMarker() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1184220Z ✔ Test newIncidentFadesEveryLayerInByOpacity() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1184790Z ✔ Test tiersAreOrdered() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1186020Z ✔ Test settleCrossfadesToStaticOverTheLastSixHundredMs() passed after 57.156 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1186820Z ✔ Test burstEndsWhenTheMarkerIsHidden() passed after 57.188 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1187390Z ✔ Test tierFollowsTheMostSevereImpact() passed after 57.188 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1187910Z ✔ Test layersPerTier() passed after 57.188 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1188410Z ✔ Test tierRiseFadesOnlyNewLayers() passed after 57.188 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1189010Z ✔ Test completeSnapshotPrunesItemsThatAreGone() passed after 57.188 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1189630Z ✔ Test burstPlaysSixSecondsThenHoldsStatic() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1190270Z ✔ Test partialSnapshotKeepsMarkersForMissingItems() passed after 57.188 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1190890Z ✔ Test urgentOnlyForMajorOrCritical() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1191480Z ✔ Test snapshotLargerThanMemoryNeverReplays() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1192120Z ✔ Test escalationIsAnnouncedOncePerTierReached() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1192830Z ✔ Test defaultsWhenNothingStored() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1193410Z ✔ Test partialAndUnknownKeysAreTolerated() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1194230Z ✔ Test boundedMemoryEvictsOldestNotCurrent() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1194840Z ✔ Test minorStraightToCriticalIsOneEvent() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1195400Z ✔ Test baselineDoesNotAnimate() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1197680Z ✔ Test resetForgetsEverythingAndRebaselines() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1199360Z ✔ Test newMajorIncidentEscalatesOnlyToCritical() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1201270Z ✔ Test duplicateIDsInOnePollAreOneIncident() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1232330Z ✔ Test reopeningAtHigherImpactIsNotAnEscalation() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1272170Z ✔ Test invalidIDsNeverEnterTheMonitor() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1305030Z ✔ Test recoveryLeavesWithoutAnimation() passed after 57.189 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1306400Z ✔ Test oldLastSuccessIsNotComparableEvenWithoutAFreshnessTick() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1307580Z ✔ Test genuinelyNewIncidentAnimatesOnce() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1308180Z ✔ Test staleKeepsMajorIncidentUrgent() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1308750Z ✔ Test startsUnknownNotNone() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1309340Z ✔ Test severityFollowsImpact() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1309860Z ✔ Test oneShotHoldsLastFrame() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1310390Z ✔ Test errorReconnectDoesNotReplay() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1311070Z ✔ Test durationsBelowMinimumAreRaised() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1311640Z ✔ Test freshNoneAndFreshIncidents() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1312180Z ✔ Test updatesReviseSilently() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1313170Z ✔ Test reducedMotionPinsFirstFrame() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1313700Z ✔ Test loopsThroughDurations() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1314400Z ✔ Test privacyDefaultsOnButAnExplicitChoiceIsKept() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1315020Z ✔ Test staleReconnectDoesNotReplay() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1316000Z ✔ Test corruptPayloadFallsBackToDefaults() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1316610Z ✔ Test outOfRangeValuesAreClamped() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1317140Z ✔ Test roundTripsEveryField() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1317750Z ✔ Test failureAfterNoneIsNotNone() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1318370Z ✔ Test staleNeverAppliesBeforeASuccessOrAfterAnError() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1318970Z ✔ Test staleAfterThreshold() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1319820Z ✔ Test resetBaselineKeepsRowsButReseedsSilently() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1320530Z ✔ Test tierReachedWhileNotComparableIsNeverAnnounced() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1321170Z ✔ Test markStaleBreaksComparability() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1321730Z ✔ Test configurationKeepsNoState() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1322260Z ✔ Test redirectsAreRefused() passed after 57.190 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1324440Z ✔ Test failureBeforeAnySuccessIsNotNone() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1325930Z ✔ Test onlyServerTrustIsHandled(_:_:) passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1327220Z ✔ Test collectEnforcesTheCap() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1328530Z ✔ Test exitCodeFourMeansAuthRequired() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1330060Z ✔ Test failureKeepsLastKnownIncidentsButNotForMood() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1331580Z ✔ Test nodesWithoutAnIDAreSkipped() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1333050Z ✔ Test repositoryRenameKeepsTheItemsIdentity() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1334550Z ✔ Test launchFailureIsTreatedAsMissing() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1336120Z ✔ Test accountAlwaysComesFromTheSameResponseAsItsItems() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1337690Z ✔ Test moreMatchesThanTheCapIsPartial() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1339110Z ✔ Test loggedOutGhIsUnauthenticated() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1340660Z ✔ Test missingGhIsReportedWithoutRunningAnything() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1342360Z ✔ Test bothSearchesFailingOrMalformedOutputIsAnError() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1344040Z ✔ Test missingViewerIsAFailureNotAnEmptyInbox() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1345710Z ✔ Test oneRequestReturnsAccountAndItemsWithStableIDs() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1347410Z ✔ Test authFailureOnTheRequestIsUnauthenticated() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1349940Z ✔ Test onlyTheActiveAccountIsChecked() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1351310Z ✔ Test symlinkedManifestIsRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1352740Z ✔ Test oneFailedSearchMakesSnapshotPartial() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1354330Z ✔ Test oldGhWithoutActiveFlagLetsTheRequestDecide() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1355900Z ✔ Test noSymlinkInsideThePackIsFollowed() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1357560Z ✔ Test checksumsAreVerifiedWhenPresent() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1358860Z ✔ Test validPackLoads() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1360070Z ✔ Test durationRulesAreEnforced() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1361500Z ✔ Test wrongFrameSizeAndNonPNGAreRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1363040Z ✔ Test prefersAClearSideAmongThoseWithRoom() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1364600Z ✔ Test pathTraversalAndAbsolutePathsAreRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1366310Z ✔ Test pathsWithNulOrControlCharactersCantEscapeThePack() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1368260Z ✔ Test symlinkEscapingPackIsRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1369740Z ✔ Test oneShotSequencesMustFitTheirEventClip() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1371170Z ✔ Test missingManifestIsRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1372630Z ✔ Test hugeDurationsAreRejectedWithoutCrashing() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1374060Z ✔ Test wrongSchemaIsRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1375380Z ✔ Test missingRequiredStateIsRejected() passed after 57.191 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1376780Z ✔ Test onlyTheV1GroundAnchorIsAccepted() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1379070Z ✔ Test firstSnapshotEstablishesBaselineWithoutEvents() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1381080Z ✔ Test shippedPackEveryFrameIsClearAndWithinTwelvePoints() passed after 57.196 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1382740Z ✔ Test genuinelyNewItemFiresExactlyOnce() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1384360Z ✔ Test partialSnapshotsNeverProduceEventsAndAreNotEmpty() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1386070Z ✔ Test explicitResetStillForgetsObservations() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1387560Z ✔ Test dedupeKeepsNewestPerStableID() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1389110Z ✔ Test evictionDuringASnapshotNeverReportsExistingIDs() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1390800Z ✔ Test itemThatDisappearsAndReturnsDoesNotReplay() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1392510Z ✔ Test idsSeenInPartialPollsBeforeTheBaselineNeverFire() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1394120Z ✔ Test resetClearsItemsStateAndTimestamp() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1395730Z ✔ Test reconnectAfterErrorDoesNotReplayEvenNewItems() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1397320Z ✔ Test unchangedPollNeverRetriggers() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1398840Z ✔ Test authAndMissingFailuresMapToDistinctStates() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1400520Z ✔ Test partialFirstSnapshotDoesNotEstablishBaseline() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1402510Z ✔ Test refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1404540Z ✔ Test clockGoingBackwardsIsNotComparable() passed after 57.192 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1406180Z ✔ Test pollsFurtherApartThanStaleAfterAreNotComparable() passed after 57.193 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1407720Z ✔ Test staleRecoveryDoesNotReplay() passed after 57.193 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1409200Z ✔ Test mascotCapsAt99PlusAndKeepsSmallerCountsExact() passed after 57.193 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1410840Z ✔ Test inboxAndAccessibilityKeepTheFullCount() passed after 57.193 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1412990Z ✔ Test resetBaselineReseedsSilently() passed after 57.193 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1413920Z ✔ Test snapshotLargerThanTrackerDoesNotReplayWhenUnchanged() passed after 57.193 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1416580Z ✔ Test atMostTwoLinesAndNoDetails() passed after 57.194 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1418060Z ✔ Test fullLabelsFitWithTheMinimumGapAtEverySize() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1419900Z ✔ Test staleFetchFromEarlierSessionIsDroppedAndDoesNotBlockTheNewOne() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1421550Z ✔ Test countQualityStaysExplicit() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1423010Z ✔ Test switchingSourcesNeverLeaksRowsBetweenSessions() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1424680Z ✔ Test leaningCountNeverCrossesTheExactlyRotatedArt() passed after 57.201 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1426260Z ✔ Test resizingKeepsTheGroundPointOnScreen() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1428340Z ✔ Test unknownArtKeepsLabelsAboveTheArtSquare() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1429750Z ✔ Test designMetricsAtTheSpecifiedSizes() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1431020Z ✔ Test topInsetIsTheFirstVisibleRow() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1432350Z ✔ Test loadedPackRecordsTheHighestStaticPose() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1433900Z ✔ Test hoverLineNamesThePublicIncident() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1434500Z ✔ Test accessibilityLabelCountsIncidentsSeparately() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1435070Z ✔ Test fullHoverPutsTheIncidentOnTop() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1435580Z ✔ Test badgeCountsActionableItemsOnly() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:49:53.1436140Z ✔ Test intermediateSizesInterpolateAndRoundUp() passed after 57.196 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9074950Z ✔ Test criticalItemsAreUrgent() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9082810Z ✔ Test countDescriptionsMatchQuality() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9084480Z ✔ Test authProblemsAreUrgent() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9085190Z ✔ Test unseenEventsNeedAlertsAllowed() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9085730Z ✔ Test compactHoverStaysTwoLines() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9086440Z ✔ Test unknownDataIsNeverAllClearOrZero() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9087180Z ✔ Test clearanceFollowsTheCapsulesRoundedEnds() passed after 57.195 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9087830Z ✔ Test animatorPlaysTheGestureAndReducedMotionIsStatic() passed after 57.185 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9088480Z ✔ Test storyboardFramesAndAngles() passed after 57.185 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9088970Z ✔ Test leanIsContinuousBoundedAndEased() passed after 57.185 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9089620Z ✔ Test declaredOversizeIsRejectedBeforeReading() passed after 57.199 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9090200Z ✔ Test clientMapsTransportTimeout() passed after 57.200 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9090850Z ✔ Suite QuietHoursTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9091280Z ✔ Suite SnoozeTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9091820Z ✔ Suite PanelPositionTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9092330Z ✔ Suite MascotAnimatorTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9092750Z ✔ Suite ServiceStatusPolicyTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9093320Z ✔ Suite IncidentMarkerSpecTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9093820Z ✔ Suite ServiceStatusClientTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9094350Z ✔ Suite GhLocatorTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9094780Z ✔ Suite ServiceStatusLinkTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9095370Z ✔ Suite SafeLinkTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9095800Z ✔ Suite FixtureSimulatorTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9096300Z ✔ Suite ServiceStatusSimulatorTests passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9098220Z ✔ Suite MonitoringScopeTests passed after 57.221 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9099390Z ✔ Suite GestureCancellationTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9099900Z ✔ Suite EventTrackerTests passed after 57.221 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9100530Z ✔ Suite ServiceStatusSimulatorActionTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9103430Z ✔ Suite AccessibilitySourceTests passed after 57.221 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9104680Z ✔ Suite StatusPageDecoderTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9105800Z ✔ Suite ScopedQueryTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9106940Z ✔ Suite AccountSessionTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9108170Z ✔ Suite WorkflowFailureFixtureTests passed after 57.221 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9109520Z ✔ Suite HoverPlacementTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9110820Z ✔ Suite IncidentMarkerGeometryTests passed after 57.221 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9112000Z ✔ Suite HoverPlacementInputsTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9113230Z ✔ Suite PrivacyTextTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9114530Z ✔ Suite EventClipQueueTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9115040Z ✔ Suite BundledPackTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9115460Z ✔ Suite ScopedClientTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9115980Z ✔ Suite DemoLabelTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9116380Z ✔ Suite IncidentMarkerStateTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9116880Z ✔ Suite UnseenItemsTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9117380Z ✔ Suite ServiceStatusMonitorTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9117830Z ✔ Suite SettingsPersistenceTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9118300Z ✔ Suite FrameClockTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9119360Z ✔ Suite StatusTransportUnitTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9119900Z ✔ Suite GhClientTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9120450Z ✔ Suite MascotPackTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9120940Z ✔ Suite InboxEngineTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9121310Z ✔ Suite MascotBadgeCapTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9121760Z ✔ Suite CompactSummaryTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9122230Z ✔ Suite SourceGenerationTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9122600Z ✔ Suite ArtBoundsTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9123050Z ✔ Suite IncidentMarkerTextTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9123470Z ✔ Suite MascotPolicyTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9123930Z ✔ Suite AttentionGestureTests passed after 57.220 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9124350Z ✔ Test oversizeStreamIsAbandoned() passed after 57.206 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9124870Z ✔ Test redirectsAreNotFollowed() passed after 57.206 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9125490Z ✔ Test packNeverReopensItsFilesAfterValidation() passed after 57.217 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9126130Z ✔ Test argumentsAreNeverInterpretedByAShell() passed after 57.214 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9126810Z ✔ Test returnsBodyAndSendsNoCookiesOrCredentials() passed after 57.206 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9127330Z ✔ Test exactlyMaxBytesIsAccepted() passed after 57.206 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9127880Z ✔ Test fifoManifestAndFrameDoNotBlock() passed after 57.212 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9128600Z ✔ Test exactBoundarySucceedsAndOneExtraByteIsTypedOverflow() passed after 57.210 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9129230Z ✔ Suite ValidatedBytesTests passed after 57.223 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9129640Z ✔ Suite MascotPackLimitTests passed after 57.222 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9130190Z ◇ Test nonzeroExitAndStderrAreCaptured() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9130690Z ◇ Test stdoutAndStderrShareOneCollectionBudget() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9131230Z ✔ Test deinitRemovesTheObservation() passed after 57.340 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9132220Z ✔ Test firesWhileAliveAndStopsAfterwards() passed after 57.340 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9132870Z ✔ Suite SystemNotificationObserverTests passed after 57.347 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9133380Z ✔ Test nonzeroExitAndStderrAreCaptured() passed after 0.124 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9134000Z ✔ Test stdoutAndStderrShareOneCollectionBudget() passed after 0.124 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9134480Z ◇ Test missingExecutableThrowsLaunchFailed() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9135000Z ◇ Test neverExitingChattyProducerIsStoppedDuringCollection() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9135640Z ✔ Test missingExecutableThrowsLaunchFailed() passed after 0.019 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9136230Z ✔ Test neverExitingChattyProducerIsStoppedDuringCollection() passed after 0.019 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9136840Z ◇ Test searchesArePinnedToGitHubDotCom() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9137270Z ◇ Test budgetSpansCommandsAndDoesNotResetAfterPreflight() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9137840Z ✔ Test searchesArePinnedToGitHubDotCom() passed after 0.039 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9138450Z ✔ Test budgetSpansCommandsAndDoesNotResetAfterPreflight() passed after 0.039 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9139080Z ◇ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9139570Z ◇ Test monotonicDeadlineSpansActualProcesses() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9140170Z ✔ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() passed after 2.363 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9140920Z ✔ Test monotonicDeadlineSpansActualProcesses() passed after 2.363 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9141390Z ✔ Test hangingServerTimesOut() passed after 59.755 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9142050Z ✔ Test slowDripHitsTheTotalDeadline() passed after 59.755 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9142520Z ✔ Suite URLSessionStatusTransportTests passed after 59.769 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9143000Z ◇ Test timeoutTerminatesTheChild() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9143670Z ◇ Test descendantPipeDrainIsBoundedAndMarkedIncomplete() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9144310Z ✔ Test timeoutTerminatesTheChild() passed after 2.336 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9144900Z ✔ Test descendantPipeDrainIsBoundedAndMarkedIncomplete() passed after 2.336 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9145530Z ✔ Suite ProcessRunnerTests passed after 62.108 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9146040Z ◇ Test deadlineTerminatesTheChild() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9146470Z ✔ Test deadlineTerminatesTheChild() passed after 0.219 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9146940Z ◇ Test prelaunchCancellationDoesNotSpawnAChild() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9147420Z ✔ Test prelaunchCancellationDoesNotSpawnAChild() passed after 0.001 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9148100Z ◇ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9148900Z ✔ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() passed after 0.116 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9149540Z ✔ Suite BoundedCommandTests passed after 62.445 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9150050Z ✔ Test nearTouchCountTracksEveryPoseAtTheGap() passed after 83.125 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9150620Z ✔ Suite MascotLayoutTests passed after 83.140 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9151280Z ✔ Test tallerSummariesAlwaysEndClearAfterTheCompactFallback() passed after 162.940 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9151870Z ✔ Suite HoverSideChoiceTests passed after 162.955 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9152380Z ✔ Test run with 306 tests passed after 162.959 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9320990Z ##[group]Run scripts/test-public-budget.sh
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9321460Z ^[[36;1mscripts/test-public-budget.sh^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9700400Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9700700Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.2491470Z PASS external normal-import CommandRunner: shared stdout/stderr + commands, typed/latching overflow, atomic accounting and deadline
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.2991960Z ##[group]Run actions/checkout@v4
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.2992880Z with:
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.2995590Z   ref: e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3008650Z   fetch-depth: 0
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3009410Z   repository: christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3017590Z   token: ***
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3021270Z   ssh-strict: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3022860Z   ssh-user: git
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3024050Z   persist-credentials: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3025120Z   clean: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3026320Z   sparse-checkout-cone-mode: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3027160Z   fetch-tags: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3027940Z   show-progress: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3029000Z   lfs: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3029360Z   submodules: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3029750Z   set-safe-directory: true
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3067300Z   allow-unsafe-pr-checkout: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.3067840Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.7796520Z Syncing repository: christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.7798020Z ##[group]Getting Git version info
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.7798700Z Working directory is '/Users/runner/work/github-pet/github-pet'
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8001860Z [command]/opt/homebrew/bin/git version
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8353730Z git version 2.56.0
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8504850Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8581080Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/a5358dbe-66b0-4032-883b-6ef07153f1de/.gitconfig'
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8597860Z Temporarily overriding HOME='/Users/runner/work/_temp/a5358dbe-66b0-4032-883b-6ef07153f1de' before making global git config changes
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8628250Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8637190Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8796870Z [command]/opt/homebrew/bin/git config --local --get remote.origin.url
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8861700Z https://github.com/christopherrbrown3/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8870140Z ##[group]Removing previously created refs, to avoid conflicts
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8873740Z [command]/opt/homebrew/bin/git rev-parse --symbolic-full-name --verify --quiet HEAD
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.8994150Z HEAD
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.9216350Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.9226710Z [command]/opt/homebrew/bin/git submodule status
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.0861580Z ##[group]Cleaning the repository
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.0871810Z [command]/opt/homebrew/bin/git clean -ffdx
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.8896280Z Removing .build/
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.8967780Z [command]/opt/homebrew/bin/git reset --hard HEAD
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9315260Z HEAD is now at e00d97d Merge e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72 into c91c250f176afca5090d17c82c4205ecffe5c793
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9324760Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9337990Z ##[group]Disabling automatic garbage collection
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9347890Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9477600Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9478160Z ##[group]Setting up auth
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9498140Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:47.9602130Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.1472280Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.1607660Z http.https://github.com/.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.1624360Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.1744510Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.3438710Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.3510920Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.5656570Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.5960560Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.5998670Z ##[group]Fetching the repository
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:48.6039860Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0440160Z [command]/opt/homebrew/bin/git rev-parse --verify --quiet e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72^{object}
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0556100Z e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0561520Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0562270Z ##[group]Determining the checkout info
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0564500Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0578590Z [command]/opt/homebrew/bin/git sparse-checkout disable
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0760020Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0841300Z ##[group]Checking out the ref
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0845330Z [command]/opt/homebrew/bin/git checkout --progress --force e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.0999710Z Previous HEAD position was e00d97d Merge e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72 into c91c250f176afca5090d17c82c4205ecffe5c793
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.1060440Z HEAD is now at e2a11a5 Merge remote-tracking branch 'origin/main' into feat/30-scope-core
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.1090430Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.2368110Z [command]/opt/homebrew/bin/git log -1 --format=%H
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.2749440Z e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3494230Z ##[group]Run test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3495750Z ^[[36;1mtest "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE_SHA"^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3496980Z ^[[36;1mtest "$(git rev-parse --is-shallow-repository)" = false^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3497900Z ^[[36;1mtest "$(git rev-list --count HEAD)" -gt 1^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3705400Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3706670Z env:
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3708410Z   EXPECTED_SOURCE_SHA: e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.3710910Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.5939210Z ##[group]Run scripts/test-packaging.sh
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.5939970Z ^[[36;1mscripts/test-packaging.sh^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.6062530Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:49.6063150Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:51.0435280Z PASS intel-smoke child=0 with usable report (exit 0)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:52.2460180Z PASS intel-smoke child=86 with usable report (exit 86)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:52.4928090Z PASS build-app depth=full (exit 86)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:52.5874760Z PASS package-zip depth=full (exit 86)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:52.7556670Z PASS build-app depth=1 (exit 65)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:52.8026510Z PASS package-zip depth=1 (exit 65)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:52.9823960Z PASS build-app depth=2 (exit 65)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:53.0152950Z PASS package-zip depth=2 (exit 65)
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:53.0714000Z ##[group]Run scripts/package-zip.sh
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:53.0714420Z ^[[36;1mscripts/package-zip.sh^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:53.0896190Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:53.0896650Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:55.4328450Z Building for production...
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:55.4413300Z [0/5] Write sources
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:55.8262700Z [2/5] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:27.4346800Z [4/6] Compiling GitHubPetCore CommandBudget.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:54.6483730Z [5/7] Compiling GitHubPet AppModel.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:54.6642890Z [5/7] Write Objects.LinkFileList
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:56.0760550Z [6/7] Linking GitHubPet
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:56.0806870Z Build of product 'GitHubPet' complete! (60.79s)
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:58.3696430Z Building for production...
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:58.3739630Z [0/5] Write sources
+build-and-test	UNKNOWN STEP	2026-11-14T20:52:58.7069770Z [2/5] Write swift-version--79AA4F9932D1E87A.txt
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:28.9504280Z [4/6] Compiling GitHubPetCore CommandBudget.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:52.4504710Z [5/7] Compiling GitHubPet AppModel.swift
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:52.4593730Z [5/7] Write Objects.LinkFileList
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:53.7284410Z [6/7] Linking GitHubPet
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:53.7337830Z Build of product 'GitHubPet' complete! (55.46s)
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.1938650Z .build/app/GitHubPet.app: replacing existing signature
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.2554010Z Built .build/app/GitHubPet.app 0.1.0 (85), release, x86_64 arm64, ad-hoc signed
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.8405600Z Packaged .build/dist/GitHubPet-0.1.0-e2a11a5-universal.zip
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.8555450Z   source: e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72 (complete history, 85 commits)
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.8557180Z   architectures: x86_64 arm64
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.8602380Z   size: 2315880 bytes
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.8668070Z   sha256: f8d94c363e3a233d2295f53bddeef10bf6c1b8b71afd6f0f99bdec8772d71a41
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9073890Z ##[group]Run plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9075840Z ^[[36;1mplutil -lint .build/app/GitHubPet.app/Contents/Info.plist^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9077410Z ^[[36;1mcodesign --verify --strict .build/app/GitHubPet.app^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9079020Z ^[[36;1mtest "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9081090Z ^[[36;1mtest -f .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/manifest.json^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9082640Z ^[[36;1mtest "$(ls .build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1/frames/*.png | wc -l)" -eq 12^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9437100Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:56.9438290Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:57.0552330Z .build/app/GitHubPet.app/Contents/Info.plist: OK
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:57.0966930Z ##[group]Run scripts/render-check.sh
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:57.0968610Z ^[[36;1mscripts/render-check.sh^[[0m
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:57.1008030Z shell: /bin/bash -e {0}
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:57.1008390Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:53:57.6750930Z GitHubPet: mascot pack mona-pet-v1 loaded from /Users/runner/work/github-pet/github-pet/.build/app/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:36.6041930Z GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:36.6044270Z GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.6480640Z GitHubPet: snapshots written to /Users/runner/work/github-pet/github-pet/.build/render-check
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.8670280Z ok   01-baseline inbox height 347 >= 256
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.8748770Z ok   02-injected inbox height 399 >= 308
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.8749140Z ok   saved preferences untouched
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.8809700Z ok   settings window height 676 >= 660
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.8888200Z ok   forces fixtures, default privacy [00-loading]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.8963820Z ok   details shown for the session [01b-details]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9028420Z ok   baseline count [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9098230Z ok   injection uses the app clock [02-injected]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9169400Z ok   injected adds one row [02-injected]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9262710Z ok   replay adds nothing [03-replayed]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9354240Z ok   partial is labelled [04-partial]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9422190Z ok   stale count unknown [05-stale]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9506470Z ok   disconnect count unknown [06-disconnected]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9609060Z ok   status loading is not none [00-loading]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9692980Z ok   fixture incident, maintenance excluded [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9780690Z ok   status stale keeps last known [05-stale]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9874890Z ok   status failure is not none [06-disconnected]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:49.9939070Z ok   status recovery is silent [07-reconnected]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0041780Z ok   new major incident announced [10c-incident-major]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0165500Z ok   resolved incidents leave quietly [10d-incidents-resolved]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0256720Z ok   mascot is one AX button [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0357010Z ok   mascot drag vs click [00-loading]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0463800Z ok   11 hover placements measured
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0644840Z ok   hover idle-64-left-edge: worst window-boundary gap 2.2 pt, arrow anchor 4.2 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0769430Z ok   hover idle-64-center: worst window-boundary gap 2.2 pt, arrow anchor 4.2 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.0895740Z ok   hover idle-128-center: worst window-boundary gap 2.5 pt, arrow anchor 6.0 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1022160Z ok   hover idle-256-center: worst window-boundary gap 3.0 pt, arrow anchor 3.0 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1143790Z ok   hover idle-128-right-edge: worst window-boundary gap 2.0 pt, arrow anchor 4.5 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1267270Z ok   hover attention-64-center: worst window-boundary gap 3.8 pt, arrow anchor 5.2 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1381750Z ok   hover attention-256-center: worst window-boundary gap 11.0 pt, arrow anchor 11.0 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1538110Z ok   hover urgent-64-left-edge: worst window-boundary gap 2.8 pt, arrow anchor 3.1 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1691570Z ok   hover urgent-64-center: worst window-boundary gap 2.8 pt, arrow anchor 3.1 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1813200Z ok   hover urgent-128-right-edge: worst window-boundary gap 4.5 pt, arrow anchor 4.5 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1901380Z ok   hover urgent-256-center: worst window-boundary gap 6.0 pt, arrow anchor 6.0 pt from art, no overlap, tags clear
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1949510Z ok   labels fit at 64
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.1996780Z ok   labels fit at 128
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2059460Z ok   labels fit at 256
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2201430Z ok   system Reduce Motion: nothing plays [attention gesture (#29, live model)]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2203270Z SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2205770Z ok   gesture-64.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2206910Z ok   gesture-128.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2207750Z ok   gesture-256.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2208960Z ok   near-touch-64-1x.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2209860Z ok   near-touch-128-2x.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2211060Z ok   near-touch-256-2x.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2363210Z ok   near-touch 64 1x: gap 1.0-3.0 pt, no overlap
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2500570Z ok   near-touch 64 2x: gap 1.0-2.0 pt, no overlap
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2622420Z ok   near-touch 128 1x: gap 1.0-3.0 pt, no overlap
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2750640Z ok   near-touch 128 2x: gap 1.5-2.5 pt, no overlap
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2876060Z ok   near-touch 256 1x: gap 1.0-3.5 pt, no overlap
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3002940Z ok   near-touch 256 2x: gap 0.9-2.9 pt, no overlap
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3070880Z ok   hover failure transparent logs without crashing [hover placement failure diagnostics]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3123030Z ok   hover failure no-candidate logs without crashing [hover placement failure diagnostics]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3180510Z ok   saved half-offscreen position keeps the badge visible [badge stays on screen (real mascot window controller)]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3257050Z ok   a drop past the edge saves where it settles [badge stays on screen (real mascot window controller)]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3311200Z ok   repeat edge drop repositions despite identical saved settings [badge stays on screen (real mascot window controller)]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3367970Z ok   drop beyond every display saves the displayed default [badge stays on screen (real mascot window controller)]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3428180Z ok   hover re-placed when content grows [hover follows content growth (real mascot window controller)]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3461870Z ok   resize 128->64 follows Settings, ground fixed
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3504250Z ok   resize 64->256 follows Settings, ground fixed
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3539310Z ok   resize 256->128 follows Settings, ground fixed
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3572910Z ok   slider 128->256 follows Settings, ground fixed
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3611210Z ok   slider 256->64 follows Settings, ground fixed
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3692040Z ok   menu-bar names Demo [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3753950Z ok   partial AX quality [04-partial]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3818880Z ok   loading count unknown [00-loading]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3878130Z ok   urgent fixture [10-urgent-static]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3940790Z ok   attention static pose [09-attention-static]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.3976270Z ok   mascot panel has tag lane
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4045440Z ok   mascot caps at 99+, inbox and AX keep the full count [count cap]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4105010Z ok   missing gh named [11-gh-override]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4167800Z ok   marker for a fresh minor incident [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4219630Z ok   AX counts the incident apart [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4270230Z ok   badge stays items only [01-baseline]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4330270Z ok   no marker when stale [05-stale]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4389650Z ok   no marker on failure [06-disconnected]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4439510Z ok   no marker while loading [00-loading]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4490980Z ok   major tier marker [10c-incident-major]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4541470Z ok   AX counts two incidents [10c-incident-major]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4590500Z ok   simulator critical announced [10e-incident-critical]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4648900Z ok   critical tier marker [10e-incident-critical]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4701610Z ok   maintenance is not an incident [10f-maintenance-ignored]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4757170Z ok   maintenance keeps the marker [10f-maintenance-ignored]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4834050Z ok   service fetch failure is not none [10g-status-fetch-fails]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4901700Z ok   no marker on service failure [10g-status-fetch-fails]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.4951970Z ok   inbox unaffected by service failure [10g-status-fetch-fails]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5016840Z ok   marker leaves on resolve [10d-incidents-resolved]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5105270Z ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5140870Z ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5179110Z ok   incident renders for design (72 PNGs)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5240390Z ok   live status offline in snapshots [11-gh-override]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5289860Z ok   missing gh is not demo [11-gh-override]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5291200Z ok   02-injected-inbox.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5292200Z ok   04-partial-inbox.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5292890Z ok   04-partial-inbox-dark.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5293730Z ok   08-privacy-hover.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5294730Z ok   05-stale-mascot.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5295500Z ok   05-stale-mascot-dark.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5296400Z ok   10-urgent-static-mascot.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5296870Z ok   00-loading-inbox.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5297170Z ok   settings.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5297540Z ok   settings-dark.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5297830Z ok   lane-64-99plus.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5298170Z ok   lane-128-99plus.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5298460Z ok   lane-256-99plus.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5298860Z ok   lane-64-99plus-dark.png rendered
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5299300Z render-check: all checks passed (.build/render-check)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5834920Z ##[group]Run actions/upload-artifact@v4
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5835450Z with:
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5835660Z   name: GitHubPet-app
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5836230Z   path: .build/dist/*.zip
+build-and-test	UNKNOWN STEP	.build/dist/*.zip.sha256
+build-and-test	UNKNOWN STEP	
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5836950Z   if-no-files-found: error
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5837180Z   retention-days: 14
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5837430Z   compression-level: 0
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5837680Z   overwrite: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5838530Z   include-hidden-files: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5839000Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:51.7371870Z (node:22111) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:51.7373680Z (Use `node --trace-deprecation ...` to show where the warning was created)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:51.7638640Z With the provided path, there will be 2 files uploaded
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:51.7664140Z Artifact name is valid!
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:51.7664760Z Root directory input is valid!
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:52.3238120Z Beginning upload of artifact content to blob storage
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:52.3858450Z (node:22111) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.2395720Z Uploaded bytes 2316352
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.3261880Z Finished uploading artifact content to blob storage!
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.3262830Z SHA256 digest of uploaded artifact zip is 029c1ee55444c928cb443ba8166d97a4877a0c086978ac76bd249b02cec1111f
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.3266600Z Finalizing artifact upload
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.6800420Z Artifact GitHubPet-app.zip successfully finalized. Artifact ID 14130599527
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.6803110Z Artifact GitHubPet-app has been successfully uploaded! Final size is 2316352 bytes. Artifact ID is 14130599527
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.6833100Z Artifact download URL: https://github.com/christopherrbrown3/github-pet/actions/runs/43639314358/artifacts/14130599527
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7264330Z ##[group]Run actions/upload-artifact@v4
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7264770Z with:
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7265000Z   name: render-check
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7265310Z   path: .build/render-check
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7265640Z   if-no-files-found: ignore
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7265900Z   compression-level: 6
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7266280Z   overwrite: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7266520Z   include-hidden-files: false
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:53.7266890Z ##[endgroup]
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:54.0391610Z (node:22222) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:54.0393730Z (Use `node --trace-deprecation ...` to show where the warning was created)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:54.0908660Z With the provided path, there will be 215 files uploaded
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:54.0909740Z Artifact name is valid!
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:54.0910280Z Root directory input is valid!
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:54.4792730Z Beginning upload of artifact content to blob storage
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:55.0399120Z (node:22222) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:56.1019960Z Uploaded bytes 8388608
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:56.4231460Z Uploaded bytes 16777216
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:56.7848210Z Uploaded bytes 23635903
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:56.8721300Z Finished uploading artifact content to blob storage!
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:56.8723910Z SHA256 digest of uploaded artifact zip is 706beb50a1c8d4b802d4a0932a1cb3eb4f5ba6fe6d5134c9cdc3f38de69b5d17
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:56.8728990Z Finalizing artifact upload
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.2683070Z Artifact render-check.zip successfully finalized. Artifact ID 14130754283
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.2685280Z Artifact render-check has been successfully uploaded! Final size is 23635903 bytes. Artifact ID is 14130754283
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.2706780Z Artifact download URL: https://github.com/christopherrbrown3/github-pet/actions/runs/43639314358/artifacts/14130754283
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.3200330Z Post job cleanup.
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.6278710Z [command]/opt/homebrew/bin/git version
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.6694750Z git version 2.56.0
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.6760620Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/9415bf64-1b93-4eb8-9379-583f802d6a05/.gitconfig'
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.6781950Z Temporarily overriding HOME='/Users/runner/work/_temp/9415bf64-1b93-4eb8-9379-583f802d6a05' before making global git config changes
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.6784590Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.6799500Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.7442220Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.7760320Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.9691050Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.9756460Z http.https://github.com/.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.9764440Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:57.9860190Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.1151980Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.1227080Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.2788080Z Post job cleanup.
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4492860Z [command]/opt/homebrew/bin/git version
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4614460Z git version 2.56.0
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4640570Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/3ed80da8-3393-43b2-bc61-4beac84b53a5/.gitconfig'
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4651950Z Temporarily overriding HOME='/Users/runner/work/_temp/3ed80da8-3393-43b2-bc61-4beac84b53a5' before making global git config changes
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4655750Z Adding repository directory to the temporary git global config as a safe directory
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4663040Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/github-pet/github-pet
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4781930Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.4874310Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.6127320Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.6257630Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.7602550Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.7715570Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:58.9103160Z Cleaning up orphan processes
+build-and-test	UNKNOWN STEP	2026-11-14T20:58:00.7023910Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

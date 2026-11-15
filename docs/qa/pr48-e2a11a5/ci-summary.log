@@ -1,0 +1,10 @@
+{"conclusion": "success", "event": "pull_request", "headSha": "e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72", "status": "completed"}
+PASS actual current-head render artifact; fixtures do not test scoped live transport
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9146940Z ◇ Test prelaunchCancellationDoesNotSpawnAChild() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9147420Z ✔ Test prelaunchCancellationDoesNotSpawnAChild() passed after 0.001 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9148100Z ◇ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() started.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9148900Z ✔ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() passed after 0.116 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:36.9152380Z ✔ Test run with 306 tests passed after 162.959 seconds.
+build-and-test	UNKNOWN STEP	2026-11-14T20:51:46.2491470Z PASS external normal-import CommandRunner: shared stdout/stderr + commands, typed/latching overflow, atomic accounting and deadline
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.2203270Z SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)
+build-and-test	UNKNOWN STEP	2026-11-14T20:57:50.5299300Z render-check: all checks passed (.build/render-check)

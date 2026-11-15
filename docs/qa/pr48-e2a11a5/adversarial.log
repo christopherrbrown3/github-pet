@@ -1,0 +1,54 @@
+HEAD e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+NORMAL import; held source/build only
+PASS one operation viewer plus metadata plus four source aliases
+PASS target values separate from query syntax
+PASS mixed overlap union preserves stable kind IDs
+PASS expected account mismatch discards all targets and rows
+PASS strict partial metadata never complete
+PASS strict partial missing never complete
+PASS strict partial badcount never complete
+PASS strict partial badrow never complete
+PASS strict partial cap never complete
+PASS strict partial errors never complete
+PASS no verified targets is failure, not empty
+PASS corrupt record fails closed and another account remains isolated
+PASS public deadline clamps to20seconds
+PASS public atomic reservation and latch
+PASS public overflow typed
+PASS scoped switched poll discarded
+PASS scoped return to A refetches independently
+PASS legacy Everything remains request-bound to response login
+PASS legacy incomplete valid JSON prefix rejected
+PASS scoped incomplete valid JSON prefix rejected
+PASS real legacy positive
+TIMING real legacy positive elapsed=0.110759417 seconds
+PASS real legacy aggregate
+TIMING real legacy aggregate elapsed=0.101201417 seconds
+PASS real legacy chatty
+TIMING real legacy chatty elapsed=0.099465208 seconds
+PASS real legacy descendant
+TIMING real legacy descendant elapsed=2.100927667 seconds
+PASS real legacy deadline
+TIMING real legacy deadline elapsed=0.257177083 seconds
+FAIL real legacy failed_valid
+TIMING real legacy failed_valid elapsed=0.150118291 seconds
+PASS real scoped positive
+TIMING real scoped positive elapsed=0.084164666 seconds
+PASS real scoped aggregate
+TIMING real scoped aggregate elapsed=0.072083125 seconds
+PASS real scoped chatty
+TIMING real scoped chatty elapsed=0.087112042 seconds
+PASS real scoped descendant
+TIMING real scoped descendant elapsed=2.086577542 seconds
+PASS real scoped deadline
+TIMING real scoped deadline elapsed=0.255376417 seconds
+PASS real scoped failed_valid
+TIMING real scoped failed_valid elapsed=0.103349792 seconds
+PASS inflight cancellation typed
+PASS independent handshake completed
+PASS cancel actual child before deadline; child gone; unrelated alive
+PASS own unrelated fixture exits cleanly
+PASS prelaunch cancellation
+RESULT checks=37 failures=1; NORMAL import, no authentication/network/UI
+
+EXIT 1

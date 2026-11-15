@@ -1,0 +1,17 @@
+HEAD e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72
+NORMAL import; held source/build only
+/Users/chris/github-pet-worktrees/qa-engineer/scripts/qa/pr48-adversarial.swift:184:24: warning: instance method 'wait' is unavailable from asynchronous contexts; Await a Task handle instead; this is an error in the Swift 6 language mode
+182 |         let gate = DispatchSemaphore(value: 0)
+183 |         let pre = Task.detached {
+184 |             guard gate.wait(timeout: .now() + 2) == .success else { throw CommandError.timedOut }
+    |                        `- warning: instance method 'wait' is unavailable from asynchronous contexts; Await a Task handle instead; this is an error in the Swift 6 language mode
+185 |             return try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"), arguments: ["-c", "printf x > \"$1\"", "qa", marker.path], timeout: 5)
+186 |         }
+
+Dispatch.DispatchSemaphore.wait:2:13: note: 'wait(timeout:)' declared here
+1 | class DispatchSemaphore {
+2 | public func wait(timeout: DispatchTime) -> DispatchTimeoutResult}
+  |             `- note: 'wait(timeout:)' declared here
+3 | 
+
+EXIT 0

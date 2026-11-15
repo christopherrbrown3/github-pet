@@ -26,6 +26,11 @@ import GitHubPetCore
             let meta = try parse(body(selected, metadataID: "R_fixture" + suffix), plan: selected)
             let fresh = try parse(body(everything, viewerID: "U_fixture_A" + suffix), plan: everything)
             let submitted = try parse(body(selected, viewerID: "U_fixture_A" + suffix), plan: selected)
+            if CommandLine.arguments.contains("--fixed") {
+                precondition(!meta.complete && meta.issues.contains(.malformedTarget(0)))
+                precondition(!fresh.complete && fresh.viewer == nil && fresh.issues.contains(.viewerUnavailable))
+                precondition(submitted.viewer == nil && submitted.issues.contains(.viewerUnavailable) && submitted.items.isEmpty)
+            }
             if meta.complete { metadataAccepted += 1 }
             if fresh.complete && fresh.viewer != nil { freshViewerAccepted += 1 }
             if submitted.issues == [.identityMismatch] && submitted.items.isEmpty { selectedMismatches += 1 }
@@ -37,5 +42,6 @@ import GitHubPetCore
             print("CONTROL invalid metadata \(id.debugDescription) rejected")
         }
         print("RESULT metadata-accepted=\(metadataAccepted)/6 fresh-Everything-viewer-accepted=\(freshViewerAccepted)/6 selected-mismatch-discard=\(selectedMismatches)/6; probe execution complete, not product PASS")
+        if CommandLine.arguments.contains("--fixed") { print("PASS all 18 full-response-path rejection assertions at fixed head") }
     }
 }
