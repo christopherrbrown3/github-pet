@@ -11,6 +11,7 @@ final class AppModel: ObservableObject {
         var now: () -> Date = Date.init
         var systemReducedMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
         var schedulesTimers = true
+        var repositoryBudget: () -> CommandBudget = { CommandBudget(timeout: 20) }
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -343,7 +344,7 @@ final class AppModel: ObservableObject {
                 apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete))
             } else { apply(outcome) }
         } else if let request = scopeSession.beginPoll() {
-            launchRepositoryPoll(request, budget: CommandBudget(timeout: 20), refetches: 1)
+            launchRepositoryPoll(request, budget: runtime.repositoryBudget(), refetches: 1)
         }
     }
 

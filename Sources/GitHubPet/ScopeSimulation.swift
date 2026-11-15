@@ -47,7 +47,10 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     }
 
     func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
-        do { try budget.check() } catch { return .failure(.cancelled) }
+        do { try budget.check() }
+        catch CommandError.timedOut { return .failure(.deadline) }
+        catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
+        catch { return .failure(.cancelled) }
         lock.lock()
         let account = self.account, count = sequence[account, default: 0], partial = self.partial
         let gate = holdNext ? DispatchSemaphore(value: 0) : nil
@@ -83,13 +86,18 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         if partial { envelope["errors"] = [] }
         guard let bytes = try? JSONSerialization.data(withJSONObject: envelope), budget.reserve(bytes.count) else { return .failure(.outputLimit) }
         if let gate {
+            // Independently real-time bounded even with a frozen unit-fixture budget clock.
+            let holdDeadline = ContinuousClock.now.advanced(by: .seconds(20))
             // Bounded, deterministic late-reply seam; no sleeps, child process or network.
             while gate.wait(timeout: .now() + 0.05) == .timedOut {
-                if budget.remaining <= 0 { return .failure(.deadline) }
+                if budget.remaining <= 0 || ContinuousClock.now >= holdDeadline { return .failure(.deadline) }
             }
             if budget.remaining <= 0 { return .failure(.deadline) }
         } else {
-            do { try budget.check() } catch { return .failure(.cancelled) }
+            do { try budget.check() }
+            catch CommandError.timedOut { return .failure(.deadline) }
+            catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
+            catch { return .failure(.cancelled) }
         }
         let parsed = ScopedResponseParser.parse(bytes, plan: plan)
         return ScopedPollResult(viewer: parsed.viewer, items: parsed.items.map {

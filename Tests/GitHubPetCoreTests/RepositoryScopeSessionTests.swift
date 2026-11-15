@@ -131,3 +131,14 @@ private final class CycleRunner: CommandRunner, @unchecked Sendable {
         #expect(result.issues == [.deadline] && !result.complete && runner.calls == 0)
     }
 }
+
+@Suite struct FixtureBudgetClockTests {
+    @Test func virtualClockCannotReachARealSubprocess() {
+        let frozen = ContinuousClock.now
+        let budget = CommandBudget(timeout: 20, now: { frozen })
+        #expect(budget.remaining == 20)
+        #expect(throws: CommandError.launchFailed("Real subprocesses require the system deadline clock")) {
+            try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/echo"), arguments: ["must-not-run"], budget: budget)
+        }
+    }
+}

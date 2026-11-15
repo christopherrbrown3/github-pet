@@ -1,19 +1,32 @@
 import Foundation
 import AppKit
 import Testing
-import GitHubPetCore
+@testable import GitHubPetCore
 @testable import GitHubPet
+
+private final class FixtureBudgetClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var instant = ContinuousClock.now
+    func now() -> ContinuousClock.Instant { lock.lock(); defer { lock.unlock() }; return instant }
+}
 
 @Suite(.serialized) @MainActor struct ScopeApplicationTests {
     private final class Inputs {
         var date = Date(timeIntervalSince1970: 1_763_208_000)
         var reducedMotion = false
+        let budgetClock = FixtureBudgetClock()
+        var expireNextBudget = false
     }
     private func model(inputs: Inputs = Inputs()) -> AppModel {
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
         return AppModel(options: options, runtime: AppModel.Runtime(now: { inputs.date },
-            systemReducedMotion: { inputs.reducedMotion }, schedulesTimers: false))
+            systemReducedMotion: { inputs.reducedMotion }, schedulesTimers: false,
+            repositoryBudget: {
+                let timeout: TimeInterval = inputs.expireNextBudget ? 0 : 20
+                inputs.expireNextBudget = false
+                return CommandBudget(timeout: timeout, now: { inputs.budgetClock.now() })
+            }))
     }
     private func wait(_ predicate: () -> Bool) async throws {
         let end = ContinuousClock.now.advanced(by: .seconds(3))
@@ -28,6 +41,8 @@ import GitHubPetCore
         let inputs = Inputs(); inputs.reducedMotion = true
         let app = model(inputs: inputs); defer { app.cleanupScopeSimulation() }
         try await settled(app)
+        #expect(app.dataState == .ready && app.items.count == 1 && app.lastSuccess != nil, "new-event test requires a complete initial baseline")
+        print("Scope fixture baseline before injection: state=\(app.dataState), rows=\(app.items.count), scopeQuality=\(app.scopeQuality ?? "none")")
         app.simulateScopeInject(); try await settled(app)
         app.injectServiceIncident(.major)
         #expect(app.unseenCount == 1)
@@ -85,6 +100,40 @@ import GitHubPetCore
                 if reduced || elapsed == 8 { #expect(app.markerPhase(at: inputs.date, reduced: reduced) == .still) }
             }
         }
+    }
+    @Test func timedOutInitialFetchMakesNextSnapshotASilentBaselineThenNewOnce() async throws {
+        let inputs = Inputs(); inputs.reducedMotion = true; inputs.expireNextBudget = true
+        let app = model(inputs: inputs); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        #expect(app.items.isEmpty && app.lastSuccess == nil)
+        #expect(app.dataState != .empty && app.scopeQuality?.contains("time limit") == true)
+        print("Deadline reproduction initial state=\(app.dataState), rows=\(app.items.count), quality=\(app.scopeQuality ?? "none")")
+        app.simulateScopeInject(); try await settled(app)
+        #expect(app.items.count == 2 && app.dataState == .ready)
+        #expect(app.unseenCount == 0, "first successful reply after timeout establishes a silent baseline")
+        app.simulateScopeInject(); try await settled(app)
+        #expect(app.items.count == 3 && app.unseenCount == 1, "motion does not erase a genuinely new comparable event")
+        #expect(app.activeClip == nil)
+    }
+    @Test func actualHostMotionPathInNormalFixturesRetainsBothUnseenSources() {
+        let name = "scope.host-motion.tests.\(UUID().uuidString)"
+        defer { UserDefaults(suiteName: name)?.removePersistentDomain(forName: name) }
+        let options = LaunchOptions.parse(arguments: ["app", "--fixtures", "--placeholder", "--defaults-suite", name], environment: [:])
+        // Keep the production NSWorkspace provider: CI reports this actual host input true.
+        let app = AppModel(options: options, runtime: AppModel.Runtime(
+            now: { Date(timeIntervalSince1970: 1_763_208_000) }, schedulesTimers: false))
+        #expect(!app.simulatesScope && app.dataState == .ready)
+        #expect(app.effectiveReducedMotion == NSWorkspace.shared.accessibilityDisplayShouldReduceMotion)
+        app.injectEntitlementEvent()
+        #expect(app.unseenCount == 1)
+        app.injectServiceIncident(.major)
+        #expect(!app.unseenIncidents.isEmpty)
+        #expect(app.showsAlertIcon && app.incidentMarker?.tier == .major)
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            #expect(app.activeClip == nil)
+            #expect(app.markerBurst == nil)
+        }
+        print("Actual host motion=\(app.effectiveReducedMotion), normal production fixture path: repository unseen=\(app.unseenCount), incident unseen=\(app.unseenIncidents.count)")
     }
     @Test func launchFlagIsExplicitAndIsolatedAndKnownSelectedIsFirstRequest() async throws {
         #expect(!LaunchOptions.parse(arguments: ["app"], environment: [:]).simulatesMonitoringScope)
