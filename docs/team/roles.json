@@ -4,7 +4,7 @@
       "name": "product-manager",
       "terminal": "t1r",
       "runtime": "codex",
-      "assignment": "Review #44 gates and #30 bounded core implementation; manage continued scope-feature work",
+      "assignment": "PR48 corrected scope core acceptance; PR46 planning checkpoint; next native scope wiring only after core gates",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": null,
       "sessionId": null,
@@ -21,7 +21,7 @@
       "name": "developer",
       "terminal": "t1s",
       "runtime": "codex",
-      "assignment": "PR47 exactbb44d7b and draftPR48 exact940231d held for CI/review/QA; immutable separate builds, no UI expansion yet",
+      "assignment": "Hold PR48 exacte2a11a5 immutable completed build; report greenCI43639314358/final review; no UI expansion yet",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -49,7 +49,7 @@
       "name": "qa-engineer",
       "terminal": "t1t",
       "runtime": "codex",
-      "assignment": "Resumed same Sol/medium after reported allowance reset; independent PR47 exactbb44d7b, then PR48 core/transport exact940231d",
+      "assignment": "Resumed same Sol/medium after Nov14 reset elapsed; finish independent PR48 exacte2a11a5 core/transport/API/JSON/actualCI evidence",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -61,7 +61,7 @@
       "verification": "launch argv, visible TUI, READY response"
     }
   ],
-  "observedDate": "2026-11-14",
+  "observedDate": "2026-11-15",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history. Chris subsequently said keep working: PM may dispatch ready backlog tasks; previous idle/no-expansion checkpoint is historical. Saved mainb0127f0 artifacts remain immutable. No new release/tag authorization. QA resumed same t1t Sol/medium after reported allowance reset elapsed and actual response confirmed at20:19UTC; no restart/model switch or premature retry."
+  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history. Chris subsequently said keep working: PM may dispatch ready backlog tasks; previous idle/no-expansion checkpoint is historical. Saved mainb0127f0 artifacts remain immutable. No new release/tag authorization. QA resumed same t1t Sol/medium after reported allowance reset elapsed and actual response confirmed at20:19UTC; no restart/model switch or premature retry. On Nov15 both same Codex sessions resumed after Nov14 7:10PM reset elapsed (clock16:40UTC), responses confirmed. PR47 mergedc91c250; PR48e2a11a5 greenCI/finalQA ongoing."
 }
