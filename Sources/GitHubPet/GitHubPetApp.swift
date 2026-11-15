@@ -43,6 +43,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var model = AppModel(options: options)
     private var mascot: MascotWindowController?
 
+    func applicationWillTerminate(_ notification: Notification) {
+        model.cleanupScopeSimulation()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Menu-bar utility: no Dock icon even when run straight from `swift run`.
         NSApp.setActivationPolicy(.accessory)

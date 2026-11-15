@@ -60,6 +60,14 @@ struct InboxView: View {
                 Text("Demo data (fixtures): invented items, not from GitHub.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Text(model.scopeSummary).font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("inbox.monitoringScope")
+            if let quality = model.scopeQuality {
+                Text(quality).font(.caption).accessibilityIdentifier("inbox.scopeQuality")
+            }
+            if model.simulatesScope {
+                Text("Simulated/Demo accounts · offline · temporary settings").font(.caption)
+            }
             HStack(spacing: 4) {
                 // Meaning is carried by primary-label words plus a symbol, never by colour
                 // alone (coloured caption text failed 4.5:1 contrast in light mode).
@@ -160,7 +168,8 @@ struct InboxView: View {
                 }
             }
             .fixedSize()
-            if model.usingFixtures {
+            if model.simulatesScope { ScopeSimulationMenu(model: model) }
+            if model.usingFixtures && !model.simulatesScope {
                 SimulatorMenu(model: model).fixedSize()
             }
             Spacer()
@@ -367,6 +376,36 @@ struct SimulatorMenu: View {
             }
             Divider()
             Button("Reset baseline") { model.resetBaseline() }
+        }
+    }
+}
+
+/// Visible only for the explicit isolated offline launch flag; not the scope editor.
+struct ScopeSimulationMenu: View {
+    @ObservedObject var model: AppModel
+    var body: some View {
+        Menu("Simulated scope") {
+            Text(model.scopeSimulationStatus)
+            Text("Discarded late replies: \(model.discardedScopeReplies)")
+            Button("Account A") { model.simulateScopeAccount(false) }
+            Button("Account B") { model.simulateScopeAccount(true) }
+            Divider()
+            Button("Apply Selected (simulated validation)") { model.simulateScopeApply(true) }
+            Button("Apply Everything (simulated validation)") { model.simulateScopeApply(false) }
+            Button("Hold next repository reply") { model.simulateScopeHold() }
+            Button("Deliver held replies") { model.simulateScopeDeliver() }
+            Button("Inject new repository row") { model.simulateScopeInject() }
+            Button("Partial replies") { model.simulateScopePartial(true) }
+            Button("Complete replies / recover") { model.simulateScopePartial(false) }
+            Divider()
+            Button("Reload saved A (known viewer)") { model.simulateScopeReload() }
+            Button("Reload saved A (unknown viewer)") { model.simulateScopeReload(forgetViewer: true) }
+            Button("Corrupt saved A and reload") { model.simulateScopeReload(corrupt: true) }
+            Button("Repair saved selections") { model.simulateScopeRepair() }
+            Divider()
+            Button("Inject minor public incident") { model.injectServiceIncident(.minor) }
+            Button("Inject major public incident") { model.injectServiceIncident(.major) }
+            Button("Resolve public incidents") { model.resolveServiceIncidents() }
         }
     }
 }

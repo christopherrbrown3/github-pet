@@ -143,16 +143,19 @@ public enum AccessibilityText {
 /// events jump the queue; duplicate IDs are ignored; clips never loop.
 /// At most one event gesture at a time (#29). A batch of new events plays one gesture, led by its
 /// most severe event; events arriving while it plays merge into it (no restart, no queue, no
-/// backlog). Only an urgent batch preempts an attention gesture, and the interrupted gesture is
-/// not replayed. After a gesture ends, a later batch may start a new one.
+/// backlog). Each source retains at most one clip at its original time bounds. Urgency chooses
+/// the visible clip; a scope reset can remove repositories without restarting public incidents.
 public struct EventClipQueue: Sendable {
+    public enum Origin: Hashable, Sendable { case repository, serviceIncident }
     public struct Clip: Equatable, Sendable {
         public var event: InboxEvent
+        public var origin: Origin
         public var startedAt: Date
         public var endsAt: Date
 
-        init(event: InboxEvent, startedAt: Date) {
+        init(event: InboxEvent, startedAt: Date, origin: Origin = .repository) {
             self.event = event
+            self.origin = origin
             self.startedAt = startedAt
             self.endsAt = startedAt.addingTimeInterval(EventClipQueue.duration(of: event.severity == .critical ? .urgent : .attention))
         }
@@ -166,33 +169,44 @@ public struct EventClipQueue: Sendable {
         state == .attention ? TimeInterval(AttentionGesture.friendlyDoubleWave.durationMs) / 1000 : 2.0
     }
 
-    public private(set) var active: Clip?
+    // At most two independently timed clips. Clearing repositories must not discard a
+    // concurrent incident that merged behind a higher-priority repository gesture.
+    private var byOrigin: [Origin: Clip] = [:]
+    public var active: Clip? {
+        let repository = byOrigin[.repository], service = byOrigin[.serviceIncident]
+        guard let repository else { return service }
+        guard let service else { return repository }
+        if repository.event.severity != service.event.severity {
+            return repository.event.severity > service.event.severity ? repository : service
+        }
+        return repository.startedAt < service.startedAt ? repository : service
+    }
 
     public init() {}
 
     /// Start a gesture for a batch of new events, or merge them into the one playing. With motion
     /// reduced or alerts disallowed nothing plays: the inbox and static mood still show the change,
     /// and nothing is replayed later.
-    public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool) {
+    public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool, origin: Origin = .repository) {
         tick(now: now)
         guard playable, let top = events.map(\.severity).max(),
               let lead = events.first(where: { $0.severity == top }) else { return }
-        if let current = active {
-            if lead.severity > current.event.severity { active = Clip(event: lead, startedAt: now) }
+        if let current = byOrigin[origin] {
+            if lead.severity > current.event.severity { byOrigin[origin] = Clip(event: lead, startedAt: now, origin: origin) }
             return
         }
-        active = Clip(event: lead, startedAt: now)
+        byOrigin[origin] = Clip(event: lead, startedAt: now, origin: origin)
     }
 
     /// Advance time; returns the clip that should be showing, if any.
     @discardableResult
     public mutating func tick(now: Date) -> Clip? {
-        if let current = active, now >= current.endsAt { active = nil }
+        byOrigin = byOrigin.filter { now < $0.value.endsAt }
         return active
     }
 
-    public mutating func clear() {
-        active = nil
+    public mutating func clear(origin: Origin? = nil) {
+        if let origin { byOrigin.removeValue(forKey: origin) } else { byOrigin.removeAll() }
     }
 }
 

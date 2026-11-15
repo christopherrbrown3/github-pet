@@ -66,6 +66,9 @@ public struct ScopedPollResult: Equatable, Sendable {
     public let items: [InboxItem]
     public let issues: [ScopedFetchIssue]
     public let successfulSources: Int
+    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int) {
+        self.viewer = viewer; self.items = items; self.issues = issues; self.successfulSources = successfulSources
+    }
     public var complete: Bool { viewer != nil && successfulSources > 0 && issues.isEmpty }
     public var outcome: FetchOutcome {
         if issues.contains(.ghMissing) { return .failure(.ghMissing) }
@@ -73,7 +76,7 @@ public struct ScopedPollResult: Equatable, Sendable {
         guard viewer != nil, successfulSources > 0 else { return .failure(.failed("Monitoring scope could not be verified")) }
         return .snapshot(items: items, complete: complete)
     }
-    static func failure(_ issue: ScopedFetchIssue, viewer: ScopeViewer? = nil) -> Self {
+    public static func failure(_ issue: ScopedFetchIssue, viewer: ScopeViewer? = nil) -> Self {
         Self(viewer: viewer, items: [], issues: [issue], successfulSources: 0)
     }
 }
@@ -186,8 +189,12 @@ public enum ScopedResponseParser {
     }
 }
 
-/// Opt-in core API for the later AppModel slice. Existing GhClient callers remain Everything.
-public struct ScopedGhClient: Sendable {
+/// Account-bound repository polling. Callers can share one budget across bootstrap/refetch.
+public protocol ScopedPolling: Sendable {
+    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult
+}
+
+public struct ScopedGhClient: ScopedPolling {
     public var locator: GhLocator
     public var runner: CommandRunner
     public var timeout: TimeInterval
@@ -199,7 +206,9 @@ public struct ScopedGhClient: Sendable {
         return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
     }
     public func fetch(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil) -> ScopedPollResult {
-        let budget = CommandBudget(timeout: timeout)
+        fetch(scope: scope, expectedAccount: expectedAccount, budget: CommandBudget(timeout: timeout))
+    }
+    public func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
         guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount) else {
             return .failure(.identityRequired)
         }

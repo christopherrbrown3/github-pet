@@ -7,6 +7,10 @@ import GitHubPetCore
 final class AppModel: ObservableObject {
     @Published private(set) var items: [InboxItem] = []
     @Published private(set) var dataState: DataState = .loading
+    @Published private(set) var scopeSummary = "Monitoring scope · resolving account"
+    @Published private(set) var scopeQuality: String?
+    @Published private(set) var scopeSimulationStatus = ""
+    @Published private(set) var discardedScopeReplies = 0
     @Published private(set) var lastSuccess: Date?
     @Published private(set) var unseen = UnseenItems()
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
@@ -44,24 +48,48 @@ final class AppModel: ObservableObject {
     private let pollsPeriodically: Bool
     private let engine = InboxEngine()
     private let simulator = FixtureSimulator()
-    private let ghClient = GhClient()
+    private let scopedClient: any ScopedPolling
+    private let scopeStore: ScopeSelectionStore
+    private let scopeSession: RepositoryScopeSession
+    private let scopeSimulation: ScopeSimulation?
+    private let scopeDefaults: UserDefaults
+    private let simulationDefaultsSuite: String?
+    private var repositoryTask: Task<Void, Never>?
     private var clips = EventClipQueue()
     private var pollTimer: Timer?
     private var tickTimer: Timer?
-    private var generations = SourceGenerations()
-    private var accounts = AccountWatch()
     // GitHub Status (#11): fixtures by default; githubstatus.com only with the live source.
     private let serviceMonitor = ServiceStatusMonitor()
     private let serviceSimulator = ServiceStatusSimulator()
     private let serviceClient: ServiceStatusClient
     private var serviceGenerations = SourceGenerations()
 
-    init(options: LaunchOptions) {
+    init(options supplied: LaunchOptions) {
+        var options = supplied
+        // Defense at construction too: programmatic test callers cannot enable simulation
+        // while retaining the real defaults domain or selecting a live transport.
+        if options.simulatesMonitoringScope { options.forcedSource = "gh"; options.resetSettings = true }
+        if options.simulatesMonitoringScope && options.defaultsSuite?.hasPrefix("dev.github-pet.scope-simulation.") != true {
+            options.defaultsSuite = "dev.github-pet.scope-simulation.\(UUID().uuidString)"
+        }
         store = SettingsStore(defaults: options.userDefaults)
+        simulationDefaultsSuite = options.simulatesMonitoringScope ? options.defaultsSuite : nil
+        scopeDefaults = options.userDefaults
+        scopeStore = ScopeSelectionStore(defaults: options.userDefaults)
+        scopeSession = RepositoryScopeSession(store: scopeStore)
+        if options.simulatesMonitoringScope {
+            try? ScopeSimulation.seed(options.userDefaults)
+            let simulation = ScopeSimulation()
+            scopeSimulation = simulation
+            scopedClient = simulation
+        } else {
+            scopeSimulation = nil
+            scopedClient = ScopedGhClient()
+        }
         clockOffset = options.clockOffset
         // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
         // would refresh a step it just made stale (flaky render-check).
-        pollsPeriodically = options.snapshotDirectory == nil
+        pollsPeriodically = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
         if options.resetSettings { store.reset() }
         var loaded = store.load()
         switch options.forcedSource {
@@ -72,7 +100,7 @@ final class AppModel: ObservableObject {
         settings = loaded
         // Snapshot evidence must be deterministic and never contain live data: with the live
         // source selected there, GitHub Status fails at once instead of reaching the network.
-        serviceClient = options.snapshotDirectory == nil
+        serviceClient = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
             ? ServiceStatusClient() : ServiceStatusClient(transport: OfflineStatusTransport())
 
         if let dir = options.resolvedPackDirectory() {
@@ -204,9 +232,9 @@ final class AppModel: ObservableObject {
     /// A new source starts empty and Loading: rows, counts and baseline from the previous
     /// source (e.g. Demo fixtures or another account) are never shown as this source's data.
     private func switchSource() {
-        generations.switchSource()
         serviceGenerations.switchSource()
-        accounts.reset()
+        repositoryTask?.cancel(); repositoryTask = nil
+        if settings.dataSource == .fixtures { scopeSession.startDemo() } else { scopeSession.startLive() }
         resetSession()
         resetServiceStatus()
         pollTimer?.invalidate()
@@ -236,23 +264,75 @@ final class AppModel: ObservableObject {
 
     func refresh() {
         refreshServiceStatus()
-        switch settings.dataSource {
-        case .fixtures:
-            apply(simulator.poll())
-        case .githubCLI:
-            guard let generation = generations.beginFetch() else { return }
-            let client = ghClient
-            Task.detached {
-                let fetch = client.fetchWithAccount()
-                await MainActor.run {
-                    // Results from a session that has since been switched away are dropped.
-                    guard self.generations.finishFetch(generation) else { return }
-                    // `gh auth switch` keeps the mode but changes whose data this is: start a
-                    // fresh baseline so the new account's existing items are not announced.
-                    if self.accounts.observe(fetch.account) { self.resetSession() }
-                    self.apply(fetch.outcome)
-                }
+        refreshRepositoriesOnly()
+    }
+
+    private func resetRepositories() {
+        engine.reset()
+        unseen.removeAll()
+        clips.clear(origin: .repository)
+        activeClip = clips.active
+        detailsRevealed = false
+        blockedLinkNote = nil
+    }
+
+    private func launchRepositoryPoll(_ request: ScopePollRequest, budget: CommandBudget, refetches: Int) {
+        let client = scopedClient
+        repositoryTask = Task.detached { [weak self] in
+            let result = client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+            await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
+        }
+    }
+
+    private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
+                                       budget: CommandBudget, refetches: Int) {
+        guard scopeSession.isCurrent(request) else {
+            if scopeSimulation != nil { discardedScopeReplies += 1 }
+            return
+        }
+        repositoryTask = nil
+        let reception = scopeSession.receive(result, for: request)
+        if reception.resetRepositories { resetRepositories() }
+        switch reception.action {
+        case .discard: break
+        case .apply(let outcome): apply(outcome)
+        case .refetch:
+            guard refetches > 0 else {
+                apply(scopeSession.failCycle(.identityMismatch)); return
             }
+            guard budget.remaining > 0 else {
+                apply(scopeSession.failCycle(.deadline)); return
+            }
+            sync(now: clock())
+            guard let next = scopeSession.beginPoll() else { return }
+            launchRepositoryPoll(next, budget: budget, refetches: refetches - 1)
+        }
+        sync(now: clock())
+    }
+
+    /// Repository-only commit seam for the later validated Settings draft controller.
+    @discardableResult
+    func applyRepositoryScope(_ scope: MonitoringScope, identity: ScopeIdentity, generation: Int) -> Bool {
+        do {
+            guard try scopeSession.apply(scope, for: identity, generation: generation) else { return false }
+            repositoryTask?.cancel()
+            repositoryTask = nil
+            resetRepositories()
+            sync(now: clock())
+            refreshRepositoriesOnly()
+            return true
+        } catch { return false }
+    }
+
+    private func refreshRepositoriesOnly() {
+        if settings.dataSource == .fixtures {
+            guard let scope = scopeSession.scope else { apply(scopeSession.configurationFailure); return }
+            let outcome = simulator.poll()
+            if case .snapshot(let items, let complete) = outcome {
+                apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete))
+            } else { apply(outcome) }
+        } else if let request = scopeSession.beginPoll() {
+            launchRepositoryPoll(request, budget: CommandBudget(timeout: 20), refetches: 1)
         }
     }
 
@@ -266,6 +346,7 @@ final class AppModel: ObservableObject {
     }
 
     private func refreshServiceStatus() {
+        if scopeSimulation != nil { applyServiceStatus(serviceSimulator.poll()); return }
         switch settings.dataSource {
         case .fixtures:
             applyServiceStatus(serviceSimulator.poll())
@@ -292,7 +373,7 @@ final class AppModel: ObservableObject {
             unseenIncidents.formIntersection(serviceMonitor.incidents.map(\.inboxItem.id))
         }
         let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date)
-        clips.enqueue(events, now: date, playable: playable)
+        clips.enqueue(events, now: date, playable: playable, origin: .serviceIncident)
         // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
         if playable && !events.isEmpty { markerBurst = IncidentMarker.Burst(start: date, fromTier: shownBefore) }
         sync(now: date)
@@ -321,6 +402,9 @@ final class AppModel: ObservableObject {
 
     private func sync(now date: Date) {
         now = date
+        scopeSummary = scopeSession.summary
+        scopeQuality = scopeSession.qualitySummary
+        scopeSimulationStatus = scopeSimulation?.status ?? ""
         if items != engine.items { items = engine.items }
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
@@ -379,7 +463,55 @@ final class AppModel: ObservableObject {
 
     // MARK: Fixture simulator hooks
 
-    var usingFixtures: Bool { settings.dataSource == .fixtures }
+    var usingFixtures: Bool { settings.dataSource == .fixtures || scopeSimulation != nil }
+    var simulatesScope: Bool { scopeSimulation != nil }
+    var repositoryFetchInFlight: Bool { repositoryTask != nil }
+    var simulatedHeldReplies: Int { scopeSimulation?.heldCount ?? 0 }
+    var simulatedRequests: [ScopeSimulation.Request] { scopeSimulation?.requestHistory ?? [] }
+    var monitoringScopeIdentity: ScopeIdentity? { scopeSession.identity }
+    var monitoringScopeGeneration: Int { scopeSession.generation }
+    var activeMonitoringScope: MonitoringScope? { scopeSession.scope }
+
+    func cleanupScopeSimulation() {
+        guard let suite = simulationDefaultsSuite, suite.hasPrefix("dev.github-pet.scope-simulation.") else { return }
+        repositoryTask?.cancel(); repositoryTask = nil
+        scopeSimulation?.releaseReplies()
+        pollTimer?.invalidate(); tickTimer?.invalidate()
+        scopeDefaults.removePersistentDomain(forName: suite)
+    }
+
+    // Explicit offline launch only; these controls never exist in a normal session.
+    func simulateScopeAccount(_ isB: Bool) {
+        guard let simulation = scopeSimulation else { return }
+        simulation.switchAccount(isB ? ScopeSimulation.accountB : ScopeSimulation.accountA)
+        repositoryTask?.cancel(); scopeSession.invalidate()
+        refreshRepositoriesOnly()
+    }
+    func simulateScopeApply(_ selected: Bool) {
+        guard scopeSimulation != nil, let identity = scopeSession.identity else { return }
+        let scope = identity == .github(ScopeSimulation.accountB) ? ScopeSimulation.selectedB : ScopeSimulation.selectedA
+        _ = applyRepositoryScope(selected ? scope : .everything, identity: identity, generation: scopeSession.generation)
+    }
+    func simulateScopeHold() {
+        guard let simulation = scopeSimulation else { return }
+        simulation.holdNextReply(); refreshRepositoriesOnly()
+    }
+    func simulateScopeDeliver() { scopeSimulation?.releaseReplies() }
+    func simulateScopeInject() { scopeSimulation?.inject(); refreshRepositoriesOnly() }
+    func simulateScopePartial(_ on: Bool) { scopeSimulation?.setPartial(on); refreshRepositoriesOnly() }
+    func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false) {
+        guard let simulation = scopeSimulation else { return }
+        if corrupt { ScopeSimulation.corruptA(scopeDefaults) }
+        if forgetViewer { scopeStore.rememberAccount(nil) }
+        simulation.switchAccount(ScopeSimulation.accountA)
+        repositoryTask?.cancel(); scopeSession.startLive(); resetRepositories()
+        sync(now: clock()); refreshRepositoriesOnly()
+    }
+    func simulateScopeRepair() {
+        guard scopeSimulation != nil else { return }
+        try? ScopeSimulation.seed(scopeDefaults)
+        simulateScopeReload()
+    }
 
     func injectEntitlementEvent() {
         guard usingFixtures else { return }

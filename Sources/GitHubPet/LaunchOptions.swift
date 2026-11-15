@@ -12,6 +12,7 @@ import GitHubPetCore
 ///   GITHUB_PET_GH_PATH=<path>     use this gh executable (missing/fake gh testing)
 ///   --render-snapshots <dir>      render a fixture scenario offscreen to PNG + AX report, then quit;
 ///                                 always fixtures, default settings and a throwaway preferences suite
+///   --simulate-monitoring-scope  opt-in offline scope controls, fresh throwaway defaults, no network
 ///   --placeholder                 draw the native placeholder instead of the bundled pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
 struct LaunchOptions {
@@ -22,6 +23,8 @@ struct LaunchOptions {
     var packDirectory: URL?
     var forcePlaceholder = false
     var snapshotDirectory: URL?
+    /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
+    var simulatesMonitoringScope = false
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
 
@@ -46,6 +49,7 @@ struct LaunchOptions {
             case "--placeholder": options.forcePlaceholder = true
             case "--render-snapshots":
                 if let dir = iterator.next() { options.snapshotDirectory = URL(fileURLWithPath: dir, isDirectory: true) }
+            case "--simulate-monitoring-scope": options.simulatesMonitoringScope = true
             case "--fixtures": options.forcedSource = "fixtures"
             case "--gh": options.forcedSource = "gh"
             case "--inject-event-after":
@@ -60,7 +64,13 @@ struct LaunchOptions {
         // Snapshot evidence is shared, so it must never contain live GitHub data or touch the
         // user's preferences: force Demo fixtures and fresh settings in a throwaway suite,
         // whatever other flags or saved settings say. Applied before AppModel exists.
+        if options.simulatesMonitoringScope {
+            options.forcedSource = "gh"
+            options.defaultsSuite = "dev.github-pet.scope-simulation.\(ProcessInfo.processInfo.processIdentifier).\(UUID().uuidString)"
+            options.resetSettings = true
+        }
         if options.snapshotDirectory != nil {
+            options.simulatesMonitoringScope = false
             options.forcedSource = "fixtures"
             options.defaultsSuite = Self.snapshotDefaultsSuite
             options.resetSettings = true
