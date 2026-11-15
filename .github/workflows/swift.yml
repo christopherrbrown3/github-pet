@@ -31,7 +31,12 @@ jobs:
       - name: Test
         timeout-minutes: 10
         # The suite is swift-testing only; skip the empty XCTest pass.
-        run: scripts/test.sh --disable-xctest
+        run: scripts/test.sh --disable-xctest --skip '^GitHubPetCoreTests[.]ProcessRunnerTests/descendantHoldingThePipeDoesNotLeakReadsOrDescriptors\(\)$'
+      - name: Descriptor cleanup (isolated process)
+        timeout-minutes: 2
+        # /dev/fd counts are process-wide; other suites may launch children or initialize
+        # AppKit descriptors. Keep the exact assertion in a process with this test alone.
+        run: scripts/test.sh --skip-build --disable-xctest --filter '^GitHubPetCoreTests[.]ProcessRunnerTests/descendantHoldingThePipeDoesNotLeakReadsOrDescriptors\(\)$'
       - name: External public CommandRunner API
         timeout-minutes: 2
         run: scripts/test-public-budget.sh
