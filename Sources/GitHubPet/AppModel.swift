@@ -64,6 +64,11 @@ final class AppModel: ObservableObject {
     private let scopeStore: ScopeSelectionStore
     private let scopeSession: RepositoryScopeSession
     private let scopeSimulation: ScopeSimulation?
+    /// Settings draft validation/discovery: gh normally, offline only in the simulated launch.
+    private let scopeAccess: any ScopeAccessChecking
+    let scopeAccessSimulation: ScopeAccessSimulation?
+    /// Settings › Monitoring scope draft controller (PR B).
+    lazy var scopeEditor = ScopeEditor(model: self, access: scopeAccess)
     private let scopeDefaults: UserDefaults
     private let simulationDefaultsSuite: String?
     private var repositoryTask: Task<Void, Never>?
@@ -101,9 +106,14 @@ final class AppModel: ObservableObject {
             let simulation = ScopeSimulation(holdLimit: runtime.scopeSimulationHoldLimit)
             scopeSimulation = simulation
             scopedClient = simulation
+            let access = ScopeAccessSimulation { simulation.account }
+            scopeAccessSimulation = access
+            scopeAccess = access
         } else {
             scopeSimulation = nil
             scopedClient = ScopedGhClient()
+            scopeAccessSimulation = nil
+            scopeAccess = ScopeGhAccess()
         }
         clockOffset = options.clockOffset
         // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
@@ -459,6 +469,7 @@ final class AppModel: ObservableObject {
         let burst = IncidentMarker.retained(markerBurst, marker: incidentMarker)
         if burst != markerBurst { markerBurst = burst }
         if activeClip != clips.active { activeClip = clips.active }
+        scopeEditor.observeActive()
     }
 
     // MARK: Actions
@@ -544,12 +555,16 @@ final class AppModel: ObservableObject {
     var monitoringScopeIdentity: ScopeIdentity? { scopeSession.identity }
     var monitoringScopeGeneration: Int { scopeSession.generation }
     var activeMonitoringScope: MonitoringScope? { scopeSession.scope }
+    var monitoringScopeConfigurationError: Bool { scopeSession.configurationError }
+    /// Display only, shown in explicit Settings; persistence is keyed by node ID.
+    var monitoringScopeViewerLogin: String? { scopeSession.viewer?.login }
 
     func cleanupScopeSimulation() {
         guard let suite = simulationDefaultsSuite, suite.hasPrefix("dev.github-pet.scope-simulation.") else { return }
         scopeSession.invalidate()
         repositoryTask?.cancel(); repositoryTask = nil
         scopeSimulation?.releaseReplies()
+        scopeAccessSimulation?.releaseValidations()
         pollTimer?.invalidate(); tickTimer?.invalidate()
         // The domain is in-memory (EphemeralDefaults), so this clears everything; nothing was on disk.
         scopeDefaults.removePersistentDomain(forName: suite)
@@ -573,8 +588,11 @@ final class AppModel: ObservableObject {
         simulation.holdNextReply(count)
         if refresh { refreshRepositoriesOnly() }
     }
-    func simulateScopeDeliver() { scopeSimulation?.releaseReplies() }
+    func simulateScopeDeliver() { scopeSimulation?.releaseReplies(); scopeAccessSimulation?.releaseValidations() }
     func simulateScopeDeliverOne(newest: Bool) { scopeSimulation?.releaseReply(newest: newest) }
+    func simulateScopeDiscovery(_ mode: ScopeAccessSimulation.DiscoveryMode) { scopeAccessSimulation?.setDiscovery(mode); objectWillChange.send() }
+    func simulateScopeValidation(_ mode: ScopeAccessSimulation.ValidationMode) { scopeAccessSimulation?.setValidation(mode); objectWillChange.send() }
+    func simulateScopeHoldValidation() { scopeAccessSimulation?.holdNextValidation(); objectWillChange.send() }
     func simulateScopeInject() {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.inject(); refreshRepositoriesOnly()

@@ -168,7 +168,7 @@ struct InboxView: View {
                 }
             }
             .fixedSize()
-            if model.simulatesScope { ScopeSimulationMenu(model: model) }
+            if model.simulatesScope { ScopeSimulationMenu(model: model); ScopeSettingsSimulationMenu(model: model) }
             if model.usingFixtures && !model.simulatesScope {
                 SimulatorMenu(model: model).fixedSize()
             }

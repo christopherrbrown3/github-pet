@@ -122,9 +122,9 @@ public final class RepositoryScopeSession {
         return .failure(.failed(issue == .deadline ? "Monitoring scope request budget exhausted" : "Monitoring scope could not be verified"))
     }
 
-    /// Explicit configuration error: never empty, never Everything. It must not promise a
-    /// repair UI this build does not ship (the scope editor is deferred).
-    public var configurationFailure: FetchOutcome { .failure(.failed("Saved monitoring scope is invalid; monitoring is paused and has not broadened")) }
+    /// Explicit configuration error: never empty, never Everything. Settings › Monitoring scope
+    /// opens it as an empty Selected draft for correction.
+    public var configurationFailure: FetchOutcome { .failure(.failed("Saved monitoring scope is invalid; monitoring is paused and has not broadened. Correct it in Settings › Monitoring scope")) }
 
     public var summary: String {
         if configurationError { return "Monitoring scope · configuration error" }
@@ -139,7 +139,7 @@ public final class RepositoryScopeSession {
 
     /// Intentionally contains no account/target names, query text or raw transport diagnostics.
     public var qualitySummary: String? {
-        if configurationError { return "Saved selection needs correction; monitoring has not broadened." }
+        if configurationError { return "Saved selection needs correction in Settings › Monitoring scope; monitoring has not broadened." }
         guard !issues.isEmpty else { return nil }
         if issues.contains(.identityMismatch) { return "Account changed; restoring its monitoring scope." }
         if issues.contains(.signedOut) { return "Sign in with GitHub CLI to verify this scope." }
