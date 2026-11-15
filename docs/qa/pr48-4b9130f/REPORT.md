@@ -1,6 +1,6 @@
 # PR48 independent exact-head QA checkpoint
 
-Head **`4b9130f82b1299929b1bc0c14d1f446cab4f91a1`**, CI43740004113 pending/supporting only after the next fix. **FAIL/HOLD for independently reproduced EMU viewer-display compatibility bug.** Affected scoped errors quality checks pass, but do not waive the viewer rejection.
+Head **`4b9130f82b1299929b1bc0c14d1f446cab4f91a1`**, CI43740004113 independently confirmed **CANCELLED** on superseding push; no current artifact acceptance. **FAIL/HOLD for independently reproduced EMU viewer-display compatibility bug.** Affected scoped errors quality checks pass, but do not waive the viewer rejection. The GitHub-only helper exited1 on this cancelled watch, not a product regression assertion.
 
 Exact clean source and completed/held build verified before linking. Only ScopedGitHub.swift's errors-member block and MonitoringScopeTests.swift differ from97; legacy quality fixes, public budget API, validation, transport, caller wiring and accepted47 integration are unchanged. Module/core object fingerprints recorded before and after QA remain equal; no mutable-build race.
 

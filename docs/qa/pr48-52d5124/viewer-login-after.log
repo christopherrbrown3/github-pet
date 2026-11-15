@@ -1,0 +1,86 @@
+HEAD 52d5124384817b63dc6d3ee2d58dcd4b9491ba45
+NORMAL import; exact immutable held source/build
+OBSERVED selected=false bound=false login=fixture-user complete=true viewer=fixture-user issues=[]
+PASS valid display login fixture-user selected=false
+PASS client valid display login fixture-user selected=false
+OBSERVED selected=false bound=false login=fixture-user_demo complete=true viewer=fixture-user_demo issues=[]
+PASS valid display login fixture-user_demo selected=false
+PASS client valid display login fixture-user_demo selected=false
+OBSERVED selected=false bound=false login=demo_admin complete=true viewer=demo_admin issues=[]
+PASS valid display login demo_admin selected=false
+PASS client valid display login demo_admin selected=false
+OBSERVED selected=false bound=false login=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo complete=true viewer=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo issues=[]
+PASS valid display login aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo selected=false
+PASS client valid display login aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo selected=false
+OBSERVED selected=false bound=false login=Fixture-User_demo complete=true viewer=Fixture-User_demo issues=[]
+PASS valid display login Fixture-User_demo selected=false
+PASS client valid display login Fixture-User_demo selected=false
+PASS missing/invalid display login rejected selected=false input=nil
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("")
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("bad login")
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("bad\nlogin")
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+PASS client missing/invalid display login rejected selected=false
+PASS valid EMU display cannot bypass nodeID guard selected=false
+OBSERVED selected=false bound=true login=fixture-user complete=true viewer=fixture-user issues=[]
+PASS valid display login fixture-user selected=false
+PASS client valid display login fixture-user selected=false
+OBSERVED selected=false bound=true login=fixture-user_demo complete=true viewer=fixture-user_demo issues=[]
+PASS valid display login fixture-user_demo selected=false
+PASS client valid display login fixture-user_demo selected=false
+OBSERVED selected=false bound=true login=demo_admin complete=true viewer=demo_admin issues=[]
+PASS valid display login demo_admin selected=false
+PASS client valid display login demo_admin selected=false
+OBSERVED selected=false bound=true login=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo complete=true viewer=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo issues=[]
+PASS valid display login aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo selected=false
+PASS client valid display login aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo selected=false
+OBSERVED selected=false bound=true login=Fixture-User_demo complete=true viewer=Fixture-User_demo issues=[]
+PASS valid display login Fixture-User_demo selected=false
+PASS client valid display login Fixture-User_demo selected=false
+PASS missing/invalid display login rejected selected=false input=nil
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("")
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("bad login")
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("bad\nlogin")
+PASS client missing/invalid display login rejected selected=false
+PASS missing/invalid display login rejected selected=false input=Optional("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+PASS client missing/invalid display login rejected selected=false
+PASS valid EMU display cannot bypass nodeID guard selected=false
+PASS client expected account mismatch discards submitted results selected=false
+OBSERVED selected=true bound=true login=fixture-user complete=true viewer=fixture-user issues=[]
+PASS valid display login fixture-user selected=true
+PASS client valid display login fixture-user selected=true
+OBSERVED selected=true bound=true login=fixture-user_demo complete=true viewer=fixture-user_demo issues=[]
+PASS valid display login fixture-user_demo selected=true
+PASS client valid display login fixture-user_demo selected=true
+OBSERVED selected=true bound=true login=demo_admin complete=true viewer=demo_admin issues=[]
+PASS valid display login demo_admin selected=true
+PASS client valid display login demo_admin selected=true
+OBSERVED selected=true bound=true login=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo complete=true viewer=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo issues=[]
+PASS valid display login aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo selected=true
+PASS client valid display login aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa_demo selected=true
+OBSERVED selected=true bound=true login=Fixture-User_demo complete=true viewer=Fixture-User_demo issues=[]
+PASS valid display login Fixture-User_demo selected=true
+PASS client valid display login Fixture-User_demo selected=true
+PASS missing/invalid display login rejected selected=true input=nil
+PASS client missing/invalid display login rejected selected=true
+PASS missing/invalid display login rejected selected=true input=Optional("")
+PASS client missing/invalid display login rejected selected=true
+PASS missing/invalid display login rejected selected=true input=Optional("bad login")
+PASS client missing/invalid display login rejected selected=true
+PASS missing/invalid display login rejected selected=true input=Optional("bad\nlogin")
+PASS client missing/invalid display login rejected selected=true
+PASS missing/invalid display login rejected selected=true input=Optional("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+PASS client missing/invalid display login rejected selected=true
+PASS valid EMU display cannot bypass nodeID guard selected=true
+PASS client expected account mismatch discards submitted results selected=true
+PASS selected EMU viewer mismatch discards submitted rows
+PASS organization target underscore remains invalid
+PASS repository owner underscore remains invalid
+RESULT checks=68 failures=0 mode=fixed
