@@ -42,21 +42,22 @@ public enum PackLabel {
     public static func sanitize(_ raw: String, fallback: String = fallbackID) -> String {
         var scalars = String.UnicodeScalarView()
         var pendingSpace = false
-        for scalar in raw.unicodeScalars {
+        var truncated = false
+        scan: for scalar in raw.unicodeScalars {
             switch scalar.properties.generalCategory {
             case .control, .lineSeparator, .paragraphSeparator, .spaceSeparator:
                 pendingSpace = !scalars.isEmpty
             case .format, .surrogate, .privateUse, .unassigned:
                 continue
             default:
+                if scalars.count >= maxScalars { truncated = true; break scan }
                 if pendingSpace { scalars.append(" "); pendingSpace = false }
                 scalars.append(scalar)
             }
-            if scalars.count >= maxScalars { break }
         }
         let text = String(scalars)
         guard !text.isEmpty else { return fallback }
-        guard text.count > maxGraphemes else { return text }
+        guard text.count > maxGraphemes else { return truncated ? text + "…" : text }
         return String(text.prefix(maxGraphemes)) + "…"
     }
 }

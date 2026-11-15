@@ -38,6 +38,17 @@ struct PackLabelTests {
         #expect(PackLabel.sanitize(zalgo).unicodeScalars.count <= PackLabel.maxScalars + 1)
     }
 
+    @Test func scalarCapTruncationIsMarked() {
+        // One huge grapheme: the suffix after the combining marks must not silently vanish.
+        let hidden = "a" + String(repeating: "\u{0301}", count: 300) + "pack-B"
+        let out = PackLabel.sanitize(hidden)
+        #expect(out.hasSuffix("…"))
+        #expect(!out.contains("pack-B"))
+        // Input exactly at the scalar limit is not marked as truncated.
+        let exact = "a" + String(repeating: "\u{0301}", count: PackLabel.maxScalars - 1)
+        #expect(!PackLabel.sanitize(exact).hasSuffix("…"))
+    }
+
     @Test func emptyAfterSanitizingUsesFallback() {
         #expect(PackLabel.sanitize("") == PackLabel.fallbackID)
         #expect(PackLabel.sanitize("\u{202E}\u{200B}\n\t ") == PackLabel.fallbackID)
