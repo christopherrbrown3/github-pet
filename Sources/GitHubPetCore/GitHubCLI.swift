@@ -172,7 +172,7 @@ public struct GhClient: Sendable {
         if Self.isAuthFailure(result) { return AccountFetch(account: nil, outcome: .failure(.unauthenticated)) }
         guard result.outputComplete else { return AccountFetch(account: nil, outcome: .failure(.failed("GitHub output incomplete"))) }
         // gh exits non-zero when GraphQL reports errors but still prints the response, which may
-        // hold one search's data: parse whatever arrived.
+        // hold one search's data: retain proven pages, but never certify them complete on failure.
         guard let response = GhGraphQLParser.parse(result.stdout), let account = response.account else {
             return AccountFetch(account: nil, outcome: .failure(.failed("GitHub search failed")))
         }
@@ -182,7 +182,8 @@ public struct GhClient: Sendable {
         let pages = [response.reviews, response.assigned]
         let found = pages.compactMap { $0 }
         guard !found.isEmpty else { return AccountFetch(account: account, outcome: .failure(.failed("GitHub search failed"))) }
-        let complete = found.count == pages.count && found.allSatisfy { $0.total <= $0.items.count }
+        let complete = result.exitCode == 0 && !response.hasErrorEnvelope
+            && found.count == pages.count && found.allSatisfy { $0.total <= $0.items.count }
         return AccountFetch(account: account, outcome: .snapshot(items: found.flatMap(\.items), complete: complete))
     }
 }
@@ -198,6 +199,8 @@ public enum GhGraphQLParser {
         public var account: String?
         public var reviews: Page?
         public var assigned: Page?
+        /// An errors member, even malformed/null/empty, cannot certify a complete response.
+        public var hasErrorEnvelope: Bool = false
     }
 
     private struct Envelope: Decodable {
@@ -221,6 +224,15 @@ public enum GhGraphQLParser {
             var repository: Repository?
         }
         var data: DataField?
+        var hasErrorEnvelope: Bool
+        private enum CodingKeys: String, CodingKey { case data, errors }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            data = try c.decodeIfPresent(DataField.self, forKey: .data)
+            // Inspect presence without decoding error contents: valid pages remain available
+            // as partial even if the errors value itself has an unexpected JSON shape.
+            hasErrorEnvelope = c.contains(.errors)
+        }
     }
 
     /// Parses the GraphQL response, or nil if it isn't one. IDs are `<kind>:<node id>`: GitHub's
@@ -243,6 +255,6 @@ public enum GhGraphQLParser {
         }
         let login = body.viewer?.login.flatMap { $0.isEmpty ? nil : $0 }
         return Response(account: login, reviews: page(body.reviews, kind: .reviewRequest),
-                        assigned: page(body.assigned, kind: .assignedIssue))
+                        assigned: page(body.assigned, kind: .assignedIssue), hasErrorEnvelope: envelope.hasErrorEnvelope)
     }
 }

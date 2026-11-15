@@ -39,6 +39,11 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
     return #"{"id":"\#(nodeID)","number":\#(number),"title":"Item \#(number)","url":"\#(link)","updatedAt":"2026-11-12T10:00:00Z","repository":{"nameWithOwner":"\#(repo)"}}"#
 }
 
+private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> Data {
+    let json = String(decoding: graphQL(reviews: reviews), as: UTF8.self)
+    return Data((json.dropLast() + ",\"errors\":" + rawErrors + "}").utf8)
+}
+
 
 @Suite struct GhLocatorTests {
     @Test func overrideIsTheOnlyCandidate() {
@@ -182,6 +187,60 @@ private func node(_ number: Int, repo: String = "example/repo", url: String? = n
             return
         }
         #expect(items.count == 1)
+    }
+
+    @Test func nonzeroExitNeverMakesValidPagesComplete() {
+        for rows in [[], [node(12)]] as [[String]] {
+            let fetch = client(CommandResult(exitCode: 7, stdout: graphQL(reviews: rows))).0.fetchWithAccount()
+            #expect(fetch.account == "first-user", "identity still belongs to the same response")
+            guard case .snapshot(let items, let complete) = fetch.outcome else {
+                Issue.record("valid response pages should remain available as partial data"); continue
+            }
+            #expect(!complete && items.count == rows.count)
+            let engine = InboxEngine()
+            engine.apply(fetch.outcome, now: Date(timeIntervalSince1970: 1000))
+            #expect(engine.state == .partial && !engine.state.countIsKnown, "never verified empty")
+        }
+    }
+
+    @Test func graphQLErrorMemberCannotMakeCompleteDataEvenAtExitZero() {
+        // Presence fails closed, including malformed/null/empty errors members. Proven data
+        // remains usable; the server's raw error messages never become source success.
+        for errors in [#"[{"message":"fixture failure"}]"#, #""malformed""#, "{}", "null", "[]", "[null]", "[{}]", "true", "0"] {
+            for rows in [[], [node(12)]] as [[String]] {
+                let fetch = client(CommandResult(exitCode: 0, stdout: graphQLWithErrors(errors, reviews: rows))).0.fetchWithAccount()
+                #expect(fetch.account == "first-user")
+                guard case .snapshot(let items, false) = fetch.outcome else {
+                    Issue.record("errors member must preserve valid pages only as partial: \(errors)"); continue
+                }
+                #expect(items.count == rows.count)
+            }
+        }
+    }
+
+    @Test func realGhFixtureExitAndErrorQualityKeepsValidZeroControl() throws {
+        let cases: [(exit: Int, rows: [String], errors: String?, complete: Bool)] = [
+            (7, [], nil, false), (7, [node(12)], nil, false),
+            (0, [], #"[{"message":"fixture error"}]"#, false), (0, [], nil, true),
+        ]
+        for fixture in cases {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let executable = directory.appendingPathComponent("gh")
+            let payload = fixture.errors.map { graphQLWithErrors($0, reviews: fixture.rows) } ?? graphQL(reviews: fixture.rows)
+            try payload.write(to: directory.appendingPathComponent("payload.json"))
+            let script = "#!/bin/sh\nif [ \"$1\" = auth ]; then exit 0; fi\n/bin/cat \"${0%/*}/payload.json\"\nexit \(fixture.exit)\n"
+            try script.write(to: executable, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+            let gh = GhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: executable.path]))
+            let fetch = gh.fetchWithAccount()
+            #expect(fetch.account == "first-user")
+            guard case .snapshot(let items, let complete) = fetch.outcome else {
+                Issue.record("expected fixture pages"); continue
+            }
+            #expect(complete == fixture.complete && items.count == fixture.rows.count)
+        }
     }
 
     @Test func moreMatchesThanTheCapIsPartial() {
