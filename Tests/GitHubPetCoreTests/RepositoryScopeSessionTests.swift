@@ -17,6 +17,20 @@ import Testing
         ScopedPollResult(viewer: ScopeViewer(account: account, login: "demo_sim"), items: [FixtureSimulator.defaultItems()[0]],
                          issues: issues, successfulSources: 2)
     }
+    @Test func unknownViewerMayApplyEverythingOnlyAfterResolvingItsStoredScope() throws {
+        for savedEverything in [false, true] {
+            try fixture { session, store, _ in
+                if savedEverything { try store.save(.everything, for: .github(a)) }
+                session.startLive()
+                let bootstrap = try #require(session.beginPoll())
+                #expect(bootstrap.expectedAccount == nil)
+                let receipt = session.receive(result(a), for: bootstrap)
+                if case .apply(.snapshot(_, true)) = receipt.action {} else { Issue.record("PM policy permits resolved Everything bootstrap") }
+                #expect(session.identity == .github(a) && session.scope == .everything)
+                #expect(store.lastKnownAccount() == a)
+            }
+        }
+    }
     @Test func knownSelectedIsFirstRequestAndUnknownBootstrapCannotDisplayEverything() throws {
         try fixture { session, store, _ in
             try store.save(selected, for: .github(a)); store.rememberAccount(a)
@@ -92,6 +106,17 @@ import Testing
 }
 
 @Suite struct SourceClipTests {
+    @Test func naturalCompletionCannotPromoteAHiddenSourceClip() {
+        let date = Date(timeIntervalSince1970: 100)
+        let ordinary = FixtureSimulator.defaultItems()[0]
+        var urgent = ordinary; urgent.kind = .ciFailure
+        var queue = EventClipQueue()
+        queue.enqueue([InboxEvent(item: urgent)], now: date, playable: true)
+        queue.enqueue([InboxEvent(item: ordinary)], now: date.addingTimeInterval(1.5), playable: true, origin: .serviceIncident)
+        #expect(queue.active?.origin == .repository)
+        #expect(queue.tick(now: date.addingTimeInterval(2)) == nil, "ordinary completion never creates a source backlog")
+        #expect(queue.tick(now: date.addingTimeInterval(2.5)) == nil)
+    }
     @Test func repositoryResetKeepsConcurrentIncidentAtOriginalTimeAndNeverReplays() {
         let date = Date(timeIntervalSince1970: 100), event = InboxEvent(item: FixtureSimulator.defaultItems()[0])
         var queue = EventClipQueue()

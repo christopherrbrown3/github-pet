@@ -201,6 +201,12 @@ public struct EventClipQueue: Sendable {
     /// Advance time; returns the clip that should be showing, if any.
     @discardableResult
     public mutating func tick(now: Date) -> Clip? {
+        // Hidden source state exists only to preserve incidents across an explicit scope
+        // reset. Natural completion coalesces the whole batch, never promotes a backlog.
+        if let visible = active, now >= visible.endsAt {
+            byOrigin.removeAll()
+            return nil
+        }
         byOrigin = byOrigin.filter { now < $0.value.endsAt }
         return active
     }
