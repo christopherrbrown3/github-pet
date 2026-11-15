@@ -1,3 +1,13 @@
+# Latest checkpoint — 2026-11-15 PR48 merged, #30 slice 2 planning
+
+Sole PM is **t49 product-manager** (Claude Opus 5.5) since explicit HANDOFF_GRANTED from Codex t1r. Specialists report via `hc send t49`. Developer owns unit/logic/regression tests and build CI; QA is functional only.
+
+- PR48 core/transport merged at exact head `52d5124384817b63dc6d3ee2d58dcd4b9491ba45` as **`f997d1d51b9f6a1d93c61f2d76fe56f60305eaee`** (`--match-head-commit`). Gates: CI43740674826 SUCCESS, Copilot5911935714 no open issues, 0 unresolved threads, independent functional QA PASS for the offline core/transport scope (comment6902058672, QA commit eef2d88). Live-auth/UI/install checks were not claimed. App behavior is unchanged (Everything).
+- #30 stays In Progress. Developer t1s has been dispatched slice 2 (native Settings scope UI, AppModel/engine adoption, discovery) in new worktree developer-scope-ui on branch feat/30-scope-ui from f997d1d, **plan first**; production edits wait for PM approval. QA will then functionally test the built app through fixture/test hooks.
+- Saved main b0127f0 app/ZIP remain immutable. No release/tag/auto-merge/Homebrew.
+
+---
+
 # Latest checkpoint — 2026-11-15 Claude PM handoff
 
 Chris requests new Claude PM after allowance reset, authorized to launch specialists as needed. Successor t49 product-manager verified Claude Opus5.5 (argv + readiness response) and read the current handoff. Sole PM authority transfers with explicit HANDOFF_GRANTED from t1r; afterward reports route to t49/product-manager, t1r stops coordinating/writing. Same dedicated PM worktree/PR46 branch is handed over cleanly. See handoffs/claude-pm-2026-11-15.md and roles.json; these supersede older dispatch below.

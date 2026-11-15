@@ -4,7 +4,7 @@
       "name": "product-manager",
       "terminal": "t49",
       "runtime": "claude",
-      "assignment": "Take over as sole PM after HANDOFF_GRANTED from t1r; functional QA/core gates then native scope UI phase",
+      "assignment": "Sole PM since HANDOFF_GRANTED from t1r (2026-11-15). Merged PR48 as f997d1d; dispatched #30 slice 2 plan to Developer",
       "intendedModel": "claude-opus-5-5",
       "observedModel": "claude-opus-5-5",
       "sessionId": null,
@@ -24,7 +24,7 @@
       "name": "developer",
       "terminal": "t1s",
       "runtime": "codex",
-      "assignment": "Hold exact52d5124 core source/debug immutable; Developer owns ALL unit/logic/regression tests and build CI; await new Claude PM t49 dispatch",
+      "assignment": "#30 slice 2 (native scope UI/application/discovery): plan-only comment on #30 first, in new worktree developer-scope-ui on branch feat/30-scope-ui from f997d1d; owns all unit/logic/regression tests and build CI",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -52,7 +52,7 @@
       "name": "qa-engineer",
       "terminal": "t1t",
       "runtime": "codex",
-      "assignment": "Quota-stopped after affected52 checks; final actual-artifact functional QA still pending. QA FUNCTIONAL ONLY from latest user instruction, no new unit/core-linked harness tasks; await new PM",
+      "assignment": "PR48 52d5124 functional PASS delivered (comment 6902058672, QA commit eef2d88). Functional-only; idle until slice-2 build exists; quota-sensitive",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -66,5 +66,5 @@
   ],
   "observedDate": "2026-11-15",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly requested a fresh Claude PM after Claude allowance reset, authorized that PM to launch other agents as needed, and ordered Developer-owned unit tests / QA functional-only. New PM t49 product-manager (Opus5.5) verified READY; sole authority transfers by explicit HANDOFF_GRANTED from t1r. Codex PM t1r then steps back and freezes PM checkout. Route to t49/product-manager after grant. Prior models/history/worktrees and completed QA evidence preserved. Developer t1s idle, QA t1t quota-stopped; new PM chooses replacements deliberately without duplicate writers. PR48 exact52 greenCI/currentCopilot no open issues but final functional QA pending; no automatic merge/release/tag/auto-merge/Homebrew."
+  "note": "Sole PM t49 product-manager (Claude Opus 5.5) since explicit HANDOFF_GRANTED from Codex t1r on 2026-11-15; t1r stepped back. Developer owns unit/logic/regression tests and build CI; QA is functional only (historical QA evidence preserved). PR48 merged at exact head 52d5124 as f997d1d after current-head CI, Copilot review and independent functional QA. Conditional ready-merge authorization remains in force; no release/tag/auto-merge/Homebrew."
 }
