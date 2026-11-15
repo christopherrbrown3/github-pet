@@ -5,6 +5,14 @@ import GitHubPetCore
 /// Shared state behind the menu-bar inbox, the Inbox window, Settings and the mascot.
 @MainActor
 final class AppModel: ObservableObject {
+    /// App-domain time and system motion are runtime inputs, not source state. Tests supply
+    /// controlled inputs without touching the user's clock or accessibility preferences.
+    struct Runtime {
+        var now: () -> Date = Date.init
+        var systemReducedMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        var schedulesTimers = true
+    }
+    private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
     @Published private(set) var dataState: DataState = .loading
     @Published private(set) var scopeSummary = "Monitoring scope · resolving account"
@@ -64,7 +72,8 @@ final class AppModel: ObservableObject {
     private let serviceClient: ServiceStatusClient
     private var serviceGenerations = SourceGenerations()
 
-    init(options supplied: LaunchOptions) {
+    init(options supplied: LaunchOptions, runtime: Runtime = Runtime()) {
+        self.runtime = runtime
         var options = supplied
         // Defense at construction too: programmatic test callers cannot enable simulation
         // while retaining the real defaults domain or selecting a live transport.
@@ -118,15 +127,17 @@ final class AppModel: ObservableObject {
                 : "mascot placeholder (pack rejected: \(packErrors.map(\.description).joined(separator: "; ")))")
         FileHandle.standardError.write(Data("GitHubPet: \(packStatus)\n".utf8))
 
-        tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+        if runtime.schedulesTimers {
+            tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.tick() }
+            }
         }
         reduceMotionObserver = SystemNotificationObserver(
             center: NSWorkspace.shared.notificationCenter,
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification
         ) { [weak self] in
             Task { @MainActor in
-                if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { self?.cancelGesture() }
+                if self?.runtime.systemReducedMotion() == true { self?.cancelGesture() }
             }
         }
         switchSource()
@@ -138,10 +149,10 @@ final class AppModel: ObservableObject {
     // MARK: Derived state
 
     /// App clock: wall clock plus the QA offset from launch options.
-    func clock() -> Date { Date().addingTimeInterval(clockOffset) }
+    func clock() -> Date { runtime.now().addingTimeInterval(clockOffset) }
 
     var effectiveReducedMotion: Bool {
-        settings.reducedMotion || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        settings.reducedMotion || runtime.systemReducedMotion()
     }
 
     var alertsAllowed: Bool { settings.alertsAllowed(at: now) }
@@ -238,7 +249,7 @@ final class AppModel: ObservableObject {
         resetSession()
         resetServiceStatus()
         pollTimer?.invalidate()
-        if pollsPeriodically {
+        if pollsPeriodically && runtime.schedulesTimers {
             pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.refresh() }
             }
@@ -388,7 +399,7 @@ final class AppModel: ObservableObject {
     /// System Reduce Motion: stop a playing gesture the moment it is switched on.
     private var reduceMotionObserver: SystemNotificationObserver?
 
-    private func tick() {
+    func tick() {
         let date = clock()
         engine.refreshFreshness(now: date)
         serviceMonitor.refreshFreshness(now: date)

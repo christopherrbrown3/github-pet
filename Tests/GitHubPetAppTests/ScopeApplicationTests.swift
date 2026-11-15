@@ -1,13 +1,19 @@
 import Foundation
+import AppKit
 import Testing
 import GitHubPetCore
 @testable import GitHubPet
 
 @Suite(.serialized) @MainActor struct ScopeApplicationTests {
-    private func model() -> AppModel {
+    private final class Inputs {
+        var date = Date(timeIntervalSince1970: 1_763_208_000)
+        var reducedMotion = false
+    }
+    private func model(inputs: Inputs = Inputs()) -> AppModel {
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
-        return AppModel(options: options)
+        return AppModel(options: options, runtime: AppModel.Runtime(now: { inputs.date },
+            systemReducedMotion: { inputs.reducedMotion }, schedulesTimers: false))
     }
     private func wait(_ predicate: () -> Bool) async throws {
         let end = ContinuousClock.now.advanced(by: .seconds(3))
@@ -16,6 +22,70 @@ import GitHubPetCore
     }
     private func settled(_ model: AppModel) async throws { try await wait { !model.repositoryFetchInFlight } }
 
+    @Test func hostMotionIsRecordedAndSuppressionNeverErasesSourceTruth() async throws {
+        // One CI diagnostic: the old fixture read this live host value implicitly.
+        print("Scope fixture host systemReduceMotion=\(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion); attention assertions use explicit inputs")
+        let inputs = Inputs(); inputs.reducedMotion = true
+        let app = model(inputs: inputs); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeInject(); try await settled(app)
+        app.injectServiceIncident(.major)
+        #expect(app.unseenCount == 1)
+        #expect(!app.unseenIncidents.isEmpty)
+        #expect(app.incidentMarker?.tier == .major && app.showsAlertIcon)
+        #expect(app.markerBurst == nil)
+        #expect(app.activeClip == nil, "system motion legitimately suppresses both gestures")
+        let unseen = app.unseenIncidents
+        app.simulateScopeApply(false); try await settled(app)
+        #expect(app.unseenIncidents == unseen)
+        #expect(app.incidentMarker?.tier == .major && app.showsAlertIcon)
+        #expect(app.markerBurst == nil)
+        #expect(app.activeClip == nil)
+        inputs.reducedMotion = false
+        app.refresh(); try await settled(app)
+        #expect(app.activeClip == nil && app.markerBurst == nil, "turning motion back on never replays")
+    }
+    @Test func expiredGestureLeavesRowsAndUnseenIntactAndLateReplyStillCannotLand() async throws {
+        let inputs = Inputs(), app = model(inputs: inputs)
+        defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeHold(); try await wait { app.simulatedHeldReplies == 1 }
+        app.simulateScopeApply(false); try await settled(app)
+        app.simulateScopeInject(); try await settled(app)
+        #expect(app.items.count == 3 && app.unseenCount == 1 && app.activeClip?.origin == .repository)
+        inputs.date.addTimeInterval(8) // deterministic analogue of a stalled cooperative executor
+        app.tick()
+        #expect(app.activeClip == nil && app.unseenCount == 1 && app.items.count == 3)
+        app.simulateScopeDeliver(); try await wait { app.discardedScopeReplies == 1 }
+        #expect(app.activeClip == nil && app.unseenCount == 1 && app.items.count == 3)
+    }
+    @Test func scopeApplyPreservesIncidentUnseenAndStaticAttentionAcrossMotionAndExpiry() async throws {
+        for reduced in [false, true] {
+            for elapsed in [0.0, 8.0] {
+                let inputs = Inputs(); inputs.reducedMotion = reduced
+                let app = model(inputs: inputs); defer { app.cleanupScopeSimulation() }
+                try await settled(app)
+                app.injectServiceIncident(.major)
+                let unseen = app.unseenIncidents, incidents = app.serviceIncidents
+                let state = app.serviceState, lastSuccess = app.serviceLastSuccess
+                #expect(!unseen.isEmpty, "new incident must remain unseen irrespective of motion")
+                if reduced { #expect(app.markerBurst == nil) } else { #expect(app.markerBurst != nil) }
+                inputs.date.addTimeInterval(elapsed)
+                app.tick()
+                let burst = app.markerBurst, clip = app.activeClip
+                if reduced || elapsed == 8 { #expect(app.markerPhase(at: inputs.date, reduced: reduced) == .still) }
+                app.simulateScopeApply(false); try await settled(app)
+                #expect(app.unseenIncidents == unseen, "Apply cannot acknowledge incidents")
+                #expect(app.serviceIncidents == incidents)
+                #expect(app.serviceState == state && app.serviceLastSuccess == lastSuccess)
+                #expect(app.incidentMarker?.tier == .major)
+                #expect(app.showsAlertIcon, "static incident attention survives even without animation")
+                #expect(app.markerBurst == burst)
+                #expect(app.activeClip == clip, "scope Apply cannot restart/clear an incident gesture")
+                if reduced || elapsed == 8 { #expect(app.markerPhase(at: inputs.date, reduced: reduced) == .still) }
+            }
+        }
+    }
     @Test func launchFlagIsExplicitAndIsolatedAndKnownSelectedIsFirstRequest() async throws {
         #expect(!LaunchOptions.parse(arguments: ["app"], environment: [:]).simulatesMonitoringScope)
         let options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--defaults-suite", "real-domain"], environment: [:])
@@ -75,10 +145,14 @@ import GitHubPetCore
         app.injectServiceIncident(.major)
         let incidents = app.serviceIncidents, state = app.serviceState, lastSuccess = app.serviceLastSuccess
         let unseen = app.unseenIncidents, burst = app.markerBurst, clip = app.activeClip
-        #expect(!unseen.isEmpty && burst != nil && clip?.origin == .serviceIncident)
+        #expect(!unseen.isEmpty)
+        #expect(burst != nil)
+        #expect(clip?.origin == .serviceIncident)
         app.simulateScopeApply(false); try await settled(app)
         #expect(app.serviceIncidents == incidents && app.serviceState == state && app.serviceLastSuccess == lastSuccess)
-        #expect(app.unseenIncidents == unseen && app.markerBurst == burst && app.activeClip == clip)
+        #expect(app.unseenIncidents == unseen)
+        #expect(app.markerBurst == burst)
+        #expect(app.activeClip == clip)
         #expect(app.unseenCount == 0)
         #expect(!app.scopeSummary.contains("demo-a") && !app.scopeSummary.contains("demo-b"))
     }
