@@ -88,6 +88,11 @@ import Testing
             let request = try #require(session.beginPoll())
             if case .apply(.failure) = session.receive(result(a), for: request).action {} else { Issue.record("corrupt record cannot accept bootstrap") }
             #expect(session.scope == nil && session.configurationError)
+            // The scope editor is not in this build: the error must stay explicit without promising it.
+            guard case .failure(.failed(let message)) = session.configurationFailure else { Issue.record("configuration error is explicit failure"); return }
+            #expect(message.contains("invalid") && !message.isEmpty && !message.localizedCaseInsensitiveContains("settings"))
+            #expect(!session.summary.contains("Everything") && session.summary.contains("configuration error"))
+            #expect(session.qualitySummary.map { !$0.localizedCaseInsensitiveContains("settings") } == true)
             if case .failure = session.failCycle(.deadline) {} else { Issue.record("budget exhaustion is explicit failure") }
             #expect(session.scope == nil)
         }

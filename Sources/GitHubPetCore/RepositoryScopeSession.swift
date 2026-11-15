@@ -122,7 +122,9 @@ public final class RepositoryScopeSession {
         return .failure(.failed(issue == .deadline ? "Monitoring scope request budget exhausted" : "Monitoring scope could not be verified"))
     }
 
-    public var configurationFailure: FetchOutcome { .failure(.failed("Saved monitoring scope is invalid; correct it in Settings")) }
+    /// Explicit configuration error: never empty, never Everything. It must not promise a
+    /// repair UI this build does not ship (the scope editor is deferred).
+    public var configurationFailure: FetchOutcome { .failure(.failed("Saved monitoring scope is invalid; monitoring is paused and has not broadened")) }
 
     public var summary: String {
         if configurationError { return "Monitoring scope · configuration error" }
