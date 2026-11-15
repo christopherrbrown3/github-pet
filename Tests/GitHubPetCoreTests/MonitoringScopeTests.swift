@@ -43,6 +43,61 @@ private func scopedErrorPayload(_ plan: ScopeQueryPlan, includeRow: Bool, errors
     return Data((String(decoding: base, as: UTF8.self).dropLast() + ",\"errors\":" + errorsJSON + "}").utf8)
 }
 
+private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedPollResult) throws {
+    let selected = try mixedScope()
+    let plans = try [ScopeQueryPlan(), ScopeQueryPlan(expectedAccount: accountA),
+                     ScopeQueryPlan(scope: selected, expectedAccount: accountA)]
+    let validLogins = ["fixture-user", "mona-cat_demo", "demo_admin", "Renamed-User_demo",
+                       String(repeating: "a", count: 39), String(repeating: "a", count: 34) + "_demo"]
+    let invalidLogins = ["", " user", "user ", "us er", "user\t", "user\0", "user\u{1f}", "user\u{7f}",
+                         "móna_demo", "K_demo", "😀_demo", "user\u{fffd}", String(repeating: "a", count: 40),
+                         "-user", "user-", "_user", "user_", "user/name", "user:other", "user.name"]
+        + lineTerminators.flatMap { ["user_demo" + $0, "us" + $0 + "er_demo"] }
+    let suite = "scope.viewer.tests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suite))
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let store = ScopeSelectionStore(defaults: defaults)
+    try store.save(selected, for: .github(accountA))
+    for plan in plans {
+        for includeRow in [false, true] {
+            func payload(_ login: String, id: String = accountA.viewerID) throws -> Data {
+                var body = envelope(plan)
+                body["viewer"] = ["id": id, "login": login]
+                if includeRow {
+                    for search in plan.searches where search.kind == .reviewRequest { body[search.alias] = page([row()]) }
+                }
+                return try response(body)
+            }
+            for login in validLogins {
+                let result = fetch(try payload(login), plan)
+                #expect(result.complete && result.issues.isEmpty, "valid display login \(login)")
+                #expect(result.viewer?.account == accountA && result.viewer?.login == login)
+                #expect(result.items.count == (includeRow ? 1 : 0))
+                if let viewer = result.viewer {
+                    #expect(store.load(for: .github(viewer.account)) == .scope(selected), "renamed login keeps node-ID persistence")
+                }
+            }
+            for login in invalidLogins {
+                let result = fetch(try payload(login), plan)
+                #expect(!result.complete && result.viewer == nil && result.items.isEmpty)
+                #expect(result.issues == [.viewerUnavailable], "invalid login bytes \(Array(login.utf8))")
+            }
+            if plan.expectedAccount != nil {
+                for login in ["fixture-user", "mona-cat_demo", "demo_admin"] {
+                    let mismatch = fetch(try payload(login, id: accountB.viewerID), plan)
+                    #expect(!mismatch.complete && mismatch.items.isEmpty && mismatch.issues == [.identityMismatch])
+                    #expect(mismatch.viewer?.account == accountB)
+                }
+            }
+        }
+    }
+    // Viewer display syntax never broadens organization or repository-owner qualifiers.
+    for login in ["mona-cat_demo", "demo_admin"] {
+        #expect(throws: ScopeValidationError.self) { try MonitoringTarget(organization: login) }
+        #expect(throws: ScopeValidationError.self) { try MonitoringTarget(repository: login + "/pet") }
+    }
+}
+
 @Suite struct MonitoringScopeTests {
     @Test func normalizedValidatedUnionAndBounds() throws {
         let org = try MonitoringTarget(organization: "  Example\n")
@@ -123,6 +178,9 @@ private func scopedErrorPayload(_ plan: ScopeQueryPlan, includeRow: Bool, errors
 }
 
 @Suite struct ScopedQueryTests {
+    @Test func viewerDisplayLoginsAcceptManagedAccountsWithoutChangingIdentityOrTargets() throws {
+        try checkViewerDisplayLogins { ScopedResponseParser.parse($0, plan: $1) }
+    }
     @Test func anyPresentErrorsMemberKeepsScopedParserIncompleteAndRetainsRows() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
         for includeRow in [false, true] {
@@ -287,6 +345,14 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     private func client(_ runner: ScopeRunner, timeout: TimeInterval = 20) -> ScopedGhClient {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
+    }
+    @Test func viewerDisplayLoginsAcceptManagedAccountsThroughBoundClient() throws {
+        try checkViewerDisplayLogins { bytes, plan in
+            let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: bytes)])
+            let result = client(runner).fetch(scope: plan.scope, expectedAccount: plan.expectedAccount)
+            #expect(runner.calls.count == 2 && runner.calls[1] == plan.arguments, "display login never enters query argv")
+            return result
+        }
     }
     @Test func anyPresentErrorsMemberKeepsScopedClientIncompleteAndRetainsRows() throws {
         let scope = try mixedScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)

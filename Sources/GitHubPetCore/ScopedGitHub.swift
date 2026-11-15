@@ -99,6 +99,16 @@ public enum ScopedResponseParser {
         guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else { return nil }
         return number.boolValue
     }
+    /// Display metadata only: github.com managed logins also contain underscores.
+    /// Keep full-input validation separate from target qualifiers and node-ID identity.
+    private static func viewerLogin(_ value: String) -> Bool {
+        func alphanumeric(_ byte: UInt8) -> Bool {
+            (48...57).contains(byte) || (65...90).contains(byte) || (97...122).contains(byte)
+        }
+        let bytes = value.utf8
+        return (1...39).contains(bytes.count) && alphanumeric(bytes.first!) && alphanumeric(bytes.last!)
+            && bytes.allSatisfy { alphanumeric($0) || $0 == 45 || $0 == 95 }
+    }
     public static func parse(_ bytes: Data, plan: ScopeQueryPlan) -> ScopedPollResult {
         guard bytes.count <= CommandBudget.maximumBytes else { return .failure(.outputLimit) }
         guard let envelope = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any] else {
@@ -115,8 +125,7 @@ public enum ScopedResponseParser {
         }
         guard let body = envelope["data"] as? [String: Any],
               let rawViewer = body["viewer"] as? [String: Any], let id = rawViewer["id"] as? String,
-              let login = rawViewer["login"] as? String, login.trimmingCharacters(in: .whitespacesAndNewlines) == login,
-              (try? MonitoringTarget(organization: login)) != nil,
+              let login = rawViewer["login"] as? String, viewerLogin(login),
               let account = try? ScopeAccount(viewerID: id) else {
             return ScopedPollResult(viewer: nil, items: [], issues: issues + [.viewerUnavailable], successfulSources: 0)
         }
