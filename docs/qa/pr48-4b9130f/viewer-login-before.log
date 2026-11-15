@@ -1,0 +1,11 @@
+HEAD 4b9130f82b1299929b1bc0c14d1f446cab4f91a1
+NORMAL import; held exactcore; no live auth
+OBSERVED selected=false login=fixture-user complete=true viewer=fixture-user issues=[]
+PASS valid display login fixture-user selected=false
+OBSERVED selected=false login=fixture-user_demo complete=false viewer=nil issues=[GitHubPetCore.ScopedFetchIssue.viewerUnavailable]
+OBSERVED selected=false login=demo_admin complete=false viewer=nil issues=[GitHubPetCore.ScopedFetchIssue.viewerUnavailable]
+OBSERVED selected=true login=fixture-user complete=true viewer=fixture-user issues=[]
+PASS valid display login fixture-user selected=true
+OBSERVED selected=true login=fixture-user_demo complete=false viewer=nil issues=[GitHubPetCore.ScopedFetchIssue.viewerUnavailable]
+OBSERVED selected=true login=demo_admin complete=false viewer=nil issues=[GitHubPetCore.ScopedFetchIssue.viewerUnavailable]
+RESULT checks=2 failures=0 mode=negative-before observations
