@@ -31,12 +31,15 @@ jobs:
       - name: Test
         timeout-minutes: 10
         # The suite is swift-testing only; skip the empty XCTest pass.
-        run: scripts/test.sh --disable-xctest --skip '^GitHubPetCoreTests[.]ProcessRunnerTests/descendantHoldingThePipeDoesNotLeakReadsOrDescriptors\(\)$'
+        run: scripts/test.sh --disable-xctest --skip '\bdescendantHoldingThePipeDoesNotLeakReadsOrDescriptors\b'
       - name: Descriptor cleanup (isolated process)
         timeout-minutes: 2
         # /dev/fd counts are process-wide; other suites may launch children or initialize
         # AppKit descriptors. Keep the exact assertion in a process with this test alone.
-        run: scripts/test.sh --skip-build --disable-xctest --filter '^GitHubPetCoreTests[.]ProcessRunnerTests/descendantHoldingThePipeDoesNotLeakReadsOrDescriptors\(\)$'
+        run: |
+          set -o pipefail
+          scripts/test.sh --skip-build --disable-xctest --filter '\bdescendantHoldingThePipeDoesNotLeakReadsOrDescriptors\b' | tee .build/descriptor-isolated.log
+          python3 -c "from pathlib import Path; assert 'Test run with 1 test in 1 suite passed' in Path('.build/descriptor-isolated.log').read_text(), 'isolated descriptor test must run and pass exactly once'"
       - name: External public CommandRunner API
         timeout-minutes: 2
         run: scripts/test-public-budget.sh
