@@ -1,0 +1,8 @@
+HEAD 1d5a9115d6ff338a308813cb01e1a2422824e606
+NORMAL import; immutable held build
+RAW exit=7 complete=true stderr="fixture transport failure\n"
+LEGACY account=fixture-user outcome=snapshot(items: [], complete: false)
+SCOPED complete=false issues=[GitHubPetCore.ScopedFetchIssue.transport] outcome=snapshot(items: [], complete: false)
+OBSERVED legacy rows=0 complete=false
+
+EXIT 0

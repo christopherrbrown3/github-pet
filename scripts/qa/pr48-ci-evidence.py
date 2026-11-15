@@ -1,15 +1,16 @@
 import json
 import pathlib
 import subprocess
+import sys
 
 root = pathlib.Path(__file__).resolve().parents[2]
-out = root / "docs/qa/pr48-e2a11a5"
-run_id = "43639314358"
+sha, run_id = sys.argv[1:] if len(sys.argv) == 3 else ("e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72", "43639314358")
+out = root / ("docs/qa/pr48-" + sha[:7])
 repo = "christopherrbrown3/github-pet"
 def run(argv):
     return subprocess.check_output(argv, text=True, stderr=subprocess.STDOUT, timeout=90)
 metadata = json.loads(run(["gh", "run", "view", run_id, "--repo", repo, "--json", "headSha,status,conclusion,event"]))
-assert metadata["headSha"] == "e2a11a559bfbfb791fcd68cd4aa37d77f1f4ce72" and metadata["conclusion"] == "success"
+assert metadata["headSha"] == sha and metadata["conclusion"] == "success"
 download = out / "download"
 download.mkdir()
 run(["gh", "run", "download", run_id, "--repo", repo, "--name", "render-check", "--dir", str(download)])

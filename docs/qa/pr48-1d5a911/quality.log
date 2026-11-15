@@ -1,0 +1,103 @@
+HEAD 1d5a9115d6ff338a308813cb01e1a2422824e606
+NORMAL import; immutable held build
+PASS parser tracks errors presence reported rows=false
+PASS errors=reported rows=false same response account
+PASS errors=reported rows=false quality and proven rows
+PASS errors=reported rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence string rows=false
+PASS errors=string rows=false same response account
+PASS errors=string rows=false quality and proven rows
+PASS errors=string rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence object rows=false
+PASS errors=object rows=false same response account
+PASS errors=object rows=false quality and proven rows
+PASS errors=object rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence null rows=false
+PASS errors=null rows=false same response account
+PASS errors=null rows=false quality and proven rows
+PASS errors=null rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence emptyarray rows=false
+PASS errors=emptyarray rows=false same response account
+PASS errors=emptyarray rows=false quality and proven rows
+PASS errors=emptyarray rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence nullentry rows=false
+PASS errors=nullentry rows=false same response account
+PASS errors=nullentry rows=false quality and proven rows
+PASS errors=nullentry rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence emptyentry rows=false
+PASS errors=emptyentry rows=false same response account
+PASS errors=emptyentry rows=false quality and proven rows
+PASS errors=emptyentry rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence boolean rows=false
+PASS errors=boolean rows=false same response account
+PASS errors=boolean rows=false quality and proven rows
+PASS errors=boolean rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence number rows=false
+PASS errors=number rows=false same response account
+PASS errors=number rows=false quality and proven rows
+PASS errors=number rows=false engine does not certify errored empty/count
+PASS parser no-error control rows=false
+PASS exit=0 rows=false same response account
+PASS exit=0 rows=false quality and proven rows
+PASS exit=0 rows=false engine does not certify errored empty/count
+PASS exit=7 rows=false same response account
+PASS exit=7 rows=false quality and proven rows
+PASS exit=7 rows=false engine does not certify errored empty/count
+PASS parser tracks errors presence reported rows=true
+PASS errors=reported rows=true same response account
+PASS errors=reported rows=true quality and proven rows
+PASS errors=reported rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence string rows=true
+PASS errors=string rows=true same response account
+PASS errors=string rows=true quality and proven rows
+PASS errors=string rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence object rows=true
+PASS errors=object rows=true same response account
+PASS errors=object rows=true quality and proven rows
+PASS errors=object rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence null rows=true
+PASS errors=null rows=true same response account
+PASS errors=null rows=true quality and proven rows
+PASS errors=null rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence emptyarray rows=true
+PASS errors=emptyarray rows=true same response account
+PASS errors=emptyarray rows=true quality and proven rows
+PASS errors=emptyarray rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence nullentry rows=true
+PASS errors=nullentry rows=true same response account
+PASS errors=nullentry rows=true quality and proven rows
+PASS errors=nullentry rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence emptyentry rows=true
+PASS errors=emptyentry rows=true same response account
+PASS errors=emptyentry rows=true quality and proven rows
+PASS errors=emptyentry rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence boolean rows=true
+PASS errors=boolean rows=true same response account
+PASS errors=boolean rows=true quality and proven rows
+PASS errors=boolean rows=true engine does not certify errored empty/count
+PASS parser tracks errors presence number rows=true
+PASS errors=number rows=true same response account
+PASS errors=number rows=true quality and proven rows
+PASS errors=number rows=true engine does not certify errored empty/count
+PASS parser no-error control rows=true
+PASS exit=0 rows=true same response account
+PASS exit=0 rows=true quality and proven rows
+PASS exit=0 rows=true engine does not certify errored empty/count
+PASS exit=7 rows=true same response account
+PASS exit=7 rows=true quality and proven rows
+PASS exit=7 rows=true engine does not certify errored empty/count
+PASS real failedempty same response account
+PASS real failedempty quality and proven rows
+PASS real failedempty engine does not certify errored empty/count
+PASS real failedrow same response account
+PASS real failedrow quality and proven rows
+PASS real failedrow engine does not certify errored empty/count
+PASS real errorexit0 same response account
+PASS real errorexit0 quality and proven rows
+PASS real errorexit0 engine does not certify errored empty/count
+PASS real positivezero same response account
+PASS real positivezero quality and proven rows
+PASS real positivezero engine does not certify errored empty/count
+RESULT checks=98 failures=0; NORMAL import, isolated fixtures only
+
+EXIT 0
