@@ -1,3 +1,9 @@
+# Latest instruction — 2026-11-15 Claude PM transfer
+
+Chris requests a fresh Claude PM (prior selected model Opus5.5) after allowance reset, authorized to launch specialists as needed. Read handoffs/claude-pm-2026-11-15.md. Claude PM t49 product-manager (Opus5.5) has verified PM_READY. Explicit HANDOFF_GRANTED from Codex t1r transfers sole authority; after that route reports via hc send t49 (or product-manager). Codex t1r steps back and freezes the PM checkout. This latest instruction/live state supersedes older dispatch below.
+
+Developer owns unit/logic/regression tests. QA is functional from here: built app, user flows and artifacts, reproducible defects and actual limits. No new QA unit-test/core-linked unit-style harness assignments. Preserve historical reports. This is Chris's explicit instruction.
+
 # Operating the team
 
 ## Current dispatch — 2026-11-15

@@ -1,3 +1,15 @@
+# Latest checkpoint — 2026-11-15 Claude PM handoff
+
+Chris requests new Claude PM after allowance reset, authorized to launch specialists as needed. Successor t49 product-manager verified Claude Opus5.5 (argv + readiness response) and read the current handoff. Sole PM authority transfers with explicit HANDOFF_GRANTED from t1r; afterward reports route to t49/product-manager, t1r stops coordinating/writing. Same dedicated PM worktree/PR46 branch is handed over cleanly. See handoffs/claude-pm-2026-11-15.md and roles.json; these supersede older dispatch below.
+
+**New binding split:** Developer owns production code and unit/logic/regression tests/build CI. QA is functional from here: actual app/user workflows/artifacts, reproducible defects/evidence/limits; no new unit-test or core-linked unit-style QA harness assignments. Existing evidence preserved.
+
+Current PR48 DRAFT head52d5124384817b63dc6d3ee2d58dcd4b9491ba45, CI43740674826 SUCCESS317tests/externalAPI/universal/render/upload; actual PR Intel smoke SKIP. Current-head Copilot5911935714 no open issues/all threads resolved, human fd-test scheduling caution recorded without reproduced failure. Scope CORE/transport only; no Settings/AppModel/discovery/clip wiring. Developer t1s source/debug completed HELD/clean in developer-scope-core, idle. Codex QA t1t hit quota while finishing final actual-artifact verification: affected52 viewer checks passed and prior error/legacy/JSON/transport evidence retained; **final current-head acceptance not claimed**. New functional QA must close the remaining actual-build/artifact gate. No UI expansion or merge until new PM assesses current gates.
+
+Mainc91 includes accepted PR47; #44 Done, #30 In Progress. PR46 holds planning/durable checkpoint docs; older state paragraphs are historical. Saved verified mainb0127f0 app/ZIP remains immutable. No releases/tags/Homebrew/auto-merge; prior ready-merge authorization conditional on review/checks/acceptance remains available to new PM.
+
+---
+
 # Team checkpoint — 2026-11-15 scope-core acceptance
 
 Board: https://github.com/users/christopherrbrown3/projects/3/views/1 . Live state and exact-head evidence supersede this snapshot.

@@ -1,6 +1,6 @@
 # GitHub Pet team contract
 
-Product Manager alone assigns work and controls authoritative GitHub Projects status. Role identity is independent of model; current models are in docs/team/roles.json (Chris authorized Codex takeover and cost-conscious model selection on 2026-11-14). Never silently substitute a model.
+Product Manager alone assigns work and controls authoritative GitHub Projects status. Role identity is independent of model; current models are in docs/team/roles.json (Chris requests a new Claude PM takeover on 2026-11-15; inspect roles.json/live Herdr for current assignments). Never silently substitute a model.
 
 - No merges during bootstrap without Chris's explicit authorization. No releases or auto-merge.
 - Use a dedicated branch/worktree per role/task. Preserve other worktrees and existing remote changes. No force pushes.
@@ -9,7 +9,7 @@ Product Manager alone assigns work and controls authoritative GitHub Projects st
 - Read-only product: approval actions open the GitHub page. All entitlement repositories are configurable; never commit internal organization details.
 - Unknown, stale, partial and failed source data must never look like an empty inbox. Initial sync establishes a baseline. Animate genuinely new comparable events once; no replay on unchanged polls or reconnect.
 - Fixtures precede live integrations. Privacy, reduced motion, quiet hours, snooze and hiding the mascot must not misrepresent source state.
-- Developer owns production Swift, tests and build CI. Designer owns `assets/mascots/` and `docs/design/`. QA owns `docs/qa/` and `scripts/qa/`, reviews independently, and sends defects to Developer. PM owns planning, templates and `docs/team/`.
+- Developer owns production Swift, unit/logic/regression tests and build CI. QA is functional from here: exercise the built app/user workflows, verify artifacts/source-state behavior, and report reproducible defects and limits; do not assign QA unit-test authoring or core-linked unit-style harnesses. Preserve historical QA evidence. Designer owns `assets/mascots/` and `docs/design/`. QA owns `docs/qa/` and `scripts/qa/`, reviews independently, and sends defects to Developer. PM owns planning, templates and `docs/team/`.
 - No additional agents unless PM explicitly assigns them. Report exact commit, PR, validation, limitations and next handoff through Herdr and durable GitHub issue/PR comments.
 
 Read `docs/team/OPERATING.md` for dispatch, status and recovery. Actual board/issue state takes precedence over a stale session snapshot.

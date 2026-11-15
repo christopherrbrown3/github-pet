@@ -2,26 +2,29 @@
   "roles": [
     {
       "name": "product-manager",
-      "terminal": "t1r",
-      "runtime": "codex",
-      "assignment": "PR48 corrected scope core acceptance; PR46 planning checkpoint; next native scope wiring only after core gates",
-      "intendedModel": "gpt-6.1-sol",
-      "observedModel": null,
+      "terminal": "t49",
+      "runtime": "claude",
+      "assignment": "Take over as sole PM after HANDOFF_GRANTED from t1r; functional QA/core gates then native scope UI phase",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
       "sessionId": null,
-      "previousCodexTerminal": "t8",
-      "previousCodexSessionId": "01a1d07b-522b-7370-9477-72b1b877c355",
+      "previousCodexTerminal": "t1r",
+      "previousCodexSessionId": null,
       "previousCodexObservedModel": "gpt-6.1-terra",
       "previousClaudeTerminal": "t1p",
       "previousClaudeModel": "claude-opus-5-5",
       "previousClaudeSessionId": "509dc436-e621-4025-b7f4-b02119a92a5b",
-      "reasoningEffort": "high",
-      "verification": "PM local configuration is Sol/high; no explicit model in launch argv"
+      "reasoningEffort": null,
+      "verification": "launch argv + actual PM_READY response/runtime self-identification, 2026-11-15",
+      "bootstrapCodexTerminal": "t8",
+      "bootstrapCodexSessionId": "01a1d07b-522b-7370-9477-72b1b877c355",
+      "previousCodexModelEvidence": "Sol/high local configuration; previous PM did not claim launch-argv model verification"
     },
     {
       "name": "developer",
       "terminal": "t1s",
       "runtime": "codex",
-      "assignment": "PR48 narrow legacy GhClient exit/error-envelope quality fix after e2 QA FAIL; old held build released, no UI expansion",
+      "assignment": "Hold exact52d5124 core source/debug immutable; Developer owns ALL unit/logic/regression tests and build CI; await new Claude PM t49 dispatch",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -49,7 +52,7 @@
       "name": "qa-engineer",
       "terminal": "t1t",
       "runtime": "codex",
-      "assignment": "PR48 e2 FAIL/HOLD report saved; links released; await new exact SHA/completed immutable build for L1/L2 after-checks",
+      "assignment": "Quota-stopped after affected52 checks; final actual-artifact functional QA still pending. QA FUNCTIONAL ONLY from latest user instruction, no new unit/core-linked harness tasks; await new PM",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -63,5 +66,5 @@
   ],
   "observedDate": "2026-11-15",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly authorized Codex takeover and cost-conscious model/effort selection on 2026-11-14, superseding earlier Claude-only preference. PM t1r is sole dispatcher; send reports explicitly to t1r. Developer t1s codex-developer Sol/high and QA t1t codex-qa Sol/medium verified launch/TUI/READY. Old Claude PM/Developer/QA/Designer exited cleanly; saved session IDs/history preserved. No restart needed. PR36/42/43 merged after current-head CI/review/independent QA. No release/tag/auto-merge/Homebrew publication. Designer/developer-2 idle; no duplicate writers or new backlog work. Prior ready-merge authorization verified in original Claude PM user history. Chris subsequently said keep working: PM may dispatch ready backlog tasks; previous idle/no-expansion checkpoint is historical. Saved mainb0127f0 artifacts remain immutable. No new release/tag authorization. QA resumed same t1t Sol/medium after reported allowance reset elapsed and actual response confirmed at20:19UTC; no restart/model switch or premature retry. On Nov15 both same Codex sessions resumed after Nov14 7:10PM reset elapsed (clock16:40UTC), responses confirmed. PR47 mergedc91c250; PR48e2a11a5 greenCI/finalQA ongoing."
+  "note": "Chris explicitly requested a fresh Claude PM after Claude allowance reset, authorized that PM to launch other agents as needed, and ordered Developer-owned unit tests / QA functional-only. New PM t49 product-manager (Opus5.5) verified READY; sole authority transfers by explicit HANDOFF_GRANTED from t1r. Codex PM t1r then steps back and freezes PM checkout. Route to t49/product-manager after grant. Prior models/history/worktrees and completed QA evidence preserved. Developer t1s idle, QA t1t quota-stopped; new PM chooses replacements deliberately without duplicate writers. PR48 exact52 greenCI/currentCopilot no open issues but final functional QA pending; no automatic merge/release/tag/auto-merge/Homebrew."
 }
