@@ -2,6 +2,8 @@
 
 Head **`1d5a9115d6ff338a308813cb01e1a2422824e606`**; CI43737962079 pending. **Legacy L1/L2 positive-after checks PASS; final acceptance waits current-head green CI/review evidence.**
 
+**Superseded-head hold:** PM requires a test-only legacy-client transport coverage commit (Copilot4579267187) before acceptance. Repository guards must cover legacy incomplete preflight/query output and shared preflight/query bytes/deadline, since AppModel uses that client. Independent legacy adversarial evidence already passes and is retained; it does not replace CI-owned regression coverage. All1d5 object links/probes are finished and the held build was explicitly released to Developer before mutation. Any existing1d5 CI/helper output is supporting evidence only, not final acceptance. Await the new test-only exact SHA/held handoff; verify production-source equality and only the new focused regressions/current CI.
+
 Only two files differ from e2: legacy GhClient/GhGraphQLParser completeness and its regression tests. Scope query/parser, account binding, budget/collector/cancellation implementation, AppModel and accepted47 integration are unchanged. Reuse unaffected e2 independent 36 passing adversarial checks and18 JSON after-fix assertions; the one failed e2 check is rerun here, not waived. Original940 negative-before parser evidence remains preserved.
 
 Clean exact HEAD and completed-held build verified before linking. Core objects/module fingerprinted before/after; unchanged. QA executables use normal import, not @testable or copied implementations.
