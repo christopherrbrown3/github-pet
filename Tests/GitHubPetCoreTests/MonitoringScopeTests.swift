@@ -54,8 +54,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
                          "-user", "user-", "_user", "user_", "user/name", "user:other", "user.name"]
         + lineTerminators.flatMap { ["user_demo" + $0, "us" + $0 + "er_demo"] }
     let suite = "scope.viewer.tests.\(UUID().uuidString)"
-    let defaults = try #require(UserDefaults(suiteName: suite))
-    defer { defaults.removePersistentDomain(forName: suite) }
+    let defaults = EphemeralDefaults(name: suite)
     let store = ScopeSelectionStore(defaults: defaults)
     try store.save(selected, for: .github(accountA))
     for plan in plans {
@@ -132,8 +131,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
     }
 
     @Test func accountAndDemoRecordsAreIsolatedAndCorruptionNeverBroadens() throws {
-        let suite = "scope.tests.\(UUID().uuidString)", defaults = try #require(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
+        let defaults = EphemeralDefaults(name: "scope.tests.\(UUID().uuidString)")
         let store = ScopeSelectionStore(defaults: defaults), selected = try mixedScope()
         #expect(store.load(for: .github(accountA)) == .scope(.everything), "legacy/missing record")
         try store.save(selected, for: .github(accountA))

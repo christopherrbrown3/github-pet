@@ -25,6 +25,9 @@ struct LaunchOptions {
     var snapshotDirectory: URL?
     /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
     var simulatesMonitoringScope = false
+    /// QA scenario runner (QAScenarioRunner); refused unless simulatesMonitoringScope.
+    var qaScenario: String?
+    var qaOutput: String?
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
 
@@ -50,6 +53,8 @@ struct LaunchOptions {
             case "--render-snapshots":
                 if let dir = iterator.next() { options.snapshotDirectory = URL(fileURLWithPath: dir, isDirectory: true) }
             case "--simulate-monitoring-scope": options.simulatesMonitoringScope = true
+            case "--qa-scenario": options.qaScenario = iterator.next() ?? ""
+            case "--qa-output": options.qaOutput = iterator.next() ?? ""
             case "--fixtures": options.forcedSource = "fixtures"
             case "--gh": options.forcedSource = "gh"
             case "--inject-event-after":
@@ -102,7 +107,15 @@ struct LaunchOptions {
 
     static let snapshotDefaultsSuite = "dev.github-pet.render-snapshots.\(ProcessInfo.processInfo.processIdentifier)"
 
+    /// Test seam: an in-memory store for a normal (non-simulated) launch.
+    var userDefaultsOverride: UserDefaults?
+
     var userDefaults: UserDefaults {
+        if let userDefaultsOverride { return userDefaultsOverride }
+        // The simulated launch's throwaway domain lives only in memory: nothing reaches disk.
+        if simulatesMonitoringScope, let defaultsSuite, defaultsSuite.hasPrefix("dev.github-pet.scope-simulation.") {
+            return EphemeralDefaults.named(defaultsSuite)
+        }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {
             return suite
         }

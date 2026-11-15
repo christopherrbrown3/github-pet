@@ -16,7 +16,7 @@ Run the exact-head CI app binary with the explicit flag:
 /path/to/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope
 ```
 
-The flag is **off by default**. It forces a fresh randomly named `dev.github-pet.scope-simulation.*` defaults domain, seeds only invented accounts/targets, uses no gh process or network (including public status), and labels the app Demo and Simulated. Caller defaults-suite overrides cannot select a real account store. Quitting normally removes this simulation domain. Periodic repository polling is disabled; use Refresh and the **Simulated scope** menu in the Inbox. The normal data-source picker can exercise source changes; return to GitHub CLI within this simulated launch for account scenarios. Even there both sources remain offline. Normal launches have no simulated controls, seeded accounts or fixture transport.
+The flag is **off by default**. It forces a fresh randomly named `dev.github-pet.scope-simulation.*` defaults domain that lives only in memory (never written through cfprefsd or to `~/Library/Preferences`), seeds only invented accounts/targets, uses no gh process or network (including public status), and labels the app Demo and Simulated. Caller defaults-suite overrides cannot select a real account store. Quitting clears this in-memory domain; no simulation plist is ever created, so none can be left behind. Periodic repository polling is disabled; use Refresh and the **Simulated scope** menu in the Inbox. The normal data-source picker can exercise source changes; return to GitHub CLI within this simulated launch for account scenarios. Even there both sources remain offline. Normal launches have no simulated controls, seeded accounts or fixture transport.
 
 Account/reload/apply controls are disabled when the source is Fixtures; delivering an already-held reply and public incident controls remain available to verify isolation. Teardown invalidates the repository session before releasing held replies, so deleted temporary defaults cannot be recreated by a late callback.
 
@@ -29,6 +29,32 @@ The menu reports account, request count, held replies, last requested scope/expe
 - **Partial→recovery/new-once:** start with repaired selections. Set partial replies and inject a row: partial count, no new gesture. Complete replies/recover: silent baseline. Inject another row: one new unseen event/gesture, unchanged Refresh does not replay it.
 - **Incidents preserved:** inject a major public incident in the Simulated scope menu, then Apply Everything or Selected. Its incident rows/unseen marker/burst and still-active service clip retain their original timing. Scope Apply does not refetch/reset public status. Existing motion/quiet/snooze controls can intentionally suppress gestures without changing source truth.
 - **Privacy and source change:** scope header contains counts, not target/account names. Hold a repository reply, switch the data-source picker to Fixtures, deliver it: it is discarded and Demo keeps its separate scope. Return to GitHub CLI to restore the simulated account's selection. Real account selections are never written.
+
+## Scenario runner (no screenshots or clicks needed)
+
+The same build can drive these scenarios itself and write what a user would see:
+
+```sh
+/path/to/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope \
+  --qa-scenario stale-reply-after-apply --qa-output ~/qa-runs/stale-reply
+```
+
+- **Opt-in and isolated.** `--qa-scenario`/`--qa-output` without `--simulate-monitoring-scope` (or together with `--render-snapshots`) are refused with exit 2 before any model or defaults domain exists, and nothing is written. Same isolation as the flag above: throwaway domain, invented accounts, no gh process or network, labelled Demo/Simulated.
+- **Output safety.** A missing directory is created; an empty one is used. A non-empty directory is accepted only if it holds the runner marker `.github-pet-qa-runner` and nothing but runner files (`step-NN-*.json|png`, `runner.json`), which are replaced. Anything else, plus `/`, home, `~/Library`, `/System`, `/Library`, `/Applications`, `/usr`, `/bin`, `/sbin`, `/etc` and the app bundle, is refused. Relative paths resolve against the working directory.
+- **Built-in scenarios (PR A):** `restore-before-display`, `account-a-b-a`, `stale-reply-after-apply`, `corrupt-saved-selected`, `partial-recovery-new-once`, `incidents-preserved`, `privacy-summary`, `demo-isolation`. Or pass a path ending in `.json`: `{"name": "a1", "steps": [{"action": "hold", "count": 2, "label": "hold-two"}, ...]}`. Labels match `[a-z0-9][a-z0-9-]{0,39}`; up to 99 steps.
+- **Steps** call exactly what the matching control calls (Simulated scope menu, Inbox Refresh/Show details, Settings toggles and source picker):
+  - Scope and replies: `account` {`account`: A|B}, `apply` {`scope`: selected|everything}, `hold` {`count`: 1-8 = the next N replies, `refresh`: true = trigger one now}, `deliver-oldest`, `deliver-newest`, `deliver-all`, `inject-row`, `partial` {`on`}, `refresh`, `mark-seen` (what closing the Inbox does).
+  - Saved selections: `reload` {`viewer`: known|unknown, `account`: A|B}, `corrupt` {`account`} (no reload), `corrupt-reload`, `seed` (no reload), `repair`.
+  - Incidents: `inject-incident` {`tier`: minor|major}, `resolve-incidents`.
+  - Settings: `privacy` {`on`}, `show-details` {`on`}, `reduce-motion` {`on`}, `source` {`source`: fixtures|gh}, `open-settings` (also renders Settings).
+  - Time and capture: `clock-set` {`time`: ISO 8601}, `clock-advance` {`seconds`: 0-86400}, `wait-real` {`seconds`: 0-60}, `capture`.
+  - `quit` must be the last step.
+- **Time.** The app clock starts at 2026-11-15T12:00:00Z and moves only on `clock-set`/`clock-advance`, so clips and bursts are reproducible. Repository budgets and held replies keep their real 20-second bound: use `wait-real` to let a held reply time out.
+- **Output.** Step 00 is the launch state. After each step the runner waits until every simulated request has been received or is held (30-second harness bound), ticks once, then writes:
+  - `step-NN-<label>.json`: Inbox header (scope summary, quality text, status, hint, badge), visible rows with stable ids and privacy-applied text, unseen/clip/burst/marker/mascot state, service incidents, settings, active scope identity/generation, the request log (scope, targets, expected account, generation), held/received/discarded counts, simulated account and defaults domain name.
+  - `step-NN-<label>-inbox.png` and `-mascot.png`, plus `-settings.png` for `open-settings`. These are offscreen renders of the app's own views (no Screen Recording or composited desktop).
+  - `runner.json`: the scenario summary. After `quit`, it also reports held replies at quit, late replies received after cleanup, keys left in the in-memory domain, and whether a plist exists for it (it never should).
+- **Exit codes.** A non-zero exit means a harness error only: 2 for a refused flag or invalid scenario, 1 for a step that would not settle or an output write failure. The runner never judges pass or fail.
 
 ## Developer evidence
 

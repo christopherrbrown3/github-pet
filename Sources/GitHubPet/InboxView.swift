@@ -399,6 +399,8 @@ struct ScopeSimulationMenu: View {
             Button("Hold next repository reply") { model.simulateScopeHold() }
                 .disabled(model.settings.dataSource != .githubCLI)
             Button("Deliver held replies") { model.simulateScopeDeliver() }
+            Button("Deliver oldest held reply") { model.simulateScopeDeliverOne(newest: false) }
+            Button("Deliver newest held reply") { model.simulateScopeDeliverOne(newest: true) }
             Button("Inject new repository row") { model.simulateScopeInject() }
                 .disabled(model.settings.dataSource != .githubCLI)
             Button("Partial replies") { model.simulateScopePartial(true) }

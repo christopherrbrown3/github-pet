@@ -8,8 +8,7 @@ import Testing
     private var selected: MonitoringScope { try! MonitoringScope(selected: [MonitoringTarget(organization: "demo-a")]) }
     private func fixture(_ body: (RepositoryScopeSession, ScopeSelectionStore, UserDefaults) throws -> Void) rethrows {
         let name = "scope.session.tests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defer { defaults.removePersistentDomain(forName: name) }
+        let defaults = EphemeralDefaults(name: name)
         let store = ScopeSelectionStore(defaults: defaults)
         try body(RepositoryScopeSession(store: store), store, defaults)
     }

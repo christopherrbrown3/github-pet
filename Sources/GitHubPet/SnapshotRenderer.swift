@@ -185,7 +185,7 @@ enum SnapshotRenderer {
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
-    private static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
+    static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
         let window: NSWindow
         if asWindow {

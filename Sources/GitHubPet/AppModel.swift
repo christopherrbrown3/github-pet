@@ -12,6 +12,8 @@ final class AppModel: ObservableObject {
         var systemReducedMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
         var schedulesTimers = true
         var repositoryBudget: () -> CommandBudget = { CommandBudget(timeout: 20) }
+        /// --simulate-monitoring-scope only; unit fixtures pass nil to drop the real-time hold bound.
+        var scopeSimulationHoldLimit: Duration? = .seconds(20)
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -65,6 +67,10 @@ final class AppModel: ObservableObject {
     private let scopeDefaults: UserDefaults
     private let simulationDefaultsSuite: String?
     private var repositoryTask: Task<Void, Never>?
+    private var replyWaiters: [(count: Int, resume: CheckedContinuation<Void, Never>)] = []
+    /// Simulation only: every launched repository request (scope, expected account, generation).
+    private(set) var simulatedPollLog: [ScopePollRequest] = []
+    private var launchedScopePolls = 0
     private var clips = EventClipQueue()
     private var pollTimer: Timer?
     private var tickTimer: Timer?
@@ -79,7 +85,9 @@ final class AppModel: ObservableObject {
         var options = supplied
         // Defense at construction too: programmatic test callers cannot enable simulation
         // while retaining the real defaults domain or selecting a live transport.
-        if options.simulatesMonitoringScope { options.forcedSource = "gh"; options.resetSettings = true }
+        if options.simulatesMonitoringScope {
+            options.forcedSource = "gh"; options.resetSettings = true; options.userDefaultsOverride = nil
+        }
         if options.simulatesMonitoringScope && options.defaultsSuite?.hasPrefix("dev.github-pet.scope-simulation.") != true {
             options.defaultsSuite = "dev.github-pet.scope-simulation.\(UUID().uuidString)"
         }
@@ -90,7 +98,7 @@ final class AppModel: ObservableObject {
         scopeSession = RepositoryScopeSession(store: scopeStore)
         if options.simulatesMonitoringScope {
             try? ScopeSimulation.seed(options.userDefaults)
-            let simulation = ScopeSimulation()
+            let simulation = ScopeSimulation(holdLimit: runtime.scopeSimulationHoldLimit)
             scopeSimulation = simulation
             scopedClient = simulation
         } else {
@@ -291,6 +299,11 @@ final class AppModel: ObservableObject {
 
     private func launchRepositoryPoll(_ request: ScopePollRequest, budget: CommandBudget, refetches: Int) {
         let client = scopedClient
+        if scopeSimulation != nil {
+            launchedScopePolls += 1
+            simulatedPollLog.append(request)
+            if simulatedPollLog.count > 64 { simulatedPollLog.removeFirst(simulatedPollLog.count - 64) }
+        }
         repositoryTask = Task.detached { [weak self] in
             let result = client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
             await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
@@ -299,7 +312,12 @@ final class AppModel: ObservableObject {
 
     private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
                                        budget: CommandBudget, refetches: Int) {
-        if scopeSimulation != nil { receivedScopeReplies += 1 }
+        if scopeSimulation != nil {
+            receivedScopeReplies += 1
+            let ready = replyWaiters.filter { $0.count <= receivedScopeReplies }
+            replyWaiters.removeAll { $0.count <= receivedScopeReplies }
+            ready.forEach { $0.resume.resume() }
+        }
         guard scopeSession.isCurrent(request) else {
             if scopeSimulation != nil { discardedScopeReplies += 1 }
             return
@@ -481,6 +499,34 @@ final class AppModel: ObservableObject {
     var simulatesScope: Bool { scopeSimulation != nil }
     var repositoryFetchInFlight: Bool { repositoryTask != nil }
     var simulatedHeldReplies: Int { scopeSimulation?.heldCount ?? 0 }
+
+    // Explicit handshakes for the simulated scope (no wall-clock polling).
+    /// Awaits the current repository poll, including any refetch it chains, until none is current.
+    func repositoryPollSettled() async {
+        while let task = repositoryTask {
+            await task.value
+            if repositoryTask == task { return }
+        }
+    }
+    func scopeRepliesReceived(_ count: Int) async {
+        guard scopeSimulation != nil, receivedScopeReplies < count else { return }
+        await withCheckedContinuation { replyWaiters.append((count, $0)) }
+    }
+    func scopeRepliesHeld(_ count: Int) async { await scopeSimulation?.waitUntilHeld(count) }
+    /// Every launched simulated request has been received by the model or is held.
+    var simulatedScopeQuiescent: Bool {
+        guard let progress = scopeSimulation?.progress else { return true }
+        return progress.entered == launchedScopePolls && progress.finished == receivedScopeReplies
+            && progress.entered - progress.finished == progress.held
+    }
+    var simulationDomain: String? { simulationDefaultsSuite }
+    /// Keys left in the simulated launch's in-memory domain (0 after cleanup).
+    var simulationDomainKeyCount: Int {
+        simulationDefaultsSuite.map { scopeDefaults.persistentDomain(forName: $0)?.count ?? 0 } ?? 0
+    }
+    var simulatedAccountName: String? {
+        scopeSimulation.map { $0.account == ScopeSimulation.accountA ? "A" : "B" }
+    }
     var simulatedRequests: [ScopeSimulation.Request] { scopeSimulation?.requestHistory ?? [] }
     var monitoringScopeIdentity: ScopeIdentity? { scopeSession.identity }
     var monitoringScopeGeneration: Int { scopeSession.generation }
@@ -492,7 +538,9 @@ final class AppModel: ObservableObject {
         repositoryTask?.cancel(); repositoryTask = nil
         scopeSimulation?.releaseReplies()
         pollTimer?.invalidate(); tickTimer?.invalidate()
+        // The domain is in-memory (EphemeralDefaults), so this clears everything; nothing was on disk.
         scopeDefaults.removePersistentDomain(forName: suite)
+        EphemeralDefaults.release(suite)
     }
 
     // Explicit offline launch only; these controls never exist in a normal session.
@@ -507,11 +555,13 @@ final class AppModel: ObservableObject {
         let scope = identity == .github(ScopeSimulation.accountB) ? ScopeSimulation.selectedB : ScopeSimulation.selectedA
         _ = applyRepositoryScope(selected ? scope : .everything, identity: identity, generation: scopeSession.generation)
     }
-    func simulateScopeHold() {
+    func simulateScopeHold(_ count: Int = 1, refresh: Bool = true) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
-        simulation.holdNextReply(); refreshRepositoriesOnly()
+        simulation.holdNextReply(count)
+        if refresh { refreshRepositoriesOnly() }
     }
     func simulateScopeDeliver() { scopeSimulation?.releaseReplies() }
+    func simulateScopeDeliverOne(newest: Bool) { scopeSimulation?.releaseReply(newest: newest) }
     func simulateScopeInject() {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.inject(); refreshRepositoriesOnly()
@@ -520,13 +570,24 @@ final class AppModel: ObservableObject {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.setPartial(on); refreshRepositoriesOnly()
     }
-    func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false) {
+    func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false,
+                             account: ScopeAccount = ScopeSimulation.accountA) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         if corrupt { ScopeSimulation.corruptA(scopeDefaults) }
         if forgetViewer { scopeStore.rememberAccount(nil) }
-        simulation.switchAccount(ScopeSimulation.accountA)
+        simulation.switchAccount(account)
         repositoryTask?.cancel(); scopeSession.startLive(); resetRepositories()
         sync(now: clock()); refreshRepositoriesOnly()
+    }
+    /// Corrupts one saved record without reloading (the next restore of that account sees it).
+    func simulateScopeCorrupt(_ account: ScopeAccount) {
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }
+        ScopeSimulation.corrupt(scopeDefaults, account: account)
+    }
+    /// Re-seeds both saved selections and the remembered viewer without reloading.
+    func simulateScopeSeed() {
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }
+        try? ScopeSimulation.seed(scopeDefaults)
     }
     func simulateScopeRepair() {
         guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }

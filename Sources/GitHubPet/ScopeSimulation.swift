@@ -9,28 +9,54 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     static let selectedA = try! MonitoringScope(selected: [MonitoringTarget(organization: "demo-a")])
     static let selectedB = try! MonitoringScope(selected: [MonitoringTarget(repository: "demo-b/pet")])
     private let lock = NSLock()
-    private var account = accountA
+    private var currentAccount = accountA
     private var sequence: [ScopeAccount: Int] = [:]
     private var partial = false
-    private var holdNext = false
+    private var holdNext = 0
+    private var entered = 0, finished = 0
     private var held: [DispatchSemaphore] = []
+    private var heldWaiters: [(count: Int, resume: CheckedContinuation<Void, Never>)] = []
+    /// Real-time bound on a held reply. nil (unit fixtures only) leaves it bounded by the
+    /// budget and explicit release/teardown, so passing never depends on runner speed.
+    private let holdLimit: Duration?
+    init(holdLimit: Duration? = .seconds(20)) { self.holdLimit = holdLimit }
     struct Request: Equatable { let scope: MonitoringScope; let expected: ScopeAccount? }
     private var history: [Request] = []
     private var calls = 0
     var requestHistory: [Request] { lock.lock(); defer { lock.unlock() }; return history }
 
-    func switchAccount(_ account: ScopeAccount) { lock.lock(); self.account = account; lock.unlock() }
-    func inject() { lock.lock(); sequence[account] = min(31, sequence[account, default: 0] + 1); lock.unlock() }
+    func switchAccount(_ account: ScopeAccount) { lock.lock(); currentAccount = account; lock.unlock() }
+    func inject() { lock.lock(); sequence[currentAccount] = min(31, sequence[currentAccount, default: 0] + 1); lock.unlock() }
     func setPartial(_ on: Bool) { lock.lock(); partial = on; lock.unlock() }
-    func holdNextReply() { lock.lock(); holdNext = true; lock.unlock() }
+    func holdNextReply(_ count: Int = 1) { lock.lock(); holdNext += max(0, count); lock.unlock() }
     func releaseReplies() {
         lock.lock(); let replies = held; held = []; lock.unlock()
         for reply in replies { reply.signal() }
     }
+    /// Releases one held reply in arrival order (oldest) or reverse order (newest).
+    @discardableResult
+    func releaseReply(newest: Bool) -> Bool {
+        lock.lock(); let reply = held.isEmpty ? nil : newest ? held.removeLast() : held.removeFirst(); lock.unlock()
+        reply?.signal()
+        return reply != nil
+    }
+    var account: ScopeAccount { lock.lock(); defer { lock.unlock() }; return currentAccount }
+    /// Every fetch that entered has returned or is held: (entered, returned, held).
+    var progress: (entered: Int, finished: Int, held: Int) {
+        lock.lock(); defer { lock.unlock() }; return (entered, finished, held.count)
+    }
+    /// Explicit handshake: resumes once `count` replies are held, however slowly the fetch is scheduled.
+    func waitUntilHeld(_ count: Int) async {
+        await withCheckedContinuation { (resume: CheckedContinuation<Void, Never>) in
+            lock.lock()
+            guard held.count < count else { lock.unlock(); resume.resume(); return }
+            heldWaiters.append((count, resume)); lock.unlock()
+        }
+    }
     var status: String {
         lock.lock(); defer { lock.unlock() }
         let last = history.last.map { " · requested \($0.scope.mode == .selected ? "Selected" : "Everything") · expected \($0.expected == nil ? "unknown" : $0.expected == Self.accountA ? "A" : "B")" } ?? ""
-        return "Simulated account \(account == Self.accountA ? "A" : "B") · \(calls) requests · \(held.count) held · \(partial ? "partial" : "complete") replies" + last
+        return "Simulated account \(currentAccount == Self.accountA ? "A" : "B") · \(calls) requests · \(held.count) held · \(partial ? "partial" : "complete") replies" + last
     }
     var heldCount: Int { lock.lock(); defer { lock.unlock() }; return held.count }
 
@@ -40,25 +66,34 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         try store.save(selectedB, for: .github(accountB))
         store.rememberAccount(accountA)
     }
-    static func corruptA(_ defaults: UserDefaults) {
+    static func corruptA(_ defaults: UserDefaults) { corrupt(defaults, account: accountA) }
+    static func corrupt(_ defaults: UserDefaults, account: ScopeAccount) {
         // Deliberately malformed fixture record, only in the launch's throwaway domain.
         defaults.set(Data(#"{"mode":"selected","targets":[]}"#.utf8),
-                     forKey: "GitHubPet.monitoring-scope.v1.github.com." + accountA.viewerID)
+                     forKey: "GitHubPet.monitoring-scope.v1.github.com." + account.viewerID)
     }
 
     func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
+        lock.lock(); entered += 1; lock.unlock()
+        defer { lock.lock(); finished += 1; lock.unlock() }
         do { try budget.check() }
         catch CommandError.timedOut { return .failure(.deadline) }
         catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
         catch { return .failure(.cancelled) }
         lock.lock()
-        let account = self.account, count = sequence[account, default: 0], partial = self.partial
-        let gate = holdNext ? DispatchSemaphore(value: 0) : nil
-        if let gate { held.append(gate) }
-        holdNext = false; calls += 1
+        let account = currentAccount, count = sequence[account, default: 0], partial = self.partial
+        let gate = holdNext > 0 ? DispatchSemaphore(value: 0) : nil
+        var ready: [CheckedContinuation<Void, Never>] = []
+        if let gate {
+            held.append(gate)
+            ready = heldWaiters.filter { $0.count <= held.count }.map(\.resume)
+            heldWaiters.removeAll { $0.count <= held.count }
+        }
+        holdNext = max(0, holdNext - 1); calls += 1
         history.append(Request(scope: scope, expected: expectedAccount))
         if history.count > 32 { history.removeFirst(history.count - 32) }
         lock.unlock()
+        for waiter in ready { waiter.resume() }
         guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount) else { return .failure(.identityRequired) }
         var body: [String: Any] = ["viewer": ["id": account.viewerID, "login": account == Self.accountA ? "demo-a_sim" : "demo-b_sim"]]
         for (index, target) in scope.targets.enumerated() {
@@ -87,10 +122,14 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         guard let bytes = try? JSONSerialization.data(withJSONObject: envelope), budget.reserve(bytes.count) else { return .failure(.outputLimit) }
         if let gate {
             // Independently real-time bounded even with a frozen unit-fixture budget clock.
-            let holdDeadline = ContinuousClock.now.advanced(by: .seconds(20))
+            let holdDeadline = holdLimit.map { ContinuousClock.now.advanced(by: $0) }
             // Bounded, deterministic late-reply seam; no sleeps, child process or network.
             while gate.wait(timeout: .now() + 0.05) == .timedOut {
-                if budget.remaining <= 0 || ContinuousClock.now >= holdDeadline { return .failure(.deadline) }
+                if budget.remaining <= 0 || holdDeadline.map({ ContinuousClock.now >= $0 }) == true {
+                    // A reply that times out on its own is no longer held.
+                    lock.lock(); held.removeAll { $0 === gate }; lock.unlock()
+                    return .failure(.deadline)
+                }
             }
             if budget.remaining <= 0 { return .failure(.deadline) }
         } else {
