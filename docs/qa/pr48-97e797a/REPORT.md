@@ -1,0 +1,10 @@
+# PR48 exact-head independent QA checkpoint
+
+Head **`97e797a32598dfd02624de35f19cb4af09fe209c`**, CI43739236182 pending. **New CI-owned legacy coverage PASS; final acceptance awaits actual current-head CI/review.**
+
+- Exact pushed/held clean HEAD verified. Diff from1d5a911 contains **only Tests/GitHubPetCoreTests/GitHubCLITests.swift**. Production Sources, workflow, scripts, docs and package files are unchanged.
+- Every linked core object and module byte hash equals the prior held1d5 build, before and after QA. No rebuild, normal-import fixture relink or production mutation was needed.
+- Independently reran **only four new test cases** with `swift test --skip-build --disable-xctest --filter …`:4 PASS in0.078s. Coverage: incomplete auth prevents query; incomplete query rejects valid empty payload; preflight+query share the same budget instance and aggregate stdout/stderr debit, exact-limit positive control and+1 overflow; expired preflight never launches query; expired query cannot certify late valid JSON. Tests exercise shipped protocol accounting rather than copied logic. Real collector enforcement remains independently covered by the retained e2 adversarial fixtures.
+- Retain prior **98 independent quality assertions** (1d5), **18 full-JSON-path rejection assertions** and the **36 passing e2 adversarial checks** by unchanged production/module identity. The previously failing legacy exit7 case is fixed and verified by the unchanged negative-before fixture's positive-after execution at1d5; original940 JSON negative-before evidence remains preserved. These checks were not wastefully repeated or represented as newly executed on97.
+
+Scope remains core/transport only; legacy live caller and opt-in scoped API tested, no Settings/AppModel/engine/clip/discovery/UI wiring. No real gh auth/account settings, saved app/process, system clock/preferences or release/merge changes. Need current97 CI log/artifact and exact-head review before final verdict; earlier1d5/e2 green runs support unchanged behavior but do not satisfy the new-head merge gate.

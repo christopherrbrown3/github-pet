@@ -1,0 +1,19 @@
+HEAD 97e797a32598dfd02624de35f19cb4af09fe209c
+Only four new test cases; --skip-build
+[0/1] Planning build
+◇ Test run started.
+↳ Testing Library Version: 1501
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite GhClientTests started.
+◇ Test legacyQueryDeadlineCannotTurnLateValidJSONIntoCompleteEmpty() started.
+◇ Test legacyExhaustedPreflightDeadlineNeverLaunchesQuery() started.
+◇ Test legacyIncompleteAuthOrQueryCannotAcceptValidEmptyPayload() started.
+◇ Test legacyAggregatePreflightQueryBytesShareOneBudgetAndKeepExactControl() started.
+✔ Test legacyIncompleteAuthOrQueryCannotAcceptValidEmptyPayload() passed after 0.001 seconds.
+✔ Test legacyExhaustedPreflightDeadlineNeverLaunchesQuery() passed after 0.054 seconds.
+✔ Test legacyQueryDeadlineCannotTurnLateValidJSONIntoCompleteEmpty() passed after 0.060 seconds.
+✔ Test legacyAggregatePreflightQueryBytesShareOneBudgetAndKeepExactControl() passed after 0.078 seconds.
+✔ Suite GhClientTests passed after 0.078 seconds.
+✔ Test run with 4 tests in 1 suite passed after 0.078 seconds.
+
+EXIT 0
