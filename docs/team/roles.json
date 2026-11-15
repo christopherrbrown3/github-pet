@@ -22,17 +22,19 @@
     },
     {
       "name": "developer",
-      "terminal": "t1s",
-      "runtime": "codex",
-      "assignment": "#30 slice 2 (native scope UI/application/discovery): plan-only comment on #30 first, in new worktree developer-scope-ui on branch feat/30-scope-ui from f997d1d; owns all unit/logic/regression tests and build CI",
-      "intendedModel": "gpt-6.1-sol",
-      "observedModel": "gpt-6.1-sol",
+      "terminal": "t4w",
+      "runtime": "claude",
+      "assignment": "Took over PR49 (#30 slice 2 PR A) at 262ee9b in developer-scope-ui/feat/30-scope-ui from Codex t1s; fix corrupt-selection Settings wording finding, Copilot replies, CI. Owns all unit/logic/regression tests and build CI",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": null,
       "sessionId": null,
       "previousClaudeTerminal": "t9",
       "previousClaudeModel": "claude-opus-5-5",
       "previousClaudeSessionId": null,
-      "reasoningEffort": "high",
-      "verification": "launch argv, visible TUI, READY response"
+      "reasoningEffort": null,
+      "verification": "launch argv --model claude-opus-5-5; READY pending",
+      "previousCodexTerminal": "t1s",
+      "previousCodexModel": "gpt-6.1-sol/high"
     },
     {
       "name": "graphic-designer",
@@ -50,21 +52,23 @@
     },
     {
       "name": "qa-engineer",
-      "terminal": "t1t",
-      "runtime": "codex",
-      "assignment": "PR48 52d5124 functional PASS delivered (comment 6902058672, QA commit eef2d88). Functional-only; idle until slice-2 build exists; quota-sensitive",
-      "intendedModel": "gpt-6.1-sol",
-      "observedModel": "gpt-6.1-sol",
+      "terminal": "t4x",
+      "runtime": "claude",
+      "assignment": "Took over from Codex t1t (qa-engineer, sprint1/qa-acceptance eef2d88, local unpushed QA commits preserved). FUNCTIONAL ONLY; readiness + capability check, then PR49 built-app functional QA on PM dispatch",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": null,
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
       "sessionId": null,
       "previousClaudeTerminal": "t1m",
       "previousClaudeModel": "claude-opus-5-5",
       "previousClaudeSessionId": "75c23127-a4b1-4819-bc22-3f78b1b19d9e",
-      "reasoningEffort": "medium",
-      "verification": "launch argv, visible TUI, READY response"
+      "reasoningEffort": null,
+      "verification": "launch argv --model claude-opus-5-5; READY pending",
+      "previousCodexTerminal": "t1t",
+      "previousCodexModel": "gpt-6.1-sol/medium"
     }
   ],
   "observedDate": "2026-11-15",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Sole PM t49 product-manager (Claude Opus 5.5) since explicit HANDOFF_GRANTED from Codex t1r on 2026-11-15; t1r stepped back. Developer owns unit/logic/regression tests and build CI; QA is functional only (historical QA evidence preserved). PR48 merged at exact head 52d5124 as f997d1d after current-head CI, Copilot review and independent functional QA. Conditional ready-merge authorization remains in force; no release/tag/auto-merge/Homebrew."
+  "note": "Sole PM t49 product-manager (Claude Opus 5.5) since explicit HANDOFF_GRANTED from Codex t1r on 2026-11-15; t1r stepped back. Developer owns unit/logic/regression tests and build CI; QA is functional only (historical QA evidence preserved). PR48 merged at exact head 52d5124 as f997d1d after current-head CI, Copilot review and independent functional QA. Conditional ready-merge authorization remains in force; no release/tag/auto-merge/Homebrew. On 2026-11-15 Chris requested Claude Developer and QA to replace Codex; t1s and t1t handed over final state and stopped writing. Claude Opus 5.5 claude-developer t4w and claude-qa t4x launched by PM t49 (--bg --outlive-parent --keep)."
 }

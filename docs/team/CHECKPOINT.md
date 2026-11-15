@@ -4,6 +4,7 @@ Sole PM is **t49 product-manager** (Claude Opus 5.5) since explicit HANDOFF_GRAN
 
 - PR48 core/transport merged at exact head `52d5124384817b63dc6d3ee2d58dcd4b9491ba45` as **`f997d1d51b9f6a1d93c61f2d76fe56f60305eaee`** (`--match-head-commit`). Gates: CI43740674826 SUCCESS, Copilot5911935714 no open issues, 0 unresolved threads, independent functional QA PASS for the offline core/transport scope (comment6902058672, QA commit eef2d88). Live-auth/UI/install checks were not claimed. App behavior is unchanged (Everything).
 - #30 stays In Progress. Developer t1s has been dispatched slice 2 (native Settings scope UI, AppModel/engine adoption, discovery) in new worktree developer-scope-ui on branch feat/30-scope-ui from f997d1d, **plan first**; production edits wait for PM approval. QA will then functionally test the built app through fixture/test hooks.
+- **Specialist swap (Chris request):** Codex Developer t1s and QA t1t gave final state and stopped writing. Claude Opus 5.5 **claude-developer t4w** (developer-scope-ui, PR49 at 262ee9b, CI43771499729 pending) and **claude-qa t4x** (qa-engineer, functional only) launched. PR49 history: CI failures root-caused (runner-slow deadline -> silent baseline, not motion; isolated fd-test guard wording); Copilot findings fixed except corrupt-selection Settings wording, now assigned.
 - Saved main b0127f0 app/ZIP remain immutable. No release/tag/auto-merge/Homebrew.
 
 ---
