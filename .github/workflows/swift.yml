@@ -39,7 +39,16 @@ jobs:
         run: |
           set -o pipefail
           scripts/test.sh --skip-build --disable-xctest --filter '\bdescendantHoldingThePipeDoesNotLeakReadsOrDescriptors\b' | tee .build/descriptor-isolated.log
-          python3 -c "from pathlib import Path; assert 'Test run with 1 test in 1 suite passed' in Path('.build/descriptor-isolated.log').read_text(), 'isolated descriptor test must run and pass exactly once'"
+          python3 - <<'PYGUARD'
+          import re
+          from pathlib import Path
+          log = Path('.build/descriptor-isolated.log').read_text()
+          named = r'^✔ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors\(\) passed\b'
+          summary = r'^✔ Test run with 1 test(?: in [0-9]+ suites?)? passed\b'
+          assert len(re.findall(named, log, re.MULTILINE)) == 1, 'descriptor test must pass exactly once'
+          assert '✘' not in log, 'isolated run contains a failure'
+          assert len(re.findall(summary, log, re.MULTILINE)) == 1, 'isolated run must report exactly one passing test'
+          PYGUARD
       - name: External public CommandRunner API
         timeout-minutes: 2
         run: scripts/test-public-budget.sh
