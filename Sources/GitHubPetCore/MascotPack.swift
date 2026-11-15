@@ -27,6 +27,46 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public var frameSha256: [String: String]?
 }
 
+/// Display-only sanitizing for strings a pack author controls (manifest `id`/`name`, state names
+/// and file paths echoed in errors). Never applied to the stored values used for matching.
+public enum PackLabel {
+    /// Longest label shown, in grapheme clusters; longer input is cut and ends with "…".
+    public static let maxGraphemes = 48
+    /// Scalar cap applied first so a single enormous grapheme (stacked combining marks) stays bounded.
+    public static let maxScalars = 256
+    public static let fallbackID = "(unnamed pack)"
+
+    /// Control characters (C0, DEL, C1, line/paragraph separators) become a space, invisible format
+    /// characters (zero-width, bidi overrides/isolates and marks, BOM, soft hyphen) are dropped,
+    /// runs of spaces collapse, and the result is trimmed and bounded. Empty results give `fallback`.
+    public static func sanitize(_ raw: String, fallback: String = fallbackID) -> String {
+        var scalars = String.UnicodeScalarView()
+        var pendingSpace = false
+        for scalar in raw.unicodeScalars {
+            switch scalar.properties.generalCategory {
+            case .control, .lineSeparator, .paragraphSeparator, .spaceSeparator:
+                pendingSpace = !scalars.isEmpty
+            case .format, .surrogate, .privateUse, .unassigned:
+                continue
+            default:
+                if pendingSpace { scalars.append(" "); pendingSpace = false }
+                scalars.append(scalar)
+            }
+            if scalars.count >= maxScalars { break }
+        }
+        let text = String(scalars)
+        guard !text.isEmpty else { return fallback }
+        guard text.count > maxGraphemes else { return text }
+        return String(text.prefix(maxGraphemes)) + "…"
+    }
+}
+
+extension MascotPackManifest {
+    /// Safe to show or log; `id` and `name` themselves stay untouched.
+    public var displayID: String { PackLabel.sanitize(id) }
+    public var displayName: String { PackLabel.sanitize(name, fallback: displayID) }
+}
+
 public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case unreadableManifest
     case unsupportedSchema(Int)
@@ -47,25 +87,26 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case clipTooLong(String, Int, Int)
 
     public var description: String {
+        func q(_ value: String) -> String { PackLabel.sanitize(value, fallback: "(invalid)") }
         switch self {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .badCanvas: return "canvas must be 256×256"
         case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
-        case .missingState(let s): return "required state '\(s)' missing"
-        case .frameCount(let s): return "state '\(s)' needs 1–\(MascotPack.maxFrames) frames"
-        case .durationMismatch(let s): return "state '\(s)' durationMs count differs from frames"
-        case .durationOutOfRange(let s, let d): return "state '\(s)' duration \(d)ms outside 125–2000"
-        case .unsafePath(let p): return "unsafe path '\(p)'"
-        case .missingFile(let p): return "file not found '\(p)'"
-        case .notPNG(let p): return "not a PNG '\(p)'"
-        case .wrongSize(let p, let w, let h): return "'\(p)' is \(w)×\(h), expected canvas size"
-        case .checksumMismatch(let p): return "SHA-256 mismatch for '\(p)'"
-        case .tooLarge(let p): return "'\(p)' exceeds the size limit"
-        case .undecodable(let p): return "'\(p)' is not a decodable RGBA PNG"
-        case .notRegularFile(let p): return "'\(p)' is not a regular file"
+        case .missingState(let s): return "required state '\(q(s))' missing"
+        case .frameCount(let s): return "state '\(q(s))' needs 1–\(MascotPack.maxFrames) frames"
+        case .durationMismatch(let s): return "state '\(q(s))' durationMs count differs from frames"
+        case .durationOutOfRange(let s, let d): return "state '\(q(s))' duration \(d)ms outside 125–2000"
+        case .unsafePath(let p): return "unsafe path '\(q(p))'"
+        case .missingFile(let p): return "file not found '\(q(p))'"
+        case .notPNG(let p): return "not a PNG '\(q(p))'"
+        case .wrongSize(let p, let w, let h): return "'\(q(p))' is \(w)×\(h), expected canvas size"
+        case .checksumMismatch(let p): return "SHA-256 mismatch for '\(q(p))'"
+        case .tooLarge(let p): return "'\(q(p))' exceeds the size limit"
+        case .undecodable(let p): return "'\(q(p))' is not a decodable RGBA PNG"
+        case .notRegularFile(let p): return "'\(q(p))' is not a regular file"
         case .clipTooLong(let s, let total, let limit):
-            return "state '\(s)' plays \(total)ms once, longer than its \(limit)ms event clip"
+            return "state '\(q(s))' plays \(total)ms once, longer than its \(limit)ms event clip"
         }
     }
 }
