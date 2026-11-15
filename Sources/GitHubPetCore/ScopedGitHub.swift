@@ -106,15 +106,12 @@ public enum ScopedResponseParser {
         }
         var issues: [ScopedFetchIssue] = []
         if let errors = envelope["errors"] {
-            if let array = errors as? [[String: Any]], array.isEmpty { /* no errors */ }
-            else {
-                let array = errors as? [[String: Any]] ?? []
-                let limited = array.contains {
-                    ($0["type"] as? String) == "RATE_LIMITED"
-                        || (($0["extensions"] as? [String: Any])?["type"] as? String) == "RATE_LIMITED"
-                }
-                issues.append(limited ? .rateLimited : .graphQLError)
+            let array = errors as? [[String: Any]] ?? []
+            let limited = array.contains {
+                ($0["type"] as? String) == "RATE_LIMITED"
+                    || (($0["extensions"] as? [String: Any])?["type"] as? String) == "RATE_LIMITED"
             }
+            issues.append(limited ? .rateLimited : .graphQLError)
         }
         guard let body = envelope["data"] as? [String: Any],
               let rawViewer = body["viewer"] as? [String: Any], let id = rawViewer["id"] as? String,

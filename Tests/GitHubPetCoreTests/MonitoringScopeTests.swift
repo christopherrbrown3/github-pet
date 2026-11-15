@@ -32,6 +32,16 @@ private func response(_ body: [String: Any], errors: [[String: Any]]? = nil) thr
     if let errors { envelope["errors"] = errors }
     return try JSONSerialization.data(withJSONObject: envelope)
 }
+private let scopedErrorShapes = [#"[{"message":"fixture failure"}]"#, #""malformed""#, "{}", "null", "[]", "[null]", "[{}]", "true", "0"]
+private func scopedErrorPayload(_ plan: ScopeQueryPlan, includeRow: Bool, errorsJSON: String? = nil) throws -> Data {
+    var body = envelope(plan)
+    if includeRow {
+        for search in plan.searches where search.kind == .reviewRequest { body[search.alias] = page([row()]) }
+    }
+    let base = try response(body)
+    guard let errorsJSON else { return base }
+    return Data((String(decoding: base, as: UTF8.self).dropLast() + ",\"errors\":" + errorsJSON + "}").utf8)
+}
 
 @Suite struct MonitoringScopeTests {
     @Test func normalizedValidatedUnionAndBounds() throws {
@@ -113,6 +123,24 @@ private func response(_ body: [String: Any], errors: [[String: Any]]? = nil) thr
 }
 
 @Suite struct ScopedQueryTests {
+    @Test func anyPresentErrorsMemberKeepsScopedParserIncompleteAndRetainsRows() throws {
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        for includeRow in [false, true] {
+            for errors in scopedErrorShapes {
+                let result = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow, errorsJSON: errors), plan: plan)
+                #expect(!result.complete && result.issues == [.graphQLError], "present errors shape \(errors)")
+                #expect(result.viewer?.account == accountA && result.items.count == (includeRow ? 1 : 0))
+                if case .snapshot(_, false) = result.outcome {} else { Issue.record("errors member cannot produce complete empty/data") }
+            }
+            let valid = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow), plan: plan)
+            #expect(valid.complete && valid.items.count == (includeRow ? 1 : 0), "absent errors control")
+            for rate in [#"[{"type":"RATE_LIMITED"}]"#, #"[{"extensions":{"type":"RATE_LIMITED"}}]"#] {
+                let limited = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow, errorsJSON: rate), plan: plan)
+                #expect(!limited.complete && limited.issues == [.rateLimited])
+                #expect(limited.items.count == (includeRow ? 1 : 0))
+            }
+        }
+    }
     @Test func oneOperationBindsViewerMetadataAndPerInclusionSearches() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
         #expect(plan.searches.count == 4)
@@ -259,6 +287,29 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     private func client(_ runner: ScopeRunner, timeout: TimeInterval = 20) -> ScopedGhClient {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
+    }
+    @Test func anyPresentErrorsMemberKeepsScopedClientIncompleteAndRetainsRows() throws {
+        let scope = try mixedScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        for includeRow in [false, true] {
+            for errors in scopedErrorShapes {
+                let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0,
+                    stdout: try scopedErrorPayload(plan, includeRow: includeRow, errorsJSON: errors))])
+                let result = client(runner).fetch(scope: scope, expectedAccount: accountA)
+                #expect(!result.complete && result.issues == [.graphQLError], "present errors shape \(errors)")
+                #expect(result.viewer?.account == accountA && result.items.count == (includeRow ? 1 : 0))
+                #expect(runner.calls.count == 2)
+            }
+            let control = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0,
+                stdout: try scopedErrorPayload(plan, includeRow: includeRow))])
+            #expect(client(control).fetch(scope: scope, expectedAccount: accountA).complete, "absent errors control")
+            for rate in [#"[{"type":"RATE_LIMITED"}]"#, #"[{"extensions":{"type":"RATE_LIMITED"}}]"#] {
+                let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0,
+                    stdout: try scopedErrorPayload(plan, includeRow: includeRow, errorsJSON: rate))])
+                let limited = client(runner).fetch(scope: scope, expectedAccount: accountA)
+                #expect(!limited.complete && limited.issues == [.rateLimited])
+                #expect(limited.items.count == (includeRow ? 1 : 0))
+            }
+        }
     }
     @Test func injectableSingleOperationAndCompleteDefaultEverything() throws {
         let plan = try ScopeQueryPlan()
