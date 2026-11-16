@@ -24,7 +24,7 @@
       "name": "developer",
       "terminal": "t5q",
       "runtime": "codex",
-      "assignment": "PR51 read-only integration complete; authorized PR59 narrow total/overlap quality fixes in developer-hidden-results",
+      "assignment": "PR51 e57d1f3 fixes published/current CI/review pending, held clean; queued PR50 file-error path formatting local fix; PR59 d813 held",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -54,7 +54,7 @@
       "name": "qa-engineer",
       "terminal": "t5p",
       "runtime": "codex",
-      "assignment": "FUNCTIONAL ONLY: combined51 exact accf actual CI app JSON/PNG/native-window isolation report; incident disclosed separately, no further launches",
+      "assignment": "FUNCTIONAL ONLY: accf51 completed flow evidence preserved but review blocks merge; one bounded currentCI PR50 asset-error diagnostics check, no CUA/units",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -92,5 +92,5 @@
   ],
   "observedDate": "2026-11-16",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Sole PM t1r under Chris allowance fallback; t49 intentionally stopped after repeated limit errors (reset3:20AM Eastern), preserved Claude specialists held. Active Codex t5q Sol/high, t5p Sol/medium; Developer units/QA functional split. Combined51accf retargetedmain without source changes, review/acceptance pending. Saved31897 alive. QA accidental normal launch changed real preference hashes; no restoration; separate explicit simulation hashes unchanged through PID-specific quit. No release/tag/auto-merge/Homebrew/force or globalprefs cleanup."
+  "note": "Sole PM t1r under Chris allowance fallback; t49 intentionally stopped after repeated limit errors (reset3:20AM Eastern), preserved Claude specialists held. Active Codex t5q Sol/high, t5p Sol/medium; Developer units/QA functional split. Combined51accf retargetedmain without source changes, review/acceptance pending. Saved31897 alive. QA accidental normal launch changed real preference hashes; no restoration; separate explicit simulation hashes unchanged through PID-specific quit. No release/tag/auto-merge/Homebrew/force or globalprefs cleanup. Combined review5915266718 now blocks51 on cancelled discovery request ownership and nonzero-exit category quality; Developer narrow fixes dispatched, accf scoped QA does not cover those defects. PR51 corrected head e57d1f3 published once with63focusedPASS and old-logic failures; currentCI43808396247/review/affected functional gates pending."
 }
