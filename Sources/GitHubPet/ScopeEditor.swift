@@ -44,6 +44,8 @@ final class ScopeEditor: ObservableObject {
     private var revision = 0
     private var validationTask: Task<Void, Never>?
     private var discoveryTask: Task<Void, Never>?
+    /// A cancelled origin never owns a later discovery, even if account/source round-trip.
+    private var discoveryEpoch = 0
 
     init(model: AppModel, access: any ScopeAccessChecking) {
         self.model = model; self.access = access
@@ -240,25 +242,33 @@ final class ScopeEditor: ObservableObject {
     func loadSuggestions() {
         guard canLoadSuggestions, case .github(let account) = identity else { return }
         let access = access, budget = budget(), expectedIdentity = identity
+        discoveryEpoch += 1
+        let expectedEpoch = discoveryEpoch
         discovery = .loading
         report("Loading suggestions…")
         launchedChecks += 1
         discoveryTask = Task { [weak self] in
             let result = await Self.offPool { access.discover(expectedAccount: account, budget: budget) }
-            self?.receiveDiscovery(result, identity: expectedIdentity)
+            self?.receiveDiscovery(result, identity: expectedIdentity, epoch: expectedEpoch)
         }
     }
 
-    private func receiveDiscovery(_ result: ScopeDiscoveryResult, identity expected: ScopeIdentity?) {
-        receivedChecks += 1
+    private func receiveDiscovery(_ result: ScopeDiscoveryResult, identity expected: ScopeIdentity?, epoch: Int) {
         // Draft edits don't invalidate hints; account/source changes do (they cancel the task).
-        guard discoveryTask != nil, identity == expected else { discardedReplies += 1; return }
+        // Check the originating task and epoch before touching the current handle or UI state.
+        guard !Task.isCancelled, discoveryEpoch == epoch, discoveryTask != nil, identity == expected else {
+            receivedChecks += 1; discardedReplies += 1; return
+        }
+        receivedChecks += 1
         discoveryTask = nil
         discovery = .finished(result)
         report(Self.discoverySummary(result))
     }
 
-    private func cancelDiscovery() { discoveryTask?.cancel(); discoveryTask = nil }
+    private func cancelDiscovery() {
+        discoveryEpoch += 1
+        discoveryTask?.cancel(); discoveryTask = nil
+    }
 
     static func completionText(_ completion: ScopeDiscoveryCompletion, count: Int) -> String {
         switch completion {

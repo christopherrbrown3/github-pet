@@ -8,6 +8,32 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     func now() -> ContinuousClock.Instant { instant }
 }
 
+/// Test-only transport: each discovery completes only when its own gate is released. The
+/// blocking work runs on ScopeEditor's GCD queue, never the cooperative pool or main actor.
+private final class ControlledDiscovery: ScopeAccessChecking, @unchecked Sendable {
+    private let lock = NSLock()
+    private var gates: [DispatchSemaphore] = []
+    var started: Int { lock.lock(); defer { lock.unlock() }; return gates.count }
+    func release(_ index: Int) {
+        lock.lock(); let gate = gates[index]; lock.unlock(); gate.signal()
+    }
+    func releaseAll() {
+        lock.lock(); let all = gates; lock.unlock(); all.forEach { $0.signal() }
+    }
+    func validate(scope: MonitoringScope, expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeAccessOutcome {
+        .failed(.transport)
+    }
+    func discover(expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeDiscoveryResult {
+        let gate = DispatchSemaphore(value: 0)
+        lock.lock(); let index = gates.count; gates.append(gate); lock.unlock()
+        guard gate.wait(timeout: .now() + 10) == .success else { return .failed(.deadline) }
+        let name = index == 0 ? "demo-old" : "demo-new"
+        return ScopeDiscoveryResult(viewer: ScopeViewer(account: expectedAccount, login: "demo-user"),
+            organizations: .init(suggestions: [name], completion: .exhausted, pages: 1),
+            repositories: .init(suggestions: [name + "/pet"], completion: .exhausted, pages: 1))
+    }
+}
+
 /// Drives the Settings editor through the real AppModel in the offline simulated launch.
 /// Budgets use a frozen clock; waits are handshakes on observable state (the bound only
 /// limits a broken run, it never decides an assertion).
@@ -217,5 +243,48 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(!editor.suggestions.organizations.isEmpty)
         app.simulateScopeAccount(true); try await settled(app)
         #expect(editor.discovery == .idle && editor.suggestions.organizations.isEmpty, "hints belong to one account")
+    }
+
+    @Test func cancelledDiscoveryCannotMutateReplacementAfterIdentityOrSourceRoundTrip() async throws {
+        for accountRoundTrip in [true, false] {
+            for oldCompletesFirst in [true, false] {
+                let app = model(), access = ControlledDiscovery()
+                defer { access.releaseAll(); app.cleanupScopeSimulation() }
+                try await settled(app)
+                let editor = ScopeEditor(model: app, access: access)
+                editor.announce = { _ in }
+                editor.observeActive()
+                editor.loadSuggestions()
+                try await wait { access.started == 1 }
+                // Drive actual model changes, then the same observer AppModel.sync calls.
+                if accountRoundTrip {
+                    app.simulateScopeAccount(true); try await settled(app); editor.observeActive()
+                    app.simulateScopeAccount(false); try await settled(app); editor.observeActive()
+                } else {
+                    app.settings.dataSource = .fixtures; editor.observeActive()
+                    app.settings.dataSource = .githubCLI; try await settled(app); editor.observeActive()
+                }
+                #expect(editor.discovery == .idle && !editor.discoveryInFlight)
+                editor.loadSuggestions()
+                try await wait { access.started == 2 }
+                let loadingStatus = editor.status
+                access.release(oldCompletesFirst ? 0 : 1)
+                try await wait { editor.receivedChecks == 1 }
+                if oldCompletesFirst {
+                    #expect(editor.discovery == .loading && editor.discoveryInFlight,
+                            "Cancelled origin must not clear the replacement task or finish its loading state")
+                    #expect(editor.suggestions.organizations.isEmpty && editor.status == loadingStatus)
+                    #expect(!editor.canLoadSuggestions, "The replacement still owns Find suggestions")
+                } else {
+                    #expect(editor.suggestions.organizations == ["demo-new"])
+                }
+                access.release(oldCompletesFirst ? 1 : 0)
+                try await wait { editor.receivedChecks == 2 }
+                #expect(!editor.discoveryInFlight && editor.canLoadSuggestions)
+                #expect(editor.suggestions.organizations == ["demo-new"])
+                #expect(editor.suggestions.repositories == ["demo-new/pet"])
+                #expect(editor.discardedReplies == 1)
+            }
+        }
     }
 }
