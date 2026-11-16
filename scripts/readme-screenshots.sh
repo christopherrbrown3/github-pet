@@ -46,10 +46,10 @@ grep -q 'source=fixtures' "$renders/report.txt" || { echo "readme-screenshots: n
 selection=(
   mascot-idle      01-baseline-mascot
   mascot-attention 09-attention-static-mascot
-  mascot-urgent    10-urgent-static-mascot
-  hover            02-injected-hover
-  inbox            01b-details-inbox
-  settings         settings-full
+  hover            readme-hover
+  inbox            readme-inbox
+  settings-scope   readme-settings-scope
+  settings-general readme-settings-general
 )
 mkdir -p "$out"
 rows=()
