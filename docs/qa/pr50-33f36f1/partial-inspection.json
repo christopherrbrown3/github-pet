@@ -1,0 +1,92 @@
+[
+  {
+    "case": "ansi",
+    "stderr_sha256": "2fae95017e2a834d4b37fae77574a5a13e63fc2f7b21c4f9d0f017246afb6cdc",
+    "launch_count": 1,
+    "label": "[31mred [0m ]0;title 2J c1csi",
+    "scalars": 29,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "combining",
+    "stderr_sha256": "2f4f79ff584ede272e405b2bb7f91a1c812a703d8d9d09c631d0cd4502dda3e0",
+    "launch_count": 1,
+    "label": "e\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u2026",
+    "scalars": 257,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "how-to",
+    "stderr_sha256": "5192102c8e1276dbef4e8c82be2fde76bb270d55cdf35f6d143e2c28a20c2f60",
+    "launch_count": 1,
+    "label": "xevil [31mGitHubPet: mascot pack trusted",
+    "scalars": 40,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "long-ascii",
+    "stderr_sha256": "40b017753dc43625ec7da4e4fb52f0051bd659cc75602dc13a2007d1ed6b56f4",
+    "launch_count": 1,
+    "label": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\u2026",
+    "scalars": 49,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "long-emoji",
+    "stderr_sha256": "e70b2b779d129fc03e4c06c2b7d7edf8a9f3f10a4887ccb90be7b1a6b9a8f94b",
+    "launch_count": 1,
+    "label": "\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\ud83d\udc68\ud83d\udc69\ud83d\udc67\u2026",
+    "scalars": 49,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "newline",
+    "stderr_sha256": "8e24d98d9db726aa067c2f90403324c88601990520fc50b08ecf2acaea3ddd6e",
+    "launch_count": 1,
+    "label": "line1 GitHubPet: mascot pack trusted line3 line4\u2026",
+    "scalars": 49,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "normal",
+    "stderr_sha256": "050a9990b46cae1608cbd937218000bf83b9863a16a5ccf4ef572654ce5e1608",
+    "launch_count": 1,
+    "label": "qa-normal-pack",
+    "scalars": 14,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "rtl",
+    "stderr_sha256": "00b472def5b00abd7d8604fba9fe113a58744d80a77e2a0b030d926a2089c353",
+    "launch_count": 1,
+    "label": "abcdefghijklmnoend",
+    "scalars": 18,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "scalar-cap-300",
+    "stderr_sha256": "e33c75695ef055ed7a7c6b1fd184dc5dc0fe5c2cf209b00a885fac340305d7c1",
+    "launch_count": 1,
+    "label": "a\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u0301\u2026",
+    "scalars": 257,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  },
+  {
+    "case": "zero-width",
+    "stderr_sha256": "3e8eb14de206354278f9c7565688950fc414263b8cf9c450eb296c3c38e9462e",
+    "launch_count": 1,
+    "label": "abcdefg",
+    "scalars": 7,
+    "unsafe_label_scalars": [],
+    "png_count": 208
+  }
+]
