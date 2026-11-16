@@ -18,6 +18,9 @@ final class AppModel: ObservableObject {
         var wakeCenter: NotificationCenter = NSWorkspace.shared.notificationCenter
         /// Wakes within this delay collapse into one refresh, which also gives the network time to return.
         var wakeRefreshDelay: Duration = .seconds(5)
+        /// Open at login (#15). nil: the system's SMAppService for a normal launch only, none for
+        /// simulated, snapshot, QA or custom-defaults launches. Tests inject a fake.
+        var loginItemBackend: (any LoginItemBackend)?
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -68,6 +71,10 @@ final class AppModel: ObservableObject {
     private let snapshotMode: Bool
     private var snapshotCLIFailure: FetchFailure = .ghMissing
     private let engine = InboxEngine()
+    /// Seen-item digests and source quality across relaunches (#12), in the launch's own domain.
+    private let baselineStore: EventBaselineStore
+    /// The source/account/scope session the engine's baseline belongs to; nil until the first apply.
+    private var baselineKey: BaselineKey?
     private let simulator = FixtureSimulator()
     private let scopedClient: any ScopedPolling
     private let scopeStore: ScopeSelectionStore
@@ -76,6 +83,8 @@ final class AppModel: ObservableObject {
     /// Settings draft validation/discovery: gh normally, offline only in the simulated launch.
     private let scopeAccess: any ScopeAccessChecking
     let scopeAccessSimulation: ScopeAccessSimulation?
+    /// Settings › Open at login (#15).
+    let loginItem: LoginItemSettings
     /// Settings › Monitoring scope draft controller (PR B).
     lazy var scopeEditor = ScopeEditor(model: self, access: scopeAccess)
     private let scopeDefaults: UserDefaults
@@ -115,7 +124,11 @@ final class AppModel: ObservableObject {
         if options.simulatesMonitoringScope && options.defaultsSuite?.hasPrefix("dev.github-pet.scope-simulation.") != true {
             options.defaultsSuite = "dev.github-pet.scope-simulation.\(UUID().uuidString)"
         }
+        let normalLaunch = !options.simulatesMonitoringScope && options.snapshotDirectory == nil
+            && options.qaScenario == nil && options.defaultsSuite == nil
+        loginItem = LoginItemSettings(backend: runtime.loginItemBackend ?? (normalLaunch ? SystemLoginItemBackend() : nil))
         store = SettingsStore(defaults: options.userDefaults)
+        baselineStore = EventBaselineStore(defaults: options.userDefaults)
         simulationDefaultsSuite = options.simulatesMonitoringScope ? options.defaultsSuite : nil
         scopeDefaults = options.userDefaults
         scopeStore = ScopeSelectionStore(defaults: options.userDefaults)
@@ -139,7 +152,7 @@ final class AppModel: ObservableObject {
         // would refresh a step it just made stale (flaky render-check).
         pollsPeriodically = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
         snapshotMode = options.snapshotDirectory != nil && !options.simulatesMonitoringScope
-        if options.resetSettings { store.reset() }
+        if options.resetSettings { store.reset(); baselineStore.reset() }
         var loaded = store.load()
         switch options.forcedSource {
         case "fixtures": loaded.dataSource = .fixtures
@@ -323,6 +336,7 @@ final class AppModel: ObservableObject {
 
     private func resetSession() {
         engine.reset()
+        baselineKey = nil
         unseen.removeAll()
         clips.clear()
         activeClip = nil
@@ -371,6 +385,7 @@ final class AppModel: ObservableObject {
 
     private func resetRepositories() {
         engine.reset()
+        baselineKey = nil
         unseen.removeAll()
         clips.clear(origin: .repository)
         activeClip = clips.active
@@ -476,11 +491,29 @@ final class AppModel: ObservableObject {
 
     private func apply(_ outcome: FetchOutcome) {
         let date = clock()
+        let key = currentBaselineKey
+        if key != baselineKey {
+            // Never carry one source/account/scope session's baseline or rows into another.
+            if baselineKey != nil { resetRepositories() }
+            if let key, let saved = baselineStore.load(for: key) { engine.restore(saved) }
+            baselineKey = key
+        }
         let events = engine.apply(outcome, now: date)
+        persistBaseline()
         unseen.record(events)
         unseen.reconcile(after: outcome, items: engine.items)
         clips.enqueue(events, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
         sync(now: date)
+    }
+
+    private var currentBaselineKey: BaselineKey? {
+        guard let identity = scopeSession.identity, let scope = scopeSession.scope else { return nil }
+        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope)
+    }
+
+    private func persistBaseline() {
+        guard let baselineKey else { return }
+        baselineStore.save(engine.baseline(key: baselineKey))
     }
 
     private func refreshServiceStatus() {
@@ -528,7 +561,7 @@ final class AppModel: ObservableObject {
 
     func tick() {
         let date = clock()
-        engine.refreshFreshness(now: date)
+        if engine.refreshFreshness(now: date) { persistBaseline() }
         serviceMonitor.refreshFreshness(now: date)
         if effectiveReducedMotion || !settings.alertsAllowed(at: date) {
             clips.clear()
@@ -835,12 +868,14 @@ final class AppModel: ObservableObject {
     func markStale() {
         guard usingFixtures else { return }
         engine.markStale()
+        persistBaseline()
         serviceMonitor.markStale()
         sync(now: clock())
     }
 
     func resetBaseline() {
         engine.resetBaseline()
+        baselineStore.reset()
         serviceMonitor.resetBaseline()
         unseen.removeAll()
         unseenIncidents.removeAll()

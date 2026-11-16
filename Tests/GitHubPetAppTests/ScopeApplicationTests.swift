@@ -268,7 +268,10 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         #expect(app.dataState.statusText == "No visible items · 3 matches hidden from your account" && app.hiddenResultsNote == nil)
         app.simulateScopeVisibility(.capped); try await settled(app)
         #expect(app.dataState == .partial && app.hiddenResultCount == 0 && app.badge == "1+")
-        app.simulateScopeVisibility(.hidden); app.simulateScopePartial(true); try await settled(app)
+        // Settle between the two changes: a refresh while a poll is pending launches nothing, and
+        // that poll reads the simulation on its own thread, so under load it could miss partial.
+        app.simulateScopeVisibility(.hidden); try await settled(app)
+        app.simulateScopePartial(true); try await settled(app)
         #expect(app.dataState == .partial && app.hiddenResultCount == 0 && app.hiddenResultsNote == nil, "errors keep Partial")
         app.simulateScopePartial(false); try await settled(app)
         #expect(app.dataState == .ready && app.unseenCount == 0 && app.hiddenResultCount == 3, "recovery is silent")
