@@ -1,0 +1,27 @@
+{
+  "wrong-loop-flags": {
+    "exit": 0,
+    "pid": 8347,
+    "launchLines": [
+      "GitHubPet: mascot placeholder (pack rejected: state 'idle' must declare \"loop\": true (idle loops; attention and urgent play once); state 'attention' must declare \"loop\": false (idle loops; attention and urgent play once))"
+    ],
+    "ghTripwireInvoked": false,
+    "saved31897Unchanged": true,
+    "changedDomains": [],
+    "changedFiles": [],
+    "pngCount": 213
+  },
+  "valid-pack": {
+    "exit": 0,
+    "pid": 11028,
+    "launchLines": [
+      "GitHubPet: mascot pack mona-pet-v1 loaded from /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr55-371c79f/valid-pack/pack"
+    ],
+    "ghTripwireInvoked": false,
+    "saved31897Unchanged": true,
+    "changedDomains": [],
+    "changedFiles": [],
+    "pngCount": 222
+  },
+  "verdict": "none: QA must inspect launch lines and Settings/placeholder PNGs"
+}

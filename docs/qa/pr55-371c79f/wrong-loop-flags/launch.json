@@ -1,0 +1,9 @@
+{
+  "pid": 8347,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr55-371c79f/artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--render-snapshots",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr55-371c79f/wrong-loop-flags/snapshots",
+    "--fixtures"
+  ]
+}

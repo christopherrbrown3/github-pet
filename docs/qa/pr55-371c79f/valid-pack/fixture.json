@@ -1,0 +1,9 @@
+{
+  "changedLoopFlags": {},
+  "loopFlags": {
+    "idle": true,
+    "attention": false,
+    "urgent": false
+  },
+  "copiedFrom": "artifact bundled mona-pet-v1"
+}

@@ -1,0 +1,4 @@
+GitHubPet: mascot placeholder (pack rejected: state 'idle' must declare "loop": true (idle loops; attention and urgent play once); state 'attention' must declare "loop": false (idle loops; attention and urgent play once))
+GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+GitHubPet: snapshots written to /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr55-371c79f/wrong-loop-flags/snapshots
