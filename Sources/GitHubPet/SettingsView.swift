@@ -76,6 +76,7 @@ struct SettingsView: View {
                 Text("With the GitHub CLI source, service incidents come from the public githubstatus.com API, without sign-in. Fixtures use demo incidents.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            MonitoringScopeSection(model: model, editor: model.scopeEditor)
         }
         .formStyle(.grouped)
         // A grouped Form scrolls, so it reports almost no height of its own and the hosting

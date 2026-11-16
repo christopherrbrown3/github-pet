@@ -88,6 +88,25 @@ private struct PackFixture {
         #expect(fixture.errors() == [.unreadableManifest])
     }
 
+    @Test func missingAssetsWithLongSharedPrefixRemainIdentifiableInRejection() throws {
+        let fixture = try PackFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let prefix = "frames/" + String(repeating: "shared-diagnostic-prefix-", count: 3) + "/"
+        let alpha = prefix + "missing-alpha.png", beta = prefix + "missing-beta.png"
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            idle["frames"] = [alpha, beta]; idle["staticFallback"] = alpha
+            states["idle"] = idle; json["states"] = states
+        }
+        let errors = fixture.errors()
+        #expect(errors.count == 2 && errors.contains(.missingFile(alpha)) && errors.contains(.missingFile(beta)),
+                "Loading still rejects both exact stored paths without rewriting their identity")
+        #expect(Set(errors.map(\.description)).count == 2, "The actual loader must identify both missing files")
+        #expect(errors.contains { $0.description.contains("missing-alpha.png") })
+        #expect(errors.contains { $0.description.contains("missing-beta.png") })
+    }
+
     @Test func wrongSchemaIsRejected() throws {
         let fixture = try PackFixture()
         try fixture.manifest { $0["schemaVersion"] = 2 }

@@ -27,6 +27,73 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public var frameSha256: [String: String]?
 }
 
+/// Display-only sanitizing for strings a pack author controls (manifest `id`/`name`, state names
+/// and file paths echoed in errors). Never applied to the stored values used for matching.
+public enum PackLabel {
+    /// Longest label shown, in grapheme clusters; longer input is cut and ends with "…".
+    public static let maxGraphemes = 48
+    /// Scalar cap applied first so a single enormous grapheme (stacked combining marks) stays bounded.
+    public static let maxScalars = 256
+    public static let fallbackID = "(unnamed pack)"
+    /// Paths get a larger cap, cut in the middle so the identifying tail stays visible.
+    public static let maxPathGraphemes = 160
+    /// Leading graphemes kept when a path is cut in the middle (enough for e.g. "/Users/name").
+    static let pathHeadGraphemes = 24
+    /// Scalar cap for paths: well above any real path, still bounded.
+    public static let maxPathScalars = 2048
+
+    /// Control characters (C0, DEL, C1, line/paragraph separators) become a space, invisible format
+    /// characters (zero-width, bidi overrides/isolates and marks, BOM, soft hyphen) are dropped,
+    /// runs of spaces collapse, and the result is trimmed and bounded. Empty results give `fallback`.
+    public static func sanitize(_ raw: String, fallback: String = fallbackID) -> String {
+        let (text, truncated) = clean(raw, scalarCap: maxScalars)
+        guard !text.isEmpty else { return fallback }
+        guard text.count > maxGraphemes else { return truncated ? text + "…" : text }
+        return String(text.prefix(maxGraphemes)) + "…"
+    }
+
+    /// Same cleaning for a file-system path, bounded at `maxPathGraphemes`. A longer path keeps its
+    /// first `pathHeadGraphemes` and its tail (starting at a component boundary when one is near),
+    /// joined by "…", so the pack directory's own name is never the part cut off.
+    public static func sanitizePath(_ raw: String, fallback: String = "(unknown path)") -> String {
+        let (text, truncated) = clean(raw, scalarCap: maxPathScalars)
+        guard !text.isEmpty else { return fallback }
+        let characters = Array(text)
+        guard characters.count > maxPathGraphemes else { return truncated ? text + "…" : text }
+        let head = String(characters.prefix(pathHeadGraphemes))
+        var tail = Array(characters.suffix(maxPathGraphemes - pathHeadGraphemes - 1))
+        if let slash = tail.prefix(32).firstIndex(of: "/") { tail.removeFirst(slash) }
+        return head + "…" + String(tail) + (truncated ? "…" : "")
+    }
+
+    private static func clean(_ raw: String, scalarCap maxScalars: Int) -> (text: String, truncated: Bool) {
+        var scalars = String.UnicodeScalarView()
+        var pendingSpace = false
+        var truncated = false
+        scan: for scalar in raw.unicodeScalars {
+            switch scalar.properties.generalCategory {
+            case .control, .lineSeparator, .paragraphSeparator, .spaceSeparator:
+                pendingSpace = !scalars.isEmpty
+            case .format, .surrogate, .privateUse, .unassigned:
+                continue
+            default:
+                // A pending separator and this scalar must fit together; never leave a
+                // trailing space or exceed the content cap when the buffer has one slot left.
+                if scalars.count + (pendingSpace ? 1 : 0) >= maxScalars { truncated = true; break scan }
+                if pendingSpace { scalars.append(" "); pendingSpace = false }
+                scalars.append(scalar)
+            }
+        }
+        return (String(scalars), truncated)
+    }
+}
+
+extension MascotPackManifest {
+    /// Safe to show or log; `id` and `name` themselves stay untouched.
+    public var displayID: String { PackLabel.sanitize(id) }
+    public var displayName: String { PackLabel.sanitize(name, fallback: displayID) }
+}
+
 public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case unreadableManifest
     case unsupportedSchema(Int)
@@ -48,6 +115,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case clipTooLong(String, Int, Int)
 
     public var description: String {
+        func q(_ value: String) -> String { PackLabel.sanitize(value, fallback: "(invalid)") }
+        func path(_ value: String) -> String { PackLabel.sanitizePath(value, fallback: "(invalid)") }
         switch self {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
@@ -55,20 +124,20 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
             return "state '\(s)' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
         case .badCanvas: return "canvas must be 256×256"
         case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
-        case .missingState(let s): return "required state '\(s)' missing"
-        case .frameCount(let s): return "state '\(s)' needs 1–\(MascotPack.maxFrames) frames"
-        case .durationMismatch(let s): return "state '\(s)' durationMs count differs from frames"
-        case .durationOutOfRange(let s, let d): return "state '\(s)' duration \(d)ms outside 125–2000"
-        case .unsafePath(let p): return "unsafe path '\(p)'"
-        case .missingFile(let p): return "file not found '\(p)'"
-        case .notPNG(let p): return "not a PNG '\(p)'"
-        case .wrongSize(let p, let w, let h): return "'\(p)' is \(w)×\(h), expected canvas size"
-        case .checksumMismatch(let p): return "SHA-256 mismatch for '\(p)'"
-        case .tooLarge(let p): return "'\(p)' exceeds the size limit"
-        case .undecodable(let p): return "'\(p)' is not a decodable RGBA PNG"
-        case .notRegularFile(let p): return "'\(p)' is not a regular file"
+        case .missingState(let s): return "required state '\(q(s))' missing"
+        case .frameCount(let s): return "state '\(q(s))' needs 1–\(MascotPack.maxFrames) frames"
+        case .durationMismatch(let s): return "state '\(q(s))' durationMs count differs from frames"
+        case .durationOutOfRange(let s, let d): return "state '\(q(s))' duration \(d)ms outside 125–2000"
+        case .unsafePath(let p): return "unsafe path '\(path(p))'"
+        case .missingFile(let p): return "file not found '\(path(p))'"
+        case .notPNG(let p): return "not a PNG '\(path(p))'"
+        case .wrongSize(let p, let w, let h): return "'\(path(p))' is \(w)×\(h), expected canvas size"
+        case .checksumMismatch(let p): return "SHA-256 mismatch for '\(path(p))'"
+        case .tooLarge(let p): return "'\(path(p))' exceeds the size limit"
+        case .undecodable(let p): return "'\(path(p))' is not a decodable RGBA PNG"
+        case .notRegularFile(let p): return "'\(path(p))' is not a regular file"
         case .clipTooLong(let s, let total, let limit):
-            return "state '\(s)' plays \(total)ms once, longer than its \(limit)ms event clip"
+            return "state '\(q(s))' plays \(total)ms once, longer than its \(limit)ms event clip"
         }
     }
 }

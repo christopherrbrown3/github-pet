@@ -99,9 +99,7 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
 @Suite struct SettingsPersistenceTests {
     private func freshDefaults() -> UserDefaults {
         let name = "GitHubPetTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
+        return EphemeralDefaults(name: name)
     }
 
     @Test func defaultsWhenNothingStored() {

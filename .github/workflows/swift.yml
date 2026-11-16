@@ -31,7 +31,24 @@ jobs:
       - name: Test
         timeout-minutes: 10
         # The suite is swift-testing only; skip the empty XCTest pass.
-        run: scripts/test.sh --disable-xctest
+        run: scripts/test.sh --disable-xctest --skip '\bdescendantHoldingThePipeDoesNotLeakReadsOrDescriptors\b'
+      - name: Descriptor cleanup (isolated process)
+        timeout-minutes: 2
+        # /dev/fd counts are process-wide; other suites may launch children or initialize
+        # AppKit descriptors. Keep the exact assertion in a process with this test alone.
+        run: |
+          set -o pipefail
+          scripts/test.sh --skip-build --disable-xctest --filter '\bdescendantHoldingThePipeDoesNotLeakReadsOrDescriptors\b' | tee .build/descriptor-isolated.log
+          python3 - <<'PYGUARD'
+          import re
+          from pathlib import Path
+          log = Path('.build/descriptor-isolated.log').read_text()
+          named = r'^✔ Test descendantHoldingThePipeDoesNotLeakReadsOrDescriptors\(\) passed\b'
+          summary = r'^✔ Test run with 1 test(?: in [0-9]+ suites?)? passed\b'
+          assert len(re.findall(named, log, re.MULTILINE)) == 1, 'descriptor test must pass exactly once'
+          assert '✘' not in log, 'isolated run contains a failure'
+          assert len(re.findall(summary, log, re.MULTILINE)) == 1, 'isolated run must report exactly one passing test'
+          PYGUARD
       - name: External public CommandRunner API
         timeout-minutes: 2
         run: scripts/test-public-budget.sh
