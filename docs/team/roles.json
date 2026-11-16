@@ -69,15 +69,16 @@
     },
     {
       "name": "developer-2",
-      "terminal": "t4y",
+      "terminal": "t64",
       "runtime": "claude",
       "intendedModel": "claude-opus-5-5",
       "observedModel": "claude-opus-5-5",
       "reasoningEffort": null,
-      "assignment": "Preserved Claude session, quota-stopped; no writes/resumption until new PM dispatch",
-      "verification": "current launch argv + stopped-state/readiness report",
+      "assignment": "#12 persist event baseline/source quality (narrow beta #61); sole writer developer-persist-baseline",
+      "verification": "hc run argv claude --model claude-opus-5-5 --name developer-2; TUI Opus 5.5; DEV2_READY; launched by t61 2026-11-16",
       "previousClaudeTerminal": "t4z",
-      "previousClaudeModel": "claude-opus-5-5"
+      "previousClaudeModel": "claude-opus-5-5",
+      "sessionId": null
     },
     {
       "name": "developer-3",

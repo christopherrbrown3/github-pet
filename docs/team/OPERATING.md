@@ -1,3 +1,7 @@
+# Narrow beta decision — Chris, 2026-11-16
+
+Chris chose the **narrow beta** (#61): review requests + assigned issues (done) + entitlement approvals surfaced read-only (the app opens the entitlement PR on GitHub, never approves) + #15 login-item Settings wiring + #7 safe error messages + #12 restart persistence. Out: #9, #10, Homebrew cask. Distribution stays free/ad-hoc per the #15 decision. Staffing: developer t62 (PR54/55/56 finish, then #15 UI, #7, #8), developer-2 t64 (#12, worktree developer-persist-baseline), QA t63. No release without Chris.
+
 # Checkpoint — t61, 2026-11-16 afternoon
 
 Merged after exact-head CI, Developer before/after regressions and independent QA source + functional review (no Copilot): PR51 → b152656 (#30 stays open because PR46 docs are still a draft; PR49 is auto-marked merged, since its head is reachable via 51), PR50 → 7a66068 (#40 Done), PR59 → b74078b (#35 Done). Non-blocking follow-ups are in #60. Now dispatched: developer t62 works PR57 login-item requiresApproval fix, then PR56 red scanner fixes, then PR58 docs qualification (each merges main first, no rebase). QA t63 does PR55 source+functional, then a safety plan only for PR54 GUI dismissal checks. Holds: none merge without the same gates.
