@@ -67,13 +67,11 @@ extension QAScenarioRunner {
         /// The Monitoring scope section scrolled into view inside the same grouped Form, plus the
         /// whole Settings window at its minimum size (whose Form scrolls rather than growing).
         "open-scope-settings": Action { c in
-            guard c.plan!.rendersPNGs else { return }
+            guard c.plan!.rendersPNGs, let out = c.output else { return }
             let model = c.model!
-            c.renders += await SnapshotRenderer.render(SettingsView(model: model), name: stem(c) + "-settings",
-                                                       directory: c.plan!.output, appearance: .aqua, asWindow: true)
-            c.renders += await SnapshotRenderer.render(
-                Form { MonitoringScopeSection(model: model, editor: model.scopeEditor) }.formStyle(.grouped).frame(width: 520),
-                name: stem(c) + "-scope-section", directory: c.plan!.output, appearance: .aqua)
+            try await renderPNG(SettingsView(model: model), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
+            try await renderPNG(Form { MonitoringScopeSection(model: model, editor: model.scopeEditor) }.formStyle(.grouped).frame(width: 520),
+                                name: stem(c) + "-scope-section", out: out, into: c)
         },
     ]
 
