@@ -8,7 +8,7 @@ mode forces fixtures and a throwaway defaults suite and quits by itself. The scr
 the app's raw stderr bytes and checks properties of the actual launch line. It does not
 reimplement the sanitizer: expected text is written out by hand only for simple cases.
 """
-import hashlib, json, time, pathlib, shutil, subprocess, sys, unicodedata
+import hashlib, json, os, time, pathlib, shutil, subprocess, sys, unicodedata
 
 sha, verify, work = sys.argv[1], pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
 qa_root = pathlib.Path(__file__).resolve().parents[2]
@@ -53,6 +53,15 @@ CASES = [
     case("empty-after", id="‮​\n\t  " + ESC + "\x00 ", expect="mascot pack " + FB + " loaded"),
     case("empty", id="", expect="mascot pack " + FB + " loaded"),
     case("hostile-dir", id="qa-dir-pack", dirname="pack\n" + ESC + "[2J‮dir"),
+    case("pending-space-boundary", id="a" + "\u0301" * 254 + " bc",
+         label=(lambda l: l == "a" + "\u0301" * 254 + "…", "a + 254 marks + … with no space or bc")),
+    case("deep-path", id="qa-deep-pack",
+         dirname="deep/" + "/".join(f"level{i:02d}-padding-component" for i in range(10)) + "/qa-deep-pack-dir"),
+    case("deep-path-1000", id="qa-deep-1000",
+         dirname="deep1000/" + "/".join(f"d{i:03d}-" + "x" * 40 for i in range(15)) + "/qa-deep-1000-dir"),
+    case("hostile-path", id="qa-hostile-path",
+         dirname="hp/" + "/".join(f"level{i:02d}-padding-component" for i in range(4))
+                 + "/x\n" + ESC + "[31mevil\u202E\u200Bdir" + "/qa-hostile-path-dir"),
     case("error-path", id="qa-error-path", mutate=bad_path),
     case("error-missing", id="qa-error-missing", mutate=bad_missing),
 ]
@@ -76,7 +85,9 @@ log = [f"# PR50 hostile pack launches, {sha}",
        "mode: GITHUB_PET_PACK_DIR=<pack> GitHubPet --render-snapshots <dir> (fixtures, throwaway suite, self-quit)", ""]
 results, failures = {}, 0
 saved_before = subprocess.run(["pgrep", "-f", "/github-pet-builds/"], capture_output=True, text=True).stdout.split()
+only = set(filter(None, os.environ.get("QA_CASES", "").split(",")))
 for c in CASES:
+    if only and c["name"] not in only: continue
     pack = work / "packs" / c["dirname"]
     if pack.exists(): shutil.rmtree(pack)
     shutil.copytree(source_pack, pack)
@@ -121,6 +132,10 @@ for c in CASES:
         clusters = sum(1 for i, ch in enumerate(core) if not unicodedata.combining(ch) and ch != zwj and (i == 0 or core[i - 1] != zwj))
         if clusters > CAP: problems.append(f"label has about {clusters} graphemes, over {CAP}")
         if len(label.encode()) > 4 * (256 + 1): problems.append("label exceeds the scalar pre-cap")
+        shown_path = line.split(" loaded from ", 1)[1] if " loaded from " in line else ""
+        if len(shown_path) > 160 + 2: problems.append(f"shown path has {len(shown_path)} code points, over 160")
+        if c["name"].startswith(("deep", "hostile-path")) and not shown_path.endswith(pathlib.PurePath(c["dirname"]).name):
+            problems.append("shown path lost the pack directory name")
         if c["label"] and not c["label"][0](label): problems.append("label check failed: " + c["label"][1])
         pngs = sorted(render.glob("*.png"))
         if not pngs: problems.append("no snapshot PNG rendered")
