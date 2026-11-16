@@ -1,0 +1,26 @@
+build-and-test	Test	2026-11-16T13:55:11.0425570Z ✔ Test badScenariosFailLoudlyAndEveryBuiltInParses() passed after 2.740 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0427900Z ✔ Test slowDripHitsTheTotalDeadline() passed after 46.622 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0430710Z ✔ Suite URLSessionStatusTransportTests passed after 46.633 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0432500Z ◇ Test deadlineTerminatesTheChild() started.
+build-and-test	Test	2026-11-16T13:55:11.0433720Z ◇ Test outputNeverOverwritesFilesTheRunnerDidNotWrite() started.
+build-and-test	Test	2026-11-16T13:55:11.0435350Z ✔ Test deadlineTerminatesTheChild() passed after 0.157 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0436590Z ◇ Test prelaunchCancellationDoesNotSpawnAChild() started.
+build-and-test	Test	2026-11-16T13:55:11.0438010Z ✔ Test prelaunchCancellationDoesNotSpawnAChild() passed after 0.001 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0440940Z ◇ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() started.
+build-and-test	Test	2026-11-16T13:55:11.0441820Z ✔ Test hostMotionIsRecordedAndSuppressionNeverErasesSourceTruth() passed after 46.926 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0442580Z ✔ Test inFlightCancellationUsesChildHandshakeAndIndependentScheduling() passed after 0.136 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0494180Z ◇ Test expiredGestureLeavesRowsAndUnseenIntactAndLateReplyStillCannotLand() started.
+build-and-test	Test	2026-11-16T13:55:11.0511710Z ◇ Test latchedBudgetCancellationReachesWorkWithoutATaskContext() started.
+build-and-test	Test	2026-11-16T13:55:11.0512150Z GitHubPet: mascot placeholder (no pack)
+build-and-test	Test	2026-11-16T13:55:11.0513400Z ✘ Test latchedBudgetCancellationReachesWorkWithoutATaskContext() recorded an issue at BoundedCommandTests.swift:147:9: Expectation failed: waitForGroup((group → <OS_dispat
+build-and-test	Test	2026-11-16T13:55:11.0514690Z ✘ Test latchedBudgetCancellationReachesWorkWithoutATaskContext() recorded an issue at BoundedCommandTests.swift:148:9: Expectation failed: (receipt.value as? CommandError 
+build-and-test	Test	2026-11-16T13:55:11.0539850Z ✘ Test latchedBudgetCancellationReachesWorkWithoutATaskContext() failed after 2.001 seconds with 2 issues.
+build-and-test	Test	2026-11-16T13:55:11.0540600Z ↳ /// Dispatch threads have no Task, so the latched budget flag is the only cancellation signal.
+build-and-test	Test	2026-11-16T13:55:11.0541300Z ◇ Test budgetCancellationFromAnotherThreadStopsAndReapsTheChild() started.
+build-and-test	Test	2026-11-16T13:55:11.0541920Z ✔ Test budgetCancellationFromAnotherThreadStopsAndReapsTheChild() passed after 0.116 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0542620Z ✔ Test outputNeverOverwritesFilesTheRunnerDidNotWrite() passed after 2.413 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0543070Z ◇ Test cancelledBudgetLaunchesNoChild() started.
+build-and-test	Test	2026-11-16T13:55:11.0543600Z ◇ Test linksAndRunnerNamedDirectoriesAreRefusedAndNeverFollowedOrDeleted() started.
+build-and-test	Test	2026-11-16T13:55:11.0544170Z ✔ Test cancelledBudgetLaunchesNoChild() passed after 0.001 seconds.
+build-and-test	Test	2026-11-16T13:55:11.0544630Z ✘ Suite BoundedCommandTests failed after 49.048 seconds with 2 issues.
+build-and-test	Test	2026-11-16T13:55:11.0545270Z ✔ Test applyValidatesThenCommitsAtomicallyAndAnnounces() passed after 5.201 seconds.
