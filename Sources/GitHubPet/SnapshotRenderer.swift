@@ -151,11 +151,9 @@ enum SnapshotRenderer {
             .frame(width: model.layout(model.settings.mascotSize).panelSize.width,
                    height: model.layout(model.settings.mascotSize).panelSize.height),
                                name: "count-cap-mascot", directory: directory, appearance: .aqua)
-        // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
-        // is deterministic and can never contain live GitHub data.
-        if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
-           !FileManager.default.fileExists(atPath: path) {
-            model.settings.dataSource = .githubCLI
+        // Snapshot-only CLI transport, independent of the installed gh or saved account.
+        do {
+            model.showSourceFailureForSnapshot(.ghMissing)
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await capture("11-gh-override")
         }
@@ -182,7 +180,12 @@ enum SnapshotRenderer {
         for (name, failure) in [("ghmissing", FetchFailure.ghMissing), ("unauthenticated", .unauthenticated)] {
             model.showSourceFailureForSnapshot(failure)
             try? await Task.sleep(nanoseconds: 400_000_000)
-            report.append("state=\(model.dataState.statusText) links=\(GhSetup.links(for: model.dataState).map(\.title))")
+            // Refresh again to prove a later poll retains the injected state, without gh.
+            model.refresh()
+            report.append("setup=\(name) source=\(model.settings.dataSource.rawValue) demo=\(model.usingFixtures) "
+                          + "badge=\(model.badge ?? "none") rows=\(model.items.count) "
+                          + "unseen=\(model.unseenCount) clip=\(model.activeClip == nil ? "none" : "active") "
+                          + "state=\(model.dataState.statusText) links=\(GhSetup.links(for: model.dataState).map(\.title))")
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
                                        name: "gh-setup-\(name)-inbox\(suffix)", directory: directory,

@@ -42,6 +42,8 @@ final class AppModel: ObservableObject {
     private let store: SettingsStore
     let clockOffset: TimeInterval
     private let pollsPeriodically: Bool
+    // Snapshot-only CLI transport: selecting the real CLI UI must never launch gh.
+    private var snapshotCLIFailure: FetchFailure = .ghMissing
     private let engine = InboxEngine()
     private let simulator = FixtureSimulator()
     private let ghClient = GhClient()
@@ -240,6 +242,10 @@ final class AppModel: ObservableObject {
         case .fixtures:
             apply(simulator.poll())
         case .githubCLI:
+            if !pollsPeriodically {
+                apply(.failure(snapshotCLIFailure))
+                return
+            }
             guard let generation = generations.beginFetch() else { return }
             let client = ghClient
             Task.detached {
@@ -510,8 +516,14 @@ final class AppModel: ObservableObject {
 
     /// Render hook only: show a gh setup failure through the real engine, without polling.
     func showSourceFailureForSnapshot(_ failure: FetchFailure) {
+        guard !pollsPeriodically else { return }
+        snapshotCLIFailure = failure
+        if settings.dataSource != .githubCLI {
+            settings.dataSource = .githubCLI
+            return // switchSource resets both baselines and refreshes the injected source.
+        }
         resetSession()
-        apply(.failure(failure))
+        refresh()
     }
 
     /// Render hook only: show the Loading state of a fresh source without polling.
