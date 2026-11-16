@@ -1,0 +1,281 @@
+# PR49 scope functional run, bb76ca6
+
+SHA bb76ca644d2ac9af4b0be86c47efc88cf6bc3865. Started 2026-11-16T03:52:50Z. Mechanical checks only; product verdicts are QA's manual judgement of each step's JSON+PNG.
+Binary: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet`, sha256 `6a842bb448e4c4aaeedf3caedba12fc32589a21367a43fc9314a90f982753d3d`, archs arm64.
+
+### restore-before-display
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario restore-before-display --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/restore-before-display`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 3 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### account-a-b-a
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario account-a-b-a --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/account-a-b-a`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 3 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### stale-reply-after-apply
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario stale-reply-after-apply --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/stale-reply-after-apply`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 6 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### corrupt-saved-selected
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario corrupt-saved-selected --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/corrupt-saved-selected`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 4 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### partial-recovery-new-once
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario partial-recovery-new-once --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/partial-recovery-new-once`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 6 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### incidents-preserved
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario incidents-preserved --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/incidents-preserved`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 6 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### privacy-summary
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario privacy-summary --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/privacy-summary`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 8 step JSON
+- FAIL: name in a visible row with privacy on: step-03-show-details.json
+- FAIL: name in a visible row with privacy on: step-03-show-details.json
+
+### demo-isolation
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario demo-isolation --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/demo-isolation`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 7 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a01-reverse-held
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a01-reverse-held.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a01-reverse-held`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 7 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a02-held-across-b
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a02-held-across-b.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a02-held-across-b`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 5 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a03-held-across-aba
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a03-held-across-aba.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a03-held-across-aba`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 6 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a04-corrupt-a-healthy-b
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a04-corrupt-a-healthy-b.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a04-corrupt-a-healthy-b`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 8 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a05-apply-mid-partial
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a05-apply-mid-partial.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a05-apply-mid-partial`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 6 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a06-double-apply
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a06-double-apply.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a06-double-apply`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 5 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a07-inject-held-double-refresh
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a07-inject-held-double-refresh.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a07-inject-held-double-refresh`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 7 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a08-incident-plus-corrupt
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a08-incident-plus-corrupt.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a08-incident-plus-corrupt`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 5 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a09-unknown-viewer-is-b
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a09-unknown-viewer-is-b.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a09-unknown-viewer-is-b`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 3 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a10-held-past-limit
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a10-held-past-limit.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a10-held-past-limit`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 5 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a11-fixtures-gh-held
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a11-fixtures-gh-held.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a11-fixtures-gh-held`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 9 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a12-privacy-matrix
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a12-privacy-matrix.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a12-privacy-matrix`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 8 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+### a13-quit-with-held
+
+argv: `/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a13-quit-with-held.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a13-quit-with-held`; exit 0; quit requested by QA: 0.
+- ok: tripwire gh never executed
+- ok: no child processes observed (250 ms polling)
+- ok: no network sockets observed (250 ms polling)
+- ok: real preferences unchanged
+- ok: no preference domain left behind
+- ok: no pre-existing domain removed
+- ok: saved build processes untouched (1493 21468 31897 )
+- structure: 3 step JSON
+- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows
+
+Finished 2026-11-16T03:56:13Z: 1 mechanical failure(s). Product correctness is not judged here.
+EXIT=1

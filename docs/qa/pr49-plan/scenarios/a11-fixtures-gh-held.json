@@ -1,0 +1,9 @@
+{"name":"a11-fixtures-gh-held","steps":[
+ {"action":"hold","count":1,"refresh":true,"label":"hold-gh-reply"},
+ {"action":"source","source":"fixtures","label":"to-fixtures"},
+ {"action":"deliver-all","label":"deliver-in-fixtures"},
+ {"action":"source","source":"gh","label":"to-gh"},
+ {"action":"hold","count":1,"refresh":true,"label":"hold-again"},
+ {"action":"source","source":"fixtures","label":"to-fixtures-2"},
+ {"action":"source","source":"gh","label":"to-gh-2"},
+ {"action":"deliver-all","label":"deliver-after-return"}]}

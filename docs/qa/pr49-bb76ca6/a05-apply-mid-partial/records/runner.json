@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.25794.02D16C25-26E5-4932-96C2-265AFB6AD120",
+  "scenario" : "a05-apply-mid-partial",
+  "steps" : 5,
+  "verdict" : "none: QA judges the step records"
+}

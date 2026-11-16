@@ -1,0 +1,8 @@
+{"name":"a12-privacy-matrix","steps":[
+ {"action":"privacy","on":true,"label":"privacy-on"},
+ {"action":"inject-row","label":"inject-private"},
+ {"action":"apply","scope":"everything","label":"everything-private"},
+ {"action":"account","account":"B","label":"b-private"},
+ {"action":"apply","scope":"selected","label":"b-selected-private"},
+ {"action":"privacy","on":false,"label":"privacy-off"},
+ {"action":"apply","scope":"everything","label":"b-everything-public"}]}

@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.26002.6CBCBB89-79AF-4BA4-ACB0-173454166379",
+  "scenario" : "a06-double-apply",
+  "steps" : 4,
+  "verdict" : "none: QA judges the step records"
+}

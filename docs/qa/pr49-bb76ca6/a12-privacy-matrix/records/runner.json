@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.28443.168428D3-7E79-4089-97B9-2356B8717068",
+  "scenario" : "a12-privacy-matrix",
+  "steps" : 7,
+  "verdict" : "none: QA judges the step records"
+}

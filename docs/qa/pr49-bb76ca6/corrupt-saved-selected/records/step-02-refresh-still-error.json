@@ -1,0 +1,95 @@
+{
+  "action" : "refresh",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.22894.F9DABE16-3886-4A19-ACFB-369881036035",
+  "inbox" : {
+    "badge" : "?",
+    "demoLabel" : true,
+    "hint" : null,
+    "lastSuccess" : null,
+    "rows" : [
+
+    ],
+    "scopeHeader" : "Monitoring scope · configuration error",
+    "scopeQuality" : "Saved selection needs correction; monitoring has not broadened.",
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened"
+  },
+  "label" : "refresh-still-error",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : null,
+    "generation" : 2,
+    "identity" : "github:A"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-02-refresh-still-error-inbox.png",
+    "step-02-refresh-still-error-mascot.png"
+  ],
+  "renders" : [
+    "step-02-refresh-still-error-inbox: 360x299 pt",
+    "step-02-refresh-still-error-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 3,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "scope" : "Everything",
+        "serial" : 2,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "scope" : "Everything",
+        "serial" : 3,
+        "targets" : [
+
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 3 requests · 0 held · complete replies · requested Everything · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 2
+}

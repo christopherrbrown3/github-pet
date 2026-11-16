@@ -1,0 +1,6 @@
+{"name":"a05-apply-mid-partial","steps":[
+ {"action":"partial","on":true,"label":"partial-on"},
+ {"action":"apply","scope":"everything","label":"apply-while-partial"},
+ {"action":"partial","on":false,"label":"recover"},
+ {"action":"inject-row","label":"inject-after-recovery"},
+ {"action":"refresh","label":"refresh-no-replay"}]}

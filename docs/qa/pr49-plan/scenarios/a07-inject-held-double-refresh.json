@@ -1,0 +1,7 @@
+{"name":"a07-inject-held-double-refresh","steps":[
+ {"action":"hold","count":1,"refresh":true,"label":"hold-one"},
+ {"action":"inject-row","label":"inject-while-held"},
+ {"action":"refresh","label":"refresh-1"},
+ {"action":"refresh","label":"refresh-2"},
+ {"action":"deliver-all","label":"deliver-held"},
+ {"action":"refresh","label":"refresh-3"}]}

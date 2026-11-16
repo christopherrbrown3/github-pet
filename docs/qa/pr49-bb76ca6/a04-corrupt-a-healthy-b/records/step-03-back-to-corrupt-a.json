@@ -1,0 +1,113 @@
+{
+  "action" : "account",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.25360.C439C09F-3640-4985-94C1-1297612A5677",
+  "inbox" : {
+    "badge" : "?",
+    "demoLabel" : true,
+    "hint" : null,
+    "lastSuccess" : null,
+    "rows" : [
+
+    ],
+    "scopeHeader" : "Monitoring scope · configuration error",
+    "scopeQuality" : "Saved selection needs correction; monitoring has not broadened.",
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened"
+  },
+  "label" : "back-to-corrupt-a",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : null,
+    "generation" : 6,
+    "identity" : "github:A"
+  },
+  "params" : {
+    "account" : "A"
+  },
+  "pngs" : [
+    "step-03-back-to-corrupt-a-inbox.png",
+    "step-03-back-to-corrupt-a-mascot.png"
+  ],
+  "renders" : [
+    "step-03-back-to-corrupt-a-inbox: 360x299 pt",
+    "step-03-back-to-corrupt-a-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 5,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "scope" : "Everything",
+        "serial" : 2,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 3,
+        "scope" : "Everything",
+        "serial" : 3,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 4,
+        "scope" : "Selected",
+        "serial" : 4,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 5,
+        "scope" : "Selected",
+        "serial" : 5,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 5 requests · 0 held · complete replies · requested Selected · expected B"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 3
+}

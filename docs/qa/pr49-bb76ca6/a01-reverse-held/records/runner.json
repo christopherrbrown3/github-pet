@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.24055.EFC1C70C-E615-4458-A078-6CAC6FF77746",
+  "scenario" : "a01-reverse-held",
+  "steps" : 6,
+  "verdict" : "none: QA judges the step records"
+}

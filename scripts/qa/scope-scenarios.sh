@@ -19,6 +19,7 @@
 #   QA_TIMEOUT_SECS   per-scenario wall limit before a normal quit is requested (default 180)
 #   QA_LABEL          output subfolder for the isolation-only run (default isolation-baseline)
 #   QA_PRIVACY_NAMES  extra regex of names that must never appear when privacy is on
+#   QA_OUT_ROOT       private root for fresh, empty runner output dirs (required for scenarios)
 set -uo pipefail
 
 qa_root=${0:A:h:h:h}
@@ -147,31 +148,32 @@ run_app() {
 
 # 5. Output structure: each step needs a JSON+PNG pair, all JSON must parse, and when
 # privacy is on, no invented account/target name may appear in the scope header.
-check_output() {  # $1 = scenario output dir
+check_output() {  # $1 = runner output dir
   python3 -I - "$1" "${QA_PRIVACY_NAMES:-}" <<'PY' | tee -a "$summary"
 import json, pathlib, re, sys
 out, extra = pathlib.Path(sys.argv[1]), sys.argv[2]
-files = [p for p in out.rglob("*") if p.is_file()]
-jsons = {p.with_suffix(""): p for p in files if p.suffix == ".json"}
-pngs = {p.with_suffix(""): p for p in files if p.suffix == ".png"}
 bad = []
-if not jsons: bad.append("no JSON written")
-for stem in sorted(set(jsons) ^ set(pngs)):
-    bad.append(f"unpaired step {stem.relative_to(out)}")
-for stem in pngs:
-    if pngs[stem].read_bytes()[:8] != b"\x89PNG\r\n\x1a\n": bad.append(f"not a PNG: {pngs[stem].name}")
-names = re.compile(r"demo-(a|b|outside)|demo-[a-z]+/pet" + (("|" + extra) if extra else ""), re.I)
-for stem, path in sorted(jsons.items()):
+steps = sorted(out.glob("step-[0-9][0-9]-*.json"))
+if not steps: bad.append("no step JSON written")
+if not (out / "runner.json").exists(): bad.append("no runner.json")
+names = re.compile(r"demo-(a|b|outside)|account [ab]\b" + (("|" + extra) if extra else ""), re.I)
+for path in steps:
+    stem = path.with_suffix("")
+    for kind in ("inbox", "mascot"):
+        png = stem.parent / f"{stem.name}-{kind}.png"
+        if not png.exists(): bad.append(f"missing {png.name}")
+        elif png.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n": bad.append(f"not a PNG: {png.name}")
     try: data = json.loads(path.read_text())
     except Exception as e: bad.append(f"invalid JSON {path.name}: {e}"); continue
-    text = json.dumps(data)
-    if re.search(r'"privacy[^"]*"\s*:\s*true', text, re.I):
-        for key in ("scopeHeader", "scopeSummary", "header", "summary"):
-            for m in re.finditer(r'"%s"\s*:\s*"([^"]*)"' % key, text):
-                if names.search(m.group(1)): bad.append(f"name in {key} with privacy on: {path.name}: {m.group(1)!r}")
-print(f"- structure: {len(jsons)} JSON, {len(pngs)} PNG")
+    header = (data.get("inbox") or {}).get("scopeHeader") or ""
+    if names.search(header): bad.append(f"name in scopeHeader: {path.name}: {header!r}")
+    if (data.get("settings") or {}).get("privacyMode"):
+        for row in (data.get("inbox") or {}).get("rows", []):
+            if names.search(str(row.get("visibleTitle", "")) + str(row.get("visibleSubtitle", ""))):
+                bad.append(f"name in a visible row with privacy on: {path.name}")
+print(f"- structure: {len(steps)} step JSON")
 for b in bad: print(f"- FAIL: {b}")
-if not bad: print("- ok: every step has a parseable JSON+PNG pair; no privacy-on header name leak by key grep")
+if not bad: print("- ok: every step has JSON + inbox/mascot PNGs; no names in scope header or private rows")
 sys.exit(1 if bad else 0)
 PY
   (( $? )) && failures=$((failures + 1))
@@ -182,14 +184,16 @@ if (( $# == 0 )); then
   run_app "$evidence/${QA_LABEL:-isolation-baseline}" "$sim_flag"
 else
   mode=scenario
+  out_root=${QA_OUT_ROOT:?set QA_OUT_ROOT to a private scratch directory}
   for scenario in "$@"; do
     label=${${scenario:t}%.json}
     out=$evidence/$label
-    [[ -e $out/output ]] && { fail "$out/output already exists; refusing to mix runs"; continue; }
-    arg=$scenario; [[ -f $scenario ]] && arg=$(cat "$scenario")
-    run_app "$out" "$sim_flag" "$scenario_flag" "$arg" "$output_flag" "$out/output"
+    runner_out=$out_root/$label
+    [[ -e $runner_out || -e $out/argv.txt ]] && { fail "$label: output already exists; refusing to mix runs"; continue; }
+    run_app "$out" "$sim_flag" "$scenario_flag" "$scenario" "$output_flag" "$runner_out"
     [[ $(cat "$out/exit-code") == 0 ]] || fail "scenario exit code $(cat "$out/exit-code")"
-    check_output "$out/output"
+    check_output "$runner_out"
+    mkdir -p "$out/records" && cp "$runner_out"/*.json "$out/records/" 2>/dev/null
   done
 fi
 

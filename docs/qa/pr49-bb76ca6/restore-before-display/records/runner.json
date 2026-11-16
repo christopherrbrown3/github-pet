@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.22286.441803FC-DD36-4C79-843A-85ABB2EFDC35",
+  "scenario" : "restore-before-display",
+  "steps" : 2,
+  "verdict" : "none: QA judges the step records"
+}

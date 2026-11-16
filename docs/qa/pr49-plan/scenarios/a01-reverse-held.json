@@ -1,0 +1,7 @@
+{"name":"a01-reverse-held","steps":[
+ {"action":"hold","count":2,"refresh":true,"label":"hold-two-refresh"},
+ {"action":"apply","scope":"everything","label":"apply-everything"},
+ {"action":"apply","scope":"selected","label":"apply-selected"},
+ {"action":"deliver-newest","label":"deliver-newest"},
+ {"action":"deliver-oldest","label":"deliver-oldest"},
+ {"action":"refresh","label":"refresh"}]}

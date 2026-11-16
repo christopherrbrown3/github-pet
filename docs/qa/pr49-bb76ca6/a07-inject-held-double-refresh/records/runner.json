@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.26197.85BC405F-B6B9-4268-82BF-FC6B541FBD9E",
+  "scenario" : "a07-inject-held-double-refresh",
+  "steps" : 6,
+  "verdict" : "none: QA judges the step records"
+}

@@ -1,0 +1,94 @@
+{
+  "action" : "corrupt-reload",
+  "attention" : {
+    "activeClip" : {
+      "endsAt" : "2026-11-15T12:00:02Z",
+      "origin" : "serviceIncident",
+      "startedAt" : "2026-11-15T12:00:00Z",
+      "state" : "urgent"
+    },
+    "incidentMarker" : "major",
+    "markerBurst" : {
+      "fromTier" : "minor",
+      "start" : "2026-11-15T12:00:00Z"
+    },
+    "mascotState" : "urgent",
+    "showsAlertIcon" : true,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.26452.750FF183-4FC7-4509-9E55-00231C90CE09",
+  "inbox" : {
+    "badge" : "?",
+    "demoLabel" : true,
+    "hint" : null,
+    "lastSuccess" : null,
+    "rows" : [
+
+    ],
+    "scopeHeader" : "Monitoring scope · configuration error",
+    "scopeQuality" : "Saved selection needs correction; monitoring has not broadened.",
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened"
+  },
+  "label" : "corrupt-a",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : null,
+    "generation" : 2,
+    "identity" : "github:A"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-02-corrupt-a-inbox.png",
+    "step-02-corrupt-a-mascot.png"
+  ],
+  "renders" : [
+    "step-02-corrupt-a-inbox: 360x339 pt",
+    "step-02-corrupt-a-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 2,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "scope" : "Everything",
+        "serial" : 2,
+        "targets" : [
+
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 2 requests · 0 held · complete replies · requested Everything · expected A"
+  },
+  "service" : {
+    "incidents" : 2,
+    "status" : "2 active GitHub incidents",
+    "unseenIncidents" : 1
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 2
+}

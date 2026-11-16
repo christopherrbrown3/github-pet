@@ -1,0 +1,1 @@
+/Users/chris/github-pet-worktrees/qa-verify-bb76ca6/.build/app/GitHubPet.app/Contents/MacOS/GitHubPet --simulate-monitoring-scope --qa-scenario docs/qa/pr49-plan/scenarios/a02-held-across-b.json --qa-output /private/tmp/claude-501/-Users-chris-github-pet-worktrees-qa-engineer/824f6f45-6a54-4ac4-9b51-996664bf2af7/scratchpad/pr49/runs/a02-held-across-b

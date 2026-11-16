@@ -1,0 +1,92 @@
+{
+  "action" : "inject-incident",
+  "attention" : {
+    "activeClip" : {
+      "endsAt" : "2026-11-15T12:00:02Z",
+      "origin" : "serviceIncident",
+      "startedAt" : "2026-11-15T12:00:00Z",
+      "state" : "urgent"
+    },
+    "incidentMarker" : "major",
+    "markerBurst" : {
+      "fromTier" : "minor",
+      "start" : "2026-11-15T12:00:00Z"
+    },
+    "mascotState" : "urgent",
+    "showsAlertIcon" : true,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.26452.750FF183-4FC7-4509-9E55-00231C90CE09",
+  "inbox" : {
+    "badge" : "1",
+    "demoLabel" : true,
+    "hint" : null,
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_0",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "major-incident",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 1,
+    "identity" : "github:A"
+  },
+  "params" : {
+    "tier" : "major"
+  },
+  "pngs" : [
+    "step-01-major-incident-inbox.png",
+    "step-01-major-incident-mascot.png"
+  ],
+  "renders" : [
+    "step-01-major-incident-inbox: 360x317 pt",
+    "step-01-major-incident-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 1,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 1 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 2,
+    "status" : "2 active GitHub incidents",
+    "unseenIncidents" : 1
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 1
+}

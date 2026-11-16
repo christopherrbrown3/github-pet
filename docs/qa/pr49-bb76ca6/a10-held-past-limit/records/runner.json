@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.26799.3A8CEEB9-BADD-432C-9C2C-E7AE4E9834E8",
+  "scenario" : "a10-held-past-limit",
+  "steps" : 4,
+  "verdict" : "none: QA judges the step records"
+}

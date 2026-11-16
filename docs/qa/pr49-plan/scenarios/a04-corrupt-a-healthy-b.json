@@ -1,0 +1,8 @@
+{"name":"a04-corrupt-a-healthy-b","steps":[
+ {"action":"corrupt-reload","label":"corrupt-a"},
+ {"action":"account","account":"B","label":"switch-to-b"},
+ {"action":"account","account":"A","label":"back-to-corrupt-a"},
+ {"action":"apply","scope":"everything","label":"apply-while-corrupt"},
+ {"action":"account","account":"B","label":"b-again"},
+ {"action":"repair","label":"repair-on-b"},
+ {"action":"account","account":"A","label":"a-repaired"}]}

@@ -1,0 +1,4 @@
+{"name":"a13-quit-with-held","steps":[
+ {"action":"hold","count":2,"refresh":true,"label":"hold-two"},
+ {"action":"apply","scope":"everything","label":"apply-while-held"},
+ {"action":"quit","label":"quit-with-two-held"}]}

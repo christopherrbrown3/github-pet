@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.22465.384A4279-5EE8-4922-9BC3-67F1F8FA188C",
+  "scenario" : "account-a-b-a",
+  "steps" : 2,
+  "verdict" : "none: QA judges the step records"
+}

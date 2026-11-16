@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "$$ $PPID $*" >> "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr49-bb76ca6/.tools/tripwire/invocations.log"
+exit 1

@@ -1,0 +1,103 @@
+{
+  "action" : "reload",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.26649.FE77847E-5AC7-4727-B89F-B2ED36E10C43",
+  "inbox" : {
+    "badge" : "1",
+    "demoLabel" : true,
+    "hint" : null,
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_B_0",
+        "isDemo" : true,
+        "repository" : "demo-b\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 0 organizations, 1 repository",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "reload-unknown-returns-b",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 3,
+    "identity" : "github:B"
+  },
+  "params" : {
+    "account" : "B",
+    "viewer" : "unknown"
+  },
+  "pngs" : [
+    "step-01-reload-unknown-returns-b-inbox.png",
+    "step-01-reload-unknown-returns-b-mascot.png"
+  ],
+  "renders" : [
+    "step-01-reload-unknown-returns-b-inbox: 360x277 pt",
+    "step-01-reload-unknown-returns-b-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 3,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : null,
+        "generation" : 2,
+        "scope" : "Everything",
+        "serial" : 2,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 3,
+        "scope" : "Selected",
+        "serial" : 3,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      }
+    ],
+    "status" : "Simulated account B · 3 requests · 0 held · complete replies · requested Selected · expected B"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "simulatedAccount" : "B",
+  "step" : 1
+}

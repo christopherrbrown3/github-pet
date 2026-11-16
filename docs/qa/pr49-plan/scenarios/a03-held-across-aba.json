@@ -1,0 +1,6 @@
+{"name":"a03-held-across-aba","steps":[
+ {"action":"hold","count":1,"refresh":true,"label":"hold-a-reply"},
+ {"action":"account","account":"B","label":"switch-to-b"},
+ {"action":"account","account":"A","label":"back-to-a"},
+ {"action":"deliver-all","label":"deliver-stale-a-reply"},
+ {"action":"refresh","label":"refresh-a"}]}

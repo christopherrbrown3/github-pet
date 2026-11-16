@@ -1,0 +1,109 @@
+{
+  "action" : "apply",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.23765.3D016FDC-B6A8-434A-A392-39B7DBECB1E4",
+  "inbox" : {
+    "badge" : "3",
+    "demoLabel" : true,
+    "hint" : null,
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:example\/pet-demo#42",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:example\/pet-tools#7",
+        "isDemo" : true,
+        "repository" : "example\/pet-tools",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "assignedIssue:example\/pet-demo#18",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Assigned issue",
+        "visibleTitle" : "Assigned issue"
+      }
+    ],
+    "scopeHeader" : "Demo scope · Everything",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "apply-ignored-in-fixtures",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Everything",
+    "generation" : 2,
+    "identity" : "demo"
+  },
+  "params" : {
+    "scope" : "everything"
+  },
+  "pngs" : [
+    "step-04-apply-ignored-in-fixtures-inbox.png",
+    "step-04-apply-ignored-in-fixtures-mascot.png"
+  ],
+  "renders" : [
+    "step-04-apply-ignored-in-fixtures-inbox: 360x381 pt",
+    "step-04-apply-ignored-in-fixtures-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 1,
+    "held" : 0,
+    "received" : 2,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "scope" : "Selected",
+        "serial" : 2,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 2 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "fixtures",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 4
+}

@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.28128.1EF00CD7-FC36-415D-BF40-9058233F0B6E",
+  "scenario" : "a11-fixtures-gh-held",
+  "steps" : 8,
+  "verdict" : "none: QA judges the step records"
+}

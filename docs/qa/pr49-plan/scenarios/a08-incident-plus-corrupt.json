@@ -1,0 +1,5 @@
+{"name":"a08-incident-plus-corrupt","steps":[
+ {"action":"inject-incident","tier":"major","label":"major-incident"},
+ {"action":"corrupt-reload","label":"corrupt-a"},
+ {"action":"clock-advance","seconds":1,"label":"one-second"},
+ {"action":"repair","label":"repair"}]}

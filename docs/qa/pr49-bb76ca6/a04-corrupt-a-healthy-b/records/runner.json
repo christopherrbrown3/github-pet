@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.25360.C439C09F-3640-4985-94C1-1297612A5677",
+  "scenario" : "a04-corrupt-a-healthy-b",
+  "steps" : 7,
+  "verdict" : "none: QA judges the step records"
+}

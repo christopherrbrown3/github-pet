@@ -1,0 +1,3 @@
+{"name":"a09-unknown-viewer-is-b","steps":[
+ {"action":"reload","viewer":"unknown","account":"B","label":"reload-unknown-returns-b"},
+ {"action":"reload","viewer":"unknown","account":"A","label":"reload-unknown-returns-a"}]}

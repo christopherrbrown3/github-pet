@@ -1,0 +1,5 @@
+{"name":"a06-double-apply","steps":[
+ {"action":"apply","scope":"everything","label":"apply-everything-1"},
+ {"action":"apply","scope":"everything","label":"apply-everything-2"},
+ {"action":"apply","scope":"selected","label":"apply-selected-1"},
+ {"action":"apply","scope":"selected","label":"apply-selected-2"}]}
