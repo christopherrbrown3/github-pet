@@ -1,3 +1,11 @@
+# Current authority — fresh Claude PM t61, 2026-11-16
+
+Chris explicitly requests Claude PM takeover and new Claude specialists because Codex usage is low. Fresh PM **t61 / claude-pm-handoff**, Claude Opus5.5, verified actual argv/runtime and PM_READY at commit3839182. Sole authority transfers from t1r on explicit HANDOFF_GRANTED; after grant reports go `hc send t61` and t1r freezes PM writes/dispatch. Read handoffs/claude-pm-2026-11-16.md and live state. The old product-manager alias reaches retiredt49; use actualt61.
+
+**Chris: no more Copilot reviews (cost).** No request/re-request or paid automatic review. QA agents independently review PR source/diffs and functional behavior; Developer owns unit/logic/regression tests/buildCI. Existing review findings remain actionable evidence. New PM launches fresh Claude Developer+QA, verifies models and one writer/worktree. Old Claude tasks stay stopped. Codex t5q/t5p intentionally stopped after finished helpers; signal1 notices expected, history/source preserved.
+
+PR51 e57d1f3 green but HOLD three review defects; PR50 a188180 local-only fix/46focusedPASS; PR59d813f10 green supporting-only needs final51. QA e57threeflows complete/images viewed but final durable report unfinished due quota: finish existing evidence, no reruns. Saved31897 alive/original start. Separate accidental normal-launch preferencehash change disclosed, no restoration. No release/tag/auto-merge/Homebrew/force/rebase/TCC/login-item changes or globalpref cleanup.
+
 # Latest instruction — Claude PM replacement and QA review, 2026-11-16
 
 Chris explicitly requests a fresh Claude PM to take over and spin up fresh Claude specialists. Current t1r remains sole PM until explicit HANDOFF_GRANTED after responsive PM_READY. Read handoffs/claude-pm-2026-11-16.md; it supersedes older snapshots.
