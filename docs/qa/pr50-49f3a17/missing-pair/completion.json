@@ -1,0 +1,13 @@
+{
+  "exit": 0,
+  "pid": 98228,
+  "launchLines": [
+    "GitHubPet: mascot placeholder (pack rejected: file not found 'frames/shared-diagnostic-prefix-shared-diagnostic-prefix-shared-diagnostic-prefix-/missing-alpha.png'; file not found 'frames/shared-diagnostic-prefix-shared-diagnostic-prefix-shared-diagnostic-prefix-/missing-beta.png')"
+  ],
+  "ghTripwireInvoked": false,
+  "saved31897Unchanged": true,
+  "changedDomains": [],
+  "changedFiles": [],
+  "pngCount": 215,
+  "verdict": "none: QA must inspect Settings/placeholder PNGs"
+}

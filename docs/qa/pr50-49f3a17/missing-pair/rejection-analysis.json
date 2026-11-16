@@ -1,0 +1,17 @@
+{
+  "lineSHA256": "327b001aa385b7f6ebcd6699714b8f6c7c62c552aba6ca0ddf27481fef2beeb6",
+  "fileNotFoundCount": 2,
+  "displayedPaths": [
+    "frames/shared-diagnostic-prefix-shared-diagnostic-prefix-shared-diagnostic-prefix-/missing-alpha.png",
+    "frames/shared-diagnostic-prefix-shared-diagnostic-prefix-shared-diagnostic-prefix-/missing-beta.png"
+  ],
+  "distinctDisplayedPathCount": 2,
+  "alphaTailVisible": true,
+  "betaTailVisible": true,
+  "controlOrFormatCharactersInLaunchLine": [],
+  "otherStderrLines": [
+    "GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)",
+    "GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)",
+    "GitHubPet: snapshots written to /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr50-49f3a17/missing-pair/snapshots"
+  ]
+}
