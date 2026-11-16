@@ -1,0 +1,11 @@
+## gh setup links
+setup=ghmissing source=githubCLI demo=false badge=? rows=0 unseen=0 clip=none state=GitHub CLI not found links=["Get GitHub CLI"]
+gh-setup-ghmissing-inbox: 360x229 pt
+gh-setup-ghmissing-settings: 520x1000 pt
+gh-setup-ghmissing-inbox-dark: 360x229 pt
+gh-setup-ghmissing-settings-dark: 520x1000 pt
+setup=unauthenticated source=githubCLI demo=false badge=? rows=0 unseen=0 clip=none state=Not signed in to GitHub CLI links=["How to sign in"]
+gh-setup-unauthenticated-inbox: 360x229 pt
+gh-setup-unauthenticated-settings: 520x1000 pt
+gh-setup-unauthenticated-inbox-dark: 360x229 pt
+gh-setup-unauthenticated-settings-dark: 520x1000 pt
