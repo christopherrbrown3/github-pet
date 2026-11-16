@@ -58,10 +58,17 @@ private final class FakeBackend: LoginItemBackend, @unchecked Sendable {
         #expect(backend.calls.isEmpty)
     }
 
-    @Test func requiresApprovalCanBeRegisteredAgainAndUnregistered() {
-        let again = FakeBackend(.requiresApproval)
-        _ = LoginItem(backend: again).setEnabled(true)
-        #expect(again.calls == ["register"])
+    /// Already registered and waiting for the user's approval: enabling again must not call
+    /// register() (which can throw for a pending item) and is pending approval, not a failure.
+    @Test func requiresApprovalIsPendingNotRegisteredAgainAndCanBeUnregistered() {
+        for registerError in [nil, FakeError()] as [Error?] {
+            let again = FakeBackend(.requiresApproval)
+            again.registerError = registerError
+            let result = LoginItem(backend: again).setEnabled(true)
+            #expect(result == LoginItemResult(status: .requiresApproval, failure: nil))
+            #expect(again.calls.isEmpty, "a pending registration is not registered again")
+            #expect(result.status.explanation?.contains("Login Items") == true)
+        }
         let off = FakeBackend(.requiresApproval)
         #expect(LoginItem(backend: off).setEnabled(false).status == .disabled)
         #expect(off.calls == ["unregister"])

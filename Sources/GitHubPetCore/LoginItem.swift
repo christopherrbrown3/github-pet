@@ -66,13 +66,14 @@ public struct LoginItem: Sendable {
     public var status: LoginItemStatus { backend.status }
 
     /// Registers or unregisters only when the current status needs it, then reports the status the
-    /// system now has. A throw is reported in `failure`, never raised.
+    /// system now has. A throw is reported in `failure`, never raised. An item already waiting for
+    /// approval is registered: enabling it again is pending approval, not another register().
     @discardableResult
     public func setEnabled(_ enabled: Bool) -> LoginItemResult {
         let current = backend.status
         do {
             if enabled {
-                if current != .enabled { try backend.register() }
+                if !current.isRegistered { try backend.register() }
             } else if current.isRegistered {
                 try backend.unregister()
             }
