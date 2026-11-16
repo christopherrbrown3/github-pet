@@ -384,6 +384,24 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
         #expect(outcome(CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1)]))) == .snapshot(items: GhGraphQLParser.parse(graphQL(reviews: [node(1)]))!.reviews!.items, complete: true))
     }
 
+    @Test func contradictoryTotalsInEitherCategoryKeepVisibleRowsPartialWithoutHiddenCounts() {
+        for (reviewTotal, assignedTotal) in [(4, 0), (0, 4)] {
+            let result = client(CommandResult(exitCode: 0, stdout: graphQL(
+                reviews: [node(1)], reviewTotal: reviewTotal,
+                assigned: [node(2)], assignedTotal: assignedTotal))).0.fetch()
+            guard case .snapshot(let items, false, 0) = result else {
+                Issue.record("Contradictory totals must stay Partial, without a trusted hidden count: \(result)")
+                continue
+            }
+            #expect(items.count == 2, "Usable rows survive a contradictory total")
+        }
+        // Exact totals, including an empty category, remain verified controls.
+        let exact = client(CommandResult(exitCode: 0, stdout: graphQL(
+            reviews: [node(1)], reviewTotal: 1, assigned: [], assignedTotal: 0))).0.fetch()
+        guard case .snapshot(let items, true, 0) = exact else { Issue.record("Exact totals remain complete"); return }
+        #expect(items.count == 1)
+    }
+
     @Test func bothSearchesFailingOrMalformedOutputIsAnError() {
         let (both, _) = client(CommandResult(exitCode: 1, stdout: graphQL(reviews: nil, assigned: nil)))
         #expect(both.fetch() == .failure(.failed("GitHub search failed")))
