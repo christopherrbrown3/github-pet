@@ -315,6 +315,44 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(sameLogin == .failed(.identityMismatch))
     }
 
+    /// JSON 0/1 bridge to NSNumber and would pass `as? Bool`; only a genuine JSON boolean may
+    /// certify the end (or cap) of a category.
+    @Test func hasNextPageMustBeAGenuineJSONBooleanForBothCategories() {
+        func reply(_ more: Any?, cursor: String = "c1") -> CommandResult {
+            var info: [String: Any] = ["endCursor": cursor]
+            if let more { info["hasNextPage"] = more }
+            var raw = viewer()
+            raw["organizations"] = ["nodes": [["login": "org-\(cursor)"]], "pageInfo": info]
+            raw["repositories"] = ["nodes": [["nameWithOwner": "demo/\(cursor)"]], "pageInfo": info]
+            return ok(["data": ["viewer": raw]])
+        }
+        for bad in [0, 1] as [Any] {
+            // First page: nothing is certified and no cursor is followed.
+            let (first, runner) = discover([reply(bad)])
+            #expect(runner.calls.count == 1, "numeric \(bad) never opens a later page")
+            #expect(first.organizations.completion == .failed && first.repositories.completion == .failed)
+            #expect(first.organizations.suggestions.isEmpty && first.repositories.suggestions.isEmpty)
+            // Last page: earlier hints remain, but neither end nor cap is certified.
+            let (last, lastRunner) = discover([reply(true, cursor: "c1"), reply(true, cursor: "c2"), reply(bad, cursor: "c3")])
+            #expect(lastRunner.calls.count == 3)
+            #expect(last.organizations == .init(suggestions: ["org-c1", "org-c2"], completion: .partial, pages: 2))
+            #expect(last.repositories == .init(suggestions: ["demo/c1", "demo/c2"], completion: .partial, pages: 2))
+        }
+        for bad in ["false", "true", NSNull(), nil] as [Any?] {
+            let (malformed, _) = discover([reply(bad)])
+            #expect(malformed.organizations.completion == .failed && malformed.repositories.completion == .failed)
+        }
+        let (exhausted, _) = discover([reply(false)])
+        #expect(exhausted.organizations.completion == .exhausted && exhausted.repositories.completion == .exhausted)
+        let (capped, cappedRunner) = discover([reply(true, cursor: "c1"), reply(true, cursor: "c2"), reply(true, cursor: "c3")])
+        #expect(cappedRunner.calls.count == 3)
+        #expect(capped.organizations.completion == .capped && capped.repositories.completion == .capped)
+        let (errored, _) = discover([CommandResult(exitCode: 0, stdout: json(["data": ["viewer": {
+            var raw = viewer(); raw["organizations"] = ["nodes": [], "pageInfo": ["hasNextPage": false]]; return raw }()],
+            "errors": [["message": "fixture"]]]))])
+        #expect(errored.failure == .graphQLError && errored.organizations.completion == .partial)
+    }
+
     @Test func malformedEntriesCursorsAndConnectionsAreVisiblyIncomplete() {
         let (badNode, _) = discover([page(organizations: ["good", "bad org", "org:x"], repositories: ["demo/pet", "no-slash"])])
         #expect(badNode.organizations == ScopeDiscoveryCategory(suggestions: ["good"], completion: .partial, pages: 1))

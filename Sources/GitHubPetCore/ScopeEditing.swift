@@ -324,6 +324,11 @@ public enum ScopeDiscovery {
         guard let value = value as? String, ScopeASCII.nodeID(value, maximum: 1024) else { return nil }
         return value
     }
+    /// Only a genuine JSON boolean; `as? Bool` would also accept the NSNumbers JSON 0/1 decode to.
+    static func boolean(_ value: Any?) -> Bool? {
+        guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else { return nil }
+        return number.boolValue
+    }
 
     public static func run(expectedAccount: ScopeAccount, budget: CommandBudget,
                            page fetch: (ScopeDiscoveryPagePlan) throws -> CommandResult) -> ScopeDiscoveryResult {
@@ -369,7 +374,7 @@ public enum ScopeDiscovery {
                 guard cursor != nil else { return }
                 guard let connection = raw?[field] as? [String: Any], let nodes = connection["nodes"] as? [Any],
                       nodes.count <= ScopeDiscoveryPagePlan.pageSize, let info = connection["pageInfo"] as? [String: Any],
-                      let more = info["hasNextPage"] as? Bool else {
+                      let more = Self.boolean(info["hasNextPage"]) else {
                     category.completion = reply.exitCode != 0 || category.pages > 0 ? .partial : .failed
                     cursor = nil; return
                 }
