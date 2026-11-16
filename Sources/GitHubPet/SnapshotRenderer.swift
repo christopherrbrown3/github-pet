@@ -54,11 +54,16 @@ enum SnapshotRenderer {
         await capture("01b-details")
         // Every Settings section at once, on Demo fixtures before any failure scenario (README
         // images). The real window clips and scrolls.
+        // One invented Demo entitlement repository (a fixture repo), so that section shows a row;
+        // restored right after. Snapshot settings are throwaway and never saved for real.
         report.append("## settings full height")
+        let savedEntitlements = model.settings.entitlementRepositories
+        model.settings.entitlementRepositories = ["example/pet-demo"]
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model).frame(height: Self.fullSettingsHeight), name: "settings-full\(suffix)",
                                    directory: directory, appearance: appearance, asWindow: true)
         }
+        model.settings.entitlementRepositories = savedEntitlements
         report.append("## lane labels (native text, widest count)")
         for side in [CGFloat(64), 128, 256] {
             report.append(tagFit(model: model, side: side))
@@ -227,7 +232,7 @@ enum SnapshotRenderer {
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
     /// Tall enough for every Settings section; README images only.
-    static let fullSettingsHeight: CGFloat = 1500
+    static let fullSettingsHeight: CGFloat = 1400
 
     static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
