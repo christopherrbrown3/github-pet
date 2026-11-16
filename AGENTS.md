@@ -1,6 +1,6 @@
 # GitHub Pet team contract
 
-Product Manager alone assigns work and controls authoritative GitHub Projects status. Role identity is independent of model; current models are in docs/team/roles.json (Chris requests a new Claude PM takeover on 2026-11-15; inspect roles.json/live Herdr for current assignments). Never silently substitute a model.
+Product Manager alone assigns work and controls authoritative GitHub Projects status. Role identity is independent of model; current models are in docs/team/roles.json (Chris authorizes Codex fallback and PM handover when Claude allowance runs low; inspect roles.json/live Herdr for current assignments). Never silently substitute a model.
 
 - No merges during bootstrap without Chris's explicit authorization. No releases or auto-merge.
 - Use a dedicated branch/worktree per role/task. Preserve other worktrees and existing remote changes. No force pushes.

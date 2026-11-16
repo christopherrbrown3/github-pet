@@ -1,3 +1,11 @@
+# Current authority — Codex return, 2026-11-15 evening
+
+Sole PM is t1r after Claude t49 HANDOFF_GRANTED and t1r HANDOFF_ACCEPTED under Chris allowance fallback instruction. Reports to hc send t1r; retired product-manager alias still reaches t49. Read handoffs/codex-pm-2026-11-15-evening.md and roles.json/live state; these supersede older authority blocks below.
+
+Current verified Codex specialists: t53 codex-dev-runner Sol/high (49 output safety), t54 codex-dev-setup Sol/medium (53 CLI snapshots), t55 codex-functional-qa Sol/medium (recover50 then functional49 runner). Old Claude writers stopped; no automatic9pm resume into owned worktrees. Preserve running helper t52/saved app31897; no stale preference cleanup.
+
+Developer owns units/regressions/build CI; QA FUNCTIONAL only. No force push/release/tag/auto-merge/Homebrew. New scoped work only on PM dispatch; current-head checks/reviews/functional QA before merges.
+
 # Latest instruction — 2026-11-15 Claude PM transfer
 
 Chris requests a fresh Claude PM (prior selected model Opus5.5) after allowance reset, authorized to launch specialists as needed. Read handoffs/claude-pm-2026-11-15.md. Claude PM t49 product-manager (Opus5.5) has verified PM_READY. Explicit HANDOFF_GRANTED from Codex t1r transfers sole authority; after that route reports via hc send t49 (or product-manager). Codex t1r steps back and freezes the PM checkout. This latest instruction/live state supersedes older dispatch below.

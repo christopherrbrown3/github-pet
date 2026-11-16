@@ -1,3 +1,13 @@
+# Current checkpoint — 2026-11-15 evening Codex PM return
+
+Sole PMt1r, accepted fromt49 under Chris allowance fallback authorization. Latest current state: handoffs/codex-pm-2026-11-15-evening.md; roles.json mappings verified READY. Developer units/QA functional split unchanged.
+
+PR48 mergedf997d1d. PR49 at0f0c65c has greenCI but hardlink output safety defect in latest review; t53 fixes. PR50 at33f36f1 functional INCOMPLETE/HOLD while old helper t52 continues; t55 preserves/collects results before new QA app. PR51 at03bd318 greenoldbase, held for history-preserving49 integration (no force rebase). PR53 exists atad926ae, t54 fixes incorrect Fixtures-source setup snapshots; candidate09b260a validation pending. #35/#41 decisions preserved, not dispatched. No merges since return.
+
+Saved user appb0127f0 pid31897 and real prefs/stale plists untouched. Functional runner PNG/JSON are offscreen app-view evidence, not real pointer/AX/native chrome/motion. Ready merges remain conditionally authorized; no release/tag/Homebrew/auto-merge.
+
+---
+
 # Latest checkpoint — 2026-11-15 PR48 merged, #30 slice 2 planning
 
 Sole PM is **t49 product-manager** (Claude Opus 5.5) since explicit HANDOFF_GRANTED from Codex t1r. Specialists report via `hc send t49`. Developer owns unit/logic/regression tests and build CI; QA is functional only.
