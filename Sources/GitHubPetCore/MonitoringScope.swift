@@ -155,6 +155,15 @@ public final class ScopeSelectionStore {
         }
         return .scope(scope)
     }
+    private static let lastAccountKey = "GitHubPet.monitoring-scope.last-viewer.v1"
+    public func lastKnownAccount() -> ScopeAccount? {
+        guard let data = defaults.data(forKey: Self.lastAccountKey), data.count <= Self.maximumRecordBytes else { return nil }
+        return try? JSONDecoder().decode(ScopeAccount.self, from: data)
+    }
+    public func rememberAccount(_ account: ScopeAccount?) {
+        if let account, let data = try? JSONEncoder().encode(account) { defaults.set(data, forKey: Self.lastAccountKey) }
+        else { defaults.removeObject(forKey: Self.lastAccountKey) }
+    }
     public func save(_ scope: MonitoringScope, for identity: ScopeIdentity) throws {
         defaults.set(try JSONEncoder().encode(scope), forKey: Self.key(identity))
     }

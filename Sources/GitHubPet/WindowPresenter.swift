@@ -11,28 +11,31 @@ final class WindowPresenter {
 
     func showInbox(model: AppModel) {
         if inboxWindow == nil {
-            inboxWindow = makeWindow(title: "GitHub Pet Inbox",
-                                     content: InboxView(model: model, showsWindowButton: false),
-                                     identifier: "inbox")
+            inboxWindow = Self.makeWindow(title: "GitHub Pet Inbox",
+                                          content: InboxView(model: model, showsWindowButton: false),
+                                          identifier: "inbox", autosavesFrame: model.persistsWindowFrames)
         }
         present(inboxWindow)
     }
 
     func showSettings(model: AppModel) {
         if settingsWindow == nil {
-            settingsWindow = makeWindow(title: "GitHub Pet Settings", content: SettingsView(model: model),
-                                        identifier: "settings")
+            settingsWindow = Self.makeWindow(title: "GitHub Pet Settings", content: SettingsView(model: model),
+                                             identifier: "settings", autosavesFrame: model.persistsWindowFrames)
         }
         present(settingsWindow)
     }
 
-    private func makeWindow<Content: View>(title: String, content: Content, identifier: String) -> NSWindow {
+    /// A frame autosave name makes AppKit write the frame to the app's real standard defaults,
+    /// outside the injected store: simulated launches must not (they never persist user state).
+    static func makeWindow<Content: View>(title: String, content: Content, identifier: String,
+                                          autosavesFrame: Bool) -> NSWindow {
         let window = NSWindow(contentViewController: NSHostingController(rootView: content))
         window.title = title
         window.identifier = NSUserInterfaceItemIdentifier(identifier)
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.isReleasedWhenClosed = false
-        window.setFrameAutosaveName("GitHubPet.\(identifier)")
+        if autosavesFrame { window.setFrameAutosaveName("GitHubPet.\(identifier)") }
         window.center()
         return window
     }
