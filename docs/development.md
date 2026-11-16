@@ -94,7 +94,9 @@ the app, proving shallow histories fail before reaching Swift.
 - **Demo**: fixture data is always identified as Demo. The menu bar shows `DEMO` next to the icon,
   the inbox header shows a DEMO tag and an explanatory line, every row subtitle starts with
   "Demo", the hover summary starts with "Demo data (fixtures)", the mascot shows a DEMO tag, and
-  the accessibility labels say "Demo data". Privacy mode never hides it.
+  the accessibility labels say "Demo data". Privacy mode never hides it. The opt-in
+  `--simulate-monitoring-scope` launch is Demo too, but it is not fixtures: its explanatory line
+  reads "Simulated scope (demo): …" and its hover says "Demo data (simulated scope)".
 - Switching the data source clears the inbox to Loading. Rows, counts and baseline from the
   previous source are never shown as the new source's data, and a slow fetch from an earlier
   session is discarded.
