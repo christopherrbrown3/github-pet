@@ -16,11 +16,15 @@ private final class InertLoginBackend: LoginItemBackend, @unchecked Sendable {
 private struct WriteGuard {
     let defaults: EphemeralDefaults
     let loginBackend: InertLoginBackend
-    let standardKeys: Set<String>
+    let standardValues: [String: String]
     let preferenceFiles: Set<String>
 
-    static func gitHubPetStandardKeys() -> Set<String> {
-        Set(UserDefaults.standard.dictionaryRepresentation().keys.filter { $0.hasPrefix("GitHubPet") })
+    /// Every standard-domain entry whose key mentions GitHubPet, including AppKit's
+    /// "NSWindow Frame GitHubPet.*" autosaves, with its value so a changed value counts too.
+    static func gitHubPetStandardValues() -> [String: String] {
+        UserDefaults.standard.dictionaryRepresentation()
+            .filter { $0.key.contains("GitHubPet") }
+            .mapValues { String(describing: $0) }
     }
     static func preferenceFiles() -> Set<String> {
         let directory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences")
@@ -41,13 +45,13 @@ private struct WriteGuard {
         _ = NSApplication.shared
         let backend = InertLoginBackend()
         let guarded = WriteGuard(defaults: defaults, loginBackend: backend,
-                                 standardKeys: WriteGuard.gitHubPetStandardKeys(), preferenceFiles: WriteGuard.preferenceFiles())
+                                 standardValues: WriteGuard.gitHubPetStandardValues(), preferenceFiles: WriteGuard.preferenceFiles())
         return (AppModel(options: options, runtime: AppModel.Runtime(loginItemBackend: backend)), guarded)
     }
     private func assertNothingWritten(_ guarded: WriteGuard) {
         #expect(guarded.defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
-        #expect(WriteGuard.gitHubPetStandardKeys().subtracting(guarded.standardKeys).isEmpty,
-                "no GitHubPet key reaches the standard (on-disk) defaults")
+        #expect(WriteGuard.gitHubPetStandardValues() == guarded.standardValues,
+                "no GitHubPet key or window frame is added to or changed in the standard (on-disk) defaults")
         #expect(WriteGuard.preferenceFiles().subtracting(guarded.preferenceFiles).isEmpty,
                 "no dev.github-pet preferences file appears")
         #expect(guarded.loginBackend.calls == 0, "the window tests never consult a login item")
