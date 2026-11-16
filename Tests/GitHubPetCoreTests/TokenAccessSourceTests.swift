@@ -12,82 +12,134 @@ import Testing
     ]
 
     enum Token: Equatable {
-        /// A string literal's content (raw delimiters removed). `escaped` is set when a non-raw literal
-        /// holds a backslash escape or interpolation, so its value can't be read statically.
+        /// A string literal's statically known value: raw delimiters removed, escapes such as `\t`
+        /// and `\u{74}` decoded. `escaped` is set when the value can't be read statically (an
+        /// interpolation or an invalid escape).
         case string(String, escaped: Bool)
         case comma
         case other
+        /// Interpolations nested deeper than `maximumInterpolationDepth`: the scan fails closed.
+        case unscannable
     }
 
+    static let maximumInterpolationDepth = 16
+
     /// Lexes Swift well enough for this guard: line and nested block comments are dropped, and
-    /// regular, raw (`#"..."#`, any number of `#`) and multiline (`"""`) string literals each become one token.
+    /// regular, raw (`#"..."#`, any number of `#`) and multiline (`"""`) string literals each become
+    /// one token. An interpolation's code is lexed like any other code (its own strings and
+    /// comments included) and its tokens follow the literal's token, then an `.other` separator.
+    ///
+    /// Not a Swift parser. Known limits, all outside what this guard claims: values built at run
+    /// time (concatenation such as `"au" + "th"`, variables, constants defined elsewhere), regex
+    /// literals containing quotes, `#if` branches (all branches are scanned), and anything run
+    /// outside Sources. Interpolation deeper than the bound is reported, never skipped.
     static func tokens(in text: String) -> [Token] {
         let b = Array(text.utf8)
-        var tokens: [Token] = []
-        var i = 0
-        func has(_ s: String, at index: Int) -> Bool {
-            let u = Array(s.utf8)
-            return index + u.count <= b.count && Array(b[index..<index + u.count]) == u
-        }
+        var i = 0, tokens: [Token] = []
+        lex(b, &i, depth: 0, untilParen: false, into: &tokens)
+        return tokens
+    }
+
+    private static func has(_ b: [UInt8], _ s: String, at index: Int) -> Bool {
+        let u = Array(s.utf8)
+        return index + u.count <= b.count && Array(b[index..<index + u.count]) == u
+    }
+
+    /// Lexes from `i`. With `untilParen`, stops after the `)` that balances an interpolation's `(`.
+    private static func lex(_ b: [UInt8], _ i: inout Int, depth: Int, untilParen: Bool, into tokens: inout [Token]) {
+        var parens = 0
         while i < b.count {
             let c = b[i]
-            if has("//", at: i) {
+            if has(b, "//", at: i) {
                 while i < b.count, b[i] != 0x0A { i += 1 }
-            } else if has("/*", at: i) {
-                var depth = 0
+            } else if has(b, "/*", at: i) {
+                var nesting = 0
                 repeat {
-                    if has("/*", at: i) { depth += 1; i += 2 }
-                    else if has("*/", at: i) { depth -= 1; i += 2 }
+                    if has(b, "/*", at: i) { nesting += 1; i += 2 }
+                    else if has(b, "*/", at: i) { nesting -= 1; i += 2 }
                     else { i += 1 }
-                } while depth > 0 && i < b.count
+                } while nesting > 0 && i < b.count
             } else if c == 0x22 || c == 0x23 {
-                var hashes = 0
-                var j = i
+                var hashes = 0, j = i
                 while j < b.count, b[j] == 0x23 { hashes += 1; j += 1 }
                 guard j < b.count, b[j] == 0x22 else { tokens.append(.other); i += max(hashes, 1); continue }
-                let pound = String(repeating: "#", count: hashes)
-                let multiline = has("\"\"\"", at: j)
-                let open = multiline ? 3 : 1
-                let close = (multiline ? "\"\"\"" : "\"") + pound
-                let escape = "\\" + pound
-                var k = j + open
-                var content: [UInt8] = []
-                var escaped = false
-                while k < b.count, !has(close, at: k) {
-                    if has(escape, at: k) {
-                        escaped = true
-                        k += escape.utf8.count
-                        if k < b.count { k += 1 }  // the escaped character, so \" never closes the literal
-                    } else {
-                        content.append(b[k]); k += 1
-                    }
-                }
-                var value = String(decoding: content, as: UTF8.self)
-                if multiline {
-                    // Content sits between the line breaks after the opening and before the closing
-                    // delimiter; the closing delimiter's indentation is not part of it.
-                    var lines = value.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-                    if lines.count >= 2 { lines.removeFirst(); lines.removeLast() }
-                    value = lines.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
-                }
-                tokens.append(.string(value, escaped: escaped))
-                i = min(k + close.utf8.count, b.count)
+                i = j
+                stringLiteral(b, &i, hashes: hashes, depth: depth, into: &tokens)
             } else if c == 0x2C {
                 tokens.append(.comma); i += 1
             } else {
+                if untilParen {
+                    if c == 0x28 { parens += 1 }
+                    if c == 0x29 {
+                        if parens == 0 { i += 1; return }
+                        parens -= 1
+                    }
+                }
                 if !(c == 0x20 || c == 0x0A || c == 0x09 || c == 0x0D) { tokens.append(.other) }
                 i += 1
             }
         }
-        return tokens
     }
 
-    /// Violations in one source text: forbidden substrings, and every `"auth"` element followed by a
+    /// `i` is at the opening quote, after `hashes` pound signs.
+    private static func stringLiteral(_ b: [UInt8], _ i: inout Int, hashes: Int, depth: Int, into tokens: inout [Token]) {
+        let pound = String(repeating: "#", count: hashes)
+        let multiline = has(b, "\"\"\"", at: i)
+        let close = (multiline ? "\"\"\"" : "\"") + pound
+        let escape = "\\" + pound
+        var k = i + (multiline ? 3 : 1)
+        var content: [UInt8] = [], escaped = false, nested: [Token] = []
+        while k < b.count, !has(b, close, at: k) {
+            guard has(b, escape, at: k) else { content.append(b[k]); k += 1; continue }
+            k += escape.utf8.count
+            guard k < b.count else { break }
+            switch b[k] {
+            case 0x28: // \( interpolation: lex its code, bounded by depth.
+                escaped = true
+                k += 1
+                guard depth < maximumInterpolationDepth else { tokens.append(.unscannable); i = b.count; return }
+                lex(b, &k, depth: depth + 1, untilParen: true, into: &nested)
+                nested.append(.other)
+            case 0x30: content.append(0); k += 1
+            case 0x5C, 0x22, 0x27: content.append(b[k]); k += 1
+            case 0x74: content.append(0x09); k += 1
+            case 0x6E: content.append(0x0A); k += 1
+            case 0x72: content.append(0x0D); k += 1
+            case 0x0A where multiline: k += 1 // line continuation
+            case 0x75: // \u{1-8 hex digits}
+                var end = k + 1, hex: [UInt8] = []
+                if end < b.count, b[end] == 0x7B {
+                    end += 1
+                    while end < b.count, hex.count <= 8, b[end] != 0x7D { hex.append(b[end]); end += 1 }
+                }
+                if end < b.count, b[end] == 0x7D, (1...8).contains(hex.count),
+                   let value = UInt32(String(decoding: hex, as: UTF8.self), radix: 16), let scalar = Unicode.Scalar(value) {
+                    content += Array(String(Character(scalar)).utf8); k = end + 1
+                } else { escaped = true; k += 1 }
+            default: escaped = true; k += 1
+            }
+        }
+        var value = String(decoding: content, as: UTF8.self)
+        if multiline {
+            // Content sits between the line breaks after the opening and before the closing
+            // delimiter; the closing delimiter's indentation is not part of it.
+            var lines = value.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+            if lines.count >= 2 { lines.removeFirst(); lines.removeLast() }
+            value = lines.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
+        }
+        tokens.append(.string(value, escaped: escaped))
+        tokens += nested
+        i = min(k + close.utf8.count, b.count)
+    }
+
+    /// Violations in one source text: forbidden substrings (in the text or a decoded literal), and every `"auth"` element followed by a
     /// comma and anything but the literal `"status"` (another subcommand, an escaped or interpolated
     /// literal, or a non-literal), whatever comments or string-literal style sit in between.
     static func violations(in text: String) -> [String] {
-        var found = forbiddenSubstrings.filter { text.contains($0) }
         let tokens = tokens(in: text)
+        let literals = tokens.compactMap { token -> String? in if case .string(let value, _) = token { return value }; return nil }
+        var found = forbiddenSubstrings.filter { name in text.contains(name) || literals.contains { $0.contains(name) } }
+        if tokens.contains(.unscannable) { found.append("unscannable interpolation nesting") }
         for index in tokens.indices where tokens[index] == .string("auth", escaped: false) {
             guard index + 2 < tokens.count, tokens[index + 1] == .comma else { continue }
             switch tokens[index + 2] {
@@ -142,9 +194,45 @@ import Testing
         #expect(Self.violations(in: multiline) == ["gh auth token"])
         #expect(Self.violations(in: ###"run([##"auth"##, ##"logout"##])"###) == ["gh auth logout"])
         // Not literals: an escape, an interpolation or a variable could build any subcommand.
-        #expect(Self.violations(in: #"run(["auth", "tok\u{65}n"])"#) == ["gh auth <escaped literal>"])
+        #expect(Self.violations(in: #"run(["auth", "tok\q"])"#) == ["gh auth <escaped literal>"])
         #expect(Self.violations(in: #"run(["auth", "\(sub)"])"#) == ["gh auth <escaped literal>"])
         #expect(Self.violations(in: #"run(["auth", sub])"#) == ["gh auth <non-literal>"])
+    }
+
+    @Test func executableCodeInsideInterpolationIsScanned() {
+        // The Copilot examples on PR #56: inner quotes and a nested "/*" no longer end the scan.
+        #expect(Self.violations(in: #"let result = "\(run(["auth", "login"]))""#) == ["gh auth login"])
+        #expect(Self.violations(in: #"let s = "\(f("/*"))"; run(["auth", "token"])"#) == ["gh auth token"])
+        // Comments, nested strings and deeper interpolation inside an interpolation.
+        #expect(Self.violations(in: #"let s = "\(f(/* " */ 1))"; run(["auth", "token"])"#) == ["gh auth token"])
+        #expect(Self.violations(in: #"let s = "a \(g("b \(run(["auth", /* x */ "refresh"])) c")) d""#) == ["gh auth refresh"])
+        #expect(Self.violations(in: #"let s = "\(f(")"))"; run(["auth", "logout"])"#) == ["gh auth logout"])
+        // Raw and multiline literals interpolate only with their own delimiter.
+        #expect(Self.violations(in: ##"let s = #"\#(run(["auth", "logout"]))"#"##) == ["gh auth logout"])
+        #expect(Self.violations(in: ##"let s = #"\(run(["auth", "logout"]))"#"##).isEmpty, "raw text, not code")
+        let multiline = "let s = \"\"\"\n  \\(run([\"auth\", \"token\"]))\n  \"\"\""
+        #expect(Self.violations(in: multiline) == ["gh auth token"])
+        // Allowed: interpolated hint text and the status preflight inside an interpolation.
+        #expect(Self.violations(in: #"Text("Run: gh auth login as \(name)")"#).isEmpty)
+        #expect(Self.violations(in: #"let s = "Run: \("gh auth login")""#).isEmpty)
+        #expect(Self.violations(in: #"let s = "\(run(["auth", "status"]))""#).isEmpty)
+        // Bounded: nesting deeper than the scanner follows fails closed instead of passing.
+        let deep = String(repeating: #""\("#, count: 40) + "1" + String(repeating: #")""#, count: 40)
+        #expect(Self.violations(in: deep) == ["unscannable interpolation nesting"])
+    }
+
+    @Test func staticallyDecodableEscapesAreDecodedBeforeMatching() {
+        // The Copilot example on PR #56.
+        #expect(Self.violations(in: #"run(["au\u{74}h", "token"])"#) == ["gh auth token"])
+        #expect(Self.violations(in: #"run(["\u{61}uth", "lo\u{67}in"])"#) == ["gh auth login"])
+        #expect(Self.violations(in: #"run(["auth", "tok\u{65}n"])"#) == ["gh auth token"])
+        #expect(Self.violations(in: ##"run([#"au\#u{74}h"#, "token"])"##) == ["gh auth token"])
+        #expect(Self.violations(in: #"env["GH_\u{54}OKEN"]"#) == ["GH_TOKEN"])
+        // Still allowed when the decoded value is the status preflight; an undecodable or
+        // interpolated subcommand is still a violation.
+        #expect(Self.violations(in: #"let a = ["\u{61}uth", "st\u{61}tus"]"#).isEmpty)
+        #expect(Self.violations(in: #"run(["au\u{74}h", "\(sub)"])"#) == ["gh auth <escaped literal>"])
+        #expect(Self.violations(in: #"run(["auth", "\u{110000}"])"#) == ["gh auth <escaped literal>"])
     }
 
     @Test func commentedOutOrQuotedTextIsNotMistakenForCode() {
