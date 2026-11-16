@@ -76,11 +76,40 @@ and confirm. You approve each downloaded version once. Apple's guidance:
   **Settings → Data source**. GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
 - Privacy mode is on by default: names and titles stay hidden until you choose **Show details**.
 
-## Updating and removing
+## Keyboard and VoiceOver access
+
+The **menu-bar icon** and **Settings** are the keyboard route: they are standard macOS controls, so
+Tab, Space and Return work in the inbox window and in Settings. The floating mascot is a
+mouse and VoiceOver target only: it is not focusable from the keyboard, but everything it opens
+(the inbox) is reachable from the menu-bar icon. With VoiceOver the mascot reads as one button
+and pressing it opens the inbox. This has been checked from static accessibility output only;
+a live VoiceOver pass has not been done yet.
+
+## Updating
 
 To update, download a newer build and replace the app in Applications (approve it once more).
-To remove it, quit GitHub Pet and delete **GitHubPet.app**. Its settings live in the
-`dev.github-pet.GitHubPet` preferences domain (`defaults delete dev.github-pet.GitHubPet`).
+
+Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on
+where the app is. Replacing the app with a newer ZIP build should therefore keep them, but this
+has **not been tested** on a clean install yet, so check Settings after updating.
+
+## Uninstalling
+
+1. Quit GitHub Pet from the inbox's power button.
+2. Delete **GitHubPet.app** from Applications (move it to the Bin).
+3. Optional: remove its saved settings. This command is for you to run in Terminal; nothing in the
+   app or the ZIP runs it for you:
+
+   ```sh
+   defaults delete dev.github-pet.GitHubPet
+   ```
+
+4. GitHub Pet does not open at login yet. When that option exists, remove it under **System
+   Settings → General → Login Items** (or turn it off in GitHub Pet's Settings) before deleting the
+   app.
+
+Uninstalling does not touch the GitHub CLI or its sign-in. A Homebrew cask is planned but not
+available, so there is no `brew uninstall` path yet.
 
 ## Building it yourself
 
