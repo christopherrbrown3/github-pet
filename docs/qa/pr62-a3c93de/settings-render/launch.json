@@ -1,0 +1,9 @@
+{
+  "pid": 72891,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr62-a3c93de/artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--render-snapshots",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr62-a3c93de/settings-render/snapshots",
+    "--fixtures"
+  ]
+}

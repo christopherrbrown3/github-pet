@@ -1,0 +1,13 @@
+{
+  "exit": 0,
+  "pid": 72891,
+  "launchLines": [
+    "GitHubPet: mascot pack mona-pet-v1 loaded from /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr62-a3c93de/artifact/extracted/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1"
+  ],
+  "ghTripwireInvoked": false,
+  "saved31897Unchanged": true,
+  "changedDomains": [],
+  "changedFiles": [],
+  "pngCount": 224,
+  "verdict": "none: QA must inspect Settings/placeholder PNGs"
+}

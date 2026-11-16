@@ -1,0 +1,45 @@
+{
+  "total_count": 2,
+  "artifacts": [
+    {
+      "id": 14239727036,
+      "node_id": "MDg6QXJ0aWZhY3QxNDIzOTcyNzAzNg==",
+      "name": "render-check",
+      "size_in_bytes": 25387012,
+      "url": "https://api.github.com/repos/christopherrbrown3/github-pet/actions/artifacts/14239727036",
+      "archive_download_url": "https://api.github.com/repos/christopherrbrown3/github-pet/actions/artifacts/14239727036/zip",
+      "expired": false,
+      "digest": "sha256:2334ab7bfb5bd26c8d96da155b3cb6ec7f4ed8463e3dc7eec69f429080f75c55",
+      "created_at": "2026-11-16T15:33:45Z",
+      "updated_at": "2026-11-16T15:33:45Z",
+      "expires_at": "2027-02-14T15:23:40Z",
+      "workflow_run": {
+        "id": 43895839559,
+        "repository_id": 1455516913,
+        "head_repository_id": 1455516913,
+        "head_branch": "feat/15-login-item-ui",
+        "head_sha": "a3c93debabf963ee6f9d10dafb99384de0f9225c"
+      }
+    },
+    {
+      "id": 14238624650,
+      "node_id": "MDg6QXJ0aWZhY3QxNDIzODYyNDY1MA==",
+      "name": "GitHubPet-app",
+      "size_in_bytes": 3042118,
+      "url": "https://api.github.com/repos/christopherrbrown3/github-pet/actions/artifacts/14238624650",
+      "archive_download_url": "https://api.github.com/repos/christopherrbrown3/github-pet/actions/artifacts/14238624650/zip",
+      "expired": false,
+      "digest": "sha256:514356832438537c22843ee43f422f54cec7669c8c57418f0da7aad160554201",
+      "created_at": "2026-11-16T15:33:41Z",
+      "updated_at": "2026-11-16T15:33:41Z",
+      "expires_at": "2026-11-30T15:33:39Z",
+      "workflow_run": {
+        "id": 43895839559,
+        "repository_id": 1455516913,
+        "head_repository_id": 1455516913,
+        "head_branch": "feat/15-login-item-ui",
+        "head_sha": "a3c93debabf963ee6f9d10dafb99384de0f9225c"
+      }
+    }
+  ]
+}
