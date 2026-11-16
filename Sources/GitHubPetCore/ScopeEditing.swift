@@ -368,6 +368,7 @@ public enum ScopeDiscovery {
             }
             result.viewer = viewer
             let raw = data?["viewer"] as? [String: Any]
+            var malformedConnection = false
 
             func consume(_ field: String, cursor: inout String??, seen: inout Set<String>, malformed: inout Bool,
                          category: inout ScopeDiscoveryCategory, normalize: (String) -> MonitoringTarget?) {
@@ -376,7 +377,7 @@ public enum ScopeDiscovery {
                       nodes.count <= ScopeDiscoveryPagePlan.pageSize, let info = connection["pageInfo"] as? [String: Any],
                       let more = Self.boolean(info["hasNextPage"]) else {
                     category.completion = reply.exitCode != 0 || category.pages > 0 ? .partial : .failed
-                    cursor = nil; return
+                    malformedConnection = true; cursor = nil; return
                 }
                 category.pages += 1
                 let key = field == "organizations" ? "login" : "nameWithOwner"
@@ -395,6 +396,8 @@ public enum ScopeDiscovery {
             consume("repositories", cursor: &repositoryCursor, seen: &repositorySeen, malformed: &repositoryMalformed,
                     category: &result.repositories) { try? MonitoringTarget(repository: $0) }
             if let pageError { result.failure = pageError; break }
+            // A clean page with an unreadable connection still says why that category stopped.
+            if malformedConnection, result.failure == nil { result.failure = .malformedResponse }
         }
         return result
     }

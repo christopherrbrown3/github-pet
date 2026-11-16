@@ -367,6 +367,23 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(oversized.organizations.completion == .failed, "more nodes than requested is malformed")
     }
 
+    @Test func malformedConnectionOnACleanPageNamesAFailureReason() {
+        let (first, _) = discover([page(organizations: nil, repositories: ["demo/pet"])])
+        #expect(first.organizations.completion == .failed && first.repositories.completion == .exhausted)
+        #expect(first.failure == .malformedResponse, "a failed category always carries a reason")
+        let (later, runner) = discover([
+            page(organizations: ["a"], organizationsMore: true, organizationCursor: "c1", repositories: ["demo/pet"]),
+            ok(["data": ["viewer": viewer()]]),
+        ])
+        #expect(runner.calls.count == 2)
+        #expect(later.organizations == .init(suggestions: ["a"], completion: .partial, pages: 1))
+        #expect(later.failure == .malformedResponse && later.repositories.completion == .exhausted)
+        let (clean, _) = discover([page(organizations: ["a"], repositories: ["demo/pet"])])
+        #expect(clean.failure == nil, "control: well-formed pages report no failure")
+        let (errored, _) = discover([page(organizations: nil, repositories: [], errors: [["message": "fixture"]])])
+        #expect(errored.failure == .graphQLError, "an explicit page error keeps its own reason")
+    }
+
     @Test func deniedSignedOutRateLimitedAndMissingGhAreFailuresNotEmptyLists() {
         let (denied, _) = discover([CommandResult(exitCode: 4, stderr: Data("run gh auth login".utf8))])
         #expect(denied.failure == .signedOut && denied.organizations.completion == .failed && denied.repositories.completion == .failed)
