@@ -113,6 +113,15 @@ the app, proving shallow histories fail before reaching Swift.
   stale data or from a partial snapshot records IDs silently, so nothing is replayed on reconnect.
   New IDs are decided before the tracker records anything, so eviction can't make existing IDs
   look new.
+- The baseline survives relaunches (#12): `GitHubPet.event-baseline.v1` in the launch's defaults
+  domain (`--defaults-suite`, or the in-memory domain of snapshot and simulated launches) holds
+  only truncated SHA-256 digests of seen IDs (at most 1024, 64 KB), a digest of the
+  source/account/scope session, the quality tag and the last success time. A relaunch stays
+  Loading until a poll lands. If the record was complete and at most 24 hours old, the first
+  complete snapshot is comparable: items that arrived while the app was quit fire once, seen ones
+  never. Partial, stale, error, signed-out or older records re-baseline silently. A record from
+  another source, account or scope, or a corrupt, oversized or other-version one, is removed.
+  `--reset-settings` and Reset baseline clear it.
 - Event gestures (#29): one batch of new events plays one gesture, led by its most severe event;
   events arriving while it plays merge into it (no restart, no queue, no backlog). An urgent batch
   preempts an attention gesture, which is not replayed. Attention plays the finite "friendly

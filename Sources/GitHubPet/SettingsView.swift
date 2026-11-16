@@ -31,6 +31,7 @@ struct SettingsView: View {
                         .font(.caption).foregroundStyle(.orange)
                 }
             }
+            LoginItemSection(settings: model.loginItem)
             Section("Privacy and motion") {
                 Toggle("Privacy mode (hide repository names and titles)", isOn: $model.settings.privacyMode)
                 Toggle("Reduce motion", isOn: $model.settings.reducedMotion)
@@ -137,5 +138,26 @@ struct EntitlementRepositoriesSection: View {
     private func add() {
         problem = model.addEntitlementRepository(input)
         if problem == nil { input = "" }
+    }
+}
+
+/// Reads the system state when shown and when the app becomes active (the user may approve or
+/// remove the item in System Settings meanwhile); only flipping the toggle changes it.
+struct LoginItemSection: View {
+    @ObservedObject var settings: LoginItemSettings
+
+    var body: some View {
+        Section("Startup") {
+            Toggle("Open at login", isOn: Binding(get: { settings.isOn }, set: { settings.setEnabled($0) }))
+                .disabled(!settings.isAvailable || settings.status == nil)
+                .accessibilityIdentifier("settings.openAtLogin")
+            Text(settings.summary)
+                .font(.caption).foregroundStyle(settings.failure == nil ? .secondary : Color.orange)
+                .accessibilityIdentifier("settings.openAtLoginStatus")
+        }
+        .onAppear { settings.refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            settings.refresh()
+        }
     }
 }
