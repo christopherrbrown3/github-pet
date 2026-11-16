@@ -348,7 +348,9 @@ public enum ScopeDiscovery {
             guard let envelope = ScopeGraphQL.envelope(reply.stdout) else {
                 finishOpen(reply.stdout.count > CommandBudget.maximumBytes ? .outputLimit : reply.exitCode != 0 ? .transport : .malformedResponse); break
             }
-            var pageError: ScopeAccessFailure?
+            // A failed process can print useful data, but cannot certify the end or cap of
+            // any category requested on this page. Classify before consume clears cursors.
+            var pageError: ScopeAccessFailure? = reply.exitCode != 0 ? .transport : nil
             if let errors = envelope["errors"] {
                 pageError = ScopeGraphQL.rateLimited(errors as? [[String: Any]] ?? []) ? .rateLimited : .graphQLError
             }
@@ -367,7 +369,8 @@ public enum ScopeDiscovery {
                 guard let connection = raw?[field] as? [String: Any], let nodes = connection["nodes"] as? [Any],
                       nodes.count <= ScopeDiscoveryPagePlan.pageSize, let info = connection["pageInfo"] as? [String: Any],
                       let more = info["hasNextPage"] as? Bool else {
-                    category.completion = category.pages > 0 ? .partial : .failed; cursor = nil; return
+                    category.completion = reply.exitCode != 0 || category.pages > 0 ? .partial : .failed
+                    cursor = nil; return
                 }
                 category.pages += 1
                 let key = field == "organizations" ? "login" : "nameWithOwner"
@@ -386,7 +389,6 @@ public enum ScopeDiscovery {
             consume("repositories", cursor: &repositoryCursor, seen: &repositorySeen, malformed: &repositoryMalformed,
                     category: &result.repositories) { try? MonitoringTarget(repository: $0) }
             if let pageError { result.failure = pageError; break }
-            if reply.exitCode != 0 { finishOpen(.transport); break }
         }
         return result
     }

@@ -317,8 +317,33 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(transport.failure == .transport && transport.organizations.suggestions.isEmpty)
         let (failedExit, _) = discover([CommandResult(exitCode: 1, stdout: page(organizations: ["a"], repositories: []).stdout)])
         #expect(failedExit.failure == .transport, "a failed gh exit never reports a clean exhausted list")
+        #expect(failedExit.organizations.completion == .partial && failedExit.organizations.suggestions == ["a"])
+        #expect(failedExit.repositories.completion == .partial, "even an empty category from a failed page is unverified")
         let missing = ScopeGhAccess(locator: GhLocator(environment: ["PATH": "/nowhere"], isExecutable: { _ in false }), runner: ScriptedRunner([]))
         #expect(missing.discover(expectedAccount: accountA, budget: CommandBudget(timeout: 20)) == .failed(.ghMissing))
+    }
+
+    @Test func parseableFailedExitCannotCertifyExhaustionOrCapForEitherCategory() {
+        let first = page(organizations: ["first-org"], organizationsMore: true,
+                         repositories: ["demo/first"], repositoriesMore: true)
+        let second = page(organizations: ["second-org"], organizationsMore: true,
+                          repositories: ["demo/second"], repositoriesMore: true)
+        for more in [false, true] {
+            let last = page(organizations: ["last-org"], organizationsMore: more,
+                            repositories: ["demo/last"], repositoriesMore: more)
+            let (result, runner) = discover([first, second, CommandResult(exitCode: 1, stdout: last.stdout)])
+            #expect(runner.calls.count == 3 && result.failure == .transport)
+            #expect(result.organizations == .init(suggestions: ["first-org", "second-org", "last-org"], completion: .partial, pages: 3))
+            #expect(result.repositories == .init(suggestions: ["demo/first", "demo/second", "demo/last"], completion: .partial, pages: 3))
+        }
+        // A category exhausted on an earlier successful page keeps that proof. Only the
+        // still-open category is affected by the later failed process.
+        let (earlierComplete, _) = discover([
+            page(organizations: ["a"], organizationsMore: true, repositories: ["demo/pet"]),
+            CommandResult(exitCode: 1, stdout: page(organizations: ["b"]).stdout),
+        ])
+        #expect(earlierComplete.organizations.completion == .partial && earlierComplete.organizations.suggestions == ["a", "b"])
+        #expect(earlierComplete.repositories.completion == .exhausted)
     }
 
     @Test func sharedDeadlineAndByteBudgetSpanAllPages() {
