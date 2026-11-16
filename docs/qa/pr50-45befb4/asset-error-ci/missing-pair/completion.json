@@ -1,0 +1,17 @@
+{
+  "exit": 0,
+  "pid": 71850,
+  "launchLines": [
+    "GitHubPet: mascot placeholder (pack rejected: file not found 'frames/shared-diagnostic-prefix-shared-diagnosti\u2026'; file not found 'frames/shared-diagnostic-prefix-shared-diagnosti\u2026')"
+  ],
+  "ghTripwireInvoked": false,
+  "saved31897Unchanged": true,
+  "changedDomains": [
+    "dev.github-pet.render-snapshots.71850"
+  ],
+  "changedFiles": [
+    "dev.github-pet.render-snapshots.71850.plist"
+  ],
+  "pngCount": 199,
+  "verdict": "none: QA must inspect Settings/placeholder PNGs"
+}

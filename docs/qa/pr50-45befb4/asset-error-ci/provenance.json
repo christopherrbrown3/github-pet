@@ -1,0 +1,9 @@
+{
+  "sha": "45befb4e1d4f30acfd826db47ba82c75e94431b6",
+  "ci": 43799845701,
+  "artifact": 14195737979,
+  "zipSHA256": "50750721c65fc9d8c1c19924c542071a12c20fa7df4613a557be76529f435e4f",
+  "binarySHA256": "bcf847d603684c8c9fc57060e72a0244380f6808f07432588e76daeb12a6ff9f",
+  "signature": "strict deep verify passed",
+  "app": "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr50-45befb4/asset-error-ci/artifact/extracted/GitHubPet.app"
+}

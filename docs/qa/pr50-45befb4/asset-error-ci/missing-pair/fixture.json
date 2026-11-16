@@ -1,0 +1,9 @@
+{
+  "absentPaths": [
+    "frames/shared-diagnostic-prefix-shared-diagnostic-prefix-shared-diagnostic-prefix-/missing-alpha.png",
+    "frames/shared-diagnostic-prefix-shared-diagnostic-prefix-shared-diagnostic-prefix-/missing-beta.png"
+  ],
+  "sharedPrefixLength": 83,
+  "manifest": "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr50-45befb4/asset-error-ci/missing-pair/pack/manifest.json",
+  "validator": "accumulates errors; checked-set deduplicates each path"
+}

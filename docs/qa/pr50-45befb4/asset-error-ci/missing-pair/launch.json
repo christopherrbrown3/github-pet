@@ -1,0 +1,9 @@
+{
+  "pid": 71850,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr50-45befb4/asset-error-ci/artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--render-snapshots",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr50-45befb4/asset-error-ci/missing-pair/snapshots",
+    "--fixtures"
+  ]
+}

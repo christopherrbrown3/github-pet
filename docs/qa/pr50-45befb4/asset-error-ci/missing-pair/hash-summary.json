@@ -1,0 +1,42 @@
+{
+  "dev.github-pet.GitHubPet": {
+    "before": {
+      "present": true,
+      "hash": "33df4275eba6706f6e552c252e81ded5acfcec3221d6a96398b832df76effab4",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "after": {
+      "present": true,
+      "hash": "33df4275eba6706f6e552c252e81ded5acfcec3221d6a96398b832df76effab4",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "equal": true
+  },
+  "NSGlobalDomain": {
+    "before": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "after": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "equal": true
+  },
+  "addedPlists": [
+    {
+      "name": "dev.github-pet.render-snapshots.71850.plist",
+      "size": 42,
+      "keyCount": 0,
+      "SHA256": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1"
+    }
+  ],
+  "saved31897Unchanged": true,
+  "saved31897After": "31897 Sat Nov 14 12:44:32 2026     /Users/chris/github-pet-builds/b0127f0/GitHubPet.app/Contents/MacOS/GitHubPet"
+}
