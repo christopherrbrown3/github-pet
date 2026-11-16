@@ -177,9 +177,24 @@ enum SnapshotRenderer {
                                    appearance: appearance, asWindow: true)
         }
 
+        // gh setup links (#52): the real engine in each setup state, never a live gh call.
+        report.append("## gh setup links")
+        for (name, failure) in [("ghmissing", FetchFailure.ghMissing), ("unauthenticated", .unauthenticated)] {
+            model.showSourceFailureForSnapshot(failure)
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            report.append("state=\(model.dataState.statusText) links=\(GhSetup.links(for: model.dataState).map(\.title))")
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+                                       name: "gh-setup-\(name)-inbox\(suffix)", directory: directory,
+                                       appearance: appearance, asWindow: true)
+                report += await render(SettingsView(model: model).frame(height: 1000),
+                                       name: "gh-setup-\(name)-settings\(suffix)",
+                                       directory: directory, appearance: appearance, asWindow: true)
+            }
+        }
+
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
-        UserDefaults.standard.removePersistentDomain(forName: LaunchOptions.snapshotDefaultsSuite)
         FileHandle.standardError.write(Data("GitHubPet: snapshots written to \(directory.path)\n".utf8))
     }
 

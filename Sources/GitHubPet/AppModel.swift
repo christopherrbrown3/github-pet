@@ -508,6 +508,12 @@ final class AppModel: ObservableObject {
 
     var simulatorConnected: Bool { simulator.connected }
 
+    /// Render hook only: show a gh setup failure through the real engine, without polling.
+    func showSourceFailureForSnapshot(_ failure: FetchFailure) {
+        resetSession()
+        apply(.failure(failure))
+    }
+
     /// Render hook only: show the Loading state of a fresh source without polling.
     func showLoadingForSnapshot() {
         resetSession()

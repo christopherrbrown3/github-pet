@@ -93,9 +93,25 @@ struct LaunchOptions {
     static let snapshotDefaultsSuite = "dev.github-pet.render-snapshots.\(ProcessInfo.processInfo.processIdentifier)"
 
     var userDefaults: UserDefaults {
+        // Snapshot mode keeps its settings in memory: a throwaway suite, even cleared, leaves a
+        // plist in ~/Library/Preferences when the process exits.
+        if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite { return EphemeralDefaults() }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {
             return suite
         }
         return .standard
     }
+}
+
+/// In-memory stand-in for the settings store's `UserDefaults` calls (`data`, `set`,
+/// `removeObject`): nothing reaches cfprefsd, so no preferences file is created.
+final class EphemeralDefaults: UserDefaults {
+    private var values: [String: Any] = [:]
+
+    init() { super.init(suiteName: nil)! }
+
+    override func object(forKey defaultName: String) -> Any? { values[defaultName] }
+    override func data(forKey defaultName: String) -> Data? { values[defaultName] as? Data }
+    override func set(_ value: Any?, forKey defaultName: String) { values[defaultName] = value }
+    override func removeObject(forKey defaultName: String) { values[defaultName] = nil }
 }
