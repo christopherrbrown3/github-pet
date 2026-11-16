@@ -48,6 +48,8 @@ final class AppModel: ObservableObject {
             store.save(settings)
             if settings.dataSource != oldValue.dataSource { switchSource() }
             if settings.privacyMode && !oldValue.privacyMode { detailsRevealed = false }
+            // Reclassify rows now; IDs don't change, so nothing looks new (#8).
+            if settings.entitlementRepositories != oldValue.entitlementRepositories { sync(now: clock()) }
             // Snooze, quiet hours or Reduce Motion turned on: stop a playing gesture now, not at
             // the next tick. Nothing is re-queued, so turning them off later replays nothing.
             if GestureCancellation.shouldCancel(from: oldValue, to: settings, at: clock()) { cancelGesture() }
@@ -428,7 +430,10 @@ final class AppModel: ObservableObject {
         let events = engine.apply(outcome, now: date)
         unseen.record(events)
         unseen.reconcile(after: outcome, items: engine.items)
-        clips.enqueue(events, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
+        let shown = events.map { event in
+            var event = event; event.item = classified(event.item); return event
+        }
+        clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
         sync(now: date)
     }
 
@@ -487,12 +492,29 @@ final class AppModel: ObservableObject {
         sync(now: date)
     }
 
+    /// #8: display-time only. The engine, its IDs and unseen state keep the source's kind.
+    private func classified(_ item: InboxItem) -> InboxItem {
+        EntitlementRepositories.classify(item, repositories: Set(settings.entitlementRepositories))
+    }
+
+    /// Settings › Entitlement approvals. Returns the problem to show, or nil once added.
+    func addEntitlementRepository(_ text: String) -> EntitlementRepositories.Problem? {
+        switch EntitlementRepositories.add(text, to: settings.entitlementRepositories) {
+        case .success(let list): settings.entitlementRepositories = list; return nil
+        case .failure(let problem): return problem
+        }
+    }
+    func removeEntitlementRepository(_ repository: String) {
+        settings.entitlementRepositories.removeAll { $0 == repository }
+    }
+
     private func sync(now date: Date) {
         now = date
         scopeSummary = scopeSession.summary
         scopeQuality = scopeSession.qualitySummary
         scopeSimulationStatus = scopeSimulation?.status ?? ""
-        if items != engine.items { items = engine.items }
+        let shown = engine.items.map(classified)
+        if items != shown { items = shown }
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
         if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
