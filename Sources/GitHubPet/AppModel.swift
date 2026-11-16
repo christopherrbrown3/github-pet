@@ -211,7 +211,16 @@ final class AppModel: ObservableObject {
 
     var summaryLines: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount,
-                            privacy: settings.privacyMode, demo: isDemo)
+                            privacy: settings.privacyMode, demo: isDemo, demoSource: demoSource)
+    }
+
+    /// Where Demo data comes from: the --simulate-monitoring-scope launch is not fixtures.
+    var demoSource: String { simulatesScope ? "simulated scope" : "fixtures" }
+
+    /// The Inbox's Demo notice (also recorded by the QA runner); nil for real data.
+    var demoNotice: String? {
+        if simulatesScope { return "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub." }
+        return isDemo ? "Demo data (fixtures): invented items, not from GitHub." : nil
     }
 
     /// Panel geometry for an art size with the loaded pack's label floor (no pack: labels stay
@@ -237,7 +246,7 @@ final class AppModel: ObservableObject {
     func hoverLines(compact: Bool) -> [String] {
         compact
             ? IncidentMarker.compactHoverLines(dataState: dataState, items: items, unseenCount: unseenCount,
-                                               demo: isDemo, marker: incidentMarker)
+                                               demo: isDemo, demoSource: demoSource, marker: incidentMarker)
             : IncidentMarker.hoverLines(fullHoverSummary, marker: incidentMarker)
     }
 
@@ -245,7 +254,7 @@ final class AppModel: ObservableObject {
     /// (the Inbox lists them all), so placement beside the character is unchanged (#27).
     private var fullHoverSummary: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount, privacy: settings.privacyMode,
-                            demo: isDemo, maxLines: incidentMarker == nil ? 3 : 2)
+                            demo: isDemo, demoSource: demoSource, maxLines: incidentMarker == nil ? 3 : 2)
     }
 
     /// Count of actionable items plus, separately, active incidents (#37); the badge stays items only.
@@ -544,6 +553,8 @@ final class AppModel: ObservableObject {
     // MARK: Fixture simulator hooks
 
     var usingFixtures: Bool { settings.dataSource == .fixtures || scopeSimulation != nil }
+    /// Window frames autosave to the real standard defaults, so only normal launches keep them.
+    var persistsWindowFrames: Bool { scopeSimulation == nil && !snapshotMode }
     var simulatesScope: Bool { scopeSimulation != nil }
     var repositoryFetchInFlight: Bool { repositoryTask != nil }
     var simulatedHeldReplies: Int { scopeSimulation?.heldCount ?? 0 }

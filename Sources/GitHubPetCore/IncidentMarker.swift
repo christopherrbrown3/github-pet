@@ -155,8 +155,9 @@ public struct IncidentMarker: Equatable, Sendable {
     /// Compact hover stays at two lines (#27): the incident line, then the count's quality, with
     /// the Demo tag folded into it.
     public static func compactHoverLines(dataState: DataState, items: [InboxItem], unseenCount: Int, demo: Bool,
-                                         marker: IncidentMarker?) -> [String] {
-        let lines = PrivacyText.compactSummary(dataState: dataState, items: items, unseenCount: unseenCount, demo: demo)
+                                         demoSource: String = "fixtures", marker: IncidentMarker?) -> [String] {
+        let lines = PrivacyText.compactSummary(dataState: dataState, items: items, unseenCount: unseenCount, demo: demo,
+                                               demoSource: demoSource)
         guard let marker else { return lines }
         let quality = demo ? "\(PrivacyText.demoLabel) · \(lines.last ?? "")" : (lines.first ?? "")
         return [marker.hoverLine, quality]

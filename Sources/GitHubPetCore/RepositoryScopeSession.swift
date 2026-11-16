@@ -21,8 +21,10 @@ public struct ScopePollReception: Sendable {
     public let action: ScopePollAction
 }
 
-/// Main-actor-owned state machine; no network or engine side effects. Request-bound viewer
-/// identity is resolved against persistence before any snapshot can reach the engine.
+/// Main-actor-owned state machine (enforced by `@MainActor`); no network or engine side
+/// effects. Request-bound viewer identity is resolved against persistence before any snapshot
+/// can reach the engine.
+@MainActor
 public final class RepositoryScopeSession {
     private let store: ScopeSelectionStore
     public private(set) var identity: ScopeIdentity?
