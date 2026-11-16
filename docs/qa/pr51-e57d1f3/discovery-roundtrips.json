@@ -1,0 +1,48 @@
+{
+  "name": "discovery-roundtrips",
+  "steps": [
+    {
+      "action": "settings-find-suggestions",
+      "label": "a-find-initial"
+    },
+    {
+      "action": "account",
+      "account": "B",
+      "label": "switch-b-clears-hints"
+    },
+    {
+      "action": "account",
+      "account": "A",
+      "label": "return-a-hints-reset"
+    },
+    {
+      "action": "settings-find-suggestions",
+      "label": "a-find-after-roundtrip"
+    },
+    {
+      "action": "open-scope-settings",
+      "label": "settings-a-after-roundtrip"
+    },
+    {
+      "action": "source",
+      "source": "fixtures",
+      "label": "switch-fixtures-clears-hints"
+    },
+    {
+      "action": "source",
+      "source": "gh",
+      "label": "return-cli-hints-reset"
+    },
+    {
+      "action": "settings-find-suggestions",
+      "label": "cli-find-after-roundtrip"
+    },
+    {
+      "action": "open-scope-settings",
+      "label": "settings-cli-after-roundtrip"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}

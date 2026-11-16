@@ -1,0 +1,11 @@
+{
+  "pid": 78931,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-e57d1f3/app-artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--simulate-monitoring-scope",
+    "--qa-scenario",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-e57d1f3/discovery-roundtrips.json",
+    "--qa-output",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-e57d1f3/functional/discovery-roundtrips/records"
+  ]
+}

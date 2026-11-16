@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.78909.692456FC-50C6-4623-A1B0-92D24FE558C3",
+  "scenario" : "settings-discovery-identity-mismatch",
+  "steps" : 7,
+  "verdict" : "none: QA judges the step records"
+}

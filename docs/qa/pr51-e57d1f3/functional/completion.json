@@ -1,0 +1,26 @@
+{
+  "results": [
+    {
+      "scenario": "settings-discovery-partial",
+      "exit": 0,
+      "steps": 5,
+      "completed": true
+    },
+    {
+      "scenario": "settings-discovery-identity-mismatch",
+      "exit": 0,
+      "steps": 8,
+      "completed": true
+    },
+    {
+      "scenario": "discovery-roundtrips",
+      "exit": 0,
+      "steps": 10,
+      "completed": true
+    }
+  ],
+  "preferencesEqual": true,
+  "ghInvoked": false,
+  "saved31897Present": true,
+  "productVerdict": "none: independent judgement required"
+}
