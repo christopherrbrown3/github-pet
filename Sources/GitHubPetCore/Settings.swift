@@ -50,12 +50,14 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public var snoozeUntil: Date?
     public var quietHours = QuietHours()
     public var dataSource: DataSourceMode = .fixtures
+    /// #8: local only, never committed. Normalized `owner/name` (see EntitlementRepositories).
+    public var entitlementRepositories: [String] = []
 
     public init() {}
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion, mascotVisible, mascotSize, mascotOriginX, mascotOriginY
-        case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource
+        case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource, entitlementRepositories
     }
 
     public init(from decoder: Decoder) throws {
@@ -70,6 +72,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
         snoozeUntil = try? c.decodeIfPresent(Date.self, forKey: .snoozeUntil)
         quietHours = (try? c.decodeIfPresent(QuietHours.self, forKey: .quietHours)) ?? defaults.quietHours
         dataSource = (try? c.decodeIfPresent(DataSourceMode.self, forKey: .dataSource)) ?? defaults.dataSource
+        entitlementRepositories = (try? c.decodeIfPresent([String].self, forKey: .entitlementRepositories)) ?? []
         self = sanitized()
     }
 
@@ -85,6 +88,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(snoozeUntil, forKey: .snoozeUntil)
         try c.encode(quietHours, forKey: .quietHours)
         try c.encode(dataSource, forKey: .dataSource)
+        try c.encode(entitlementRepositories, forKey: .entitlementRepositories)
     }
 
     /// Clamp out-of-range values (size, non-finite coordinates, quiet-hour minutes).
@@ -102,6 +106,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
         copy.quietHours = QuietHours(enabled: copy.quietHours.enabled,
                                      startMinute: copy.quietHours.startMinute,
                                      endMinute: copy.quietHours.endMinute)
+        copy.entitlementRepositories = EntitlementRepositories.normalized(copy.entitlementRepositories)
         return copy
     }
 
