@@ -627,6 +627,12 @@ final class AppModel: ObservableObject {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.setPartial(on); refreshRepositoriesOnly()
     }
+    /// #35 fixtures: matches hidden from the viewer, hidden-only, or capped review searches.
+    func simulateScopeVisibility(_ mode: ScopeSimulation.Visibility) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.setVisibility(mode); refreshRepositoriesOnly()
+    }
+    var simulatedVisibility: ScopeSimulation.Visibility? { scopeSimulation?.currentVisibility }
     func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false,
                              account: ScopeAccount = ScopeSimulation.accountA) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }

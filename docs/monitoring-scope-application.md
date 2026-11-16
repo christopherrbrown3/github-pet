@@ -41,9 +41,9 @@ The same build can drive these scenarios itself and write what a user would see:
 
 - **Opt-in and isolated.** `--qa-scenario`/`--qa-output` without `--simulate-monitoring-scope` (or together with `--render-snapshots`) are refused with exit 2 before any model or defaults domain exists, and nothing is written. Same isolation as the flag above: throwaway domain, invented accounts, no gh process or network, labelled Demo/Simulated.
 - **Output safety.** The output path is resolved once (realpath of its deepest existing ancestor), then opened by walking from `/` one component at a time with `openat(O_DIRECTORY|O_NOFOLLOW)`. Missing components are created with `mkdirat`, every directory on the way must be owned by you or root, and the opened directory's real location is checked against the protected list again. A symlink swapped into any ancestor after validation is therefore refused, never followed. A missing directory is created; an empty one is used. A non-empty directory is accepted only if it holds the runner marker `.github-pet-qa-runner` and nothing but runner files (`step-NN-*.json|png`, `runner.json`), which are replaced. Every entry must be a single-link regular file: a hard-linked or symlinked marker or step file, or a runner-named directory, is refused. After validation, all output goes through one `O_NOFOLLOW` directory descriptor. Writes use a fresh exclusively created temporary inode and atomic replacement, so even a destination swapped after validation cannot cause an outside inode to be truncated. Cleanup unlinks single-link regular files only and never recurses. Anything else, plus `/`, home, `~/Library`, `/System`, `/Library`, `/Applications`, `/usr`, `/bin`, `/sbin`, `/etc` and the app bundle, is refused. Relative paths resolve against the working directory.
-- **Built-in scenarios (PR A):** `restore-before-display`, `account-a-b-a`, `stale-reply-after-apply`, `corrupt-saved-selected`, `partial-recovery-new-once`, `incidents-preserved`, `privacy-summary`, `demo-isolation`. Or pass a path ending in `.json`: `{"name": "a1", "steps": [{"action": "hold", "count": 2, "label": "hold-two"}, ...]}`. Labels match `[a-z0-9][a-z0-9-]{0,39}`; up to 99 steps.
+- **Built-in scenarios (PR A):** `restore-before-display`, `account-a-b-a`, `stale-reply-after-apply`, `corrupt-saved-selected`, `partial-recovery-new-once`, `incidents-preserved`, `privacy-summary`, `demo-isolation`, plus `hidden-results` (#35). Or pass a path ending in `.json`: `{"name": "a1", "steps": [{"action": "hold", "count": 2, "label": "hold-two"}, ...]}`. Labels match `[a-z0-9][a-z0-9-]{0,39}`; up to 99 steps.
 - **Steps** call exactly what the matching control calls (Simulated scope menu, Inbox Refresh/Show details, Settings toggles and source picker):
-  - Scope and replies: `account` {`account`: A|B}, `apply` {`scope`: selected|everything}, `hold` {`count`: 1-8 = the next N replies, `refresh`: true = trigger one now}, `deliver-oldest`, `deliver-newest`, `deliver-all`, `inject-row`, `partial` {`on`}, `refresh`, `mark-seen` (what closing the Inbox does).
+  - Scope and replies: `account` {`account`: A|B}, `apply` {`scope`: selected|everything}, `hold` {`count`: 1-8 = the next N replies, `refresh`: true = trigger one now}, `deliver-oldest`, `deliver-newest`, `deliver-all`, `inject-row`, `partial` {`on`}, `visibility` {`mode`: complete|hidden|hidden-only|capped} (#35 search fixtures), `refresh`, `mark-seen` (what closing the Inbox does).
   - Saved selections: `reload` {`viewer`: known|unknown, `account`: A|B}, `corrupt` {`account`} (no reload), `corrupt-reload`, `seed` (no reload), `repair`.
   - Incidents: `inject-incident` {`tier`: minor|major}, `resolve-incidents`.
   - Settings: `privacy` {`on`}, `show-details` {`on`}, `reduce-motion` {`on`}, `source` {`source`: fixtures|gh}, `open-settings` (also renders Settings).
@@ -55,6 +55,19 @@ The same build can drive these scenarios itself and write what a user would see:
   - `step-NN-<label>-inbox.png` and `-mascot.png`, plus `-settings.png` for `open-settings`. These are offscreen renders of the app's own views (no Screen Recording or composited desktop). The mascot is drawn at the scenario clock (`mascotRenderedAt` in the JSON), so its pose and clip/burst phase match the record. Each PNG must decode, or the run fails as a harness error.
   - `runner.json`: the scenario summary. After `quit`, it also reports held replies at quit, late replies received after cleanup, keys left in the in-memory domain, and whether a plist exists for it (it never should).
 - **Exit codes.** A non-zero exit means a harness error only: 2 for a refused flag or invalid scenario, 1 for a step that would not settle or an output write failure. The runner never judges pass or fail.
+
+## Matches hidden from your account (#35)
+
+GitHub's search `issueCount` can include items the viewer can't read. Each search alias (and the legacy client's two searches) is classified:
+
+| Search result | Shown as |
+|---|---|
+| A full page (30) with more matches, or `hasNextPage` | **Partial**, as before ("Scope result limit reached"). |
+| Fewer nodes than a page, a larger count, no next page, in a fully clean response | Complete for visible results. The rows show, with an informational note (no warning symbol, Partial badge or mood change): "3 matching items aren't visible to your account". |
+| The same, with zero visible rows | "No visible items · 3 matches hidden from your account", badge `0`. This is never the verified-empty "All clear" state. |
+| Any error, nonzero exit, malformed or missing node or source, or identity issue | **Partial/Error** exactly as before. The hidden count is dropped and the alias counts as capped. |
+
+Counts only: never repository or target names. Identity-only replies carry no search aliases and never contribute a count. In simulated mode, the **Search visibility (#35)** submenu (or the runner's `visibility` step) sets the review searches to hidden (+3), hidden-only (0 nodes, 3 hidden) or capped. Combine it with **Partial replies** to see the error case. The `hidden-results` scenario walks through every row of the table; each step's JSON has `inbox.hiddenResults` {`count`, `note`} and `simulatedVisibility`.
 
 ## Developer evidence
 

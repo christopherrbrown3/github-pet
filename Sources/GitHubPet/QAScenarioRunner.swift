@@ -295,6 +295,10 @@ enum QAScenarioRunner {
         },
         "resolve-incidents": Action { c in c.model.resolveServiceIncidents() },
         "partial": Action(keys: ["on"], validate: { _ = try $0.bool("on") }) { c in c.model.simulateScopePartial(try c.bool("on")) },
+        "visibility": Action(keys: ["mode"], validate: { _ = try $0.string("mode", ScopeSimulation.Visibility.allCases.map(\.rawValue)) }) { c in
+            let mode = try c.string("mode", ScopeSimulation.Visibility.allCases.map(\.rawValue))
+            c.model.simulateScopeVisibility(ScopeSimulation.Visibility(rawValue: mode)!)
+        },
         "reload": Action(keys: ["viewer", "account"], validate: { c in
             _ = try c.string("viewer", ["known", "unknown"]); _ = try c.account()
         }) { c in
@@ -410,6 +414,7 @@ enum QAScenarioRunner {
             "scenarioClock": iso(clock.now()),
             "defaultsDomain": optional(model.simulationDomain),
             "simulatedAccount": optional(model.simulatedAccountName),
+            "simulatedVisibility": optional(model.simulatedVisibility?.rawValue),
             "settings": ["dataSource": model.settings.dataSource == .githubCLI ? "gh" : "fixtures",
                          "privacyMode": model.settings.privacyMode, "detailsRevealed": model.detailsRevealed,
                          "reducedMotion": model.settings.reducedMotion, "effectiveReducedMotion": model.effectiveReducedMotion,
@@ -419,7 +424,9 @@ enum QAScenarioRunner {
                       "status": model.dataState.statusText, "hint": optional(model.dataState.hint),
                       "badge": optional(model.badge), "lastSuccess": iso(model.lastSuccess),
                       "showingLastKnown": !model.items.isEmpty && (!model.dataState.hasUsableItems || model.dataState == .stale),
-                      "rows": rows],
+                      "rows": rows,
+                      // #35: informational note beside rows; zero visible uses the hiddenOnly status text.
+                      "hiddenResults": ["count": model.hiddenResultCount, "note": optional(model.hiddenResultsNote)] as [String: Any]],
             "attention": ["unseenCount": model.unseenCount, "showsAlertIcon": model.showsAlertIcon,
                           "mascotState": model.mascotState.rawValue,
                           "activeClip": model.activeClip.map { ["origin": $0.origin == .repository ? "repository" : "serviceIncident",
@@ -506,6 +513,18 @@ enum QAScenarioRunner {
           {"action": "account", "account": "B", "label": "account-b-private"},
           {"action": "privacy", "on": false, "label": "privacy-off"},
           {"action": "open-settings", "label": "settings"}]}
+        """#,
+        "hidden-results": #"""
+        {"name": "hidden-results", "steps": [
+          {"action": "visibility", "mode": "hidden", "label": "rows-plus-hidden"},
+          {"action": "visibility", "mode": "hidden-only", "label": "zero-visible-hidden"},
+          {"action": "visibility", "mode": "capped", "label": "capped-partial"},
+          {"action": "visibility", "mode": "hidden", "label": "hidden-again"},
+          {"action": "partial", "on": true, "label": "hidden-with-error-partial"},
+          {"action": "partial", "on": false, "label": "error-recovered"},
+          {"action": "inject-row", "label": "new-row-alerts-once"},
+          {"action": "privacy", "on": false, "label": "privacy-off-counts-only"},
+          {"action": "visibility", "mode": "complete", "label": "all-visible"}]}
         """#,
         "demo-isolation": #"""
         {"name": "demo-isolation", "steps": [

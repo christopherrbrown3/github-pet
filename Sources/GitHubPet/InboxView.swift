@@ -415,6 +415,13 @@ struct ScopeSimulationMenu: View {
                 .disabled(model.settings.dataSource != .githubCLI)
             Button("Complete replies / recover") { model.simulateScopePartial(false) }
                 .disabled(model.settings.dataSource != .githubCLI)
+            Menu("Search visibility (#35)") {
+                Button("All matches visible") { model.simulateScopeVisibility(.complete) }
+                Button("Some matches hidden from account") { model.simulateScopeVisibility(.hidden) }
+                Button("Only hidden matches") { model.simulateScopeVisibility(.hiddenOnly) }
+                Button("Results capped") { model.simulateScopeVisibility(.capped) }
+            }
+            .disabled(model.settings.dataSource != .githubCLI)
             Divider()
             Button("Reload saved A (known viewer)") { model.simulateScopeReload() }
                 .disabled(model.settings.dataSource != .githubCLI)
