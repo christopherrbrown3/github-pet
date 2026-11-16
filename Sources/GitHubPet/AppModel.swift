@@ -304,8 +304,21 @@ final class AppModel: ObservableObject {
             simulatedPollLog.append(request)
             if simulatedPollLog.count > 64 { simulatedPollLog.removeFirst(simulatedPollLog.count - 64) }
         }
+        let simulated = scopeSimulation != nil
         repositoryTask = Task.detached { [weak self] in
-            let result = client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+            let result: ScopedPollResult
+            if simulated {
+                // Simulated replies can be held indefinitely by design. Keep that blocking wait on
+                // GCD, which adds threads, not on the small cooperative pool: held replies there
+                // starved every other task (CI 43776871945 hung with all pool threads blocked).
+                result = await withCheckedContinuation { done in
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        done.resume(returning: client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget))
+                    }
+                }
+            } else {
+                result = client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+            }
             await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
         }
     }

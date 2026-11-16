@@ -132,7 +132,9 @@ public final class RepositoryScopeSession {
         let prefix = identity == .demo ? "Demo scope" : "Monitoring scope"
         if scope.mode == .everything { return "\(prefix) · Everything" }
         let orgs = scope.targets.filter { $0.kind == .organization }.count
-        return "\(prefix) · Selected · \(orgs) organizations, \(scope.targets.count - orgs) repositories"
+        func count(_ n: Int, _ noun: String, _ plural: String) -> String { "\(n) \(n == 1 ? noun : plural)" }
+        return "\(prefix) · Selected · \(count(orgs, "organization", "organizations")), "
+            + count(scope.targets.count - orgs, "repository", "repositories")
     }
 
     /// Intentionally contains no account/target names, query text or raw transport diagnostics.

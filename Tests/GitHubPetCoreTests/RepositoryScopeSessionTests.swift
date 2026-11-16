@@ -96,6 +96,21 @@ import Testing
             #expect(session.scope == nil)
         }
     }
+    @Test func summaryCountsAreGrammaticalAndNameless() throws {
+        let cases: [([MonitoringTarget], String)] = [
+            ([try MonitoringTarget(organization: "demo-a")], "1 organization, 0 repositories"),
+            ([try MonitoringTarget(repository: "demo-b/pet")], "0 organizations, 1 repository"),
+            ([try MonitoringTarget(organization: "demo-a"), try MonitoringTarget(organization: "demo-c"),
+              try MonitoringTarget(repository: "demo-b/pet"), try MonitoringTarget(repository: "demo-b/cat")], "2 organizations, 2 repositories"),
+        ]
+        for (targets, counts) in cases {
+            try fixture { session, store, _ in
+                try store.save(MonitoringScope(selected: targets), for: .github(a)); store.rememberAccount(a); session.startLive()
+                #expect(session.summary == "Monitoring scope · Selected · \(counts)")
+                #expect(!["demo-a", "demo-b", "demo-c", "pet", "cat"].contains { session.summary.contains($0) })
+            }
+        }
+    }
     @Test func summariesNeverContainNamesAndEveryQualityRemainsVisible() throws {
         try fixture { session, store, _ in
             try store.save(selected, for: .github(a)); store.rememberAccount(a); session.startLive()
