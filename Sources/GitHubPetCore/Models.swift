@@ -66,18 +66,26 @@ public enum DataState: Equatable, Sendable {
     case loading
     case ready
     case empty
+    /// Complete, nothing visible, but GitHub counted this many matches the viewer can't see.
+    /// Never the verified-empty "all clear" state.
+    case hiddenOnly(Int)
     case partial
     case stale
     case ghMissing
     case unauthenticated
     case error(String)
 
-    public var countIsKnown: Bool { self == .ready || self == .empty }
+    public var countIsKnown: Bool {
+        switch self {
+        case .ready, .empty, .hiddenOnly: return true
+        default: return false
+        }
+    }
 
     /// Whether items held in this state came from at least one successful fetch.
     public var hasUsableItems: Bool {
         switch self {
-        case .ready, .empty, .partial, .stale: return true
+        case .ready, .empty, .hiddenOnly, .partial, .stale: return true
         default: return false
         }
     }
@@ -87,6 +95,7 @@ public enum DataState: Equatable, Sendable {
         case .loading: return "Loading…"
         case .ready: return "Up to date"
         case .empty: return "All clear"
+        case .hiddenOnly(let hidden): return "No visible items · " + HiddenResults.matchesHidden(hidden)
         case .partial: return "Partial data"
         case .stale: return "Stale"
         case .ghMissing: return "GitHub CLI not found"
@@ -112,10 +121,22 @@ public enum FetchFailure: Equatable, Sendable {
     case failed(String)
 }
 
+/// Wording for matches GitHub counted but the viewer can't see (#35). Counts only, no names.
+public enum HiddenResults {
+    public static func matchesHidden(_ count: Int) -> String {
+        count == 1 ? "1 match hidden from your account" : "\(count) matches hidden from your account"
+    }
+    public static func notVisible(_ count: Int) -> String {
+        count == 1 ? "1 matching item isn't visible to your account" : "\(count) matching items aren't visible to your account"
+    }
+}
+
 /// The result of one poll, from fixtures or from `gh`.
 public enum FetchOutcome: Equatable, Sendable {
     /// `complete == false` means some sub-query failed; items are a lower bound.
-    case snapshot(items: [InboxItem], complete: Bool)
+    /// `hidden` (only with `complete`): matches GitHub counted that the viewer can't see. They are
+    /// informational, never a Partial result: the visible results are complete.
+    case snapshot(items: [InboxItem], complete: Bool, hidden: Int = 0)
     case failure(FetchFailure)
 }
 

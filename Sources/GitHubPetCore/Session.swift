@@ -36,7 +36,7 @@ public struct UnseenItems: Equatable, Sendable {
     }
 
     public mutating func reconcile(after outcome: FetchOutcome, items: [InboxItem]) {
-        guard case .snapshot(_, complete: true) = outcome else { return }
+        guard case .snapshot(_, complete: true, _) = outcome else { return }
         let present = Set(items.map(\.id))
         if !ids.isSubset(of: present) { ids.formIntersection(present) }
     }

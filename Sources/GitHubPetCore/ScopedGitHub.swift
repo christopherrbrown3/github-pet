@@ -66,15 +66,18 @@ public struct ScopedPollResult: Equatable, Sendable {
     public let items: [InboxItem]
     public let issues: [ScopedFetchIssue]
     public let successfulSources: Int
-    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int) {
+    /// Matches GitHub counted but the viewer can't see (#35): only for a fully clean response.
+    public let hidden: Int
+    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int, hidden: Int = 0) {
         self.viewer = viewer; self.items = items; self.issues = issues; self.successfulSources = successfulSources
+        self.hidden = hidden
     }
     public var complete: Bool { viewer != nil && successfulSources > 0 && issues.isEmpty }
     public var outcome: FetchOutcome {
         if issues.contains(.ghMissing) { return .failure(.ghMissing) }
         if issues.contains(.signedOut) { return .failure(.unauthenticated) }
         guard viewer != nil, successfulSources > 0 else { return .failure(.failed("Monitoring scope could not be verified")) }
-        return .snapshot(items: items, complete: complete)
+        return .snapshot(items: items, complete: complete, hidden: complete ? hidden : 0)
     }
     public static func failure(_ issue: ScopedFetchIssue, viewer: ScopeViewer? = nil) -> Self {
         Self(viewer: viewer, items: [], issues: [issue], successfulSources: 0)
@@ -153,6 +156,7 @@ public enum ScopedResponseParser {
         }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
+        var hiddenByAlias: [String: Int] = [:]
         for search in plan.searches {
             if let index = search.targetIndex, !verified.contains(index) { continue }
             guard let page = body[search.alias] as? [String: Any] else { issues.append(.missingSource(search.alias)); continue }
@@ -162,7 +166,13 @@ public enum ScopedResponseParser {
                 issues.append(.malformedSource(search.alias)); continue
             }
             successes += 1
-            if count > nodes.count || more { issues.append(.capped(search.alias)) }
+            // #35: a full page with more matches (or a next page) is capped: Partial. Fewer nodes
+            // than a page with no next page means GitHub counted matches the viewer can't see.
+            if more || (nodes.count >= ScopeQueryPlan.rowsPerCategory && count > nodes.count) {
+                issues.append(.capped(search.alias))
+            } else if count > nodes.count {
+                hiddenByAlias[search.alias] = count - nodes.count
+            }
             if count < nodes.count { issues.append(.malformedSource(search.alias)) }
             var sourceIDs = Set<String>()
             for node in nodes {
@@ -184,8 +194,16 @@ public enum ScopedResponseParser {
                 if items[key].map({ $0.updatedAt > item.updatedAt }) != true { items[key] = item }
             }
         }
+        // Hidden counts are trusted only in a clean response. With any error, malformed or missing
+        // source/row, those aliases stay capped (Partial) exactly as before: when in doubt, Partial.
+        var hidden = 0
+        if issues.isEmpty {
+            hidden = hiddenByAlias.values.reduce(0, +)
+        } else {
+            issues += hiddenByAlias.keys.sorted().map { ScopedFetchIssue.capped($0) }
+        }
         return ScopedPollResult(viewer: viewer, items: InboxEngine.dedupe(Array(items.values)), issues: issues,
-                                successfulSources: successes)
+                                successfulSources: successes, hidden: hidden)
     }
 }
 

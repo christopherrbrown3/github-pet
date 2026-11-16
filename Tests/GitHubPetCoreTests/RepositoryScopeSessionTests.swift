@@ -24,7 +24,7 @@ import Testing
                 let bootstrap = try #require(session.beginPoll())
                 #expect(bootstrap.expectedAccount == nil)
                 let receipt = session.receive(result(a), for: bootstrap)
-                if case .apply(.snapshot(_, true)) = receipt.action {} else { Issue.record("PM policy permits resolved Everything bootstrap") }
+                if case .apply(.snapshot(_, true, _)) = receipt.action {} else { Issue.record("PM policy permits resolved Everything bootstrap") }
                 #expect(session.identity == .github(a) && session.scope == .everything)
                 #expect(store.lastKnownAccount() == a)
             }
@@ -117,7 +117,7 @@ import Testing
             #expect(!session.summary.contains("demo-a"))
             for issue in [ScopedFetchIssue.rateLimited, .outputLimit, .transport, .targetUnavailable(0), .capped("reviews0")] {
                 let request = try #require(session.beginPoll())
-                if case .apply(.snapshot(_, false)) = session.receive(result(a, issues: [issue]), for: request).action {} else { Issue.record("quality reaches engine incomplete") }
+                if case .apply(.snapshot(_, false, _)) = session.receive(result(a, issues: [issue]), for: request).action {} else { Issue.record("quality reaches engine incomplete") }
                 #expect(session.qualitySummary != nil && !session.qualitySummary!.contains("demo-a"))
             }
         }

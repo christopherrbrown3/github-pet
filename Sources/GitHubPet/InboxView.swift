@@ -80,12 +80,17 @@ struct InboxView: View {
                     .foregroundStyle(statusIsDegraded ? .primary : .secondary)
                     .fontWeight(statusIsDegraded ? .semibold : .regular)
                     .accessibilityIdentifier("inbox.status")
-                if let last = model.lastSuccess, model.dataState != .ready, model.dataState != .empty {
+                if let last = model.lastSuccess, !model.dataState.countIsKnown {
                     Text("· last updated \(last.formatted(date: .omitted, time: .shortened))")
                         .foregroundStyle(.secondary)
                 }
             }
             .font(.caption)
+            if let note = model.hiddenResultsNote {
+                Label(note, systemImage: "eye.slash")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("inbox.hiddenResults")
+            }
             if let hint = model.dataState.hint {
                 Text(hint).font(.caption.monospaced()).textSelection(.enabled)
             }
@@ -103,7 +108,8 @@ struct InboxView: View {
 
     private var statusSymbol: String? {
         switch model.dataState {
-        case .ready, .empty, .loading: return nil
+        // Hidden matches are informational: no warning symbol and no degraded styling.
+        case .ready, .empty, .hiddenOnly, .loading: return nil
         case .partial, .stale: return "exclamationmark.triangle.fill"
         case .ghMissing, .unauthenticated, .error: return "xmark.octagon.fill"
         }
@@ -151,6 +157,7 @@ struct InboxView: View {
     private var emptyText: String {
         switch model.dataState {
         case .empty: return "All clear — nothing needs you."
+        case .hiddenOnly(let hidden): return "No visible items · " + HiddenResults.matchesHidden(hidden)
         case .partial: return "No items in the sources that loaded."
         default: return "No data available yet."
         }

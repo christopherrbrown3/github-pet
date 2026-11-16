@@ -112,7 +112,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
         runner.replies["api graphql"] = CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1)]))
         let client = GhClient(locator: locator("/opt/homebrew/bin/gh"), runner: runner)
         #expect(client.authState() == .authenticated)
-        guard case .snapshot(let items, true) = client.fetch() else {
+        guard case .snapshot(let items, true, _) = client.fetch() else {
             Issue.record("expected the active account's items")
             return
         }
@@ -146,7 +146,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
                                                                assigned: [node(7, repo: "example/other")]))
         let (client, runner) = client(reply)
         let fetch = client.fetchWithAccount()
-        guard case .snapshot(let items, let complete) = fetch.outcome else {
+        guard case .snapshot(let items, let complete, _) = fetch.outcome else {
             Issue.record("expected snapshot")
             return
         }
@@ -203,7 +203,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
 
     @Test func oneFailedSearchMakesSnapshotPartial() {
         let (client, _) = client(CommandResult(exitCode: 1, stdout: graphQL(reviews: [node(12)], assigned: nil)))
-        guard case .snapshot(let items, false) = client.fetch() else {
+        guard case .snapshot(let items, false, _) = client.fetch() else {
             Issue.record("expected partial snapshot")
             return
         }
@@ -214,7 +214,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
         for rows in [[], [node(12)]] as [[String]] {
             let fetch = client(CommandResult(exitCode: 7, stdout: graphQL(reviews: rows))).0.fetchWithAccount()
             #expect(fetch.account == "first-user", "identity still belongs to the same response")
-            guard case .snapshot(let items, let complete) = fetch.outcome else {
+            guard case .snapshot(let items, let complete, _) = fetch.outcome else {
                 Issue.record("valid response pages should remain available as partial data"); continue
             }
             #expect(!complete && items.count == rows.count)
@@ -231,7 +231,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
             for rows in [[], [node(12)]] as [[String]] {
                 let fetch = client(CommandResult(exitCode: 0, stdout: graphQLWithErrors(errors, reviews: rows))).0.fetchWithAccount()
                 #expect(fetch.account == "first-user")
-                guard case .snapshot(let items, false) = fetch.outcome else {
+                guard case .snapshot(let items, false, _) = fetch.outcome else {
                     Issue.record("errors member must preserve valid pages only as partial: \(errors)"); continue
                 }
                 #expect(items.count == rows.count)
@@ -257,7 +257,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
             let gh = GhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: executable.path]))
             let fetch = gh.fetchWithAccount()
             #expect(fetch.account == "first-user")
-            guard case .snapshot(let items, let complete) = fetch.outcome else {
+            guard case .snapshot(let items, let complete, _) = fetch.outcome else {
                 Issue.record("expected fixture pages"); continue
             }
             #expect(complete == fixture.complete && items.count == fixture.rows.count)
@@ -341,7 +341,7 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
     @Test func moreMatchesThanTheCapIsPartial() {
         let rows = (1...GhClient.searchLimit).map { node($0) }
         let (capped, runner) = client(CommandResult(exitCode: 0, stdout: graphQL(reviews: rows, reviewTotal: 31)))
-        guard case .snapshot(let items, let complete) = capped.fetch() else {
+        guard case .snapshot(let items, let complete, _) = capped.fetch() else {
             Issue.record("expected snapshot")
             return
         }
@@ -350,10 +350,38 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
         #expect(runner.calls[1].1.last?.contains("first: \(GhClient.searchLimit)") == true)
         // Exactly 30 matches is complete (the old row-count rule couldn't tell).
         let (exact, _) = client(CommandResult(exitCode: 0, stdout: graphQL(reviews: rows, reviewTotal: 30)))
-        guard case .snapshot(_, true) = exact.fetch() else {
+        guard case .snapshot(_, true, _) = exact.fetch() else {
             Issue.record("expected complete snapshot")
             return
         }
+    }
+
+    /// #35 decision table for the legacy client (no pageInfo: a full page with a larger count is the cap).
+    @Test func hiddenMatchesAreInformationalAndUnclearResultsStayPartial() {
+        func outcome(_ reply: CommandResult) -> FetchOutcome { client(reply).0.fetch() }
+        // Rows plus hidden in both searches: complete for visible results, hidden summed.
+        let rows = outcome(CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1)], reviewTotal: 3, assigned: [], assignedTotal: 2)))
+        guard case .snapshot(let items, true, 4) = rows else { Issue.record("complete, hidden 4: \(rows)"); return }
+        #expect(items.count == 1)
+        // Zero visible with hidden matches: complete, nothing shown, hidden count kept.
+        #expect(outcome(CommandResult(exitCode: 0, stdout: graphQL(reviews: [], reviewTotal: 5))) == .snapshot(items: [], complete: true, hidden: 5))
+        // Capped: a full page with more matches is Partial without a hidden count.
+        let full = (1...GhClient.searchLimit).map { node($0) }
+        guard case .snapshot(_, false, 0) = outcome(CommandResult(exitCode: 0, stdout: graphQL(reviews: full, reviewTotal: 40))) else {
+            Issue.record("capped stays Partial"); return
+        }
+        // Unclear: nonzero exit, an errors member, a dropped malformed node, or a missing search.
+        let unclear: [CommandResult] = [
+            CommandResult(exitCode: 1, stdout: graphQL(reviews: [node(1)], reviewTotal: 3)),
+            CommandResult(exitCode: 0, stdout: graphQLWithErrors("[]", reviews: [node(1)])),
+            CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1), #"{"number":2}"#], reviewTotal: 4)),
+            CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1)], reviewTotal: 3, assigned: nil)),
+        ]
+        for reply in unclear {
+            guard case .snapshot(_, false, 0) = outcome(reply) else { Issue.record("unclear stays Partial: \(reply.exitCode)"); continue }
+        }
+        // Exact: complete and nothing hidden.
+        #expect(outcome(CommandResult(exitCode: 0, stdout: graphQL(reviews: [node(1)]))) == .snapshot(items: GhGraphQLParser.parse(graphQL(reviews: [node(1)]))!.reviews!.items, complete: true))
     }
 
     @Test func bothSearchesFailingOrMalformedOutputIsAnError() {

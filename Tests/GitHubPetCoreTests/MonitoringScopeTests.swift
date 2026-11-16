@@ -186,7 +186,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
                 let result = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow, errorsJSON: errors), plan: plan)
                 #expect(!result.complete && result.issues == [.graphQLError], "present errors shape \(errors)")
                 #expect(result.viewer?.account == accountA && result.items.count == (includeRow ? 1 : 0))
-                if case .snapshot(_, false) = result.outcome {} else { Issue.record("errors member cannot produce complete empty/data") }
+                if case .snapshot(_, false, _) = result.outcome {} else { Issue.record("errors member cannot produce complete empty/data") }
             }
             let valid = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow), plan: plan)
             #expect(valid.complete && valid.items.count == (includeRow ? 1 : 0), "absent errors control")
@@ -242,9 +242,48 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(engine.apply(changed.outcome, now: now + 2).isEmpty)
     }
 
+    /// #35 decision table, per alias: capped -> Partial; fewer than a page with a larger count and no
+    /// next page in a clean response -> complete for visible results plus a hidden count; anything
+    /// unclear -> Partial exactly as before (hidden aliases revert to capped).
+    @Test func hiddenMatchesAreInformationalOnlyInACleanResponse() throws {
+        let plan = try ScopeQueryPlan()
+        let fullPage = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
+        func parse(_ reviews: [String: Any], assigned: [String: Any] = page(), errors: [[String: Any]]? = nil) throws -> ScopedPollResult {
+            var body = envelope(plan); body["reviews0"] = reviews; body["assigned0"] = assigned
+            return ScopedResponseParser.parse(try response(body, errors: errors), plan: plan)
+        }
+        // Rows plus hidden: complete, rows kept, hidden summed across aliases, no capped issue.
+        let withRows = try parse(page([row()], total: 4), assigned: page([], total: 2))
+        #expect(withRows.complete && withRows.items.count == 1 && withRows.hidden == 5 && withRows.issues.isEmpty)
+        if case .snapshot(let items, true, 5) = withRows.outcome { #expect(items.count == 1) } else { Issue.record("complete with hidden 5") }
+        // Zero visible: complete, but hidden > 0 (the engine turns this into .hiddenOnly, never .empty).
+        let none = try parse(page([], total: 3))
+        #expect(none.complete && none.items.isEmpty && none.hidden == 3)
+        // Capped: a full page with more matches, or hasNextPage, is Partial with no hidden count.
+        for capped in [page(fullPage, total: 45), page([row()], total: 4, more: true)] {
+            let result = try parse(capped)
+            #expect(!result.complete && result.hidden == 0 && result.issues.contains(.capped("reviews0")))
+            if case .snapshot(_, false, 0) = result.outcome {} else { Issue.record("capped stays Partial") }
+        }
+        // Unclear: GraphQL errors, a malformed row, or a missing source keep Partial and the hidden alias capped.
+        let errored = try parse(page([row()], total: 4), errors: [["message": "partial failure"]])
+        var bad = row("PR_fixture_9"); bad["url"] = "https://evil.example/x"
+        let malformed = try parse(page([row(), bad], total: 6))
+        var missingBody = envelope(plan); missingBody["reviews0"] = page([row()], total: 4); missingBody["assigned0"] = nil
+        let missing = ScopedResponseParser.parse(try response(missingBody), plan: plan)
+        for unclear in [errored, malformed, missing] {
+            #expect(!unclear.complete && unclear.hidden == 0 && unclear.issues.contains(.capped("reviews0")))
+            if case .snapshot(_, false, 0) = unclear.outcome {} else { Issue.record("unclear stays Partial without a hidden count") }
+        }
+        // Exact count: complete, nothing hidden.
+        let exact = try parse(page([row()]))
+        #expect(exact.complete && exact.hidden == 0)
+    }
+
     @Test func malformedRowsCapsAndGraphQLErrorsCannotLookComplete() throws {
         let plan = try ScopeQueryPlan()
-        for badPage in [page([row(), NSNull()]), page([row(repo: "outside/pet")], total: 40),
+        let fullPage = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
+        for badPage in [page([row(), NSNull()]), page(fullPage, total: 40),
                         page([], more: true), ["issueCount": true, "nodes": [], "pageInfo": ["hasNextPage": false]],
                         ["issueCount": 0, "nodes": []]] as [[String: Any]] {
             var body = envelope(plan); body["reviews0"] = badPage

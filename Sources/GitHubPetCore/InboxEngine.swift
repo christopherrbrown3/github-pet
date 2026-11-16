@@ -14,6 +14,8 @@ public final class InboxEngine {
     public private(set) var items: [InboxItem] = []
     public private(set) var state: DataState = .loading
     public private(set) var lastSuccess: Date?
+    /// Matches hidden from the viewer in the last complete snapshot (0 otherwise). Informational.
+    public private(set) var hiddenCount = 0
     public let staleAfter: TimeInterval
 
     private var tracker: EventTracker
@@ -32,6 +34,7 @@ public final class InboxEngine {
         switch outcome {
         case .failure(let failure):
             previousWasComparable = false
+            hiddenCount = 0
             switch failure {
             case .ghMissing: state = .ghMissing
             case .unauthenticated: state = .unauthenticated
@@ -39,7 +42,7 @@ public final class InboxEngine {
             }
             return []
 
-        case .snapshot(let rawItems, let complete):
+        case .snapshot(let rawItems, let complete, let hidden):
             let deduped = Self.dedupe(rawItems)
             // Comparable only against a fresh, complete previous success; checking the age here
             // keeps stale recovery silent regardless of freshness-timer ordering (e.g. after sleep).
@@ -58,7 +61,9 @@ public final class InboxEngine {
             }
             items = deduped
             lastSuccess = now
-            state = complete ? (deduped.isEmpty ? .empty : .ready) : .partial
+            // Hidden matches never make a snapshot Partial, and never let zero visible look all clear.
+            hiddenCount = complete ? max(0, hidden) : 0
+            state = complete ? (deduped.isEmpty ? (hiddenCount > 0 ? .hiddenOnly(hiddenCount) : .empty) : .ready) : .partial
             previousWasComparable = complete
             return events
         }
@@ -86,6 +91,7 @@ public final class InboxEngine {
         items = []
         state = .loading
         lastSuccess = nil
+        hiddenCount = 0
         resetBaseline()
     }
 

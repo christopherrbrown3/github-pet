@@ -43,6 +43,8 @@ public enum MascotPolicy {
         switch dataState {
         case .ready: return "\(count)"
         case .empty: return nil
+        // Zero visible is known, but it is not the verified-empty "all clear" (no badge) state.
+        case .hiddenOnly: return "0"
         case .partial: return "\(count)+"
         default: return "?"
         }
@@ -53,6 +55,7 @@ public enum MascotPolicy {
         switch dataState {
         case .ready: return count == 1 ? "1 item" : "\(count) items"
         case .empty: return "all clear"
+        case .hiddenOnly(let hidden): return "no visible items, " + HiddenResults.matchesHidden(hidden)
         case .partial: return "at least \(count) items, some sources unavailable"
         case .stale: return "count unknown, data is stale"
         case .loading: return "count unknown, loading"

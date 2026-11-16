@@ -118,8 +118,9 @@ public struct GhClient: Sendable {
         }
     }
 
-    /// Per-search result cap. More matches than this (GraphQL `issueCount`) make the snapshot
-    /// partial: its items are a lower bound.
+    /// Per-search result cap. A full page with more matches (GraphQL `issueCount`) makes the
+    /// snapshot partial: its items are a lower bound. Fewer nodes than the cap with a larger
+    /// count are matches the viewer can't see (#35): informational, not partial.
     static let searchLimit = 30
 
     /// One GraphQL request answers the viewer's login and both searches, so the account and the
@@ -182,17 +183,26 @@ public struct GhClient: Sendable {
         let pages = [response.reviews, response.assigned]
         let found = pages.compactMap { $0 }
         guard !found.isEmpty else { return AccountFetch(account: account, outcome: .failure(.failed("GitHub search failed"))) }
-        let complete = result.exitCode == 0 && !response.hasErrorEnvelope
-            && found.count == pages.count && found.allSatisfy { $0.total <= $0.items.count }
-        return AccountFetch(account: account, outcome: .snapshot(items: found.flatMap(\.items), complete: complete))
+        // Clean: successful exit, no errors member, both pages, and no node dropped as malformed.
+        let clean = result.exitCode == 0 && !response.hasErrorEnvelope
+            && found.count == pages.count && found.allSatisfy { $0.nodeCount == $0.items.count }
+        var capped = false, hidden = 0
+        for page in found where page.total > page.nodeCount {
+            if page.nodeCount >= Self.searchLimit { capped = true } else { hidden += page.total - page.nodeCount }
+        }
+        let complete = clean && !capped
+        return AccountFetch(account: account, outcome: .snapshot(items: found.flatMap(\.items), complete: complete,
+                                                                 hidden: complete ? hidden : 0))
     }
 }
 
 public enum GhGraphQLParser {
     public struct Page: Equatable, Sendable {
         public var items: [InboxItem]
-        /// All matches (`issueCount`); more than `items` means the cap hid some.
+        /// All matches (`issueCount`), including any the viewer can't see.
         public var total: Int
+        /// Nodes GitHub returned, before dropping malformed ones (`items` may be fewer).
+        public var nodeCount: Int = 0
     }
 
     public struct Response: Equatable, Sendable {
@@ -251,7 +261,7 @@ public enum GhGraphQLParser {
                 return InboxItem(id: "\(kind.rawValue):\(nodeID)", kind: kind, repository: repo,
                                  title: node.title ?? "", url: node.url.flatMap { SafeLink.validated($0) }, updatedAt: updatedAt)
             }
-            return Page(items: items, total: search.issueCount)
+            return Page(items: items, total: search.issueCount, nodeCount: search.nodes.count)
         }
         let login = body.viewer?.login.flatMap { $0.isEmpty ? nil : $0 }
         return Response(account: login, reviews: page(body.reviews, kind: .reviewRequest),
