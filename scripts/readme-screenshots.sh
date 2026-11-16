@@ -3,12 +3,17 @@
 # Demo fixtures only: throwaway preferences, an executable gh trap, no network, and the app is
 # never launched normally (it renders offscreen and quits).
 #
-#   scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir]   # default docs/screenshots/beta
+#   scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir] [build notes file]
+#
+# Output defaults to docs/screenshots/beta. A build notes file (for example the CI run, artifact and
+# ZIP checksum the app came from) is copied into the provenance README.
 set -euo pipefail
 cd "${0:A:h}/.."
 
 app=${1:?usage: scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir]}
 out=${2:-docs/screenshots/beta}
+notes=${3:-}
+[[ -z $notes || -f $notes ]] || { echo "readme-screenshots: no build notes file at $notes" >&2; exit 1; }
 binary=$app/Contents/MacOS/GitHubPet
 [[ -x $binary ]] || { echo "readme-screenshots: no executable at $binary" >&2; exit 1; }
 revision=$(/usr/libexec/PlistBuddy -c 'Print :GitHubPetSourceRevision' "$app/Contents/Info.plist" 2>/dev/null || echo unknown)
@@ -74,6 +79,9 @@ mockups. Every inbox value is an invented Demo fixture; nothing came from GitHub
 - Command: \`scripts/readme-screenshots.sh <GitHubPet.app> $out\`
 - Renderer invocation: \`GitHubPet --defaults-suite <throwaway> --fixtures --render-snapshots <scratch>\`,
   with a gh trap (gh was not launched) and throwaway preferences.
+
+$( [[ -n $notes ]] && { printf '## Build\n\n'; cat "$notes"; printf '\n'; } )
+## Images
 
 | Image | Renderer output | Pixels | SHA-256 |
 |---|---|---|---|
