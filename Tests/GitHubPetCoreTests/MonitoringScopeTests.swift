@@ -280,6 +280,86 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(exact.complete && exact.hidden == 0)
     }
 
+    @Test func verifiedOrganizationCoverageCountsHiddenMatchesOncePerCategory() throws {
+        let org = try MonitoringTarget(organization: "ExAmPlE")
+        let repo = try MonitoringTarget(repository: "EXAMPLE/Pet")
+        for targets in [[org, repo], [repo, org]] {
+            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+            for kind in [ItemKind.reviewRequest, .assignedIssue] {
+                var body = envelope(plan)
+                for (index, target) in plan.scope.targets.enumerated() {
+                    var metadata = body["target\(index)"] as! [String: Any]
+                    metadata[target.kind == .organization ? "login" : "nameWithOwner"] =
+                        target.kind == .organization ? "EXAMPLE" : "Example/PET"
+                    body["target\(index)"] = metadata
+                }
+                for search in plan.searches where search.kind == kind { body[search.alias] = page([], total: 1) }
+                let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                #expect(result.complete && result.items.isEmpty && result.hidden == 1)
+                let engine = InboxEngine()
+                #expect(engine.apply(result.outcome, now: Date()).isEmpty)
+                #expect(engine.state == .hiddenOnly(1), "Hidden-only overlap must never become All clear or double-count")
+            }
+        }
+
+        // Multiple covered repositories add no duplicate count; unrelated owners and the
+        // disjoint issue/review categories still contribute independently. Visible IDs dedupe.
+        let targets = try [org, repo, MonitoringTarget(repository: "example/tools"),
+                           MonitoringTarget(repository: "other/pet")]
+        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+        var body = envelope(plan)
+        for search in plan.searches {
+            let target = plan.scope.targets[search.targetIndex!]
+            if target.owner == "other" {
+                body[search.alias] = page([], total: search.kind == .reviewRequest ? 2 : 0)
+            } else if search.kind == .reviewRequest {
+                body[search.alias] = page([row(repo: "example/pet")], total: 4)
+                if target.name == "tools" { body[search.alias] = page([], total: 1) }
+            } else { body[search.alias] = page([], total: 5) }
+        }
+        let result = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(result.complete && result.items.count == 1 && result.hidden == 10)
+    }
+
+    @Test func overlappingAliasesStillFailClosedForEveryQualityAndIdentityGuard() throws {
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        let org = plan.scope.targets.firstIndex { $0.kind == .organization }!
+        let repo = plan.scope.targets.firstIndex { $0.kind == .repository }!
+        let full = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
+        for kind in [ItemKind.reviewRequest, .assignedIssue] {
+            let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+            for defect in ["missing", "cap", "contradiction", "row", "metadata", "unverified-org", "error", "account"] {
+                var body = envelope(plan)
+                body[prefix + String(org)] = page([], total: 1)
+                body[prefix + String(repo)] = page([], total: 1)
+                var errors: [[String: Any]]?
+                var validRow = row()
+                if kind == .assignedIssue {
+                    validRow["__typename"] = "Issue"
+                    validRow["url"] = "https://github.com/example/pet/issues/1"
+                }
+                switch defect {
+                case "missing": body.removeValue(forKey: prefix + String(repo))
+                case "cap": body[prefix + String(repo)] = page([], total: 1, more: true)
+                case "contradiction": body[prefix + String(repo)] = page([validRow], total: 0)
+                case "row": body[prefix + String(repo)] = page([NSNull()], total: 2)
+                case "metadata": body["target\(repo)"] = ["__typename": "Repository", "id": "R_fixture", "nameWithOwner": "different/pet"]
+                case "unverified-org": body.removeValue(forKey: "target\(org)")
+                case "error": errors = [["message": "fixture failure"]]
+                default: body["viewer"] = ["id": accountB.viewerID, "login": "other-user"]
+                }
+                let result = ScopedResponseParser.parse(try response(body, errors: errors), plan: plan)
+                #expect(!result.complete && result.hidden == 0, "\(prefix) \(defect) must remain unverified")
+            }
+        }
+        // A full-page cap must also survive exclusion of the repository's hidden contribution.
+        var body = envelope(plan)
+        body["reviews\(org)"] = page([], total: 1)
+        body["reviews\(repo)"] = page(full, total: 40)
+        let capped = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(!capped.complete && capped.hidden == 0 && capped.issues.contains(.capped("reviews\(repo)")))
+    }
+
     @Test func malformedRowsCapsAndGraphQLErrorsCannotLookComplete() throws {
         let plan = try ScopeQueryPlan()
         let fullPage = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }

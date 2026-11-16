@@ -147,6 +147,7 @@ public enum ScopedResponseParser {
         let viewer = ScopeViewer(account: account, login: login)
         if let expected = plan.expectedAccount, expected != account { return .failure(.identityMismatch, viewer: viewer) }
         var verified = Set<Int>()
+        var verifiedOwners: [Int: String] = [:]
         for (index, target) in plan.scope.targets.enumerated() {
             guard let metadata = body["target\(index)"] as? [String: Any] else {
                 issues.append(.targetUnavailable(index)); continue
@@ -161,7 +162,12 @@ public enum ScopedResponseParser {
             } else {
                 matches = type == "Repository" && (metadata["nameWithOwner"] as? String)?.lowercased() == "\(target.owner)/\(target.name!)"
             }
-            if matches { verified.insert(index) } else { issues.append(.malformedTarget(index)) }
+            if matches {
+                verified.insert(index)
+                // Use the canonical response name only after metadata has verified this target.
+                let canonicalName = metadata[target.kind == .organization ? "login" : "nameWithOwner"] as? String
+                verifiedOwners[index] = canonicalName?.split(separator: "/").first.map { String($0).lowercased() }
+            } else { issues.append(.malformedTarget(index)) }
         }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
@@ -207,7 +213,17 @@ public enum ScopedResponseParser {
         // source/row, those aliases stay capped (Partial) exactly as before: when in doubt, Partial.
         var hidden = 0
         if issues.isEmpty {
-            hidden = hiddenByAlias.values.reduce(0, +)
+            let organizationOwners = Set(verified.compactMap { index in
+                plan.scope.targets[index].kind == .organization ? verifiedOwners[index] : nil
+            })
+            for search in plan.searches {
+                // An org search already counts its repositories for this same category. Keep
+                // every alias's validation/cap/error checks above; only its duplicate hidden
+                // contribution is excluded. No containment is inferred for unverified owners.
+                if let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
+                   let owner = verifiedOwners[index], organizationOwners.contains(owner) { continue }
+                hidden += hiddenByAlias[search.alias] ?? 0
+            }
         } else {
             issues += hiddenByAlias.keys.sorted().map { ScopedFetchIssue.capped($0) }
         }
