@@ -14,5 +14,6 @@ let package = Package(
         // SwiftUI menu-bar app plus AppKit mascot window.
         .executableTarget(name: "GitHubPet", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetCoreTests", dependencies: ["GitHubPetCore"]),
+        .testTarget(name: "GitHubPetAppTests", dependencies: ["GitHubPet"]),
     ]
 )
