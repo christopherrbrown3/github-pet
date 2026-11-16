@@ -184,13 +184,14 @@ public struct GhClient: Sendable {
         let found = pages.compactMap { $0 }
         guard !found.isEmpty else { return AccountFetch(account: account, outcome: .failure(.failed("GitHub search failed"))) }
         // Clean: successful exit, no errors member, both pages, no malformed node, and totals
-        // consistent with the raw nodes. A contradictory category cannot certify another's hidden count.
+        // consistent with the raw nodes and bounded like the scoped parser (so the hidden sum
+        // cannot overflow). A contradictory category cannot certify another's hidden count.
         let clean = result.exitCode == 0 && !response.hasErrorEnvelope
             && found.count == pages.count
-            && found.allSatisfy { $0.nodeCount == $0.items.count && $0.total >= $0.nodeCount }
+            && found.allSatisfy { $0.nodeCount == $0.items.count && $0.total >= $0.nodeCount && $0.total <= Int(Int32.max) }
         var capped = false, hidden = 0
         for page in found where page.total > page.nodeCount {
-            if page.nodeCount >= Self.searchLimit { capped = true } else { hidden += page.total - page.nodeCount }
+            if page.nodeCount >= Self.searchLimit { capped = true } else if clean { hidden += page.total - page.nodeCount }
         }
         let complete = clean && !capped
         return AccountFetch(account: account, outcome: .snapshot(items: found.flatMap(\.items), complete: complete,

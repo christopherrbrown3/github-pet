@@ -402,6 +402,24 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
         #expect(items.count == 1)
     }
 
+    /// #35 LOW-3: issueCount is bounded like the scoped parser (Int32.max), so a hostile or
+    /// broken total is Partial with no hidden count and the two-category sum can never trap.
+    @Test func unboundedIssueCountsArePartialAndNeverOverflowTheHiddenSum() {
+        let bound = Int(Int32.max)
+        for (reviewTotal, assignedTotal) in [(Int.max, 0), (0, Int.max), (bound + 1, 0), (Int.max, Int.max)] {
+            let result = client(CommandResult(exitCode: 0, stdout: graphQL(
+                reviews: [], reviewTotal: reviewTotal, assigned: [], assignedTotal: assignedTotal))).0.fetch()
+            guard case .snapshot(let items, false, 0) = result else {
+                Issue.record("Out-of-bound totals \(reviewTotal)/\(assignedTotal) must stay Partial: \(result)"); continue
+            }
+            #expect(items.isEmpty)
+        }
+        // Control: the largest bounded totals in both categories are trusted and add up safely.
+        let bounded = client(CommandResult(exitCode: 0, stdout: graphQL(
+            reviews: [], reviewTotal: bound, assigned: [], assignedTotal: bound))).0.fetch()
+        #expect(bounded == .snapshot(items: [], complete: true, hidden: 2 * bound))
+    }
+
     @Test func bothSearchesFailingOrMalformedOutputIsAnError() {
         let (both, _) = client(CommandResult(exitCode: 1, stdout: graphQL(reviews: nil, assigned: nil)))
         #expect(both.fetch() == .failure(.failed("GitHub search failed")))
