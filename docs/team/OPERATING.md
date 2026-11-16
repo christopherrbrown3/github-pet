@@ -1,3 +1,5 @@
+**Merge rule (t61, after main went red on 632f1d0):** a PR merges only when its exact head is green AND that head contains current main. If main moved since the PR's CI, the PR merges main and gets green CI first. Use --match-head-commit; merge commits only.
+
 # Narrow beta decision — Chris, 2026-11-16
 
 Chris chose the **narrow beta** (#61): review requests + assigned issues (done) + entitlement approvals surfaced read-only (the app opens the entitlement PR on GitHub, never approves) + #15 login-item Settings wiring + #7 safe error messages + #12 restart persistence. Out: #9, #10, Homebrew cask. Distribution stays free/ad-hoc per the #15 decision. Staffing: developer t62 (PR54/55/56 finish, then #15 UI, #7, #8), developer-2 t64 (#12, worktree developer-persist-baseline), QA t63. No release without Chris.
