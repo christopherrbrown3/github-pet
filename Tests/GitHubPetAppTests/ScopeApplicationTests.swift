@@ -205,7 +205,8 @@ private final class FixtureBudgetClock: @unchecked Sendable {
     @Test func unknownBootstrapIsDiscardedAndAccountsRoundTripSilently() async throws {
         let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         app.simulateScopeReload(forgetViewer: true); try await settled(app)
-        #expect(app.simulatedRequests.suffix(2).map(\.scope) == [.everything, ScopeSimulation.selectedA])
+        #expect(app.simulatedRequests.suffix(2).map(\.identityOnly) == [true, false], "unknown viewer bootstrap asks identity only")
+        #expect(app.simulatedRequests.last?.scope == ScopeSimulation.selectedA)
         #expect(app.items.count == 1 && !app.items.contains { $0.repository == "demo-outside/pet" })
         app.simulateScopeAccount(true); try await settled(app)
         #expect(app.items.count == 1 && app.items.allSatisfy { $0.repository == "demo-b/pet" })
@@ -229,7 +230,22 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         app.simulateScopeReload(corrupt: true); try await settled(app)
         #expect(app.items.isEmpty && app.dataState != .empty && app.activeMonitoringScope == nil)
         #expect(app.scopeQuality != nil && app.scopeSummary.contains("configuration error"))
+        // Paused: reload and Refresh ask only who the viewer is (no search aliases, never Everything).
+        let pausedFrom = app.simulatedRequests.count - 1
+        app.refresh(); try await settled(app)
+        app.refresh(); try await settled(app)
+        let paused = app.simulatedRequests[pausedFrom...]
+        #expect(paused.count == 3 && paused.allSatisfy { $0.identityOnly && $0.searchAliases.isEmpty && $0.expected == ScopeSimulation.accountA })
+        #expect(app.items.isEmpty && app.scopeSummary.contains("configuration error"))
+        // An account switch while paused is still detected and restores B's own selection.
+        app.simulateScopeAccount(true); try await settled(app)
+        #expect(app.simulatedRequests.suffix(2).map(\.identityOnly) == [true, false])
+        #expect(app.activeMonitoringScope == ScopeSimulation.selectedB && app.items.map(\.repository) == ["demo-b/pet"])
+        #expect(app.unseenCount == 0)
+        app.simulateScopeAccount(false); try await settled(app)
+        #expect(app.items.isEmpty && app.scopeSummary.contains("configuration error"))
         app.simulateScopeRepair(); try await settled(app)
+        #expect(app.simulatedRequests.last?.identityOnly == false && app.unseenCount == 0 && app.items.count == 1, "repair resumes silently")
         app.simulateScopePartial(true); try await settled(app)
         app.simulateScopeInject(); try await settled(app)
         #expect(app.dataState == .partial && app.items.count == 2 && app.unseenCount == 0)

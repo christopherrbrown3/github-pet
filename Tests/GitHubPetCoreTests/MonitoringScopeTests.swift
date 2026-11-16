@@ -383,6 +383,22 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
     }
+    @Test func identityOnlyRequestRunsNoSearchesAndDetectsTheViewer() throws {
+        let plan = ScopeQueryPlan(identityFor: accountA)
+        #expect(plan.identityOnly && plan.searches.isEmpty && plan.expectedAccount == accountA)
+        let query = plan.arguments.joined(separator: " ")
+        #expect(query.contains("viewer { id login }") && !query.contains("search(") && !query.contains("repository(")
+                && !query.contains("organization("), "viewer only: no search aliases or target lookups")
+        for (viewer, mismatch) in [(accountA, false), (accountB, true)] {
+            let body = Data(#"{"data":{"viewer":{"id":"\#(viewer.viewerID)","login":"demo_sim"}}}"#.utf8)
+            let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: body)])
+            let result = client(runner).fetchIdentity(expectedAccount: accountA, budget: CommandBudget(timeout: 20))
+            #expect(runner.calls.count == 2 && runner.calls[1] == plan.arguments)
+            #expect(result.viewer?.account == viewer && result.items.isEmpty && result.successfulSources == 0)
+            #expect(result.issues.contains(.identityMismatch) == mismatch)
+            if case .failure = result.outcome {} else { Issue.record("an identity reply is never a snapshot") }
+        }
+    }
     @Test func viewerDisplayLoginsAcceptManagedAccountsThroughBoundClient() throws {
         try checkViewerDisplayLogins { bytes, plan in
             let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: bytes)])

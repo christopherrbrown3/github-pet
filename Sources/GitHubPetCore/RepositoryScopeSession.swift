@@ -5,6 +5,9 @@ public struct ScopePollRequest: Equatable, Sendable {
     public let serial: Int
     public let scope: MonitoringScope
     public let expectedAccount: ScopeAccount?
+    /// Viewer only, no search aliases (`scope` is unused): sent while no valid saved selection
+    /// is known, i.e. an unknown viewer's bootstrap or a corrupt record ("monitoring is paused").
+    public let identityOnly: Bool
 }
 
 public enum ScopePollAction: Sendable {
@@ -65,9 +68,10 @@ public final class RepositoryScopeSession {
         serial += 1
         let account: ScopeAccount?
         if case .github(let current) = identity { account = current } else { account = nil }
-        // A corrupt record may learn a switched account, but its bootstrap rows cannot apply.
-        let request = ScopePollRequest(generation: generation, serial: serial,
-                                       scope: scope ?? .everything, expectedAccount: account)
+        // No valid selection known (unknown viewer, or corrupt record): ask only who the viewer
+        // is. That still detects account switches, but fetches no rows and runs no searches.
+        let request = ScopePollRequest(generation: generation, serial: serial, scope: scope ?? .everything,
+                                       expectedAccount: account, identityOnly: scope == nil)
         pending = request
         return request
     }
@@ -96,6 +100,11 @@ public final class RepositoryScopeSession {
             return .init(resetRepositories: changed, action: .apply(configurationFailure))
         }
         guard let scope else { return .init(resetRepositories: changed, action: .apply(configurationFailure)) }
+        // Identity resolved to a valid selection: fetch it with a request bound to this viewer.
+        if request.identityOnly {
+            issues = []
+            return .init(resetRepositories: true, action: .refetch)
+        }
         // A mismatch response has no usable rows. Unknown Everything can apply only after
         // resolving a saved Everything; saved Selected always requires a bound refetch.
         if result.issues.contains(.identityMismatch) || request.scope != scope

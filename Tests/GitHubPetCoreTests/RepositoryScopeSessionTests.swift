@@ -16,18 +16,68 @@ import Testing
         ScopedPollResult(viewer: ScopeViewer(account: account, login: "demo_sim"), items: [FixtureSimulator.defaultItems()[0]],
                          issues: issues, successfulSources: 2)
     }
-    @Test func unknownViewerMayApplyEverythingOnlyAfterResolvingItsStoredScope() throws {
+    private func identityReply(_ account: ScopeAccount, issues: [ScopedFetchIssue] = []) -> ScopedPollResult {
+        ScopedPollResult(viewer: ScopeViewer(account: account, login: "demo_sim"), items: [], issues: issues, successfulSources: 0)
+    }
+    @Test func unknownViewerBootstrapIsIdentityOnlyThenFetchesItsStoredScopeBound() throws {
         for savedEverything in [false, true] {
             try fixture { session, store, _ in
-                if savedEverything { try store.save(.everything, for: .github(a)) }
+                if savedEverything { try store.save(.everything, for: .github(a)) } else { try store.save(selected, for: .github(a)) }
                 session.startLive()
                 let bootstrap = try #require(session.beginPoll())
-                #expect(bootstrap.expectedAccount == nil)
-                let receipt = session.receive(result(a), for: bootstrap)
-                if case .apply(.snapshot(_, true, _)) = receipt.action {} else { Issue.record("PM policy permits resolved Everything bootstrap") }
-                #expect(session.identity == .github(a) && session.scope == .everything)
-                #expect(store.lastKnownAccount() == a)
+                #expect(bootstrap.identityOnly && bootstrap.expectedAccount == nil, "no searches before the viewer's selection is known")
+                let receipt = session.receive(identityReply(a), for: bootstrap)
+                #expect(receipt.resetRepositories)
+                if case .refetch = receipt.action {} else { Issue.record("identity reply never applies; it leads to a bound fetch") }
+                #expect(session.identity == .github(a) && store.lastKnownAccount() == a)
+                let bound = try #require(session.beginPoll())
+                #expect(!bound.identityOnly && bound.expectedAccount == a)
+                #expect(bound.scope == (savedEverything ? .everything : selected))
+                if case .apply(.snapshot(_, true, _)) = session.receive(result(a), for: bound).action {} else { Issue.record("bound fetch applies") }
             }
+        }
+    }
+    @Test func corruptSelectionPollsIdentityOnlyAndStillDetectsAccountSwitches() throws {
+        try fixture { session, store, defaults in
+            try store.save(selected, for: .github(b)); store.rememberAccount(a)
+            defaults.set(Data(#"{"mode":"selected","targets":[]}"#.utf8), forKey: ScopeSelectionStore.key(.github(a)))
+            session.startLive()
+            #expect(session.configurationError)
+            // Reload/Refresh while paused: identity only, bound to A, never Everything.
+            for _ in 0..<2 {
+                let poll = try #require(session.beginPoll())
+                #expect(poll.identityOnly && poll.expectedAccount == a)
+                if case .apply(.failure) = session.receive(identityReply(a), for: poll).action {} else { Issue.record("stays an explicit configuration error") }
+                #expect(session.configurationError && session.scope == nil && session.summary.contains("configuration error"))
+            }
+            // An account switch is detected from the identity reply and restores B's own selection.
+            let poll = try #require(session.beginPoll())
+            let switched = session.receive(identityReply(b, issues: [.identityMismatch]), for: poll)
+            #expect(switched.resetRepositories && session.identity == .github(b) && !session.configurationError)
+            if case .refetch = switched.action {} else { Issue.record("B's selection is fetched bound to B") }
+            let boundB = try #require(session.beginPoll())
+            #expect(!boundB.identityOnly && boundB.scope == selected && boundB.expectedAccount == b)
+            // Unknown viewer resolving to the corrupt record stays identity-only.
+            store.rememberAccount(nil); session.startLive()
+            let bootstrap = try #require(session.beginPoll())
+            #expect(bootstrap.identityOnly && bootstrap.expectedAccount == nil)
+            if case .apply(.failure) = session.receive(identityReply(a), for: bootstrap).action {} else { Issue.record("corrupt record never fetches rows") }
+            let next = try #require(session.beginPoll())
+            #expect(next.identityOnly && next.expectedAccount == a)
+        }
+    }
+    @Test func validatedApplyOnACorruptAccountResumesFullScopedPolling() throws {
+        try fixture { session, store, defaults in
+            store.rememberAccount(a)
+            defaults.set(Data(#"{"mode":"selected","targets":[]}"#.utf8), forKey: ScopeSelectionStore.key(.github(a)))
+            session.startLive()
+            let paused = try #require(session.beginPoll())
+            #expect(paused.identityOnly)
+            _ = session.receive(identityReply(a), for: paused)
+            #expect(try session.apply(selected, for: .github(a), generation: session.generation))
+            let resumed = try #require(session.beginPoll())
+            #expect(!resumed.identityOnly && resumed.scope == selected && resumed.expectedAccount == a)
+            #expect(!session.configurationError && store.load(for: .github(a)) == .scope(selected))
         }
     }
     @Test func knownSelectedIsFirstRequestAndUnknownBootstrapCannotDisplayEverything() throws {
@@ -39,7 +89,7 @@ import Testing
             if case .apply = session.receive(result(a), for: first).action {} else { Issue.record("bound selected applies") }
             store.rememberAccount(nil); session.startLive()
             let bootstrap = try #require(session.beginPoll())
-            #expect(bootstrap.scope == .everything && bootstrap.expectedAccount == nil)
+            #expect(bootstrap.identityOnly && bootstrap.expectedAccount == nil)
             let receipt = session.receive(result(a), for: bootstrap)
             #expect(receipt.resetRepositories)
             if case .refetch = receipt.action {} else { Issue.record("unrestricted rows discarded") }

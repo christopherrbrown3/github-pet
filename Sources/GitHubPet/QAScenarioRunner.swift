@@ -240,8 +240,11 @@ enum QAScenarioRunner {
             return value
         }
         func bool(_ key: String) throws -> Bool {
-            guard let value = step.params[key] as? Bool else { throw HarnessError(description: "\(step.action): \"\(key)\" must be true or false") }
-            return value
+            // Only JSON true/false: 1 and 0 also bridge to Bool through NSNumber.
+            guard let number = step.params[key] as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else {
+                throw HarnessError(description: "\(step.action): \"\(key)\" must be true or false")
+            }
+            return number.boolValue
         }
         func number(_ key: String, _ range: ClosedRange<Double>, default fallback: Double? = nil) throws -> Double {
             // JSON true/false also bridge to NSNumber; only real numbers are accepted.
@@ -432,7 +435,11 @@ enum QAScenarioRunner {
                                 "received": model.receivedScopeReplies, "discarded": model.discardedScopeReplies,
                                 "requests": model.simulatedPollLog.map { request -> [String: Any] in
                                     ["generation": request.generation, "serial": request.serial,
-                                     "scope": request.scope.mode == .everything ? "Everything" : "Selected",
+                                     "scope": request.identityOnly ? "IdentityOnly" : request.scope.mode == .everything ? "Everything" : "Selected",
+                                     "identityOnly": request.identityOnly,
+                                     // What GitHub was asked for: identity-only requests run no searches.
+                                     "searchAliases": request.identityOnly ? [] : ((try? ScopeQueryPlan(scope: request.scope,
+                                         expectedAccount: request.expectedAccount))?.searches.map(\.alias) ?? []),
                                      "targets": request.scope.targets.map { target in target.name.map { "\(target.owner)/\($0)" } ?? target.owner },
                                      "expectedAccount": account(request.expectedAccount)]
                                 }],
@@ -468,7 +475,10 @@ enum QAScenarioRunner {
         "corrupt-saved-selected": #"""
         {"name": "corrupt-saved-selected", "steps": [
           {"action": "corrupt-reload", "label": "corrupt-a-and-reload"},
-          {"action": "refresh", "label": "refresh-still-error"},
+          {"action": "refresh", "label": "refresh-identity-only"},
+          {"action": "account", "account": "B", "label": "switch-to-b-while-a-corrupt"},
+          {"action": "account", "account": "A", "label": "back-to-corrupt-a"},
+          {"action": "reload", "viewer": "unknown", "label": "unknown-viewer-resolves-corrupt"},
           {"action": "repair", "label": "repair-selections"}]}
         """#,
         "partial-recovery-new-once": #"""
