@@ -6,18 +6,35 @@ public final class CommandBudget: @unchecked Sendable {
     public static let maximumBytes = 2 * 1024 * 1024
     public static let maximumSeconds: TimeInterval = 20
     let deadline: ContinuousClock.Instant
+    private let now: @Sendable () -> ContinuousClock.Instant
+    let usesSystemClock: Bool
     private let lock = NSLock()
     private let limit: Int
     private var used = 0
     private var overflow = false
+    private var cancelled = false
 
-    public init(timeout: TimeInterval = CommandBudget.maximumSeconds, maximumBytes: Int = CommandBudget.maximumBytes) {
+    public convenience init(timeout: TimeInterval = CommandBudget.maximumSeconds, maximumBytes: Int = CommandBudget.maximumBytes) {
+        self.init(timeout: timeout, maximumBytes: maximumBytes, now: { ContinuousClock.now }, usesSystemClock: true)
+    }
+
+    /// Internal deterministic seam for in-memory fixture runners, never real subprocesses.
+    convenience init(timeout: TimeInterval, maximumBytes: Int = CommandBudget.maximumBytes,
+                     now: @escaping @Sendable () -> ContinuousClock.Instant) {
+        self.init(timeout: timeout, maximumBytes: maximumBytes, now: now, usesSystemClock: false)
+    }
+    private init(timeout: TimeInterval, maximumBytes: Int,
+                 now: @escaping @Sendable () -> ContinuousClock.Instant, usesSystemClock: Bool) {
+        self.now = now; self.usesSystemClock = usesSystemClock
         let seconds = timeout.isFinite ? min(Self.maximumSeconds, max(0, timeout)) : 0
-        deadline = ContinuousClock.now.advanced(by: .seconds(seconds))
+        deadline = now().advanced(by: .seconds(seconds))
         limit = min(Self.maximumBytes, max(0, maximumBytes))
     }
 
-    public var remaining: TimeInterval { Self.seconds(until: deadline) }
+    public var remaining: TimeInterval {
+        let parts = now().duration(to: deadline).components
+        return max(0, Double(parts.seconds) + Double(parts.attoseconds) / 1e18)
+    }
     public var consumedBytes: Int { lock.lock(); defer { lock.unlock() }; return used }
 
     static func seconds(until deadline: ContinuousClock.Instant) -> TimeInterval {
@@ -36,12 +53,17 @@ public final class CommandBudget: @unchecked Sendable {
         return true
     }
 
-    /// Check the latched byte error, current Task cancellation and monotonic deadline.
+    /// Latch cancellation for every command sharing this budget. Work on Dispatch threads has no
+    /// Task to observe, so the owner bridges its Task cancellation here; it is never cleared.
+    public func cancel() { lock.lock(); cancelled = true; lock.unlock() }
+    public var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+
+    /// Check the latched byte error, latched or current-Task cancellation and monotonic deadline.
     /// Real-I/O implementations call this while collecting and waiting, not only on exit.
     public func check() throws {
-        lock.lock(); let exceeded = overflow; lock.unlock()
+        lock.lock(); let exceeded = overflow, cancelled = cancelled; lock.unlock()
         if exceeded { throw CommandError.outputLimitExceeded }
-        if Task.isCancelled { throw CommandError.cancelled }
+        if cancelled || Task.isCancelled { throw CommandError.cancelled }
         if remaining <= 0 { throw CommandError.timedOut }
     }
 }
@@ -80,6 +102,7 @@ public struct ProcessCommandRunner: CommandRunner {
     }
 
     public func run(executable: URL, arguments: [String], budget: CommandBudget) throws -> CommandResult {
+        guard budget.usesSystemClock else { throw CommandError.launchFailed("Real subprocesses require the system deadline clock") }
         try budget.check()
         let process = Process()
         process.executableURL = executable

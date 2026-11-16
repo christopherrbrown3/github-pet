@@ -54,8 +54,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
                          "-user", "user-", "_user", "user_", "user/name", "user:other", "user.name"]
         + lineTerminators.flatMap { ["user_demo" + $0, "us" + $0 + "er_demo"] }
     let suite = "scope.viewer.tests.\(UUID().uuidString)"
-    let defaults = try #require(UserDefaults(suiteName: suite))
-    defer { defaults.removePersistentDomain(forName: suite) }
+    let defaults = EphemeralDefaults(name: suite)
     let store = ScopeSelectionStore(defaults: defaults)
     try store.save(selected, for: .github(accountA))
     for plan in plans {
@@ -132,8 +131,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
     }
 
     @Test func accountAndDemoRecordsAreIsolatedAndCorruptionNeverBroadens() throws {
-        let suite = "scope.tests.\(UUID().uuidString)", defaults = try #require(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
+        let defaults = EphemeralDefaults(name: "scope.tests.\(UUID().uuidString)")
         let store = ScopeSelectionStore(defaults: defaults), selected = try mixedScope()
         #expect(store.load(for: .github(accountA)) == .scope(.everything), "legacy/missing record")
         try store.save(selected, for: .github(accountA))
@@ -345,6 +343,22 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     private func client(_ runner: ScopeRunner, timeout: TimeInterval = 20) -> ScopedGhClient {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
+    }
+    @Test func identityOnlyRequestRunsNoSearchesAndDetectsTheViewer() throws {
+        let plan = ScopeQueryPlan(identityFor: accountA)
+        #expect(plan.identityOnly && plan.searches.isEmpty && plan.expectedAccount == accountA)
+        let query = plan.arguments.joined(separator: " ")
+        #expect(query.contains("viewer { id login }") && !query.contains("search(") && !query.contains("repository(")
+                && !query.contains("organization("), "viewer only: no search aliases or target lookups")
+        for (viewer, mismatch) in [(accountA, false), (accountB, true)] {
+            let body = Data(#"{"data":{"viewer":{"id":"\#(viewer.viewerID)","login":"demo_sim"}}}"#.utf8)
+            let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: body)])
+            let result = client(runner).fetchIdentity(expectedAccount: accountA, budget: CommandBudget(timeout: 20))
+            #expect(runner.calls.count == 2 && runner.calls[1] == plan.arguments)
+            #expect(result.viewer?.account == viewer && result.items.isEmpty && result.successfulSources == 0)
+            #expect(result.issues.contains(.identityMismatch) == mismatch)
+            if case .failure = result.outcome {} else { Issue.record("an identity reply is never a snapshot") }
+        }
     }
     @Test func viewerDisplayLoginsAcceptManagedAccountsThroughBoundClient() throws {
         try checkViewerDisplayLogins { bytes, plan in

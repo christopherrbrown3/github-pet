@@ -56,9 +56,14 @@ struct InboxView: View {
                                                                           count: model.items.count))
                 }
             }
-            if model.isDemo {
-                Text("Demo data (fixtures): invented items, not from GitHub.")
-                    .font(.caption).foregroundStyle(.secondary)
+            if let notice = model.demoNotice {
+                Text(notice).font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("inbox.demoNotice")
+            }
+            Text(model.scopeSummary).font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("inbox.monitoringScope")
+            if let quality = model.scopeQuality {
+                Text(quality).font(.caption).accessibilityIdentifier("inbox.scopeQuality")
             }
             HStack(spacing: 4) {
                 // Meaning is carried by primary-label words plus a symbol, never by colour
@@ -161,7 +166,8 @@ struct InboxView: View {
                 }
             }
             .fixedSize()
-            if model.usingFixtures {
+            if model.simulatesScope { ScopeSimulationMenu(model: model); ScopeSettingsSimulationMenu(model: model) }
+            if model.usingFixtures && !model.simulatesScope {
                 SimulatorMenu(model: model).fixedSize()
             }
             Spacer()
@@ -368,6 +374,50 @@ struct SimulatorMenu: View {
             }
             Divider()
             Button("Reset baseline") { model.resetBaseline() }
+        }
+    }
+}
+
+/// Visible only for the explicit isolated offline launch flag; not the scope editor.
+struct ScopeSimulationMenu: View {
+    @ObservedObject var model: AppModel
+    var body: some View {
+        Menu("Simulated scope") {
+            Text(model.scopeSimulationStatus)
+            Text("Discarded late replies: \(model.discardedScopeReplies)")
+            Button("Account A") { model.simulateScopeAccount(false) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Account B") { model.simulateScopeAccount(true) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Divider()
+            Button("Apply Selected (simulated validation)") { model.simulateScopeApply(true) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Apply Everything (simulated validation)") { model.simulateScopeApply(false) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Hold next repository reply") { model.simulateScopeHold() }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Deliver held replies") { model.simulateScopeDeliver() }
+            Button("Deliver oldest held reply") { model.simulateScopeDeliverOne(newest: false) }
+            Button("Deliver newest held reply") { model.simulateScopeDeliverOne(newest: true) }
+            Button("Inject new repository row") { model.simulateScopeInject() }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Partial replies") { model.simulateScopePartial(true) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Complete replies / recover") { model.simulateScopePartial(false) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Divider()
+            Button("Reload saved A (known viewer)") { model.simulateScopeReload() }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Reload saved A (unknown viewer)") { model.simulateScopeReload(forgetViewer: true) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Corrupt saved A and reload") { model.simulateScopeReload(corrupt: true) }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Button("Repair saved selections") { model.simulateScopeRepair() }
+                .disabled(model.settings.dataSource != .githubCLI)
+            Divider()
+            Button("Inject minor public incident") { model.injectServiceIncident(.minor) }
+            Button("Inject major public incident") { model.injectServiceIncident(.major) }
+            Button("Resolve public incidents") { model.resolveServiceIncidents() }
         }
     }
 }
