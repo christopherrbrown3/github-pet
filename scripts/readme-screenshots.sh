@@ -76,11 +76,12 @@ mockups. Every inbox value is an invented Demo fixture; nothing came from GitHub
 
 - Source revision of the rendered app: \`$revision\`
 - Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-- Command: \`scripts/readme-screenshots.sh <GitHubPet.app> $out\`
+- Command: \`scripts/readme-screenshots.sh <GitHubPet.app> $out${notes:+ <build notes>}\`
 - Renderer invocation: \`GitHubPet --defaults-suite <throwaway> --fixtures --render-snapshots <scratch>\`,
   with a gh trap (gh was not launched) and throwaway preferences.
 
-$( [[ -n $notes ]] && { printf '## Build\n\n'; cat "$notes"; printf '\n'; } )
+$( [[ -n $notes ]] && { printf '## Build\n\n'; cat "$notes"; } )
+
 ## Images
 
 | Image | Renderer output | Pixels | SHA-256 |
