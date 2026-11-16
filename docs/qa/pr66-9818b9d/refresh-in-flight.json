@@ -1,0 +1,18 @@
+{
+  "name": "refresh-in-flight",
+  "steps": [
+    {
+      "action": "hold",
+      "count": 1,
+      "refresh": true,
+      "label": "poll-in-flight"
+    },
+    {
+      "action": "deliver-all",
+      "label": "reply-delivered"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}
