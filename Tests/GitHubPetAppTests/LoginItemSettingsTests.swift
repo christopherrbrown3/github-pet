@@ -79,6 +79,11 @@ private final class FakeLoginBackend: LoginItemBackend, @unchecked Sendable {
         for arguments in launches {
             var options = LaunchOptions.parse(arguments: ["GitHubPet"] + arguments, environment: [:])
             options.forcePlaceholder = true
+            // The custom suite is what makes this launch non-normal; keep it in memory, since the
+            // relaunch baseline (#12) would otherwise leave a preferences file behind.
+            if !options.simulatesMonitoringScope, let suite = options.defaultsSuite {
+                options.userDefaultsOverride = EphemeralDefaults(name: suite)
+            }
             let app = AppModel(options: options, runtime: AppModel.Runtime(schedulesTimers: false, scopeSimulationHoldLimit: nil))
             defer { app.cleanupScopeSimulation() }
             let settings = app.loginItem
