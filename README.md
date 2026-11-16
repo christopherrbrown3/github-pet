@@ -22,6 +22,8 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 - **A companion that stays calm.** An optional animated mascot sits on your desktop with a count badge and
   a hover summary. It plays a short animation once for a genuinely new item, not on every refresh.
 - **Remembers across restarts.** Items you have already seen don't come back as new after a relaunch.
+- **Stays current.** It refreshes after your Mac wakes, and a Refresh clicked while a check is still
+  running is remembered and runs once that check finishes.
 - **Honest states.** Loading, partial, stale, signed-out, rate-limited, access-denied and failed results are
   labelled as such and never look like an empty inbox. Matches that GitHub counts but your account can't
   see are reported as a number.
