@@ -24,7 +24,7 @@
       "name": "developer",
       "terminal": "t53",
       "runtime": "codex",
-      "assignment": "codex-dev-runner in developer-scope-ui/feat/30-scope-ui: PR49 hardlink output safety fix and Developer-owned regressions; no integration yet",
+      "assignment": "t53: PR49 hardlink output fix pushed801ddcb; six negative-before/positive-after and ten runner tests PASS, CI43782047042/re-review pending; no integration",
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "sessionId": null,
@@ -74,7 +74,7 @@
       "intendedModel": "gpt-6.1-sol",
       "observedModel": "gpt-6.1-sol",
       "reasoningEffort": "medium",
-      "assignment": "codex-dev-setup in developer-gh-setup-link: PR53 fixes52 CLI-source snapshot evidence; hold PR51 until PM integration dispatch",
+      "assignment": "t54: PR53 held09b260a/CI43782147405/re-review now requested by PM; narrow PR50 scalar pending-space cap fix in developer-pack-sanitize, preserve QA33 old helper",
       "verification": "launch argv + READY response",
       "previousClaudeTerminal": "t4z",
       "previousClaudeModel": "claude-opus-5-5"

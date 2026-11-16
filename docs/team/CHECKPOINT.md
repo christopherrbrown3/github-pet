@@ -1,3 +1,13 @@
+# Live dispatch update — PR49/50/53, 2026-11-15 evening
+
+PR49 new801ddcb2a0d24ee8efa24970425cff3522b6e4a7 fixes hardlink writes with exclusive temporary output/atomic rename and single-link guards. Six before-overwrites/six after-preserved-refused controls and ten runner tests PASS. CI43782047042 pending; stale-head helper stop was GitHub propagation lag, not tests/source failure, no rerun. Functional49 awaits current green app artifact.
+
+PR53 new09b260a38efdec0c9606f3977675dc6d85c847c4 pushed:66 tests/10suites, actualCLI source snapshots/gh trap/preferences/silent recovery and eightPNG Developer inspection PASS. Immutable evidence/app github-pet-builds/pr53-09b260a. CI43782147405 pending. Developer RESTbot request422 failed; PM successfully requested via gh pr edit53 --add-reviewer @copilot. QA functional pending.
+
+PR50 old33f36f1 helper t52 remains bounded sequential eighteen-case rendering, twelve completed at00:44UTC; one combining-many child2:02 of5min bound (not timed out). Preserve helper/saved31897. New review found scalar pendingSpace can exceed256+ellipsis bound; t54 assigned narrowfix/Developer regressions in developer-pack-sanitize. QA reuses unaffected old captures and later checks one boundary case on new app. #40 returned In Progress; #52 In Review. PR51 remains held for49 history-preserving integration.
+
+---
+
 # Current checkpoint — 2026-11-15 evening Codex PM return
 
 Sole PMt1r, accepted fromt49 under Chris allowance fallback authorization. Latest current state: handoffs/codex-pm-2026-11-15-evening.md; roles.json mappings verified READY. Developer units/QA functional split unchanged.
