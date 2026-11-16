@@ -3,7 +3,7 @@
 A quiet macOS desktop companion that tells you when GitHub work is waiting for you, and opens it on GitHub when you choose to act.
 
 <p>
-  <img src="docs/screenshots/beta/inbox.png" alt="GitHub Pet inbox showing Demo review requests and an assigned issue" width="600">
+  <img src="docs/screenshots/beta/inbox.png" alt="GitHub Pet inbox with Demo items: an entitlement approval, a review request and an assigned issue, plus a Demo GitHub incident" width="600">
 </p>
 
 > **Beta.** GitHub Pet is a free, independent beta. Builds are ad-hoc signed and not notarized, and some
@@ -21,33 +21,42 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
   anything.
 - **A companion that stays calm.** An optional animated mascot sits on your desktop with a count badge and
   a hover summary. It plays a short animation once for a genuinely new item, not on every refresh.
-- **Remembers across restarts.** Items you have already seen don't come back as new after a relaunch.
-- **Stays current.** It refreshes after your Mac wakes, and a Refresh clicked while a check is still
-  running is remembered and runs once that check finishes.
+- **Remembers across restarts.** Items you have already seen don't come back as new after a relaunch;
+  items that arrived while it was quit are announced once (within 24 hours).
+- **Stays current.** With the GitHub CLI source it refreshes after your Mac wakes, and a Refresh clicked
+  while a check is still running is remembered and runs once that check finishes.
 - **Honest states.** Loading, partial, stale, signed-out, rate-limited, access-denied and failed results are
   labelled as such and never look like an empty inbox. Matches that GitHub counts but your account can't
   see are reported as a number.
-- **GitHub service incidents.** Confirmed incidents from the public githubstatus.com feed, kept separate
+- **GitHub service incidents.** Active incidents from the public githubstatus.com feed, kept separate
   from your own items.
 - **Privacy, quiet hours and snooze.** Privacy mode (on by default) hides repository names and titles until
-  you choose to show them. Quiet hours, snooze and Reduce Motion keep the mascot still while the inbox
-  keeps updating.
+  you choose to show them. Quiet hours and snooze stop new-item animations and alerts; Reduce Motion
+  keeps the mascot still. The inbox keeps updating either way.
 - **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
-- **Custom mascot packs.** Replace the artwork with your own pack, loaded from the directory in the
-  `GITHUB_PET_PACK_DIR` environment variable ([pack format](docs/design/README.md)). Every pack is
-  validated; an invalid one falls back to the built-in placeholder without affecting monitoring.
+- **Custom mascot packs (advanced).** Replace the artwork with your own pack by launching the app from
+  Terminal with `GITHUB_PET_PACK_DIR` set to the pack's directory; there is no Settings control for it
+  yet ([pack format](docs/design/README.md)). Every pack is validated; an invalid one falls back to the
+  built-in placeholder without affecting monitoring.
 
-| Idle | New item | Urgent |
-|:---:|:---:|:---:|
-| <img src="docs/screenshots/beta/mascot-idle.png" alt="Mascot idle with a count badge" width="160"> | <img src="docs/screenshots/beta/mascot-attention.png" alt="Mascot drawing attention to a new item" width="160"> | <img src="docs/screenshots/beta/mascot-urgent.png" alt="Mascot in the urgent state" width="160"> |
+| Idle | New item |
+|:---:|:---:|
+| <img src="docs/screenshots/beta/mascot-idle.png" alt="Mascot idle with a Demo label and a count badge" width="160"> | <img src="docs/screenshots/beta/mascot-attention.png" alt="Mascot drawing attention to a new Demo item" width="160"> |
+
+The red light beside the mascot marks an active GitHub service incident (a Demo incident here).
 
 <p>
-  <img src="docs/screenshots/beta/hover.png" alt="Hover summary listing the newest items" width="360">
-  <img src="docs/screenshots/beta/settings.png" alt="Settings with monitoring scope, Startup and Entitlement approvals sections" width="360">
+  <img src="docs/screenshots/beta/hover.png" alt="Hover summary listing the newest Demo items, including an entitlement update" width="420">
 </p>
 
-Dark-mode versions sit beside each image (`*-dark.png`).
+<p>
+  <img src="docs/screenshots/beta/settings-scope.png" alt="Settings: monitoring scope and an Entitlement approvals list with one Demo repository" width="400">
+  <img src="docs/screenshots/beta/settings-general.png" alt="Settings: mascot, Open at login (off), privacy and motion, snooze and quiet hours" width="400">
+</p>
+
+All images show invented Demo data (the app's offline fixtures), which is also what GitHub Pet shows
+before you choose the GitHub CLI source. Dark-mode versions sit beside each image (`*-dark.png`).
 
 ## Requirements
 
@@ -57,8 +66,10 @@ Dark-mode versions sit beside each image (`*-dark.png`).
 
 ## Install
 
-1. Download the **GitHubPet** ZIP and its `.sha256` checksum, and check it
-   ([installation guide](docs/install.md#2-check-the-download)).
+1. Download the **GitHubPet** ZIP and its `.sha256` checksum. Until GitHub Releases exist, they come from
+   the **GitHubPet-app** artifact of the latest successful `main` build in GitHub Actions, which needs a
+   GitHub account ([where to download](docs/install.md#1-download)). Check the checksum
+   ([how](docs/install.md#2-check-the-download)).
 2. Unzip it and move **GitHubPet.app** to Applications.
 3. Open it once. Because the build is **ad-hoc signed and not notarized** (there is no paid Apple
    Developer account), macOS blocks the first launch. Approve it in **System Settings → Privacy &
@@ -75,9 +86,10 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
 - **No tokens.** GitHub Pet never asks for, reads or stores a GitHub token. All GitHub access goes
   through your installed `gh` CLI and its own sign-in.
 - **Read-only.** Nothing is approved, merged, commented on or changed from the app. Actions open the item
-  on github.com in your browser, and only validated github.com links are opened.
+  in your browser, and only validated links are opened: github.com, and githubstatus.com for incidents.
 - **Local.** No backend and no analytics. Settings, the entitlement repository list and the seen-items
-  record stay on your Mac.
+  record stay on your Mac. Network use: only `gh` talking to github.com, and the public githubstatus.com
+  API for incidents.
 - **Fixed error messages.** Error text from `gh` or GitHub, which can name organizations, is classified
   rather than shown.
 
@@ -86,6 +98,8 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
 - github.com only; GitHub Enterprise Server isn't supported.
 - Each search returns at most 30 items per category; hitting that limit marks the result as partial.
 - Open at login and the Gatekeeper approval step have not been verified on every supported macOS version.
+- Refresh after wake is covered by automated tests only; it hasn't been checked on a real Mac sleeping
+  and waking.
 - Keyboard access goes through the menu-bar icon and Settings. The floating mascot isn't keyboard
   focusable, and a full live VoiceOver pass hasn't been done.
 - Workflow failures, deployment approvals and your own pull requests are not monitored yet.
