@@ -1,0 +1,11 @@
+{
+  "pid": 2844,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr59-9e401ba/app-artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--simulate-monitoring-scope",
+    "--qa-scenario",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr59-9e401ba/hidden-overlap-fullpage.json",
+    "--qa-output",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr59-9e401ba/functional/hidden-overlap-fullpage/records"
+  ]
+}

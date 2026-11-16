@@ -1,0 +1,708 @@
+{
+  "action" : "inject-row",
+  "attention" : {
+    "activeClip" : {
+      "endsAt" : "2026-11-15T12:00:01Z",
+      "origin" : "repository",
+      "startedAt" : "2026-11-15T12:00:00Z",
+      "state" : "attention"
+    },
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "attention",
+    "showsAlertIcon" : true,
+    "unseenCount" : 20
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.2844.F7B73FD2-9EC0-44D8-968E-26EBD93DE2BA",
+  "inbox" : {
+    "badge" : "21",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hiddenResults" : {
+      "count" : 3,
+      "note" : "3 matching items aren't visible to your account"
+    },
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "21 items · 20 new",
+      "Demo · Review request",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_0",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_1",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_10",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_11",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_12",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_13",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_14",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_15",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_16",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_17",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_18",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_19",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_2",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_20",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_3",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_4",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_5",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_6",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_7",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_8",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_9",
+        "isDemo" : true,
+        "repository" : "demo-a\/new-pet",
+        "unseen" : true,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 1 organization, 1 repository",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "fill-20",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 2,
+    "identity" : "github:A"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-25-fill-20-inbox.png",
+    "step-25-fill-20-mascot.png"
+  ],
+  "renders" : [
+    "step-25-fill-20-inbox: 360x581 pt",
+    "step-25-fill-20-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 25,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 3,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 4,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 5,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 6,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 7,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 8,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 9,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 10,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 11,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 12,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 13,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 14,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 15,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 16,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 17,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 18,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 19,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 20,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 21,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 22,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 23,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 24,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1"
+        ],
+        "serial" : 25,
+        "targets" : [
+          "demo-a",
+          "demo-a\/pet"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 25 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · Selected · 1 organization, 1 repository",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 1,
+    "checksReceived" : 1,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-a"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+      {
+        "text" : "demo-a\/pet"
+      }
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 1 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Monitoring scope applied: Selected · 1 organization, 1 repository.",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "simulatedVisibility" : "hidden",
+  "step" : 25
+}

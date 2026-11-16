@@ -1,0 +1,10 @@
+{
+  "sha": "9e401baded33611f2fdbcfbb238093c9d38d7207",
+  "ci": "43885610761",
+  "ZIPsha256": "17001cfd28cec40fb1014955ea64d3ff22403ad63c16bcbce8e2bb8e5021ef54",
+  "binarySHA256": "57b6f52de9aad1e3460c75caf525d4513cbe9062c396013bead69eb9fce2128c",
+  "revision": "9e401baded33611f2fdbcfbb238093c9d38d7207",
+  "build": "133",
+  "strictSignature": "PASS",
+  "app": "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr59-9e401ba/app-artifact/extracted/GitHubPet.app"
+}

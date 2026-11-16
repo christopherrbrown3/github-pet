@@ -1,0 +1,11 @@
+{
+  "pid": 2822,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr59-9e401ba/app-artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--simulate-monitoring-scope",
+    "--qa-scenario",
+    "hidden-results",
+    "--qa-output",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr59-9e401ba/functional/hidden-results/records"
+  ]
+}

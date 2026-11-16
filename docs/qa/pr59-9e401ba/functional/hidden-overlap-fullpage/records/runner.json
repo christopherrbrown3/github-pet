@@ -1,0 +1,14 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.2844.F7B73FD2-9EC0-44D8-968E-26EBD93DE2BA",
+  "quit" : {
+    "discardedTotal" : 0,
+    "domainKeysAfterCleanup" : 0,
+    "heldAtQuit" : 0,
+    "lateRepliesReceivedAfterCleanup" : 0,
+    "plistOnDisk" : false
+  },
+  "scenario" : "hidden-overlap-fullpage",
+  "steps" : 36,
+  "verdict" : "none: QA judges the step records"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "scenario": "hidden-results",
+    "exit": 0,
+    "steps": 10,
+    "completed": true
+  },
+  {
+    "scenario": "hidden-overlap-fullpage",
+    "exit": 0,
+    "steps": 36,
+    "completed": true
+  }
+]

@@ -1,0 +1,154 @@
+{
+  "name": "hidden-overlap-fullpage",
+  "steps": [
+    {
+      "action": "settings-add",
+      "kind": "repository",
+      "text": "demo-a/pet",
+      "label": "draft-add-covered-repo"
+    },
+    {
+      "action": "settings-apply",
+      "label": "apply-org-plus-covered-repo"
+    },
+    {
+      "action": "visibility",
+      "mode": "hidden",
+      "label": "overlap-rows-plus-hidden"
+    },
+    {
+      "action": "visibility",
+      "mode": "hidden-only",
+      "label": "overlap-zero-visible-hidden"
+    },
+    {
+      "action": "visibility",
+      "mode": "hidden",
+      "label": "overlap-hidden-before-fill"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-01"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-02"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-03"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-04"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-05"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-06"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-07"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-08"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-09"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-10"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-11"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-12"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-13"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-14"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-15"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-16"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-17"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-18"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-19"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-20"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-21"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-22"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-23"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-24"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-25"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-26"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-27"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-28"
+    },
+    {
+      "action": "inject-row",
+      "label": "fill-29"
+    },
+    {
+      "action": "visibility",
+      "mode": "complete",
+      "label": "full-page-all-visible"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}
