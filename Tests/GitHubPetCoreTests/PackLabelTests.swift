@@ -55,6 +55,39 @@ struct PackLabelTests {
         #expect(PackLabel.sanitize("\u{1B}", fallback: "(x)") == "(x)")
     }
 
+    @Test func pendingSpaceRespectsScalarBoundaryWithCombiningClusters() {
+        // Each prefix is one grapheme, so the grapheme cap cannot hide a scalar overflow.
+        for prefixCount in [253, 254, 255, 256] {
+            let prefix = "a" + String(repeating: "\u{0301}", count: prefixCount - 1)
+            let raw = prefix + " bc"
+            let expected: String
+            switch prefixCount {
+            case 253: expected = raw // 256 content scalars, no truncation.
+            case 254: expected = prefix + " b…"
+            default: expected = prefix + "…" // No room for both the space and b.
+            }
+            #expect(PackLabel.sanitize(raw) == expected, "prefix=\(prefixCount)")
+            #expect(PackLabel.sanitize(raw).unicodeScalars.count <= PackLabel.maxScalars + 1)
+        }
+        // Exact 255/256/257 total-scalar inputs at a pending-space boundary.
+        for total in [255, 256, 257] {
+            let prefix = "a" + String(repeating: "\u{0301}", count: total - 3)
+            let raw = prefix + " b"
+            #expect(PackLabel.sanitize(raw) == (total <= 256 ? raw : prefix + "…"))
+        }
+    }
+
+    @Test func pendingSpaceKeepsShortSafeLabelsAndFallbackPolicy() {
+        for label in ["Mona", "safe pack", "a\u{0301} b", "🐈 companion"] {
+            #expect(PackLabel.sanitize(label) == label)
+        }
+        #expect(PackLabel.sanitize("  a\u{0301}\n\t\u{200B} b  ") == "a\u{0301} b")
+        #expect(PackLabel.sanitize("\u{202E}\n", fallback: "(invalid)") == "(invalid)")
+        let exact = "a" + String(repeating: "\u{0301}", count: 255)
+        #expect(PackLabel.sanitize(exact) == exact)
+        #expect(PackLabel.sanitize(exact + "b") == exact + "…")
+    }
+
     @Test func manifestDisplayLeavesStoredIdentityUntouched() throws {
         let json = """
         {"schemaVersion":1,"id":"a\\u202Eb\\ncd","name":"\\u200B","canvas":{"width":256,"height":256},

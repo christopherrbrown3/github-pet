@@ -50,7 +50,9 @@ public enum PackLabel {
             case .format, .surrogate, .privateUse, .unassigned:
                 continue
             default:
-                if scalars.count >= maxScalars { truncated = true; break scan }
+                // A pending separator and this scalar must fit together; never leave a
+                // trailing space or exceed the content cap when the buffer has one slot left.
+                if scalars.count + (pendingSpace ? 1 : 0) >= maxScalars { truncated = true; break scan }
                 if pendingSpace { scalars.append(" "); pendingSpace = false }
                 scalars.append(scalar)
             }
