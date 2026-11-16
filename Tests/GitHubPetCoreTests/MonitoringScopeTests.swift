@@ -321,6 +321,37 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(result.complete && result.items.count == 1 && result.hidden == 10)
     }
 
+    /// #35 MED-1: a covered repository reporting more hidden matches than its organization in the
+    /// same category is a contradiction, so it must not be dropped into an All clear.
+    @Test func coveredRepositoryHiddenAboveItsOrganizationIsPartialNeverAllClear() throws {
+        let org = try MonitoringTarget(organization: "example")
+        let repo = try MonitoringTarget(repository: "example/pet")
+        for targets in [[org, repo], [repo, org]] {
+            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+            let orgIndex = plan.scope.targets.firstIndex(of: org)!, repoIndex = plan.scope.targets.firstIndex(of: repo)!
+            for kind in [ItemKind.reviewRequest, .assignedIssue] {
+                let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+                for (orgHidden, repoHidden, contradiction) in [(0, 3, true), (2, 3, true), (3, 3, false), (5, 3, false)] {
+                    var body = envelope(plan)
+                    for search in plan.searches { body[search.alias] = page([], total: 0) }
+                    body[prefix + String(orgIndex)] = page([], total: orgHidden)
+                    body[prefix + String(repoIndex)] = page([], total: repoHidden)
+                    let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                    let engine = InboxEngine()
+                    _ = engine.apply(result.outcome, now: Date())
+                    if contradiction {
+                        #expect(!result.complete && result.hidden == 0, "\(prefix) org \(orgHidden) < repo \(repoHidden)")
+                        #expect(result.issues.contains(.capped(prefix + String(repoIndex))))
+                        #expect(engine.state == .partial, "never All clear or a trusted hidden count")
+                    } else {
+                        #expect(result.complete && result.hidden == orgHidden, "\(prefix) org \(orgHidden) covers repo \(repoHidden)")
+                        #expect(engine.state == .hiddenOnly(orgHidden))
+                    }
+                }
+            }
+        }
+    }
+
     @Test func overlappingAliasesStillFailClosedForEveryQualityAndIdentityGuard() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
         let org = plan.scope.targets.firstIndex { $0.kind == .organization }!

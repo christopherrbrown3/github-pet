@@ -211,21 +211,35 @@ public enum ScopedResponseParser {
         }
         // Hidden counts are trusted only in a clean response. With any error, malformed or missing
         // source/row, those aliases stay capped (Partial) exactly as before: when in doubt, Partial.
+        // An org search already counts its repositories for the same category, so a covered
+        // repository's hidden count is excluded. No containment is inferred for unverified owners.
+        var organizationHidden: [ItemKind: [String: Int]] = [:]
+        for search in plan.searches {
+            guard let index = search.targetIndex, plan.scope.targets[index].kind == .organization,
+                  let owner = verifiedOwners[index] else { continue }
+            organizationHidden[search.kind, default: [:]][owner] = max(organizationHidden[search.kind]?[owner] ?? 0,
+                                                                      hiddenByAlias[search.alias] ?? 0)
+        }
+        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
+            guard let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
+                  let owner = verifiedOwners[index] else { return nil }
+            return organizationHidden[search.kind]?[owner]
+        }
+        // A covered repository with more hidden matches than its org contradicts that coverage
+        // (#35 MED-1): never drop it into All clear; treat the response as capped (Partial).
+        if issues.isEmpty {
+            issues += plan.searches.filter { search in
+                coveringHidden(search).map { (hiddenByAlias[search.alias] ?? 0) > $0 } ?? false
+            }.map { ScopedFetchIssue.capped($0.alias) }
+        }
         var hidden = 0
         if issues.isEmpty {
-            let organizationOwners = Set(verified.compactMap { index in
-                plan.scope.targets[index].kind == .organization ? verifiedOwners[index] : nil
-            })
-            for search in plan.searches {
-                // An org search already counts its repositories for this same category. Keep
-                // every alias's validation/cap/error checks above; only its duplicate hidden
-                // contribution is excluded. No containment is inferred for unverified owners.
-                if let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
-                   let owner = verifiedOwners[index], organizationOwners.contains(owner) { continue }
+            for search in plan.searches where coveringHidden(search) == nil {
                 hidden += hiddenByAlias[search.alias] ?? 0
             }
         } else {
-            issues += hiddenByAlias.keys.sorted().map { ScopedFetchIssue.capped($0) }
+            let capped = Set(issues.compactMap { issue -> String? in if case .capped(let alias) = issue { return alias }; return nil })
+            issues += hiddenByAlias.keys.sorted().filter { !capped.contains($0) }.map { ScopedFetchIssue.capped($0) }
         }
         return ScopedPollResult(viewer: viewer, items: InboxEngine.dedupe(Array(items.values)), issues: issues,
                                 successfulSources: successes, hidden: hidden)
