@@ -5,9 +5,27 @@ import GitHubPetCore
 /// Shared state behind the menu-bar inbox, the Inbox window, Settings and the mascot.
 @MainActor
 final class AppModel: ObservableObject {
+    /// App-domain time and system motion are runtime inputs, not source state. Tests supply
+    /// controlled inputs without touching the user's clock or accessibility preferences.
+    struct Runtime {
+        var now: () -> Date = Date.init
+        var systemReducedMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+        var schedulesTimers = true
+        var repositoryBudget: () -> CommandBudget = { CommandBudget(timeout: 20) }
+        /// --simulate-monitoring-scope only; unit fixtures pass nil to drop the real-time hold bound.
+        var scopeSimulationHoldLimit: Duration? = .seconds(20)
+    }
+    private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
     @Published private(set) var dataState: DataState = .loading
+    @Published private(set) var scopeSummary = "Monitoring scope · resolving account"
+    @Published private(set) var scopeQuality: String?
+    @Published private(set) var scopeSimulationStatus = ""
+    @Published private(set) var discardedScopeReplies = 0
+    @Published private(set) var receivedScopeReplies = 0
     @Published private(set) var lastSuccess: Date?
+    /// Matches GitHub counted but the viewer can't see, from the last complete snapshot (#35).
+    @Published private(set) var hiddenResultCount = 0
     @Published private(set) var unseen = UnseenItems()
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
     /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
@@ -42,26 +60,71 @@ final class AppModel: ObservableObject {
     private let store: SettingsStore
     let clockOffset: TimeInterval
     private let pollsPeriodically: Bool
+    // Snapshot-only CLI transport (#52): selecting the real CLI UI must never launch gh.
+    private let snapshotMode: Bool
+    private var snapshotCLIFailure: FetchFailure = .ghMissing
     private let engine = InboxEngine()
     private let simulator = FixtureSimulator()
-    private let ghClient = GhClient()
+    private let scopedClient: any ScopedPolling
+    private let scopeStore: ScopeSelectionStore
+    private let scopeSession: RepositoryScopeSession
+    private let scopeSimulation: ScopeSimulation?
+    /// Settings draft validation/discovery: gh normally, offline only in the simulated launch.
+    private let scopeAccess: any ScopeAccessChecking
+    let scopeAccessSimulation: ScopeAccessSimulation?
+    /// Settings › Monitoring scope draft controller (PR B).
+    lazy var scopeEditor = ScopeEditor(model: self, access: scopeAccess)
+    private let scopeDefaults: UserDefaults
+    private let simulationDefaultsSuite: String?
+    private var repositoryTask: Task<Void, Never>?
+    private var replyWaiters: [(count: Int, resume: CheckedContinuation<Void, Never>)] = []
+    /// Simulation only: every launched repository request (scope, expected account, generation).
+    private(set) var simulatedPollLog: [ScopePollRequest] = []
+    private var launchedScopePolls = 0
     private var clips = EventClipQueue()
     private var pollTimer: Timer?
     private var tickTimer: Timer?
-    private var generations = SourceGenerations()
-    private var accounts = AccountWatch()
     // GitHub Status (#11): fixtures by default; githubstatus.com only with the live source.
     private let serviceMonitor = ServiceStatusMonitor()
     private let serviceSimulator = ServiceStatusSimulator()
     private let serviceClient: ServiceStatusClient
     private var serviceGenerations = SourceGenerations()
 
-    init(options: LaunchOptions) {
+    init(options supplied: LaunchOptions, runtime: Runtime = Runtime()) {
+        self.runtime = runtime
+        var options = supplied
+        // Defense at construction too: programmatic test callers cannot enable simulation
+        // while retaining the real defaults domain or selecting a live transport.
+        if options.simulatesMonitoringScope {
+            options.forcedSource = "gh"; options.resetSettings = true; options.userDefaultsOverride = nil
+        }
+        if options.simulatesMonitoringScope && options.defaultsSuite?.hasPrefix("dev.github-pet.scope-simulation.") != true {
+            options.defaultsSuite = "dev.github-pet.scope-simulation.\(UUID().uuidString)"
+        }
         store = SettingsStore(defaults: options.userDefaults)
+        simulationDefaultsSuite = options.simulatesMonitoringScope ? options.defaultsSuite : nil
+        scopeDefaults = options.userDefaults
+        scopeStore = ScopeSelectionStore(defaults: options.userDefaults)
+        scopeSession = RepositoryScopeSession(store: scopeStore)
+        if options.simulatesMonitoringScope {
+            try? ScopeSimulation.seed(options.userDefaults)
+            let simulation = ScopeSimulation(holdLimit: runtime.scopeSimulationHoldLimit)
+            scopeSimulation = simulation
+            scopedClient = simulation
+            let access = ScopeAccessSimulation(holdLimit: runtime.scopeSimulationHoldLimit) { simulation.account }
+            scopeAccessSimulation = access
+            scopeAccess = access
+        } else {
+            scopeSimulation = nil
+            scopedClient = ScopedGhClient()
+            scopeAccessSimulation = nil
+            scopeAccess = ScopeGhAccess()
+        }
         clockOffset = options.clockOffset
         // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
         // would refresh a step it just made stale (flaky render-check).
-        pollsPeriodically = options.snapshotDirectory == nil
+        pollsPeriodically = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
+        snapshotMode = options.snapshotDirectory != nil && !options.simulatesMonitoringScope
         if options.resetSettings { store.reset() }
         var loaded = store.load()
         switch options.forcedSource {
@@ -72,7 +135,7 @@ final class AppModel: ObservableObject {
         settings = loaded
         // Snapshot evidence must be deterministic and never contain live data: with the live
         // source selected there, GitHub Status fails at once instead of reaching the network.
-        serviceClient = options.snapshotDirectory == nil
+        serviceClient = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
             ? ServiceStatusClient() : ServiceStatusClient(transport: OfflineStatusTransport())
 
         if let dir = options.resolvedPackDirectory() {
@@ -85,20 +148,22 @@ final class AppModel: ObservableObject {
             packErrors = []
         }
         // One launch line on stderr so QA can confirm which mascot is in use.
-        let packStatus = pack.map { "mascot pack \($0.manifest.id) loaded from \($0.directory.path)" }
+        let packStatus = pack.map { "mascot pack \($0.manifest.displayID) loaded from \(PackLabel.sanitizePath($0.directory.path))" }
             ?? (packErrors.isEmpty ? "mascot placeholder (no pack)"
                 : "mascot placeholder (pack rejected: \(packErrors.map(\.description).joined(separator: "; ")))")
         FileHandle.standardError.write(Data("GitHubPet: \(packStatus)\n".utf8))
 
-        tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+        if runtime.schedulesTimers {
+            tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.tick() }
+            }
         }
         reduceMotionObserver = SystemNotificationObserver(
             center: NSWorkspace.shared.notificationCenter,
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification
         ) { [weak self] in
             Task { @MainActor in
-                if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion { self?.cancelGesture() }
+                if self?.runtime.systemReducedMotion() == true { self?.cancelGesture() }
             }
         }
         switchSource()
@@ -110,10 +175,10 @@ final class AppModel: ObservableObject {
     // MARK: Derived state
 
     /// App clock: wall clock plus the QA offset from launch options.
-    func clock() -> Date { Date().addingTimeInterval(clockOffset) }
+    func clock() -> Date { runtime.now().addingTimeInterval(clockOffset) }
 
     var effectiveReducedMotion: Bool {
-        settings.reducedMotion || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        settings.reducedMotion || runtime.systemReducedMotion()
     }
 
     var alertsAllowed: Bool { settings.alertsAllowed(at: now) }
@@ -136,11 +201,26 @@ final class AppModel: ObservableObject {
     var mascotBadge: String? { MascotPolicy.mascotBadge(dataState: dataState, count: items.count) }
 
     /// Fixture data is always identified as Demo, in every surface and in privacy mode.
+    /// Informational note beside visible rows; never a Partial badge, warning or mood change.
+    /// (Zero visible rows use the `.hiddenOnly` state instead.)
+    var hiddenResultsNote: String? {
+        dataState == .ready && hiddenResultCount > 0 ? HiddenResults.notVisible(hiddenResultCount) : nil
+    }
+
     var isDemo: Bool { usingFixtures }
 
     var summaryLines: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount,
-                            privacy: settings.privacyMode, demo: isDemo)
+                            privacy: settings.privacyMode, demo: isDemo, demoSource: demoSource)
+    }
+
+    /// Where Demo data comes from: the --simulate-monitoring-scope launch is not fixtures.
+    var demoSource: String { simulatesScope ? "simulated scope" : "fixtures" }
+
+    /// The Inbox's Demo notice (also recorded by the QA runner); nil for real data.
+    var demoNotice: String? {
+        if simulatesScope { return "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub." }
+        return isDemo ? "Demo data (fixtures): invented items, not from GitHub." : nil
     }
 
     /// Panel geometry for an art size with the loaded pack's label floor (no pack: labels stay
@@ -166,7 +246,7 @@ final class AppModel: ObservableObject {
     func hoverLines(compact: Bool) -> [String] {
         compact
             ? IncidentMarker.compactHoverLines(dataState: dataState, items: items, unseenCount: unseenCount,
-                                               demo: isDemo, marker: incidentMarker)
+                                               demo: isDemo, demoSource: demoSource, marker: incidentMarker)
             : IncidentMarker.hoverLines(fullHoverSummary, marker: incidentMarker)
     }
 
@@ -174,7 +254,7 @@ final class AppModel: ObservableObject {
     /// (the Inbox lists them all), so placement beside the character is unchanged (#27).
     private var fullHoverSummary: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount, privacy: settings.privacyMode,
-                            demo: isDemo, maxLines: incidentMarker == nil ? 3 : 2)
+                            demo: isDemo, demoSource: demoSource, maxLines: incidentMarker == nil ? 3 : 2)
     }
 
     /// Count of actionable items plus, separately, active incidents (#37); the badge stays items only.
@@ -204,13 +284,13 @@ final class AppModel: ObservableObject {
     /// A new source starts empty and Loading: rows, counts and baseline from the previous
     /// source (e.g. Demo fixtures or another account) are never shown as this source's data.
     private func switchSource() {
-        generations.switchSource()
         serviceGenerations.switchSource()
-        accounts.reset()
+        repositoryTask?.cancel(); repositoryTask = nil
+        if settings.dataSource == .fixtures { scopeSession.startDemo() } else { scopeSession.startLive() }
         resetSession()
         resetServiceStatus()
         pollTimer?.invalidate()
-        if pollsPeriodically {
+        if pollsPeriodically && runtime.schedulesTimers {
             pollTimer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.refresh() }
             }
@@ -236,23 +316,110 @@ final class AppModel: ObservableObject {
 
     func refresh() {
         refreshServiceStatus()
-        switch settings.dataSource {
-        case .fixtures:
-            apply(simulator.poll())
-        case .githubCLI:
-            guard let generation = generations.beginFetch() else { return }
-            let client = ghClient
-            Task.detached {
-                let fetch = client.fetchWithAccount()
-                await MainActor.run {
-                    // Results from a session that has since been switched away are dropped.
-                    guard self.generations.finishFetch(generation) else { return }
-                    // `gh auth switch` keeps the mode but changes whose data this is: start a
-                    // fresh baseline so the new account's existing items are not announced.
-                    if self.accounts.observe(fetch.account) { self.resetSession() }
-                    self.apply(fetch.outcome)
+        refreshRepositoriesOnly()
+    }
+
+    private func resetRepositories() {
+        engine.reset()
+        unseen.removeAll()
+        clips.clear(origin: .repository)
+        activeClip = clips.active
+        detailsRevealed = false
+        blockedLinkNote = nil
+    }
+
+    private func launchRepositoryPoll(_ request: ScopePollRequest, budget: CommandBudget, refetches: Int) {
+        let client = scopedClient
+        if scopeSimulation != nil {
+            launchedScopePolls += 1
+            simulatedPollLog.append(request)
+            if simulatedPollLog.count > 64 { simulatedPollLog.removeFirst(simulatedPollLog.count - 64) }
+        }
+        let simulated = scopeSimulation != nil
+        repositoryTask = Task.detached { [weak self] in
+            let result: ScopedPollResult
+            if simulated {
+                // Simulated replies can be held indefinitely by design. Keep that blocking wait on
+                // GCD, which adds threads, not on the small cooperative pool: held replies there
+                // starved every other task (CI 43776871945 hung with all pool threads blocked).
+                result = await withCheckedContinuation { done in
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        done.resume(returning: Self.poll(client, request, budget))
+                    }
                 }
+            } else {
+                result = Self.poll(client, request, budget)
             }
+            await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
+        }
+    }
+
+    nonisolated private static func poll(_ client: any ScopedPolling, _ request: ScopePollRequest,
+                                         _ budget: CommandBudget) -> ScopedPollResult {
+        request.identityOnly ? client.fetchIdentity(expectedAccount: request.expectedAccount, budget: budget)
+            : client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+    }
+
+    private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
+                                       budget: CommandBudget, refetches: Int) {
+        if scopeSimulation != nil {
+            receivedScopeReplies += 1
+            let ready = replyWaiters.filter { $0.count <= receivedScopeReplies }
+            replyWaiters.removeAll { $0.count <= receivedScopeReplies }
+            ready.forEach { $0.resume.resume() }
+        }
+        guard scopeSession.isCurrent(request) else {
+            if scopeSimulation != nil { discardedScopeReplies += 1 }
+            return
+        }
+        repositoryTask = nil
+        let reception = scopeSession.receive(result, for: request)
+        if reception.resetRepositories { resetRepositories() }
+        switch reception.action {
+        case .discard: break
+        case .apply(let outcome): apply(outcome)
+        case .refetch:
+            guard refetches > 0 else {
+                apply(scopeSession.failCycle(.identityMismatch)); return
+            }
+            guard budget.remaining > 0 else {
+                apply(scopeSession.failCycle(.deadline)); return
+            }
+            sync(now: clock())
+            guard let next = scopeSession.beginPoll() else { return }
+            launchRepositoryPoll(next, budget: budget, refetches: refetches - 1)
+        }
+        sync(now: clock())
+    }
+
+    /// Repository-only commit seam for the later validated Settings draft controller.
+    @discardableResult
+    func applyRepositoryScope(_ scope: MonitoringScope, identity: ScopeIdentity, generation: Int) -> Bool {
+        do {
+            guard try scopeSession.apply(scope, for: identity, generation: generation) else { return false }
+            repositoryTask?.cancel()
+            repositoryTask = nil
+            resetRepositories()
+            sync(now: clock())
+            refreshRepositoriesOnly()
+            return true
+        } catch { return false }
+    }
+
+    private func refreshRepositoriesOnly() {
+        // Snapshot renders show the actual CLI source with an injected failure, never a gh call
+        // or a scoped request (#52).
+        if snapshotMode && settings.dataSource == .githubCLI {
+            apply(.failure(snapshotCLIFailure)); return
+        }
+        if settings.dataSource == .fixtures {
+            guard let scope = scopeSession.scope else { apply(scopeSession.configurationFailure); return }
+            let outcome = simulator.poll()
+            if case .snapshot(let items, let complete, let hidden) = outcome {
+                apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete, hidden: hidden))
+            } else { apply(outcome) }
+        } else if let request = scopeSession.beginPoll() {
+            launchRepositoryPoll(request, budget: runtime.repositoryBudget(), refetches: 1)
         }
     }
 
@@ -266,6 +433,7 @@ final class AppModel: ObservableObject {
     }
 
     private func refreshServiceStatus() {
+        if scopeSimulation != nil { applyServiceStatus(serviceSimulator.poll()); return }
         switch settings.dataSource {
         case .fixtures:
             applyServiceStatus(serviceSimulator.poll())
@@ -292,7 +460,7 @@ final class AppModel: ObservableObject {
             unseenIncidents.formIntersection(serviceMonitor.incidents.map(\.inboxItem.id))
         }
         let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date)
-        clips.enqueue(events, now: date, playable: playable)
+        clips.enqueue(events, now: date, playable: playable, origin: .serviceIncident)
         // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
         if playable && !events.isEmpty { markerBurst = IncidentMarker.Burst(start: date, fromTier: shownBefore) }
         sync(now: date)
@@ -307,7 +475,7 @@ final class AppModel: ObservableObject {
     /// System Reduce Motion: stop a playing gesture the moment it is switched on.
     private var reduceMotionObserver: SystemNotificationObserver?
 
-    private func tick() {
+    func tick() {
         let date = clock()
         engine.refreshFreshness(now: date)
         serviceMonitor.refreshFreshness(now: date)
@@ -321,15 +489,20 @@ final class AppModel: ObservableObject {
 
     private func sync(now date: Date) {
         now = date
+        scopeSummary = scopeSession.summary
+        scopeQuality = scopeSession.qualitySummary
+        scopeSimulationStatus = scopeSimulation?.status ?? ""
         if items != engine.items { items = engine.items }
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
+        if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
         if serviceState != serviceMonitor.state { serviceState = serviceMonitor.state }
         if serviceIncidents != serviceMonitor.incidents { serviceIncidents = serviceMonitor.incidents }
         if serviceLastSuccess != serviceMonitor.lastSuccess { serviceLastSuccess = serviceMonitor.lastSuccess }
         let burst = IncidentMarker.retained(markerBurst, marker: incidentMarker)
         if burst != markerBurst { markerBurst = burst }
         if activeClip != clips.active { activeClip = clips.active }
+        scopeEditor.observeActive()
     }
 
     // MARK: Actions
@@ -379,7 +552,122 @@ final class AppModel: ObservableObject {
 
     // MARK: Fixture simulator hooks
 
-    var usingFixtures: Bool { settings.dataSource == .fixtures }
+    var usingFixtures: Bool { settings.dataSource == .fixtures || scopeSimulation != nil }
+    /// Window frames autosave to the real standard defaults, so only normal launches keep them.
+    var persistsWindowFrames: Bool { scopeSimulation == nil && !snapshotMode }
+    var simulatesScope: Bool { scopeSimulation != nil }
+    var repositoryFetchInFlight: Bool { repositoryTask != nil }
+    var simulatedHeldReplies: Int { scopeSimulation?.heldCount ?? 0 }
+
+    // Explicit handshakes for the simulated scope (no wall-clock polling).
+    /// Awaits the current repository poll, including any refetch it chains, until none is current.
+    func repositoryPollSettled() async {
+        while let task = repositoryTask {
+            await task.value
+            if repositoryTask == task { return }
+        }
+    }
+    func scopeRepliesReceived(_ count: Int) async {
+        guard scopeSimulation != nil, receivedScopeReplies < count else { return }
+        await withCheckedContinuation { replyWaiters.append((count, $0)) }
+    }
+    func scopeRepliesHeld(_ count: Int) async { await scopeSimulation?.waitUntilHeld(count) }
+    /// Every launched simulated request has been received by the model or is held.
+    var simulatedScopeQuiescent: Bool {
+        guard let progress = scopeSimulation?.progress else { return true }
+        return progress.entered == launchedScopePolls && progress.finished == receivedScopeReplies
+            && progress.entered - progress.finished == progress.held
+            // Settings checks: every launched validation/discovery was received or is held.
+            && scopeEditor.launchedChecks - scopeEditor.receivedChecks == (scopeAccessSimulation?.heldCount ?? 0)
+    }
+    var simulationDomain: String? { simulationDefaultsSuite }
+    /// Keys left in the simulated launch's in-memory domain (0 after cleanup).
+    var simulationDomainKeyCount: Int {
+        simulationDefaultsSuite.map { scopeDefaults.persistentDomain(forName: $0)?.count ?? 0 } ?? 0
+    }
+    var simulatedAccountName: String? {
+        scopeSimulation.map { $0.account == ScopeSimulation.accountA ? "A" : "B" }
+    }
+    var simulatedRequests: [ScopeSimulation.Request] { scopeSimulation?.requestHistory ?? [] }
+    var monitoringScopeIdentity: ScopeIdentity? { scopeSession.identity }
+    var monitoringScopeGeneration: Int { scopeSession.generation }
+    var activeMonitoringScope: MonitoringScope? { scopeSession.scope }
+    var monitoringScopeConfigurationError: Bool { scopeSession.configurationError }
+    /// Display only, shown in explicit Settings; persistence is keyed by node ID.
+    var monitoringScopeViewerLogin: String? { scopeSession.viewer?.login }
+
+    func cleanupScopeSimulation() {
+        guard let suite = simulationDefaultsSuite, suite.hasPrefix("dev.github-pet.scope-simulation.") else { return }
+        scopeSession.invalidate()
+        repositoryTask?.cancel(); repositoryTask = nil
+        scopeSimulation?.releaseReplies()
+        scopeAccessSimulation?.releaseValidations()
+        pollTimer?.invalidate(); tickTimer?.invalidate()
+        // The domain is in-memory (EphemeralDefaults), so this clears everything; nothing was on disk.
+        scopeDefaults.removePersistentDomain(forName: suite)
+        EphemeralDefaults.release(suite)
+    }
+
+    // Explicit offline launch only; these controls never exist in a normal session.
+    func simulateScopeAccount(_ isB: Bool) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.switchAccount(isB ? ScopeSimulation.accountB : ScopeSimulation.accountA)
+        repositoryTask?.cancel(); scopeSession.invalidate()
+        refreshRepositoriesOnly()
+    }
+    func simulateScopeApply(_ selected: Bool) {
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil, let identity = scopeSession.identity else { return }
+        let scope = identity == .github(ScopeSimulation.accountB) ? ScopeSimulation.selectedB : ScopeSimulation.selectedA
+        _ = applyRepositoryScope(selected ? scope : .everything, identity: identity, generation: scopeSession.generation)
+    }
+    func simulateScopeHold(_ count: Int = 1, refresh: Bool = true) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.holdNextReply(count)
+        if refresh { refreshRepositoriesOnly() }
+    }
+    func simulateScopeDeliver() { scopeSimulation?.releaseReplies(); scopeAccessSimulation?.releaseValidations() }
+    func simulateScopeDeliverOne(newest: Bool) { scopeSimulation?.releaseReply(newest: newest) }
+    func simulateScopeDiscovery(_ mode: ScopeAccessSimulation.DiscoveryMode) { scopeAccessSimulation?.setDiscovery(mode); objectWillChange.send() }
+    func simulateScopeValidation(_ mode: ScopeAccessSimulation.ValidationMode) { scopeAccessSimulation?.setValidation(mode); objectWillChange.send() }
+    func simulateScopeHoldValidation() { scopeAccessSimulation?.holdNextValidation(); objectWillChange.send() }
+    func simulateScopeInject() {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.inject(); refreshRepositoriesOnly()
+    }
+    func simulateScopePartial(_ on: Bool) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.setPartial(on); refreshRepositoriesOnly()
+    }
+    /// #35 fixtures: matches hidden from the viewer, hidden-only, or capped review searches.
+    func simulateScopeVisibility(_ mode: ScopeSimulation.Visibility) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.setVisibility(mode); refreshRepositoriesOnly()
+    }
+    var simulatedVisibility: ScopeSimulation.Visibility? { scopeSimulation?.currentVisibility }
+    func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false,
+                             account: ScopeAccount = ScopeSimulation.accountA) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        if corrupt { ScopeSimulation.corruptA(scopeDefaults) }
+        if forgetViewer { scopeStore.rememberAccount(nil) }
+        simulation.switchAccount(account)
+        repositoryTask?.cancel(); scopeSession.startLive(); resetRepositories()
+        sync(now: clock()); refreshRepositoriesOnly()
+    }
+    /// Corrupts one saved record without reloading (the next restore of that account sees it).
+    func simulateScopeCorrupt(_ account: ScopeAccount) {
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }
+        ScopeSimulation.corrupt(scopeDefaults, account: account)
+    }
+    /// Re-seeds both saved selections and the remembered viewer without reloading.
+    func simulateScopeSeed() {
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }
+        try? ScopeSimulation.seed(scopeDefaults)
+    }
+    func simulateScopeRepair() {
+        guard settings.dataSource == .githubCLI, scopeSimulation != nil else { return }
+        try? ScopeSimulation.seed(scopeDefaults)
+        simulateScopeReload()
+    }
 
     func injectEntitlementEvent() {
         guard usingFixtures else { return }
@@ -507,6 +795,18 @@ final class AppModel: ObservableObject {
     }
 
     var simulatorConnected: Bool { simulator.connected }
+
+    /// Render hook only: show a gh setup failure through the real engine, without polling.
+    func showSourceFailureForSnapshot(_ failure: FetchFailure) {
+        guard snapshotMode else { return }
+        snapshotCLIFailure = failure
+        if settings.dataSource != .githubCLI {
+            settings.dataSource = .githubCLI
+            return // switchSource resets both baselines and refreshes the injected source.
+        }
+        resetSession()
+        refresh()
+    }
 
     /// Render hook only: show the Loading state of a fresh source without polling.
     func showLoadingForSnapshot() {

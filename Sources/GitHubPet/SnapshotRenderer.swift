@@ -151,11 +151,9 @@ enum SnapshotRenderer {
             .frame(width: model.layout(model.settings.mascotSize).panelSize.width,
                    height: model.layout(model.settings.mascotSize).panelSize.height),
                                name: "count-cap-mascot", directory: directory, appearance: .aqua)
-        // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
-        // is deterministic and can never contain live GitHub data.
-        if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
-           !FileManager.default.fileExists(atPath: path) {
-            model.settings.dataSource = .githubCLI
+        // Snapshot-only CLI transport, independent of the installed gh or saved account.
+        do {
+            model.showSourceFailureForSnapshot(.ghMissing)
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await capture("11-gh-override")
         }
@@ -176,16 +174,52 @@ enum SnapshotRenderer {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
         }
+        // Monitoring scope editor with a full 10-entry Demo draft and inline errors; nothing is
+        // applied. The Form keeps its 520 pt width and scrolls rather than growing the window.
+        report.append("## settings monitoring scope (long draft)")
+        let editor = model.scopeEditor
+        editor.setMode(.selected)
+        for index in 0..<5 { editor.organizationInput = "demo-org-with-a-long-name-\(index)"; editor.addOrganization() }
+        for index in 0..<5 { editor.repositoryInput = "demo-owner/a-much-longer-demo-repository-name-\(index)"; editor.addRepository() }
+        editor.update(editor.draft.rows[1].id, text: "org:demo is:pr")
+        editor.repositoryInput = "demo-owner/one-too-many"; editor.addRepository()
+        report.append("scope editor: rows=\(editor.draft.rows.count) apply=\(editor.canApply) blocked=\(editor.applyBlockedReason ?? "none")")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(Form { MonitoringScopeSection(model: model, editor: editor) }.formStyle(.grouped).frame(width: 520),
+                                   name: "settings-scope-long\(suffix)", directory: directory, appearance: appearance)
+        }
+        editor.cancel()
+
+        // gh setup links (#52): the real engine in each setup state, never a live gh call.
+        report.append("## gh setup links")
+        for (name, failure) in [("ghmissing", FetchFailure.ghMissing), ("unauthenticated", .unauthenticated)] {
+            model.showSourceFailureForSnapshot(failure)
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            // Refresh again to prove a later poll retains the injected state, without gh.
+            model.refresh()
+            report.append("setup=\(name) source=\(model.settings.dataSource.rawValue) demo=\(model.usingFixtures) "
+                          + "badge=\(model.badge ?? "none") rows=\(model.items.count) "
+                          + "unseen=\(model.unseenCount) clip=\(model.activeClip == nil ? "none" : "active") "
+                          + "state=\(model.dataState.statusText) links=\(GhSetup.links(for: model.dataState).map(\.title))")
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+                                       name: "gh-setup-\(name)-inbox\(suffix)", directory: directory,
+                                       appearance: appearance, asWindow: true)
+                report += await render(SettingsView(model: model).frame(height: 1000),
+                                       name: "gh-setup-\(name)-settings\(suffix)",
+                                       directory: directory, appearance: appearance, asWindow: true)
+            }
+        }
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
-        UserDefaults.standard.removePersistentDomain(forName: LaunchOptions.snapshotDefaultsSuite)
+        EphemeralDefaults.release(LaunchOptions.snapshotDefaultsSuite)
         FileHandle.standardError.write(Data("GitHubPet: snapshots written to \(directory.path)\n".utf8))
     }
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
-    private static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
+    static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
         let window: NSWindow
         if asWindow {

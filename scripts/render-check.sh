@@ -11,21 +11,36 @@ binary=${1:-.build/app/GitHubPet.app/Contents/MacOS/GitHubPet}
 out=${2:-.build/render-check}
 rm -rf "$out"
 
-# Snapshot mode must ignore saved settings and leave them alone. Seed a test preferences suite
-# with a live source and privacy off, point the app at it with --defaults-suite and --gh, then
-# check the render used Demo fixtures with default privacy and the suite is unchanged. (The app's
-# real preferences domain is never touched: a running copy of the app may be writing to it.)
-suite=dev.github-pet.render-check.$$
+# Snapshot mode must ignore saved settings and leave them alone. Seed a preferences file with a
+# live source and privacy off, point the app at it with --defaults-suite and --gh, then check the
+# render used Demo fixtures with default privacy and the file is unchanged. The seed lives in a
+# temp directory as an absolute-path domain: a named `defaults write` suite left an empty
+# ~/Library/Preferences/dev.github-pet.render-check.<pid>.plist behind even after `defaults
+# delete` (cfprefsd rewrites it), and the app's real preferences domain is never touched.
 scratch=$(mktemp -d)
-trap 'defaults delete "$suite" >/dev/null 2>&1 || true' EXIT
-seed=$(printf '%s' '{"schemaVersion":1,"dataSource":"githubCLI","privacyMode":false}' | xxd -p | tr -d '\n')
-defaults write "$suite" GitHubPet.settings.v1 -data "$seed"
-# Key-sorted dump: the exported plist's byte order is not stable.
-prefs() { defaults export "$suite" "$scratch/$1.plist" && plutil -p "$scratch/$1.plist"; }
+trap 'rm -rf "$scratch"' EXIT
+suite=$scratch/seeded-preferences
+seed=$(printf '%s' '{"schemaVersion":1,"dataSource":"githubCLI","privacyMode":false}' | base64)
+# Written directly: plutil -insert would read the dotted key as a key path.
+cat > "$suite.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>GitHubPet.settings.v1</key><data>$seed</data></dict></plist>
+PLIST
+plutil -lint -s "$suite.plist"
+# Exact bytes plus a readable dump, so any rewrite (even an identical-looking one) is caught.
+prefs() { shasum -a 256 "$suite.plist" && plutil -p "$suite.plist"; }
 before=$(prefs before)
 
+# An executable gh trap proves snapshot CLI selection cannot launch even an installed CLI.
+cat > "$scratch/gh" <<'SH'
+#!/bin/sh
+printf 'unexpected gh invocation\n' >> "$GITHUB_PET_SNAPSHOT_GH_TRAP"
+exit 99
+SH
+chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
-GITHUB_PET_GH_PATH=/nonexistent/gh "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
+GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
 for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
@@ -36,6 +51,8 @@ report=$out/report.txt
 [[ -f $report ]] || { echo "render-check: no report at $report" >&2; exit 1; }
 
 failures=0
+if [[ ! -e $scratch/gh-called ]]; then echo "ok   snapshot CLI never launched gh"
+else echo "FAIL snapshot CLI launched gh"; failures=$((failures + 1)); fi
 check() {
   if grep -qE -- "$2" "$report"; then echo "ok   $1"; else echo "FAIL $1 (expected /$2/)"; failures=$((failures + 1)); fi
 }
@@ -187,6 +204,16 @@ if (( $(grep -cE '^incident renders @[0-9]+: 24 PNGs' "$report") == 3 )); then e
 else echo "FAIL incident renders missing"; failures=$((failures + 1)); fi
 check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
+for state title in ghmissing 'Get GitHub CLI' unauthenticated 'How to sign in'; do
+  check_in 'gh setup links' "$state uses silent actual CLI source" \
+    "^setup=$state source=githubCLI demo=false badge=\\? rows=0 unseen=0 clip=none state=.*links=.*$title"
+  for surface in inbox settings; do
+    for theme in '' '-dark'; do
+      png="gh-setup-$state-$surface$theme"
+      [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+    done
+  done
+done
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do
