@@ -1,0 +1,15 @@
+{
+  "wrong-loop-flags": {
+    "exit": 0,
+    "pid": 33481,
+    "launchLines": [
+      "GitHubPet: mascot placeholder (pack rejected: state 'idle' must declare \"loop\": true (idle loops; attention and urgent play once); state 'attention' must declare \"loop\": false (idle loops; attention and urgent play once))"
+    ],
+    "ghTripwireInvoked": false,
+    "saved31897Unchanged": true,
+    "changedDomains": [],
+    "changedFiles": [],
+    "pngCount": 215
+  },
+  "verdict": "none: QA must inspect launch lines and Settings/placeholder PNGs"
+}
