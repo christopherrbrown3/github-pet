@@ -4,19 +4,19 @@ import Testing
 @testable import GitHubPet
 
 /// #41: the real mascot window controller's object lifetimes and popover dismissal.
-/// Fixtures only (no gh, no network). The defaults suite is unique and never written: these tests
-/// change no settings, so no preferences file is created.
+/// Fixtures only (no gh, no network). The defaults are in memory (EphemeralDefaults), so no
+/// preferences file is created; the relaunch baseline (#12) a fixtures launch saves lands there too.
 @Suite(.serialized) @MainActor struct MascotWindowLifetimeTests {
-    private func model() -> (AppModel, String) {
-        let suite = "dev.github-pet.tests.mascot-window.\(UUID().uuidString)"
-        var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures", "--defaults-suite", suite], environment: [:])
+    private func model() -> (AppModel, EphemeralDefaults) {
+        let defaults = EphemeralDefaults(name: "dev.github-pet.tests.mascot-window.\(UUID().uuidString)")
+        var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures"], environment: [:])
         options.forcePlaceholder = true
+        options.userDefaultsOverride = defaults
         _ = NSApplication.shared
-        return (AppModel(options: options), suite)
+        return (AppModel(options: options), defaults)
     }
-    private func assertNothingWritten(_ suite: String) {
-        let keys = UserDefaults(suiteName: suite)?.persistentDomain(forName: suite)?.keys.filter { $0.hasPrefix("GitHubPet") } ?? []
-        #expect(keys.isEmpty, "the test must not persist settings")
+    private func assertNothingWritten(_ defaults: EphemeralDefaults) {
+        #expect(defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
     }
 
     @Test func droppedControllerFreesItsPanelAndContainer() async throws {
