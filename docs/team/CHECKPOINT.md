@@ -1,3 +1,11 @@
+# Latest instruction — Claude PM replacement and QA review, 2026-11-16
+
+Chris explicitly requests a fresh Claude PM to take over and spin up fresh Claude specialists. Current t1r remains sole PM until explicit HANDOFF_GRANTED after responsive PM_READY. Read handoffs/claude-pm-2026-11-16.md; it supersedes older snapshots.
+
+**No more Copilot reviews: Chris says they are too expensive. Do not request or re-request Copilot, or enable automatic paid reviews. QA agents independently review PR source/diffs and functional product behavior. Developer still owns unit/logic/regression tests/build CI; QA does not author unit harnesses.** Preserve already-existing review findings as evidence; current PR51 e57 has three unresolved substantive findings in review5915337912, despite its banner.
+
+Codex t5q/t5p are usage-stopped and will be intentionally shut down after helpers ended; all source/evidence preserved. PR51 e57d1f3 clean/green but HOLD three defects; PR50 a188180 local-only fix clean/46focusedPASS, no push; PR59 d813f10 green supporting-only, needs final51 integration. Saved31897 alive/original start, no QA app remains. Existing late e57 three-flow QA output awaits durable final judgement; do not repeat runs. No releases/tags/auto-merge/Homebrew/force or preference cleanup.
+
 # Current authority — Codex fallback, 2026-11-16 UTC
 
 Sole PM is **t1r**, under Chris's standing allowance-fallback instruction. Claude PM t49 hit the session limit (reset shown as 3:20 AM America/New_York); its repeated automatic retries were stopped intentionally. Exit129 is expected. No automatic PM or specialist resumption into occupied worktrees. Reports route `hc send t1r`; the product-manager alias belongs to retired t49. This block, the new handoff and live GitHub state supersede historical snapshots below.
