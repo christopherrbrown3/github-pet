@@ -174,6 +174,12 @@ enum SnapshotRenderer {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
         }
+        // Every Settings section at once (README images): the real window clips and scrolls.
+        report.append("## settings full height")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(SettingsView(model: model).frame(height: Self.fullSettingsHeight), name: "settings-full\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+        }
         // Monitoring scope editor with a full 10-entry Demo draft and inline errors; nothing is
         // applied. The Form keeps its 520 pt width and scrolls rather than growing the window.
         report.append("## settings monitoring scope (long draft)")
@@ -219,6 +225,9 @@ enum SnapshotRenderer {
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
+    /// Tall enough for every Settings section; README images only.
+    static let fullSettingsHeight: CGFloat = 1500
+
     static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
         let window: NSWindow
