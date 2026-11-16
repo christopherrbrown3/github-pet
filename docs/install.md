@@ -78,12 +78,23 @@ and confirm. You approve each downloaded version once. Apple's guidance:
 
 ## Keyboard and VoiceOver access
 
-The **menu-bar icon** and **Settings** are the keyboard route: they are standard macOS controls, so
-Tab, Space and Return work in the inbox window and in Settings. The floating mascot is a
-mouse and VoiceOver target only: it is not focusable from the keyboard, but everything it opens
-(the inbox) is reachable from the menu-bar icon. With VoiceOver the mascot reads as one button
-and pressing it opens the inbox. This has been checked from static accessibility output only;
-a live VoiceOver pass has not been done yet.
+The **menu-bar icon** and **Settings** are the intended keyboard route. They use standard macOS
+controls, but keyboard behaviour has **not been verified on a real Mac** yet, so treat the
+following as what to expect, not a guarantee:
+
+- **Reaching the menu-bar icon is a separate step.** GitHub Pet has no Dock icon or app menu of
+  its own, so you reach its icon the way you reach any menu-bar item, for example with the
+  system's "Move focus to status menus" shortcut (System Settings → Keyboard → Keyboard
+  Shortcuts → Keyboard), if it is enabled on your Mac.
+- **Tab only reaches buttons when Keyboard Navigation is on** (System Settings → Keyboard →
+  Keyboard navigation). With it off, Tab moves only between text fields and lists.
+- **Activation keys depend on the control.** Space usually presses the focused button; Return
+  triggers the default button of a window or sheet, which is not always the focused one.
+
+The floating mascot is a mouse and VoiceOver target only: it is not focusable from the keyboard,
+but everything it opens (the inbox) is reachable from the menu-bar icon. With VoiceOver the
+mascot reads as one button and pressing it opens the inbox. This has been checked from static
+accessibility output only; a live VoiceOver pass has not been done yet.
 
 ## Updating
 
