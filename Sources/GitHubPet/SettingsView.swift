@@ -78,6 +78,7 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             MonitoringScopeSection(model: model, editor: model.scopeEditor)
+            EntitlementRepositoriesSection(model: model)
         }
         .formStyle(.grouped)
         // A grouped Form scrolls, so it reports almost no height of its own and the hosting
@@ -99,6 +100,44 @@ struct SettingsView: View {
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
             model.settings.quietHours[keyPath: keyPath] = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
         }
+    }
+}
+
+/// #8: review requests from these repositories show as entitlement approvals. Local only.
+struct EntitlementRepositoriesSection: View {
+    @ObservedObject var model: AppModel
+    @State private var input = ""
+    @State private var problem: EntitlementRepositories.Problem?
+
+    var body: some View {
+        Section("Entitlement approvals") {
+            ForEach(model.settings.entitlementRepositories, id: \.self) { repository in
+                HStack {
+                    Image(systemName: "key").accessibilityHidden(true)
+                    Text(repository)
+                    Spacer()
+                    Button("Remove") { model.removeEntitlementRepository(repository) }
+                        .accessibilityLabel("Remove \(repository)")
+                }
+            }
+            HStack {
+                TextField("owner/name", text: $input)
+                    .onSubmit(add)
+                    .onChange(of: input) { _ in problem = nil }
+                    .accessibilityIdentifier("settings.entitlementInput")
+                Button("Add", action: add).disabled(input.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            if let problem {
+                Text(problem.message).font(.caption).foregroundStyle(.orange)
+            }
+            Text("Review requests from these repositories are shown as entitlement approvals (key icon). Opening one opens the pull request on GitHub; GitHub Pet never approves anything. The list is stored only on this Mac.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func add() {
+        problem = model.addEntitlementRepository(input)
+        if problem == nil { input = "" }
     }
 }
 
