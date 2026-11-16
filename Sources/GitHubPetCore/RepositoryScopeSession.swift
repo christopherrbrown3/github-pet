@@ -151,11 +151,16 @@ public final class RepositoryScopeSession {
     /// Intentionally contains no account/target names, query text or raw transport diagnostics.
     public var qualitySummary: String? {
         if configurationError { return "Saved selection needs correction in Settings › Monitoring scope; monitoring has not broadened." }
+        return Self.qualitySummary(for: issues)
+    }
+    nonisolated public static let accessDeniedQuality = "GitHub denied access to part of this scope (token scope or SAML single sign-on); results are incomplete. Run gh auth refresh."
+    nonisolated public static func qualitySummary(for issues: [ScopedFetchIssue]) -> String? {
         guard !issues.isEmpty else { return nil }
         if issues.contains(.identityMismatch) { return "Account changed; restoring its monitoring scope." }
         if issues.contains(.signedOut) { return "Sign in with GitHub CLI to verify this scope." }
         if issues.contains(.ghMissing) { return "GitHub CLI is unavailable." }
         if issues.contains(.rateLimited) { return "GitHub rate limit; scope results are incomplete." }
+        if issues.contains(.accessDenied) { return accessDeniedQuality }
         if issues.contains(.deadline) { return "Scope request time limit reached; results are unverified." }
         if issues.contains(.outputLimit) { return "Scope output limit reached; results are unverified." }
         if issues.contains(where: { if case .targetUnavailable = $0 { return true }; if case .malformedTarget = $0 { return true }; return false }) {
