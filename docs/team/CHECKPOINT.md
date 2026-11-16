@@ -1,3 +1,13 @@
+# Overnight checkpoint — 2026-11-15 ~22:45 EST, Claude PM t49 again
+
+t1r handed sole PM back to t49 (HANDOFF_GRANTED/ACCEPTED) to spend the Claude allowance and conserve Codex weekly quota (21%). See handoffs/claude-overnight-2026-11-15.md. Dispatch (one writer per worktree):
+- t4w (Opus): PR49 801ddcb ancestor-symlink race triage/fix -> final head.
+- t4z (Sonnet, explicit): PR50 d044 red fd-test diagnosis (cross-suite hypothesis, no relaxing) + directory-path label truncation fix (middle ellipsis, larger cap). ZWJ stripping accepted as cosmetic.
+- t4x (Opus, functional): PR50 visual verdict -> PR53 09b260a artifact functional -> PR49 runner on final head.
+- t4y (Opus): PR53 Copilot thread 4580958161 verify/resolve (sole writer in developer-gh-setup-link); PR51 history-preserving merge after PR49 final.
+
+---
+
 # Latest checkpoint — overnight Claude PM transfer
 
 Nov15 22:22EST / Nov16 03:22UTC. Claude PMt49 readyafterreset; explicitgrant/acceptance transfers soleauthority fromt1r, which stepsback. Codexweekly21% conserved, evening3Codexspecialists deliberately stopped after alljobscomplete. Theircommits areauthorized. Current sourceoftruth: handoffs/claude-overnight-2026-11-15.md +roles/live state.
