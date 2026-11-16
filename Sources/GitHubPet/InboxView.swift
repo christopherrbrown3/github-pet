@@ -162,7 +162,8 @@ struct InboxView: View {
 
     private var footer: some View {
         HStack {
-            Button("Refresh") { model.refresh() }
+            // A click while a poll is in flight is queued once, never dropped (#60).
+            Button(model.refreshing ? "Refreshing…" : "Refresh") { model.requestRefresh() }
             Menu("Snooze") {
                 ForEach(SnoozeOption.allCases, id: \.self) { option in
                     Button(option.title) { model.snooze(option) }

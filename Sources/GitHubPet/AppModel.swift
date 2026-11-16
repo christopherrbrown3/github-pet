@@ -14,6 +14,10 @@ final class AppModel: ObservableObject {
         var repositoryBudget: () -> CommandBudget = { CommandBudget(timeout: 20) }
         /// --simulate-monitoring-scope only; unit fixtures pass nil to drop the real-time hold bound.
         var scopeSimulationHoldLimit: Duration? = .seconds(20)
+        /// Source of system wake notifications; tests post to a private centre.
+        var wakeCenter: NotificationCenter = NSWorkspace.shared.notificationCenter
+        /// Wakes within this delay collapse into one refresh, which also gives the network time to return.
+        var wakeRefreshDelay: Duration = .seconds(5)
         /// Open at login (#15). nil: the system's SMAppService for a normal launch only, none for
         /// simulated, snapshot, QA or custom-defaults launches. Tests inject a fake.
         var loginItemBackend: (any LoginItemBackend)?
@@ -85,7 +89,17 @@ final class AppModel: ObservableObject {
     lazy var scopeEditor = ScopeEditor(model: self, access: scopeAccess)
     private let scopeDefaults: UserDefaults
     private let simulationDefaultsSuite: String?
-    private var repositoryTask: Task<Void, Never>?
+    private var repositoryTask: Task<Void, Never>? {
+        didSet { if refreshing != (repositoryTask != nil) { refreshing = repositoryTask != nil } }
+    }
+    /// A repository poll is in flight: the Refresh control says so (#60).
+    @Published private(set) var refreshing = false
+    /// A Refresh requested during an in-flight poll, for the scope generation it was asked in.
+    /// At most one; it runs once after the current reply lands, and is dropped if the source,
+    /// account or scope changed meanwhile (that change already started its own poll).
+    private var queuedRefreshGeneration: Int?
+    private var wakeObserver: SystemNotificationObserver?
+    private var wakeTask: Task<Void, Never>?
     private var replyWaiters: [(count: Int, resume: CheckedContinuation<Void, Never>)] = []
     /// Simulation only: every launched repository request (scope, expected account, generation).
     private(set) var simulatedPollLog: [ScopePollRequest] = []
@@ -177,6 +191,14 @@ final class AppModel: ObservableObject {
         ) { [weak self] in
             Task { @MainActor in
                 if self?.runtime.systemReducedMotion() == true { self?.cancelGesture() }
+            }
+        }
+        // Wake refresh is for normal launches only: snapshot and simulated launches drive every
+        // poll themselves.
+        if pollsPeriodically {
+            wakeObserver = SystemNotificationObserver(center: runtime.wakeCenter,
+                                                      name: NSWorkspace.didWakeNotification) { [weak self] in
+                Task { @MainActor in self?.handleWake() }
             }
         }
         switchSource()
@@ -333,6 +355,34 @@ final class AppModel: ObservableObject {
         refreshRepositoriesOnly()
     }
 
+    /// The Refresh control (and wake). A request during an in-flight repository poll is
+    /// remembered once and runs after that reply lands, instead of being silently dropped.
+    func requestRefresh() {
+        guard repositoryTask != nil else { refresh(); return }
+        refreshServiceStatus()
+        queuedRefreshGeneration = scopeSession.generation
+    }
+
+    private func runQueuedRefresh() {
+        guard let queued = queuedRefreshGeneration, repositoryTask == nil else { return }
+        queuedRefreshGeneration = nil
+        guard queued == scopeSession.generation else { return }
+        refreshRepositoriesOnly()
+    }
+
+    /// One refresh after the Mac wakes, live source only; wakes during the delay collapse into it.
+    func handleWake() {
+        guard settings.dataSource == .githubCLI, !snapshotMode, wakeTask == nil else { return }
+        let delay = runtime.wakeRefreshDelay
+        wakeTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let self else { return }
+            self.wakeTask = nil
+            guard !Task.isCancelled, self.settings.dataSource == .githubCLI else { return }
+            self.requestRefresh()
+        }
+    }
+
     private func resetRepositories() {
         engine.reset()
         baselineKey = nil
@@ -388,6 +438,7 @@ final class AppModel: ObservableObject {
             return
         }
         repositoryTask = nil
+        defer { runQueuedRefresh() }
         let reception = scopeSession.receive(result, for: request)
         if reception.resetRepositories { resetRepositories() }
         switch reception.action {
@@ -590,6 +641,10 @@ final class AppModel: ObservableObject {
     var persistsWindowFrames: Bool { scopeSimulation == nil && !snapshotMode }
     var simulatesScope: Bool { scopeSimulation != nil }
     var repositoryFetchInFlight: Bool { repositoryTask != nil }
+    var refreshQueued: Bool { queuedRefreshGeneration != nil }
+    var observesWake: Bool { wakeObserver?.isObserving == true }
+    /// Awaits a scheduled wake refresh, if any.
+    func wakeRefreshSettled() async { await wakeTask?.value }
     var simulatedHeldReplies: Int { scopeSimulation?.heldCount ?? 0 }
 
     // Explicit handshakes for the simulated scope (no wall-clock polling).
@@ -633,6 +688,7 @@ final class AppModel: ObservableObject {
         guard let suite = simulationDefaultsSuite, suite.hasPrefix("dev.github-pet.scope-simulation.") else { return }
         scopeSession.invalidate()
         repositoryTask?.cancel(); repositoryTask = nil
+        wakeTask?.cancel(); wakeTask = nil
         scopeSimulation?.releaseReplies()
         scopeAccessSimulation?.releaseValidations()
         pollTimer?.invalidate(); tickTimer?.invalidate()
