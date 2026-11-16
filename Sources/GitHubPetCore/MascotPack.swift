@@ -30,6 +30,7 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
 public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case unreadableManifest
     case unsupportedSchema(Int)
+    case wrongLoopFlag(String, expected: Bool)
     case badCanvas
     case badAnchor
     case missingState(String)
@@ -50,6 +51,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         switch self {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
+        case .wrongLoopFlag(let s, let expected):
+            return "state '\(s)' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
         case .badCanvas: return "canvas must be 256×256"
         case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
         case .missingState(let s): return "required state '\(s)' missing"
@@ -249,6 +252,9 @@ public struct MascotPack: Equatable, Sendable {
                 errors.append(.frameCount(state.rawValue))
                 continue
             }
+            // Playback is fixed by the renderer (idle loops, event clips play once), so a manifest
+            // declaring otherwise would not behave as written and is rejected.
+            if spec.loop != (state == .idle) { errors.append(.wrongLoopFlag(state.rawValue, expected: state == .idle)) }
             if spec.frames.count != spec.durationMs.count { errors.append(.durationMismatch(state.rawValue)) }
             for duration in spec.durationMs where !durationRange.contains(duration) {
                 errors.append(.durationOutOfRange(state.rawValue, duration))

@@ -104,6 +104,25 @@ private struct PackFixture {
         #expect(fixture.errors().contains(.missingState("urgent")))
     }
 
+    @Test func loopFlagsMustMatchHowTheRendererPlaysEachState() throws {
+        func errors(setting state: String, loop: Bool) throws -> [MascotPackError] {
+            let fixture = try PackFixture()
+            try fixture.manifest { json in
+                var states = json["states"] as! [String: [String: Any]]
+                states[state]!["loop"] = loop
+                json["states"] = states
+            }
+            return fixture.errors()
+        }
+        #expect(try errors(setting: "idle", loop: false) == [.wrongLoopFlag("idle", expected: true)])
+        #expect(try errors(setting: "attention", loop: true) == [.wrongLoopFlag("attention", expected: false)])
+        #expect(try errors(setting: "urgent", loop: true) == [.wrongLoopFlag("urgent", expected: false)])
+        #expect(try errors(setting: "idle", loop: true).isEmpty)
+        #expect(try errors(setting: "urgent", loop: false).isEmpty)
+        #expect(MascotPackError.wrongLoopFlag("idle", expected: true).description.contains("\"loop\": true"))
+        #expect(MascotPackError.wrongLoopFlag("urgent", expected: false).description.contains("\"loop\": false"))
+    }
+
     @Test func oneShotSequencesMustFitTheirEventClip() throws {
         let fixture = try PackFixture()
         func durations(_ state: String, _ values: [Int]) throws {
