@@ -7,6 +7,8 @@ struct InboxView: View {
     var showsWindowButton = true
     /// Closing a real inbox marks its items seen; offscreen render copies must not.
     var marksSeenOnClose = true
+    /// README renders only: hide the fixture Simulator menu, a developer control.
+    var showsSimulator = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -175,7 +177,7 @@ struct InboxView: View {
             }
             .fixedSize()
             if model.simulatesScope { ScopeSimulationMenu(model: model); ScopeSettingsSimulationMenu(model: model) }
-            if model.usingFixtures && !model.simulatesScope {
+            if showsSimulator && model.usingFixtures && !model.simulatesScope {
                 SimulatorMenu(model: model).fixedSize()
             }
             Spacer()

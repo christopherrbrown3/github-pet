@@ -52,6 +52,7 @@ enum SnapshotRenderer {
         // As if the user pressed "Show details": rows show titles, hover stays generic.
         model.detailsRevealed = true
         await capture("01b-details")
+        report += await readmeRenders(model: model, directory: directory)
         report.append("## lane labels (native text, widest count)")
         for side in [CGFloat(64), 128, 256] {
             report.append(tagFit(model: model, side: side))
@@ -219,6 +220,50 @@ enum SnapshotRenderer {
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
+    /// README images (scripts/readme-screenshots.sh), on Demo fixtures: privacy off so the inbox,
+    /// hover and Settings agree; one invented fixture repository listed as an entitlement
+    /// repository; no Simulator menu; and Startup shown in a neutral Off state through an inert
+    /// stand-in, since snapshot launches never touch the real login item. Everything is restored.
+    static func readmeRenders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## readme"]
+        let saved = model.settings
+        model.settings.privacyMode = false
+        model.settings.entitlementRepositories = ["example/pet-demo"]
+        let startup = LoginItemSettings(backend: InertLoginItemBackend())
+        startup.refresh()
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        func form<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+            Form(content: content).formStyle(.grouped).frame(width: 520)
+        }
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false, showsSimulator: false),
+                                   name: "readme-inbox\(suffix)", directory: directory, appearance: appearance, asWindow: true)
+            report += await render(HoverSummaryView(model: model, compact: model.hoverIsCompact), name: "readme-hover\(suffix)",
+                                   directory: directory, appearance: appearance)
+            report += await render(form {
+                MonitoringScopeSection(model: model, editor: model.scopeEditor)
+                EntitlementRepositoriesSection(model: model)
+            }.frame(height: Self.readmeScopeHeight), name: "readme-settings-scope\(suffix)", directory: directory, appearance: appearance)
+            report += await render(form {
+                MascotSettingsSection(model: model)
+                LoginItemSection(settings: startup)
+                PrivacyMotionSection(model: model)
+                SnoozeQuietHoursSection(model: model)
+            }.frame(height: Self.readmeGeneralHeight), name: "readme-settings-general\(suffix)", directory: directory, appearance: appearance)
+        }
+        model.settings = saved
+        return report
+    }
+    static let readmeScopeHeight: CGFloat = 540
+    static let readmeGeneralHeight: CGFloat = 690
+
+    /// Reports Off and never registers: the README's Startup section, offscreen only.
+    private struct InertLoginItemBackend: LoginItemBackend {
+        var status: LoginItemStatus { .disabled }
+        func register() throws { throw CocoaError(.featureUnsupported) }
+        func unregister() throws { throw CocoaError(.featureUnsupported) }
+    }
+
     static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
         let window: NSWindow

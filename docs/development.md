@@ -17,6 +17,7 @@ swift build                       # debug build of the library and app
 scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
 scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
+scripts/readme-screenshots.sh .build/app/GitHubPet.app   # offscreen Demo renders -> docs/screenshots/beta
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
 ```
 
