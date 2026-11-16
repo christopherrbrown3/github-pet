@@ -9,7 +9,11 @@ import Testing
     static let forbiddenSubstrings = [
         "GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN",
         "show-token", "auth token", "SecItemCopyMatching",
+        // Other ways to read a stored token: gh's config value and hosts file, and the Keychain CLI.
+        "oauth_token", "hosts.yml", "find-generic-password", "find-internet-password",
     ]
+    /// `gh auth` subcommands: after a first element that can't be read statically, they fail closed.
+    static let authSubcommands: Set<String> = ["login", "logout", "refresh", "setup-git", "status", "switch", "token"]
 
     enum Token: Equatable {
         /// A string literal's statically known value: raw delimiters removed, escapes such as `\t`
@@ -17,6 +21,8 @@ import Testing
         /// interpolation or an invalid escape).
         case string(String, escaped: Bool)
         case comma
+        /// `]`: the end of an array literal.
+        case close
         case other
         /// Interpolations nested deeper than `maximumInterpolationDepth`: the scan fails closed.
         case unscannable
@@ -27,17 +33,20 @@ import Testing
     /// Lexes Swift well enough for this guard: line and nested block comments are dropped, and
     /// regular, raw (`#"..."#`, any number of `#`) and multiline (`"""`) string literals each become
     /// one token. An interpolation's code is lexed like any other code (its own strings and
-    /// comments included) and its tokens follow the literal's token, then an `.other` separator.
+    /// comments included) into its own segment; segments follow the top-level tokens, each after
+    /// an `.other` separator, so they never change which elements sit next to each other.
     ///
     /// Not a Swift parser. Known limits, all outside what this guard claims: values built at run
     /// time (concatenation such as `"au" + "th"`, variables, constants defined elsewhere), regex
     /// literals containing quotes, `#if` branches (all branches are scanned), and anything run
-    /// outside Sources. Interpolation deeper than the bound is reported, never skipped.
+    /// outside Sources. Interpolation deeper than the bound is reported, never skipped. A first
+    /// element that can't be read statically is flagged only before a known `gh auth` subcommand
+    /// array element; the status flag check covers the same array literal only.
     static func tokens(in text: String) -> [Token] {
         let b = Array(text.utf8)
-        var i = 0, tokens: [Token] = []
-        lex(b, &i, depth: 0, untilParen: false, into: &tokens)
-        return tokens
+        var i = 0, tokens: [Token] = [], segments: [[Token]] = []
+        lex(b, &i, depth: 0, untilParen: false, into: &tokens, segments: &segments)
+        return segments.reduce(tokens) { $0 + [.other] + $1 }
     }
 
     private static func has(_ b: [UInt8], _ s: String, at index: Int) -> Bool {
@@ -46,7 +55,8 @@ import Testing
     }
 
     /// Lexes from `i`. With `untilParen`, stops after the `)` that balances an interpolation's `(`.
-    private static func lex(_ b: [UInt8], _ i: inout Int, depth: Int, untilParen: Bool, into tokens: inout [Token]) {
+    private static func lex(_ b: [UInt8], _ i: inout Int, depth: Int, untilParen: Bool,
+                            into tokens: inout [Token], segments: inout [[Token]]) {
         var parens = 0
         while i < b.count {
             let c = b[i]
@@ -64,9 +74,11 @@ import Testing
                 while j < b.count, b[j] == 0x23 { hashes += 1; j += 1 }
                 guard j < b.count, b[j] == 0x22 else { tokens.append(.other); i += max(hashes, 1); continue }
                 i = j
-                stringLiteral(b, &i, hashes: hashes, depth: depth, into: &tokens)
+                stringLiteral(b, &i, hashes: hashes, depth: depth, into: &tokens, segments: &segments)
             } else if c == 0x2C {
                 tokens.append(.comma); i += 1
+            } else if c == 0x5D {
+                tokens.append(.close); i += 1
             } else {
                 if untilParen {
                     if c == 0x28 { parens += 1 }
@@ -82,13 +94,14 @@ import Testing
     }
 
     /// `i` is at the opening quote, after `hashes` pound signs.
-    private static func stringLiteral(_ b: [UInt8], _ i: inout Int, hashes: Int, depth: Int, into tokens: inout [Token]) {
+    private static func stringLiteral(_ b: [UInt8], _ i: inout Int, hashes: Int, depth: Int,
+                                      into tokens: inout [Token], segments: inout [[Token]]) {
         let pound = String(repeating: "#", count: hashes)
         let multiline = has(b, "\"\"\"", at: i)
         let close = (multiline ? "\"\"\"" : "\"") + pound
         let escape = "\\" + pound
         var k = i + (multiline ? 3 : 1)
-        var content: [UInt8] = [], escaped = false, nested: [Token] = []
+        var content: [UInt8] = [], escaped = false
         while k < b.count, !has(b, close, at: k) {
             guard has(b, escape, at: k) else { content.append(b[k]); k += 1; continue }
             k += escape.utf8.count
@@ -98,8 +111,9 @@ import Testing
                 escaped = true
                 k += 1
                 guard depth < maximumInterpolationDepth else { tokens.append(.unscannable); i = b.count; return }
-                lex(b, &k, depth: depth + 1, untilParen: true, into: &nested)
-                nested.append(.other)
+                var code: [Token] = []
+                lex(b, &k, depth: depth + 1, untilParen: true, into: &code, segments: &segments)
+                segments.append(code)
             case 0x30: content.append(0); k += 1
             case 0x5C, 0x22, 0x27: content.append(b[k]); k += 1
             case 0x74: content.append(0x09); k += 1
@@ -128,26 +142,57 @@ import Testing
             value = lines.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: "\n")
         }
         tokens.append(.string(value, escaped: escaped))
-        tokens += nested
         i = min(k + close.utf8.count, b.count)
     }
 
-    /// Violations in one source text: forbidden substrings (in the text or a decoded literal), and every `"auth"` element followed by a
-    /// comma and anything but the literal `"status"` (another subcommand, an escaped or interpolated
-    /// literal, or a non-literal), whatever comments or string-literal style sit in between.
+    /// Violations in one source text: forbidden substrings (in the text or a decoded literal); every
+    /// `"auth"` element followed by a comma and anything but the literal `"status"` (another subcommand,
+    /// an escaped or interpolated literal, or a non-literal); a status array that asks for the token
+    /// or holds a non-static element; and a non-static first element before a `gh auth` subcommand.
+    /// Comments and string-literal style between elements make no difference.
     static func violations(in text: String) -> [String] {
         let tokens = tokens(in: text)
         let literals = tokens.compactMap { token -> String? in if case .string(let value, _) = token { return value }; return nil }
         var found = forbiddenSubstrings.filter { name in text.contains(name) || literals.contains { $0.contains(name) } }
         if tokens.contains(.unscannable) { found.append("unscannable interpolation nesting") }
-        for index in tokens.indices where tokens[index] == .string("auth", escaped: false) {
-            guard index + 2 < tokens.count, tokens[index + 1] == .comma else { continue }
+        for index in tokens.indices {
+            guard index + 2 < tokens.count, tokens[index + 1] == .comma,
+                  case .string(let first, let firstEscaped) = tokens[index] else { continue }
+            if firstEscaped {
+                // Could be "auth" at run time (QA LOW-3): fail closed before a gh auth subcommand
+                // that is an array element (followed by `,` or `]`, not a dictionary key's `:`).
+                let next = index + 3 < tokens.count ? tokens[index + 3] : .close
+                if case .string(let sub, escaped: false) = tokens[index + 2], authSubcommands.contains(sub),
+                   next == .comma || next == .close {
+                    found.append("gh <escaped literal> \(sub)")
+                }
+                continue
+            }
+            guard first == "auth" else { continue }
             switch tokens[index + 2] {
-            case .string("status", escaped: false): break
+            case .string("status", escaped: false): found += statusFlagViolations(tokens, after: index + 2)
             case .string(let sub, escaped: false): found.append("gh auth \(sub)")
             case .string: found.append("gh auth <escaped literal>")
             default: found.append("gh auth <non-literal>")
             }
+        }
+        return found
+    }
+
+    /// The rest of a `"auth", "status"` array (QA MED-1): every element must be a static literal and
+    /// none may ask for the token (`--show-token`, or `-t` alone or in a short-flag group).
+    static func statusFlagViolations(_ tokens: [Token], after status: Int) -> [String] {
+        var found: [String] = [], index = status + 1
+        while index + 1 < tokens.count, tokens[index] == .comma {
+            switch tokens[index + 1] {
+            case .close: return found
+            case .string(let flag, escaped: false):
+                let short = flag.hasPrefix("-") && !flag.hasPrefix("--") && flag.contains("t")
+                if short || flag.hasPrefix("--show-token") { found.append("gh auth status \(flag)") }
+            case .string: found.append("gh auth status <escaped literal>")
+            default: found.append("gh auth status <non-literal>"); return found
+            }
+            index += 2
         }
         return found
     }
@@ -179,7 +224,7 @@ import Testing
         #expect(Self.violations(in: #"ProcessInfo.processInfo.environment["GITHUB_TOKEN"]"#) == ["GITHUB_TOKEN"])
         #expect(Self.violations(in: #"run(["auth", "token"])"#) == ["gh auth token"])
         #expect(Self.violations(in: #"run(["auth","refresh"])"#) == ["gh auth refresh"])
-        #expect(Self.violations(in: #"["auth", "status", "--show-token"]"#) == ["show-token"])
+        #expect(Self.violations(in: #"["auth", "status", "--show-token"]"#) == ["show-token", "gh auth status --show-token"])
     }
 
     @Test func commentsAndRawOrMultilineLiteralsCannotHideAuthCommands() {
@@ -233,6 +278,39 @@ import Testing
         #expect(Self.violations(in: #"let a = ["\u{61}uth", "st\u{61}tus"]"#).isEmpty)
         #expect(Self.violations(in: #"run(["au\u{74}h", "\(sub)"])"#) == ["gh auth <escaped literal>"])
         #expect(Self.violations(in: #"run(["auth", "\u{110000}"])"#) == ["gh auth <escaped literal>"])
+    }
+
+    @Test func theStatusPreflightCannotAskForTheToken() {
+        // QA MED-1 on PR #56: -t is gh's short --show-token; pflag also accepts it in a group.
+        #expect(Self.violations(in: #"run(["auth", "status", "-t"])"#) == ["gh auth status -t"])
+        #expect(Self.violations(in: #"run(["auth", "status", "--active", "-at"])"#) == ["gh auth status -at"])
+        #expect(Self.violations(in: #"run(["auth", "status", /* x */ "-\u{74}"])"#) == ["gh auth status -t"])
+        #expect(Self.violations(in: #"run(["auth", "status", "--show-token=true"])"#) == ["show-token", "gh auth status --show-token=true"])
+        #expect(Self.violations(in: #"run(["auth", "status", "\(flag)"])"#) == ["gh auth status <escaped literal>"])
+        #expect(Self.violations(in: #"run(["auth", "status", flag])"#) == ["gh auth status <non-literal>"])
+        // Allowed: the documented preflight, with or without a trailing comma.
+        #expect(Self.violations(in: #"let a = ["auth", "status", "--active", "--hostname", "github.com"]"#).isEmpty)
+        #expect(Self.violations(in: "let a = [\"auth\", \"status\",\n]").isEmpty)
+    }
+
+    @Test func otherWaysToReadAStoredTokenAreForbidden() {
+        // QA LOW-2 on PR #56.
+        #expect(Self.violations(in: #"run(["config", "get", "oauth_token"])"#) == ["oauth_token"])
+        #expect(Self.violations(in: #"run(["find-generic-password", "-s", "gh:github.com"])"#) == ["find-generic-password"])
+        #expect(Self.violations(in: #"run(["find-internet-password", "-s", "github.com"])"#) == ["find-internet-password"])
+        #expect(Self.violations(in: #"read(home + "/.config/gh/hosts.yml")"#) == ["hosts.yml"])
+        #expect(Self.violations(in: #"read("hosts\u{2E}yml")"#) == ["hosts.yml"])
+    }
+
+    @Test func anAuthPositionThatCannotBeReadStaticallyFailsClosed() {
+        // QA LOW-3 on PR #56: an interpolated or invalid-escape first element before a gh auth
+        // subcommand could be "auth" at run time.
+        #expect(Self.violations(in: #"run(["\("auth")", "token"])"#) == ["gh <escaped literal> token"])
+        #expect(Self.violations(in: #"run(["au\qth", "login"])"#) == ["gh <escaped literal> login"])
+        // Not a gh auth subcommand after it: ordinary interpolated text stays allowed.
+        #expect(Self.violations(in: #"let a = ["\(name)", "Assigned"]"#).isEmpty)
+        #expect(Self.violations(in: #"let d = ["id": "O_\(index)", "login": owner]"#).isEmpty, "a dictionary key, not an argument")
+        #expect(Self.violations(in: #"run(["\(verb)", "login", "--web"])"#) == ["gh <escaped literal> login"])
     }
 
     @Test func commentedOutOrQuotedTextIsNotMistakenForCode() {
