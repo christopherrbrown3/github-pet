@@ -1,0 +1,337 @@
+## 00-loading
+state=Loading… badge=? rows=0 demo=true mood=idle
+service=Checking GitHub status… incident-rows=0 unseen-incidents=0
+incident-marker=none hover-top=Demo data (fixtures) compact-hover=Demo data (fixtures) | Loading…
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, count unknown, loading
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, count unknown, loading. Loading…
+mascot pointer: drop-without-drag-events=moved click=opens-inbox
+00-loading-mascot: 128x150 pt
+00-loading-hover: 142x67 pt
+00-loading-mascot-dark: 128x150 pt
+00-loading-hover-dark: 142x67 pt
+00-loading-inbox: 360x226 pt
+00-loading-inbox-dark: 360x226 pt
+
+## 01-baseline
+state=Up to date badge=3 rows=3 demo=true mood=idle
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 3 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 3 items, 1 active GitHub incident
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 3 items, 1 active GitHub incident. 3 items. Demo · Review request. Demo · Review request. Demo · Assigned issue
+01-baseline-mascot: 128x150 pt
+01-baseline-hover: 320x115 pt
+01-baseline-mascot-dark: 128x150 pt
+01-baseline-hover-dark: 320x115 pt
+01-baseline-inbox: 360x362 pt
+01-baseline-inbox-dark: 360x362 pt
+
+## 01b-details
+state=Up to date badge=3 rows=3 demo=true mood=idle
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 3 items
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, 3 items, 1 active GitHub incident
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 3 items, 1 active GitHub incident. 3 items. Demo · Review request. Demo · Review request. Demo · Assigned issue
+01b-details-mascot: 128x150 pt
+01b-details-hover: 320x115 pt
+01b-details-mascot-dark: 128x150 pt
+01b-details-hover-dark: 320x115 pt
+01b-details-inbox: 360x362 pt
+01b-details-inbox-dark: 360x362 pt
+
+## lane labels (native text, widest count)
+tags @64: demo=39 count99=36 panel=96 gap=13 min-gap=6 fits=true lane=18.0 panel-height=82.0 count-slot-x=56 max-count-offset=3.5 demo-to-art=4.8
+lane-64-99plus: 96x82 pt
+lane-64-99plus-dark: 96x82 pt
+tags @128: demo=46 count99=47 panel=128 gap=23 min-gap=8 fits=true lane=22.0 panel-height=150.0 count-slot-x=75 max-count-offset=8.1 demo-to-art=7.5
+lane-128-99plus: 128x150 pt
+lane-128-99plus-dark: 128x150 pt
+tags @256: demo=54 count99=62 panel=256 gap=124 min-gap=12 fits=true lane=17.0 panel-height=273.0 count-slot-x=186 max-count-offset=25.3 demo-to-art=11.8
+lane-256-99plus: 256x273 pt
+lane-256-99plus-dark: 256x273 pt
+## near-touch labels (real MascotView rasterised; art and labels drawn separately)
+near-touch @64 1x: gap-min=1.0 gap-max=3.0 upright=1.0-2.0 leaning=1.2-3.0 (closest idle/0/2, farthest attention/1@5.0°/2) cases=100 empty-renders=0 overlapping-pixels=0 lane=18.0
+near-touch @64 2x: gap-min=1.0 gap-max=2.0 upright=1.0-1.5 leaning=1.6-2.0 (closest idle/0/2, farthest attention/0@-2.5°/2+) cases=100 empty-renders=0 overlapping-pixels=0 lane=18.0
+near-touch @128 1x: gap-min=1.0 gap-max=3.0 upright=1.0-2.0 leaning=2.0-3.0 (closest idle/0/2, farthest attention/1@2.5°/2+) cases=100 empty-renders=0 overlapping-pixels=0 lane=22.0
+near-touch @128 2x: gap-min=1.5 gap-max=2.5 upright=1.5-2.0 leaning=1.5-2.5 (closest idle/1/2, farthest attention/0@-2.5°/2) cases=100 empty-renders=0 overlapping-pixels=0 lane=22.0
+near-touch @256 1x: gap-min=1.0 gap-max=3.5 upright=1.0-1.2 leaning=2.6-3.5 (closest idle/0/2, farthest attention/1@-5.0°/2) cases=100 empty-renders=0 overlapping-pixels=0 lane=17.0
+near-touch @256 2x: gap-min=0.9 gap-max=2.9 upright=0.9-1.3 leaning=1.5-2.9 (closest attention/2/2, farthest attention/1@5.0°/2+) cases=100 empty-renders=0 overlapping-pixels=0 lane=17.0
+## hover placement (idle)
+hover idle-64-left-edge: state=idle side=right window-gap-min=2.2 window-gap-max=2.2 arrow-anchor-to-static-art=4.2 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(0,209 96x82) art=(16,209 64x64) popover=(71,186 346x77) screen=(0,89 1920x961)
+hover idle-64-center: state=idle side=right window-gap-min=2.2 window-gap-max=2.2 arrow-anchor-to-static-art=4.2 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(912,209 96x82) art=(928,209 64x64) popover=(983,186 346x77) screen=(0,89 1920x961)
+hover idle-128-center: state=idle side=right window-gap-min=2.5 window-gap-max=2.5 arrow-anchor-to-static-art=6.0 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(896,209 128x150) art=(896,209 128x128) popover=(1004,180 346x141) screen=(0,89 1920x961)
+hover idle-256-center: state=idle side=right window-gap-min=3.0 window-gap-max=3.0 arrow-anchor-to-static-art=3.0 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(832,209 256x273) art=(832,209 256x256) popover=(1046,243 346x141) screen=(0,89 1920x961)
+hover idle-128-right-edge: state=idle side=left window-gap-min=2.0 window-gap-max=2.0 arrow-anchor-to-static-art=4.5 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(1768,209 128x150) art=(1768,209 128x128) popover=(1446,175 346x141) screen=(0,89 1920x961)
+## 02-injected
+state=Up to date badge=4 rows=4 demo=true mood=attention
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 4 items · 1 new
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, 4 items, 1 active GitHub incident, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 4 items, 1 active GitHub incident, needs attention. 4 items · 1 new. Demo · Entitlement update. Demo · Review request. Demo · Review request
+02-injected-mascot: 128x150 pt
+02-injected-hover: 320x115 pt
+02-injected-mascot-dark: 128x150 pt
+02-injected-hover-dark: 320x115 pt
+02-injected-inbox: 360x414 pt
+02-injected-inbox-dark: 360x414 pt
+
+injected-age-on-app-clock=2s
+## 03-replayed
+state=Up to date badge=4 rows=4 demo=true mood=attention
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 4 items · 1 new
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, 4 items, 1 active GitHub incident, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 4 items, 1 active GitHub incident, needs attention. 4 items · 1 new. Demo · Entitlement update. Demo · Review request. Demo · Review request
+03-replayed-mascot: 128x150 pt
+03-replayed-hover: 320x115 pt
+03-replayed-mascot-dark: 128x150 pt
+03-replayed-hover-dark: 320x115 pt
+03-replayed-inbox: 360x414 pt
+03-replayed-inbox-dark: 360x414 pt
+
+## 04-partial
+state=Partial data badge=3+ rows=3 demo=true mood=idle
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 3+ items · Partial data
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, at least 3 items, some sources unavailable, 1 active GitHub incident
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, at least 3 items, some sources unavailable, 1 active GitHub incident. 3+ items. Partial data. Demo · Entitlement update. Demo · Review request. Demo · Review request
+04-partial-mascot: 128x150 pt
+04-partial-hover: 320x131 pt
+04-partial-mascot-dark: 128x150 pt
+04-partial-hover-dark: 320x131 pt
+04-partial-inbox: 360x362 pt
+04-partial-inbox-dark: 360x362 pt
+
+## 05-stale
+state=Stale badge=? rows=4 demo=true mood=idle
+service=GitHub status is stale incident-rows=1 unseen-incidents=0
+incident-marker=none hover-top=Demo data (fixtures) compact-hover=Demo data (fixtures) | Stale
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, count unknown, data is stale
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, count unknown, data is stale. Stale. Demo · Entitlement update. Demo · Review request. Demo · Review request
+05-stale-mascot: 128x150 pt
+05-stale-hover: 149x115 pt
+05-stale-mascot-dark: 128x150 pt
+05-stale-hover-dark: 149x115 pt
+05-stale-inbox: 360x452 pt
+05-stale-inbox-dark: 360x452 pt
+
+## 06-disconnected
+state=Error: simulated disconnect badge=? rows=4 demo=true mood=idle
+service=GitHub status unavailable: simulated disconnect incident-rows=1 unseen-incidents=0
+incident-marker=none hover-top=Demo data (fixtures) compact-hover=Demo data (fixtures) | Error: simulated disconnect
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, count unknown, Error: simulated disconnect
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, count unknown, Error: simulated disconnect. Error: simulated disconnect
+06-disconnected-mascot: 128x150 pt
+06-disconnected-hover: 153x67 pt
+06-disconnected-mascot-dark: 128x150 pt
+06-disconnected-hover-dark: 153x67 pt
+06-disconnected-inbox: 360x452 pt
+06-disconnected-inbox-dark: 360x452 pt
+
+## 07-reconnected
+state=Up to date badge=4 rows=4 demo=true mood=idle
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 4 items
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, 4 items, 1 active GitHub incident
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 4 items, 1 active GitHub incident. 4 items. Demo · Entitlement update. Demo · Review request. Demo · Review request
+07-reconnected-mascot: 128x150 pt
+07-reconnected-hover: 320x115 pt
+07-reconnected-mascot-dark: 128x150 pt
+07-reconnected-hover-dark: 320x115 pt
+07-reconnected-inbox: 360x414 pt
+07-reconnected-inbox-dark: 360x414 pt
+
+## 08-privacy
+state=Up to date badge=4 rows=4 demo=true mood=idle
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 4 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 4 items, 1 active GitHub incident
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 4 items, 1 active GitHub incident. 4 items. Demo · Entitlement update. Demo · Review request. Demo · Review request
+08-privacy-mascot: 128x150 pt
+08-privacy-hover: 320x115 pt
+08-privacy-mascot-dark: 128x150 pt
+08-privacy-hover-dark: 320x115 pt
+08-privacy-inbox: 360x414 pt
+08-privacy-inbox-dark: 360x414 pt
+
+## 09-attention-static
+state=Up to date badge=5 rows=5 demo=true mood=attention
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 5 items · 1 new
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, 5 items, 1 active GitHub incident, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 5 items, 1 active GitHub incident, needs attention. 5 items · 1 new. Demo · Entitlement update. Demo · Entitlement update. Demo · Review request
+09-attention-static-mascot: 128x150 pt
+09-attention-static-hover: 320x115 pt
+09-attention-static-mascot-dark: 128x150 pt
+09-attention-static-hover-dark: 320x115 pt
+09-attention-static-inbox: 360x466 pt
+09-attention-static-inbox-dark: 360x466 pt
+
+## hover placement (attention, swept lean outline)
+hover attention-64-center: state=attention side=right window-gap-min=1.5 window-gap-max=3.8 arrow-anchor-to-static-art=5.2 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(912,209 96x82) art=(928,209 64x64) popover=(984,186 346x77) screen=(0,89 1920x961)
+hover attention-256-center: state=attention side=right window-gap-min=2.0 window-gap-max=11.0 arrow-anchor-to-static-art=11.0 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(832,209 256x273) art=(832,209 256x256) popover=(1052,252 346x141) screen=(0,89 1920x961)
+## 10-urgent-static
+state=Up to date badge=6 rows=6 demo=true mood=urgent
+service=1 active GitHub incident incident-rows=1 unseen-incidents=0
+incident-marker=minor hover-top=Demo GitHub incident: Demo: Delayed GitHub Actions job starts compact-hover=Demo GitHub incident: Demo: Delayed GitHub Actions job starts | Demo · 6 items · 1 new
+source=fixtures privacy=true details=true inbox-privacy=false
+menu-bar AX: GitHub Pet, Demo data, 6 items, 1 active GitHub incident, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 6 items, 1 active GitHub incident, needs attention. 6 items · 1 new. Demo · Workflow failure. Demo · Entitlement update. Demo · Entitlement update
+10-urgent-static-mascot: 128x150 pt
+10-urgent-static-hover: 320x115 pt
+10-urgent-static-mascot-dark: 128x150 pt
+10-urgent-static-hover-dark: 320x115 pt
+10-urgent-static-inbox: 360x518 pt
+10-urgent-static-inbox-dark: 360x518 pt
+
+## hover placement (urgent, privacy off: names and titles)
+hover urgent-64-left-edge: state=urgent side=right window-gap-min=1.8 window-gap-max=2.8 arrow-anchor-to-static-art=3.1 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(0,209 96x82) art=(16,209 64x64) popover=(70,189 346x77) screen=(0,89 1920x961)
+hover urgent-64-center: state=urgent side=right window-gap-min=1.8 window-gap-max=2.8 arrow-anchor-to-static-art=3.1 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(912,209 96x82) art=(928,209 64x64) popover=(982,189 346x77) screen=(0,89 1920x961)
+hover urgent-128-right-edge: state=urgent side=left window-gap-min=2.5 window-gap-max=4.5 arrow-anchor-to-static-art=4.5 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(1768,209 128x150) art=(1768,209 128x128) popover=(1443,180 346x141) screen=(0,89 1920x961)
+hover urgent-256-center: state=urgent side=right window-gap-min=2.0 window-gap-max=6.0 arrow-anchor-to-static-art=6.0 frames=5 overlap=0 lane=clear on-screen=true meets-target=true popover-source=window-bounds panel=(832,209 256x273) art=(832,209 256x256) popover=(1043,228 346x141) screen=(0,89 1920x961)
+## attention gesture (#29, live model)
+gesture environment: system-reduce-motion=false alerts-allowed=true
+gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false
+gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false
+gesture filmstrips: gesture-64.png gesture-128.png gesture-256.png (13 key times)
+## 10c-incident-major
+state=Up to date badge=10 rows=10 demo=true mood=urgent
+service=2 active GitHub incidents incident-rows=2 unseen-incidents=1
+incident-marker=major hover-top=Demo GitHub incidents: Git operations outage (+1 more) compact-hover=Demo GitHub incidents: Git operations outage (+1 more) | Demo · 10 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 10 items, 2 active GitHub incidents, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 10 items, 2 active GitHub incidents, needs attention. 10 items. Demo · Entitlement update. Demo · Entitlement update. Demo · Entitlement update
+10c-incident-major-mascot: 128x150 pt
+10c-incident-major-hover: 320x115 pt
+10c-incident-major-mascot-dark: 128x150 pt
+10c-incident-major-hover-dark: 320x115 pt
+10c-incident-major-inbox: 360x606 pt
+10c-incident-major-inbox-dark: 360x606 pt
+
+## 10e-incident-critical
+state=Up to date badge=10 rows=10 demo=true mood=urgent
+service=3 active GitHub incidents incident-rows=3 unseen-incidents=2
+incident-marker=critical hover-top=Demo GitHub incidents: Major outage: github.com (+2 more) compact-hover=Demo GitHub incidents: Major outage: github.com (+2 more) | Demo · 10 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 10 items, 3 active GitHub incidents, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 10 items, 3 active GitHub incidents, needs attention. 10 items. Demo · Entitlement update. Demo · Entitlement update. Demo · Entitlement update
+10e-incident-critical-mascot: 128x150 pt
+10e-incident-critical-hover: 320x115 pt
+10e-incident-critical-mascot-dark: 128x150 pt
+10e-incident-critical-hover-dark: 320x115 pt
+10e-incident-critical-inbox: 360x646 pt
+10e-incident-critical-inbox-dark: 360x646 pt
+
+## 10f-maintenance-ignored
+state=Up to date badge=10 rows=10 demo=true mood=urgent
+service=3 active GitHub incidents incident-rows=3 unseen-incidents=2
+incident-marker=critical hover-top=Demo GitHub incidents: Major outage: github.com (+2 more) compact-hover=Demo GitHub incidents: Major outage: github.com (+2 more) | Demo · 10 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 10 items, 3 active GitHub incidents, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 10 items, 3 active GitHub incidents, needs attention. 10 items. Demo · Entitlement update. Demo · Entitlement update. Demo · Entitlement update
+10f-maintenance-ignored-mascot: 128x150 pt
+10f-maintenance-ignored-hover: 320x115 pt
+10f-maintenance-ignored-mascot-dark: 128x150 pt
+10f-maintenance-ignored-hover-dark: 320x115 pt
+10f-maintenance-ignored-inbox: 360x646 pt
+10f-maintenance-ignored-inbox-dark: 360x646 pt
+
+## 10g-status-fetch-fails
+state=Up to date badge=10 rows=10 demo=true mood=urgent
+service=GitHub status unavailable: simulated status fetch failure incident-rows=3 unseen-incidents=2
+incident-marker=none hover-top=Demo data (fixtures) compact-hover=Demo data (fixtures) | 10 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 10 items, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 10 items, needs attention. 10 items. Demo · Entitlement update. Demo · Entitlement update. Demo · Entitlement update
+10g-status-fetch-fails-mascot: 128x150 pt
+10g-status-fetch-fails-hover: 149x115 pt
+10g-status-fetch-fails-mascot-dark: 128x150 pt
+10g-status-fetch-fails-hover-dark: 149x115 pt
+10g-status-fetch-fails-inbox: 360x663 pt
+10g-status-fetch-fails-inbox-dark: 360x663 pt
+
+## incident marker (#37: rasterised marker vs labels and keep-out, every tier and pose)
+incident marker @64 1x: gap=13.0 overlapping-pixels=0 keep-out-pixels=0 gutter-pixels=508 slot=(0.0, 0.0, 96.0, 48.0)
+incident marker @64 2x: gap=12.5 overlapping-pixels=0 keep-out-pixels=0 gutter-pixels=1977 slot=(0.0, 0.0, 96.0, 48.0)
+incident renders @64: 24 PNGs (tiers x static/0.05s/1.2s/2.6s x light/dark)
+incident marker @128 1x: gap=>16 overlapping-pixels=0 keep-out-pixels=0 gutter-pixels=0 slot=(0.0, 0.0, 128.0, 96.0)
+incident marker @128 2x: gap=>16 overlapping-pixels=0 keep-out-pixels=0 gutter-pixels=0 slot=(0.0, 0.0, 128.0, 96.0)
+incident renders @128: 24 PNGs (tiers x static/0.05s/1.2s/2.6s x light/dark)
+incident marker @256 1x: gap=>16 overlapping-pixels=0 keep-out-pixels=0 gutter-pixels=0 slot=(0.0, 0.0, 256.0, 192.0)
+incident marker @256 2x: gap=>16 overlapping-pixels=0 keep-out-pixels=0 gutter-pixels=0 slot=(0.0, 0.0, 256.0, 192.0)
+incident renders @256: 24 PNGs (tiers x static/0.05s/1.2s/2.6s x light/dark)
+## 10d-incidents-resolved
+state=Up to date badge=10 rows=10 demo=true mood=urgent
+service=No active GitHub incidents incident-rows=0 unseen-incidents=0
+incident-marker=none hover-top=Demo data (fixtures) compact-hover=Demo data (fixtures) | 10 items
+source=fixtures privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, Demo data, 10 items, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, Demo data, 10 items, needs attention. 10 items. Demo · Entitlement update. Demo · Entitlement update. Demo · Entitlement update
+10d-incidents-resolved-mascot: 128x150 pt
+10d-incidents-resolved-hover: 149x115 pt
+10d-incidents-resolved-mascot-dark: 128x150 pt
+10d-incidents-resolved-hover-dark: 149x115 pt
+10d-incidents-resolved-inbox: 360x526 pt
+10d-incidents-resolved-inbox-dark: 360x526 pt
+
+## count cap
+count cap: items=110 mascot-badge=99+ inbox-badge=110 ax=GitHub Pet, Demo data, 110 items, needs attention
+count-cap-mascot: 128x150 pt
+## 11-gh-override
+state=GitHub CLI not found badge=? rows=0 demo=false mood=urgent
+service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0 unseen-incidents=0
+incident-marker=none hover-top=GitHub CLI not found compact-hover=GitHub CLI not found | Open the Inbox for details
+source=githubCLI privacy=true details=false inbox-privacy=true
+menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found, needs attention
+mascot AX: element=true role=AXButton press=opens-inbox label=GitHub Pet, count unknown, GitHub CLI not found, needs attention. GitHub CLI not found
+11-gh-override-mascot: 128x150 pt
+11-gh-override-hover: 144x51 pt
+11-gh-override-mascot-dark: 128x150 pt
+11-gh-override-hover-dark: 144x51 pt
+11-gh-override-inbox: 360x240 pt
+11-gh-override-inbox-dark: 360x240 pt
+
+## hover placement failure diagnostics
+hover failure transparent: meets-target=false infinite-gap=true report-completed=true
+hover failure no-candidate: meets-target=false infinite-gap=true report-completed=true
+## badge stays on screen (real mascot window controller)
+badge on screen: panel-inside=true labels-inside=true saved-x-offscreen=51pt panel=(1792,289)
+dropped past edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=false
+dropped past saved edge: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=true
+dropped beyond all displays: panel-inside=true saved-equals-shown=true expected-origin=true saved-before-equals-settled=false
+## hover follows content growth (real mascot window controller)
+hover growth: grew=true before-side=right after-side=left art-clear=true labels-clear=true on-screen=true before=168x93 after=346x141
+## resize (real mascot window controller, as the Settings slider does)
+resize 128->64: setting=64 panel=96x82 expected=96x82 ground-drift=0.0 ok=true
+resize 64->256: setting=256 panel=256x273 expected=256x273 ground-drift=0.0 ok=true
+resize 256->128: setting=128 panel=128x150 expected=128x150 ground-drift=0.0 ok=true
+slider 128->256: setting=256 panel=256x273 expected=256x273 ground-drift=0.0 ok=true
+slider 256->64: setting=64 panel=96x82 expected=96x82 ground-drift=0.0 ok=true
+## settings
+settings: 520x676 pt
+settings-dark: 520x676 pt
+## settings monitoring scope (long draft)
+scope editor: rows=10 apply=false blocked=Account not verified yet. Refresh the Inbox, then try again.
+settings-scope-long: 520x896 pt
+settings-scope-long-dark: 520x896 pt
+## gh setup links
+setup=ghmissing source=githubCLI demo=false badge=? rows=0 unseen=0 clip=none state=GitHub CLI not found links=["Get GitHub CLI"]
+gh-setup-ghmissing-inbox: 360x240 pt
+gh-setup-ghmissing-settings: 520x1000 pt
+gh-setup-ghmissing-inbox-dark: 360x240 pt
+gh-setup-ghmissing-settings-dark: 520x1000 pt
+setup=unauthenticated source=githubCLI demo=false badge=? rows=0 unseen=0 clip=none state=Not signed in to GitHub CLI links=["How to sign in"]
+gh-setup-unauthenticated-inbox: 360x240 pt
+gh-setup-unauthenticated-settings: 520x1000 pt
+gh-setup-unauthenticated-inbox-dark: 360x240 pt
+gh-setup-unauthenticated-settings-dark: 520x1000 pt

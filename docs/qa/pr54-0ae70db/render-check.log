@@ -1,0 +1,123 @@
+GitHubPet: mascot pack mona-pet-v1 loaded from /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr54-0ae70db/artifact/extracted/GitHubPet.app/Contents/Resources/MascotPacks/mona-pet-v1
+GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+GitHubPet: hover summary has no clear placement (labels clear: false, arrow inf pt from the art)
+GitHubPet: snapshots written to /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr54-0ae70db/render
+ok   snapshot CLI never launched gh
+ok   01-baseline inbox height 362 >= 256
+ok   02-injected inbox height 414 >= 308
+ok   saved preferences untouched
+ok   settings window height 676 >= 660
+ok   forces fixtures, default privacy [00-loading]
+ok   details shown for the session [01b-details]
+ok   baseline count [01-baseline]
+ok   injection uses the app clock [02-injected]
+ok   injected adds one row [02-injected]
+ok   replay adds nothing [03-replayed]
+ok   partial is labelled [04-partial]
+ok   stale count unknown [05-stale]
+ok   disconnect count unknown [06-disconnected]
+ok   status loading is not none [00-loading]
+ok   fixture incident, maintenance excluded [01-baseline]
+ok   status stale keeps last known [05-stale]
+ok   status failure is not none [06-disconnected]
+ok   status recovery is silent [07-reconnected]
+ok   new major incident announced [10c-incident-major]
+ok   resolved incidents leave quietly [10d-incidents-resolved]
+ok   mascot is one AX button [01-baseline]
+ok   mascot drag vs click [00-loading]
+ok   11 hover placements measured
+ok   hover idle-64-left-edge: worst window-boundary gap 2.2 pt, arrow anchor 4.2 pt from art, no overlap, tags clear
+ok   hover idle-64-center: worst window-boundary gap 2.2 pt, arrow anchor 4.2 pt from art, no overlap, tags clear
+ok   hover idle-128-center: worst window-boundary gap 2.5 pt, arrow anchor 6.0 pt from art, no overlap, tags clear
+ok   hover idle-256-center: worst window-boundary gap 3.0 pt, arrow anchor 3.0 pt from art, no overlap, tags clear
+ok   hover idle-128-right-edge: worst window-boundary gap 2.0 pt, arrow anchor 4.5 pt from art, no overlap, tags clear
+ok   hover attention-64-center: worst window-boundary gap 3.8 pt, arrow anchor 5.2 pt from art, no overlap, tags clear
+ok   hover attention-256-center: worst window-boundary gap 11.0 pt, arrow anchor 11.0 pt from art, no overlap, tags clear
+ok   hover urgent-64-left-edge: worst window-boundary gap 2.8 pt, arrow anchor 3.1 pt from art, no overlap, tags clear
+ok   hover urgent-64-center: worst window-boundary gap 2.8 pt, arrow anchor 3.1 pt from art, no overlap, tags clear
+ok   hover urgent-128-right-edge: worst window-boundary gap 4.5 pt, arrow anchor 4.5 pt from art, no overlap, tags clear
+ok   hover urgent-256-center: worst window-boundary gap 6.0 pt, arrow anchor 6.0 pt from art, no overlap, tags clear
+ok   labels fit at 64
+ok   labels fit at 128
+ok   labels fit at 256
+ok   one gesture, merges, ends, Reduce Motion still [attention gesture (#29, live model)]
+ok   snooze stops a gesture at once, no replay [attention gesture (#29, live model)]
+ok   gesture-64.png rendered
+ok   gesture-128.png rendered
+ok   gesture-256.png rendered
+ok   near-touch-64-1x.png rendered
+ok   near-touch-128-2x.png rendered
+ok   near-touch-256-2x.png rendered
+ok   near-touch 64 1x: gap 1.0-3.0 pt, no overlap
+ok   near-touch 64 2x: gap 1.0-2.0 pt, no overlap
+ok   near-touch 128 1x: gap 1.0-3.0 pt, no overlap
+ok   near-touch 128 2x: gap 1.5-2.5 pt, no overlap
+ok   near-touch 256 1x: gap 1.0-3.5 pt, no overlap
+ok   near-touch 256 2x: gap 0.9-2.9 pt, no overlap
+ok   hover failure transparent logs without crashing [hover placement failure diagnostics]
+ok   hover failure no-candidate logs without crashing [hover placement failure diagnostics]
+ok   saved half-offscreen position keeps the badge visible [badge stays on screen (real mascot window controller)]
+ok   a drop past the edge saves where it settles [badge stays on screen (real mascot window controller)]
+ok   repeat edge drop repositions despite identical saved settings [badge stays on screen (real mascot window controller)]
+ok   drop beyond every display saves the displayed default [badge stays on screen (real mascot window controller)]
+ok   hover re-placed when content grows [hover follows content growth (real mascot window controller)]
+ok   resize 128->64 follows Settings, ground fixed
+ok   resize 64->256 follows Settings, ground fixed
+ok   resize 256->128 follows Settings, ground fixed
+ok   slider 128->256 follows Settings, ground fixed
+ok   slider 256->64 follows Settings, ground fixed
+ok   menu-bar names Demo [01-baseline]
+ok   partial AX quality [04-partial]
+ok   loading count unknown [00-loading]
+ok   urgent fixture [10-urgent-static]
+ok   attention static pose [09-attention-static]
+ok   mascot panel has tag lane
+ok   mascot caps at 99+, inbox and AX keep the full count [count cap]
+ok   missing gh named [11-gh-override]
+ok   marker for a fresh minor incident [01-baseline]
+ok   AX counts the incident apart [01-baseline]
+ok   badge stays items only [01-baseline]
+ok   no marker when stale [05-stale]
+ok   no marker on failure [06-disconnected]
+ok   no marker while loading [00-loading]
+ok   major tier marker [10c-incident-major]
+ok   AX counts two incidents [10c-incident-major]
+ok   simulator critical announced [10e-incident-critical]
+ok   critical tier marker [10e-incident-critical]
+ok   maintenance is not an incident [10f-maintenance-ignored]
+ok   maintenance keeps the marker [10f-maintenance-ignored]
+ok   service fetch failure is not none [10g-status-fetch-fails]
+ok   no marker on service failure [10g-status-fetch-fails]
+ok   inbox unaffected by service failure [10g-status-fetch-fails]
+ok   marker leaves on resolve [10d-incidents-resolved]
+ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x
+ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)
+ok   incident renders for design (72 PNGs)
+ok   live status offline in snapshots [11-gh-override]
+ok   missing gh is not demo [11-gh-override]
+ok   ghmissing uses silent actual CLI source [gh setup links]
+ok   gh-setup-ghmissing-inbox.png rendered
+ok   gh-setup-ghmissing-inbox-dark.png rendered
+ok   gh-setup-ghmissing-settings.png rendered
+ok   gh-setup-ghmissing-settings-dark.png rendered
+ok   unauthenticated uses silent actual CLI source [gh setup links]
+ok   gh-setup-unauthenticated-inbox.png rendered
+ok   gh-setup-unauthenticated-inbox-dark.png rendered
+ok   gh-setup-unauthenticated-settings.png rendered
+ok   gh-setup-unauthenticated-settings-dark.png rendered
+ok   02-injected-inbox.png rendered
+ok   04-partial-inbox.png rendered
+ok   04-partial-inbox-dark.png rendered
+ok   08-privacy-hover.png rendered
+ok   05-stale-mascot.png rendered
+ok   05-stale-mascot-dark.png rendered
+ok   10-urgent-static-mascot.png rendered
+ok   00-loading-inbox.png rendered
+ok   settings.png rendered
+ok   settings-dark.png rendered
+ok   lane-64-99plus.png rendered
+ok   lane-128-99plus.png rendered
+ok   lane-256-99plus.png rendered
+ok   lane-64-99plus-dark.png rendered
+render-check: all checks passed (/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr54-0ae70db/render)
+exit 0
