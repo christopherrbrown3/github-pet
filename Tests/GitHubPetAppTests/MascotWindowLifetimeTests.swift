@@ -52,11 +52,10 @@ import Testing
         let popover = try #require(controller.summaryPopover)
         #expect(popover.isShown)
         // The dismissal AppKit performs for a semitransient popover: not through hideSummary().
-        // Handshake on didClose (closing may animate) rather than a fixed delay.
-        let closed = NotificationCenter.default.notifications(named: NSPopover.didCloseNotification, object: popover)
+        // Closing may animate, or not under Reduce Motion: wait for the closed state itself.
         popover.close()
-        var iterator = closed.makeAsyncIterator()
-        _ = await iterator.next()
+        let end = ContinuousClock.now.advanced(by: .seconds(10))
+        while popover.isShown && ContinuousClock.now < end { try await Task.sleep(nanoseconds: 10_000_000) }
         #expect(!popover.isShown)
         #expect(controller.summaryPopover == nil, "the controller's state follows the dismissal")
         // A change that alters the summary's content and placement inputs (one new row).
@@ -80,12 +79,13 @@ import Testing
         defer { controller.panelWindow?.orderOut(nil) }
         controller.showSummaryNow()
         let first = try #require(controller.summaryPopover)
-        let closed = NotificationCenter.default.notifications(named: NSPopover.didCloseNotification, object: first)
         controller.showSummaryNow()
         let second = try #require(controller.summaryPopover)
         #expect(first !== second)
-        var iterator = closed.makeAsyncIterator()
-        _ = await iterator.next()
+        // Deliver the replaced popover's close explicitly, after its successor is installed: with
+        // Reduce Motion (or no animation) AppKit closes it at once, while it is still current, so
+        // waiting for the real callback would not exercise the identity guard (Copilot, #54).
+        controller.popoverDidClose(Notification(name: NSPopover.didCloseNotification, object: first))
         #expect(controller.summaryPopover === second && second.isShown)
         second.close()
     }
