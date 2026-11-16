@@ -14,6 +14,9 @@ final class AppModel: ObservableObject {
         var repositoryBudget: () -> CommandBudget = { CommandBudget(timeout: 20) }
         /// --simulate-monitoring-scope only; unit fixtures pass nil to drop the real-time hold bound.
         var scopeSimulationHoldLimit: Duration? = .seconds(20)
+        /// Open at login (#15). nil: the system's SMAppService for a normal launch only, none for
+        /// simulated, snapshot, QA or custom-defaults launches. Tests inject a fake.
+        var loginItemBackend: (any LoginItemBackend)?
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -72,6 +75,8 @@ final class AppModel: ObservableObject {
     /// Settings draft validation/discovery: gh normally, offline only in the simulated launch.
     private let scopeAccess: any ScopeAccessChecking
     let scopeAccessSimulation: ScopeAccessSimulation?
+    /// Settings › Open at login (#15).
+    let loginItem: LoginItemSettings
     /// Settings › Monitoring scope draft controller (PR B).
     lazy var scopeEditor = ScopeEditor(model: self, access: scopeAccess)
     private let scopeDefaults: UserDefaults
@@ -101,6 +106,9 @@ final class AppModel: ObservableObject {
         if options.simulatesMonitoringScope && options.defaultsSuite?.hasPrefix("dev.github-pet.scope-simulation.") != true {
             options.defaultsSuite = "dev.github-pet.scope-simulation.\(UUID().uuidString)"
         }
+        let normalLaunch = !options.simulatesMonitoringScope && options.snapshotDirectory == nil
+            && options.qaScenario == nil && options.defaultsSuite == nil
+        loginItem = LoginItemSettings(backend: runtime.loginItemBackend ?? (normalLaunch ? SystemLoginItemBackend() : nil))
         store = SettingsStore(defaults: options.userDefaults)
         simulationDefaultsSuite = options.simulatesMonitoringScope ? options.defaultsSuite : nil
         scopeDefaults = options.userDefaults
