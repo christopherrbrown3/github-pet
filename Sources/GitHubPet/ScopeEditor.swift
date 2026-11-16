@@ -25,6 +25,10 @@ final class ScopeEditor: ObservableObject {
     @Published private(set) var discovery = Discovery.idle
     /// Validation/discovery replies rejected by the revision/identity/generation guards.
     @Published private(set) var discardedReplies = 0
+    /// Every validation/discovery started vs. returned (applied or discarded): a handshake for
+    /// tests and the QA runner, independent of timing.
+    private(set) var launchedChecks = 0
+    private(set) var receivedChecks = 0
 
     private weak var model: AppModel?
     private let access: any ScopeAccessChecking
@@ -179,6 +183,7 @@ final class ScopeEditor: ObservableObject {
         phase = .validating
         let expectedRevision = revision, access = access, budget = budget()
         report("Checking access to \(Self.counts(scope))…")
+        launchedChecks += 1
         validationTask = Task { [weak self] in
             let outcome = await Self.offPool { access.validate(scope: scope, expectedAccount: account, budget: budget) }
             self?.receiveValidation(outcome, scope: scope, identity: identity, generation: generation, revision: expectedRevision)
@@ -187,6 +192,7 @@ final class ScopeEditor: ObservableObject {
 
     private func receiveValidation(_ outcome: ScopeAccessOutcome, scope: MonitoringScope, identity: ScopeIdentity,
                                    generation: Int, revision expected: Int) {
+        receivedChecks += 1
         // Draft edits, Cancel, account/source changes and Apply elsewhere all invalidate the reply.
         guard validationTask != nil, revision == expected, let model,
               model.monitoringScopeIdentity == identity, model.monitoringScopeGeneration == generation else {
@@ -236,6 +242,7 @@ final class ScopeEditor: ObservableObject {
         let access = access, budget = budget(), expectedIdentity = identity
         discovery = .loading
         report("Loading suggestions…")
+        launchedChecks += 1
         discoveryTask = Task { [weak self] in
             let result = await Self.offPool { access.discover(expectedAccount: account, budget: budget) }
             self?.receiveDiscovery(result, identity: expectedIdentity)
@@ -243,6 +250,7 @@ final class ScopeEditor: ObservableObject {
     }
 
     private func receiveDiscovery(_ result: ScopeDiscoveryResult, identity expected: ScopeIdentity?) {
+        receivedChecks += 1
         // Draft edits don't invalidate hints; account/source changes do (they cancel the task).
         guard discoveryTask != nil, identity == expected else { discardedReplies += 1; return }
         discoveryTask = nil

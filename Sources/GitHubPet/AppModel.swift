@@ -106,7 +106,7 @@ final class AppModel: ObservableObject {
             let simulation = ScopeSimulation(holdLimit: runtime.scopeSimulationHoldLimit)
             scopeSimulation = simulation
             scopedClient = simulation
-            let access = ScopeAccessSimulation { simulation.account }
+            let access = ScopeAccessSimulation(holdLimit: runtime.scopeSimulationHoldLimit) { simulation.account }
             scopeAccessSimulation = access
             scopeAccess = access
         } else {
@@ -542,6 +542,8 @@ final class AppModel: ObservableObject {
         guard let progress = scopeSimulation?.progress else { return true }
         return progress.entered == launchedScopePolls && progress.finished == receivedScopeReplies
             && progress.entered - progress.finished == progress.held
+            // Settings checks: every launched validation/discovery was received or is held.
+            && scopeEditor.launchedChecks - scopeEditor.receivedChecks == (scopeAccessSimulation?.heldCount ?? 0)
     }
     var simulationDomain: String? { simulationDefaultsSuite }
     /// Keys left in the simulated launch's in-memory domain (0 after cleanup).

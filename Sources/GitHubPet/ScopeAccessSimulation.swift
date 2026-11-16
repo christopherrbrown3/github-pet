@@ -18,7 +18,11 @@ final class ScopeAccessSimulation: ScopeAccessChecking, @unchecked Sendable {
     private var held: [DispatchSemaphore] = []
     private var validations = 0, discoveryPages = 0
 
-    init(account: @escaping @Sendable () -> ScopeAccount) { self.account = account }
+    private let holdLimit: Duration?
+    /// `holdLimit` matches ScopeSimulation: nil only for tests with a frozen budget clock.
+    init(holdLimit: Duration? = .seconds(20), account: @escaping @Sendable () -> ScopeAccount) {
+        self.holdLimit = holdLimit; self.account = account
+    }
 
     func setDiscovery(_ mode: DiscoveryMode) { lock.lock(); discoveryMode = mode; lock.unlock() }
     func setValidation(_ mode: ValidationMode) { lock.lock(); validationMode = mode; lock.unlock() }
@@ -52,10 +56,13 @@ final class ScopeAccessSimulation: ScopeAccessChecking, @unchecked Sendable {
         holdNext = false
         lock.unlock()
         if let gate {
-            // Bounded hold: real-time 20 s maximum even with a frozen fixture budget clock.
-            let deadline = ContinuousClock.now.advanced(by: .seconds(20))
+            // Bounded hold (runs on a Dispatch thread, never the cooperative pool).
+            let deadline = holdLimit.map { ContinuousClock.now.advanced(by: $0) }
             while gate.wait(timeout: .now() + 0.05) == .timedOut {
-                if budget.remaining <= 0 || ContinuousClock.now >= deadline { return .failed(.deadline) }
+                if budget.remaining <= 0 || deadline.map({ ContinuousClock.now >= $0 }) == true {
+                    lock.lock(); held.removeAll { $0 === gate }; lock.unlock()
+                    return .failed(.deadline)
+                }
             }
         }
         do { try budget.check() } catch { return .failed(ScopeAccessFailure(error)) }

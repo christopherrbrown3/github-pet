@@ -71,7 +71,8 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         for name in QAScenarioRunner.builtInScenarios.keys {
             #expect(refusal(sim + [name]) == nil, "built-in \(name) must validate")
         }
-        #expect(Set(QAScenarioRunner.builtInScenarios.keys) == ["restore-before-display", "account-a-b-a", "stale-reply-after-apply",
+        // PR A's set; PR B's Settings scenarios are pinned in SettingsScenarioRunnerTests.
+        #expect(Set(QAScenarioRunner.coreScenarios.keys) == ["restore-before-display", "account-a-b-a", "stale-reply-after-apply",
             "corrupt-saved-selected", "partial-recovery-new-once", "incidents-preserved", "privacy-summary", "demo-isolation"])
     }
 

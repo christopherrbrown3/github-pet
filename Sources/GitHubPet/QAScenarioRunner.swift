@@ -223,7 +223,8 @@ enum QAScenarioRunner {
 
     /// Every action calls what the matching user control calls (Simulated scope menu, Inbox
     /// buttons, Settings toggles/picker). PR B adds its Settings draft/discovery actions here.
-    static let actions: [String: Action] = [
+    static let actions: [String: Action] = coreActions.merging(settingsActions) { core, _ in core }
+    static let coreActions: [String: Action] = [
         "capture": Action { _ in },
         "account": Action(keys: ["account"], validate: { _ = try $0.account() }) { c in
             c.model.simulateScopeAccount(try c.account() == ScopeSimulation.accountB)
@@ -299,7 +300,7 @@ enum QAScenarioRunner {
     ]
 
     private static var currentIndex = 0
-    private static func stem(_ c: Context) -> String { String(format: "step-%02d-", currentIndex) + c.step.label }
+    static func stem(_ c: Context) -> String { String(format: "step-%02d-", currentIndex) + c.step.label }
 
     // MARK: Records
 
@@ -369,6 +370,7 @@ enum QAScenarioRunner {
             "service": ["status": model.serviceState.statusText(count: model.serviceIncidents.count),
                         "incidents": model.serviceIncidents.count, "unseenIncidents": model.unseenIncidents.count],
             "monitoringScope": ["identity": identity, "generation": model.monitoringScopeGeneration, "active": scope],
+            "settingsScope": settingsSnapshot(model),
             "scopeSimulation": ["status": model.scopeSimulationStatus, "held": model.simulatedHeldReplies,
                                 "received": model.receivedScopeReplies, "discarded": model.discardedScopeReplies,
                                 "requests": model.simulatedPollLog.map { request -> [String: Any] in
@@ -387,7 +389,8 @@ enum QAScenarioRunner {
 
     // MARK: Built-in PR A scenarios (docs/monitoring-scope-application.md)
 
-    static let builtInScenarios: [String: String] = [
+    static let builtInScenarios: [String: String] = coreScenarios.merging(settingsScenarios) { core, _ in core }
+    static let coreScenarios: [String: String] = [
         "restore-before-display": #"""
         {"name": "restore-before-display", "steps": [
           {"action": "reload", "viewer": "unknown", "label": "reload-unknown-viewer"},

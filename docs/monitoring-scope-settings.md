@@ -36,12 +36,22 @@ Simulated access rule: an owner starting with `demo-` is accessible unless the e
 - **Corrupt saved:** in the Simulated scope menu, choose Corrupt saved A and reload. Settings shows an empty Selected draft and the quality text points to Settings. Apply a valid selection or Everything to repair it.
 - **Demo isolation:** switch the data source to Fixtures. Settings says Demo, Find suggestions is disabled, and Apply never validates. Return to GitHub CLI: A's selection is intact.
 
-When slice A's scenario runner lands, these become named runner scenarios driving the same `ScopeEditor` actions. `ScopeEditor.snapshot` already exposes the visible Settings state as JSON-encodable fields.
+### Scenario runner (no clicks or Screen Recording)
+
+```sh
+GitHubPet --simulate-monitoring-scope --qa-scenario <name|path.json> --qa-output <empty dir>
+```
+
+Built-in PR B scenarios: `settings-draft-apply-cancel`, `settings-invalid-input`, `settings-max-10`, `settings-discovery-capped`, `settings-discovery-partial`, `settings-discovery-denied`, `settings-discovery-identity-mismatch`, `settings-validation-failure-keeps-active`, `settings-min-size-long-lists`. Each `step-NN-*.json` gains a `settingsScope` record with what the section shows: account, active summary, mode, rows with inline errors, input errors, Apply/Cancel/Find suggestions enabled, blocked reason, status announcement, discovery text, suggestions, discarded replies, launched/received checks and the simulated-check status. `open-scope-settings` writes `-settings.png` (the window at minimum size, Form scrolled to the top) and `-scope-section.png` (the section itself, 520 pt).
+
+Step actions (each calls the method the matching control calls): `settings-mode {mode}`, `settings-add {kind, text}`, `settings-edit {kind, index, text}`, `settings-remove {kind, index}`, `settings-apply`, `settings-cancel`, `settings-find-suggestions`, `settings-use-suggestion {kind, index}`, `discovery-mode {mode}`, `validation-mode {mode}`, `hold-validation`, `open-scope-settings`. `deliver-all` also releases held validations. The runner records state and never judges pass/fail.
 
 ## Developer evidence
 
 - `ScopeEditingTests` (core): draft trim/dedupe/limit/injection, access plan/parser/gh exit classification and budget, discovery paging/cursors/caps/partial/identity/malformed/denied/budget.
-- `ScopeEditorTests` (app, real AppModel, simulated launch, frozen budget clock, handshake waits): draft/Cancel, validated Apply/announcement/persistence, unavailable/renamed/network failure, empty/invalid/max, late validation versus account switch/edit/Cancel, corrupt repair, demo isolation, discovery states, and hints discarded on account change. Tests remove their own throwaway preference files.
+- `ScopeEditorTests` (app, real AppModel, simulated launch, frozen budget clock, handshake waits): draft/Cancel, validated Apply/announcement/persistence, unavailable/renamed/network failure, empty/invalid/max, late validation versus account switch/edit/Cancel, corrupt repair, demo isolation, discovery states, and hints discarded on account change. The simulated launch is in-memory (`EphemeralDefaults`), so nothing reaches disk.
 - Render check adds `settings-scope-long(-dark).png`: a 10-entry draft with inline errors at 520 pt.
+- `SettingsScenarioRunnerTests` executes every PR B scenario through the real AppModel and checks its records.
+- **Pre-existing leak fixed:** snapshot renders (`--render-snapshots`, including CI render-check) used the real `dev.github-pet.render-snapshots.<pid>` suite, which left an empty plist in `~/Library/Preferences` after each run. They now use the in-memory `EphemeralDefaults` domain, with a regression test.
 
 Manual VoiceOver, keyboard and pointer checks are functional QA evidence; renders do not establish them.

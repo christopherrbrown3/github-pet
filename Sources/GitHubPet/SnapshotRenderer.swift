@@ -194,7 +194,7 @@ enum SnapshotRenderer {
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
-        UserDefaults.standard.removePersistentDomain(forName: LaunchOptions.snapshotDefaultsSuite)
+        EphemeralDefaults.release(LaunchOptions.snapshotDefaultsSuite)
         FileHandle.standardError.write(Data("GitHubPet: snapshots written to \(directory.path)\n".utf8))
     }
 

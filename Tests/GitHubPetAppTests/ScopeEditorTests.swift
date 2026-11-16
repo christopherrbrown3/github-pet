@@ -19,28 +19,10 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         let clock = FrozenBudgetClock()
         let app = AppModel(options: options, runtime: AppModel.Runtime(now: { Date(timeIntervalSince1970: 1_763_208_000) },
             systemReducedMotion: { true }, schedulesTimers: false,
-            repositoryBudget: { CommandBudget(timeout: 20, now: { clock.now() }) }))
+            repositoryBudget: { CommandBudget(timeout: 20, now: { clock.now() }) }, scopeSimulationHoldLimit: nil))
         app.scopeEditor.budget = { CommandBudget(timeout: 20, now: { clock.now() }) }
         app.scopeEditor.announce = { spoken.messages.append($0) }
-        suites.append(options.defaultsSuite ?? "")
         return app
-    }
-    /// Removes the throwaway simulation domain's file too (cfprefsd keeps an empty plist).
-    private func finish(_ app: AppModel) {
-        app.cleanupScopeSimulation()
-        for suite in suites where suite.hasPrefix("dev.github-pet.scope-simulation.") {
-            UserDefaults().removePersistentDomain(forName: suite)
-            _ = CFPreferencesSynchronize(suite as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
-            let file = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Library/Preferences/\(suite).plist")
-            try? FileManager.default.removeItem(at: file)
-        }
-    }
-    private final class Suites { var names: [String] = [] }
-    private let suiteBox = Suites()
-    private var suites: [String] {
-        get { suiteBox.names }
-        nonmutating set { suiteBox.names = newValue }
     }
     private func wait(_ predicate: () -> Bool) async throws {
         let end = ContinuousClock.now.advanced(by: .seconds(10))
@@ -48,12 +30,12 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         try #require(predicate(), "bounded simulated completion")
     }
     private func settled(_ app: AppModel) async throws {
-        try await wait { !app.repositoryFetchInFlight && !app.scopeEditor.validationInFlight && !app.scopeEditor.discoveryInFlight }
+        try await wait { app.simulatedScopeQuiescent && !app.repositoryFetchInFlight && !app.scopeEditor.validationInFlight && !app.scopeEditor.discoveryInFlight }
     }
     private var simulatedA: ScopeIdentity { .github(ScopeSimulation.accountA) }
 
     @Test func draftEditsNeverTouchTheActiveScopeAndCancelRestoresIt() async throws {
-        let app = model(); defer { finish(app) }; try await settled(app)
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         let editor = app.scopeEditor, generation = app.monitoringScopeGeneration
         #expect(editor.draft.mode == .selected && editor.draft.rows.map(\.text) == ["demo-a"])
         #expect(!editor.hasChanges && !editor.canApply)
@@ -70,7 +52,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func applyValidatesThenCommitsAtomicallyAndAnnounces() async throws {
-        let spoken = Spoken(), app = model(spoken); defer { finish(app) }; try await settled(app)
+        let spoken = Spoken(), app = model(spoken); defer { app.cleanupScopeSimulation() }; try await settled(app)
         app.injectServiceIncident(.major)
         let incidents = app.serviceIncidents, unseenIncidents = app.unseenIncidents
         let editor = app.scopeEditor
@@ -95,7 +77,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func unavailableTargetsAndNetworkFailureLeaveTheActiveSelectionIntact() async throws {
-        let spoken = Spoken(), app = model(spoken); defer { finish(app) }; try await settled(app)
+        let spoken = Spoken(), app = model(spoken); defer { app.cleanupScopeSimulation() }; try await settled(app)
         let editor = app.scopeEditor, generation = app.monitoringScopeGeneration, rows = app.items
         editor.organizationInput = "demo-denied"; editor.addOrganization()
         editor.repositoryInput = "elsewhere/pet"; editor.addRepository()
@@ -122,7 +104,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func emptyOrInvalidSelectedCannotApply() async throws {
-        let app = model(); defer { finish(app) }; try await settled(app)
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         let editor = app.scopeEditor
         editor.remove(editor.draft.rows[0].id)
         #expect(!editor.canApply && editor.applyBlockedReason == "Add at least one organization or repository.")
@@ -140,7 +122,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func lateValidationCannotCommitAfterAccountChangeEditOrCancel() async throws {
-        let spoken = Spoken(), app = model(spoken); defer { finish(app) }; try await settled(app)
+        let spoken = Spoken(), app = model(spoken); defer { app.cleanupScopeSimulation() }; try await settled(app)
         let editor = app.scopeEditor, simulation = try #require(app.scopeAccessSimulation)
         // Account switch while validating: B's reply is a mismatch AND the generation moved.
         simulation.holdNextValidation()
@@ -170,7 +152,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func corruptConfigurationIsRepairedOnlyThroughValidatedApply() async throws {
-        let app = model(); defer { finish(app) }; try await settled(app)
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         app.simulateScopeReload(corrupt: true); try await settled(app)
         let editor = app.scopeEditor
         #expect(app.monitoringScopeConfigurationError && editor.draft.mode == .selected && editor.draft.rows.isEmpty)
@@ -187,7 +169,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func demoScopeUsesItsOwnRecordAndNeverValidatesLive() async throws {
-        let app = model(); defer { finish(app) }; try await settled(app)
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         app.settings.dataSource = .fixtures
         let editor = app.scopeEditor
         #expect(editor.isDemo && editor.draft.mode == .everything && !editor.canLoadSuggestions)
@@ -202,7 +184,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func discoveryStatesAreVisibleAndTypedAddStaysAvailable() async throws {
-        let spoken = Spoken(), app = model(spoken); defer { finish(app) }; try await settled(app)
+        let spoken = Spoken(), app = model(spoken); defer { app.cleanupScopeSimulation() }; try await settled(app)
         let editor = app.scopeEditor
         #expect(app.scopeAccessSimulation?.discoveryPageCount == 0, "opening Settings never discovers")
         editor.loadSuggestions(); try await settled(app)
@@ -229,7 +211,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
 
     @Test func accountChangeDiscardsSuggestionsInFlight() async throws {
-        let app = model(); defer { finish(app) }; try await settled(app)
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         let editor = app.scopeEditor
         editor.loadSuggestions(); try await settled(app)
         #expect(!editor.suggestions.organizations.isEmpty)

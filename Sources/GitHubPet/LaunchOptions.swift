@@ -116,6 +116,11 @@ struct LaunchOptions {
         if simulatesMonitoringScope, let defaultsSuite, defaultsSuite.hasPrefix("dev.github-pet.scope-simulation.") {
             return EphemeralDefaults.named(defaultsSuite)
         }
+        // Snapshot renders also use a throwaway domain; a real suite left an empty
+        // render-snapshots.<pid>.plist behind on every run, even after removePersistentDomain.
+        if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite {
+            return EphemeralDefaults.named(Self.snapshotDefaultsSuite)
+        }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {
             return suite
         }
