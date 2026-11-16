@@ -1,0 +1,14 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61092.129335A2-D254-4033-ABB0-FADA1649BAFE",
+  "quit" : {
+    "discardedTotal" : 2,
+    "domainKeysAfterCleanup" : 0,
+    "heldAtQuit" : 1,
+    "lateRepliesReceivedAfterCleanup" : 1,
+    "plistOnDisk" : false
+  },
+  "scenario" : "demo-isolation",
+  "steps" : 7,
+  "verdict" : "none: QA judges the step records"
+}

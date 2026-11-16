@@ -1,0 +1,145 @@
+{
+  "action" : "settings-add",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61382.1EDABDCB-140F-4AB9-9688-0AA301D2FEE6",
+  "inbox" : {
+    "badge" : "3",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "3 items",
+      "Demo · Review request",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:example\/pet-demo#42",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:example\/pet-tools#7",
+        "isDemo" : true,
+        "repository" : "example\/pet-tools",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "assignedIssue:example\/pet-demo#18",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Assigned issue",
+        "visibleTitle" : "Assigned issue"
+      }
+    ],
+    "scopeHeader" : "Demo scope · Everything",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "settings-add",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Everything",
+    "generation" : 2,
+    "identity" : "demo"
+  },
+  "params" : {
+    "kind" : "organization",
+    "text" : "demo-c"
+  },
+  "pngs" : [
+    "step-18-settings-add-inbox.png",
+    "step-18-settings-add-mascot.png"
+  ],
+  "renders" : [
+    "step-18-settings-add-inbox: 360x361 pt",
+    "step-18-settings-add-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 1,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 1 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "fixtures",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "Demo (offline fixtures)",
+    "activeSummary" : "Demo scope · Everything",
+    "applyEnabled" : true,
+    "cancelEnabled" : true,
+    "checksLaunched" : 3,
+    "checksReceived" : 3,
+    "discardedReplies" : 3,
+    "discovery" : "Suggestions need the GitHub CLI source.",
+    "findSuggestionsEnabled" : false,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-c"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 3 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Organization added to the draft.",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 18
+}

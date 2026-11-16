@@ -1,0 +1,155 @@
+{
+  "action" : "apply",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61092.129335A2-D254-4033-ABB0-FADA1649BAFE",
+  "inbox" : {
+    "badge" : "3",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "3 items",
+      "Demo · Review request",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:example\/pet-demo#42",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:example\/pet-tools#7",
+        "isDemo" : true,
+        "repository" : "example\/pet-tools",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "assignedIssue:example\/pet-demo#18",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Assigned issue",
+        "visibleTitle" : "Assigned issue"
+      }
+    ],
+    "scopeHeader" : "Demo scope · Everything",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "apply-ignored-in-fixtures",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Everything",
+    "generation" : 2,
+    "identity" : "demo"
+  },
+  "params" : {
+    "scope" : "everything"
+  },
+  "pngs" : [
+    "step-04-apply-ignored-in-fixtures-inbox.png",
+    "step-04-apply-ignored-in-fixtures-mascot.png"
+  ],
+  "renders" : [
+    "step-04-apply-ignored-in-fixtures-inbox: 360x361 pt",
+    "step-04-apply-ignored-in-fixtures-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 1,
+    "held" : 0,
+    "received" : 2,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 2 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "fixtures",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "Demo (offline fixtures)",
+    "activeSummary" : "Demo scope · Everything",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 0,
+    "checksReceived" : 0,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions need the GitHub CLI source.",
+    "findSuggestionsEnabled" : false,
+    "mode" : "everything",
+    "organizationInput" : "",
+    "organizations" : [
+
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 4
+}

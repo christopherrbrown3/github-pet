@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.60983.121E80C7-354D-495A-B6D9-C70CD236F1A9",
+  "scenario" : "stale-reply-after-apply",
+  "steps" : 5,
+  "verdict" : "none: QA judges the step records"
+}

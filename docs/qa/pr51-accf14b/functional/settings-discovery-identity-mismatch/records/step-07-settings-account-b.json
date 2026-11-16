@@ -1,0 +1,159 @@
+{
+  "action" : "open-scope-settings",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61288.596CD25E-09FF-49F2-94FE-38C65E580A86",
+  "inbox" : {
+    "badge" : "1",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "1 item",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_B_0",
+        "isDemo" : true,
+        "repository" : "demo-b\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 0 organizations, 1 repository",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "settings-account-b",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 3,
+    "identity" : "github:B"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-07-settings-account-b-inbox.png",
+    "step-07-settings-account-b-mascot.png",
+    "step-07-settings-account-b-scope-section.png",
+    "step-07-settings-account-b-settings.png"
+  ],
+  "renders" : [
+    "step-07-settings-account-b-settings: 520x676 pt",
+    "step-07-settings-account-b-scope-section: 520x609 pt",
+    "step-07-settings-account-b-inbox: 360x257 pt",
+    "step-07-settings-account-b-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 3,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 3,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 3,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      }
+    ],
+    "status" : "Simulated account B · 3 requests · 0 held · complete replies · requested Selected · expected B"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-b_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · Selected · 0 organizations, 1 repository",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 3,
+    "checksReceived" : 3,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+      {
+        "text" : "demo-b\/pet"
+      }
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 4 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Suggestions: organizations 3 found (end of this list); repositories 3 found (end of this list). Suggestions are hints, not every repository you can read; you can type any owner\/name.",
+    "validating" : false
+  },
+  "simulatedAccount" : "B",
+  "step" : 7
+}

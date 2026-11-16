@@ -1,0 +1,103 @@
+{
+  "name": "settings-races-demo-repair",
+  "steps": [
+    {
+      "action": "settings-add",
+      "kind": "organization",
+      "text": "demo-b"
+    },
+    {
+      "action": "hold-validation"
+    },
+    {
+      "action": "settings-apply",
+      "label": "held-edit"
+    },
+    {
+      "action": "settings-edit",
+      "kind": "organization",
+      "index": 2,
+      "text": "demo-c"
+    },
+    {
+      "action": "deliver-all",
+      "label": "late-edit-discarded"
+    },
+    {
+      "action": "settings-cancel"
+    },
+    {
+      "action": "settings-add",
+      "kind": "organization",
+      "text": "demo-b"
+    },
+    {
+      "action": "hold-validation"
+    },
+    {
+      "action": "settings-apply"
+    },
+    {
+      "action": "settings-cancel"
+    },
+    {
+      "action": "deliver-all",
+      "label": "late-cancel-discarded"
+    },
+    {
+      "action": "settings-add",
+      "kind": "organization",
+      "text": "demo-b"
+    },
+    {
+      "action": "hold-validation"
+    },
+    {
+      "action": "settings-apply"
+    },
+    {
+      "action": "source",
+      "source": "fixtures"
+    },
+    {
+      "action": "deliver-all",
+      "label": "late-source-discarded"
+    },
+    {
+      "action": "settings-mode",
+      "mode": "selected"
+    },
+    {
+      "action": "settings-add",
+      "kind": "organization",
+      "text": "demo-c"
+    },
+    {
+      "action": "settings-apply",
+      "label": "demo-apply-offline"
+    },
+    {
+      "action": "source",
+      "source": "gh",
+      "label": "return-a-unchanged"
+    },
+    {
+      "action": "corrupt-reload"
+    },
+    {
+      "action": "settings-add",
+      "kind": "organization",
+      "text": "demo-b"
+    },
+    {
+      "action": "settings-apply",
+      "label": "corrupt-repaired-by-editor"
+    },
+    {
+      "action": "open-scope-settings"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}

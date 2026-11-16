@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61309.6EB0E0BB-D37B-4103-9131-2C77A5C402AD",
+  "scenario" : "settings-validation-failure-keeps-active",
+  "steps" : 16,
+  "verdict" : "none: QA judges the step records"
+}

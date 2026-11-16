@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61129.21538E5C-0D22-42E1-AEB4-8E7BD3A5BFE8",
+  "scenario" : "settings-invalid-input",
+  "steps" : 11,
+  "verdict" : "none: QA judges the step records"
+}

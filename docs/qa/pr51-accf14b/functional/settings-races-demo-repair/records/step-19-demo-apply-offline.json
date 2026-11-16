@@ -1,0 +1,119 @@
+{
+  "action" : "settings-apply",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61382.1EDABDCB-140F-4AB9-9688-0AA301D2FEE6",
+  "inbox" : {
+    "badge" : null,
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "All clear"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+
+    ],
+    "scopeHeader" : "Demo scope · Selected · 1 organization, 0 repositories",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "All clear"
+  },
+  "label" : "demo-apply-offline",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 3,
+    "identity" : "demo"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-19-demo-apply-offline-inbox.png",
+    "step-19-demo-apply-offline-mascot.png"
+  ],
+  "renders" : [
+    "step-19-demo-apply-offline-inbox: 360x265 pt",
+    "step-19-demo-apply-offline-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 1,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 1 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "fixtures",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "Demo (offline fixtures)",
+    "activeSummary" : "Demo scope · Selected · 1 organization, 0 repositories",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 3,
+    "checksReceived" : 3,
+    "discardedReplies" : 3,
+    "discovery" : "Suggestions need the GitHub CLI source.",
+    "findSuggestionsEnabled" : false,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-c"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 3 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Monitoring scope applied: Selected · 1 organization, 0 repositories (Demo).",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 19
+}

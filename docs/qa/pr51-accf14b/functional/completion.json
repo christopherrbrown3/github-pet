@@ -1,0 +1,116 @@
+{
+  "results": [
+    {
+      "scenario": "restore-before-display",
+      "exit": 0,
+      "steps": 3,
+      "completed": true
+    },
+    {
+      "scenario": "account-a-b-a",
+      "exit": 0,
+      "steps": 3,
+      "completed": true
+    },
+    {
+      "scenario": "stale-reply-after-apply",
+      "exit": 0,
+      "steps": 6,
+      "completed": true
+    },
+    {
+      "scenario": "corrupt-saved-selected",
+      "exit": 0,
+      "steps": 7,
+      "completed": true
+    },
+    {
+      "scenario": "partial-recovery-new-once",
+      "exit": 0,
+      "steps": 6,
+      "completed": true
+    },
+    {
+      "scenario": "incidents-preserved",
+      "exit": 0,
+      "steps": 6,
+      "completed": true
+    },
+    {
+      "scenario": "privacy-summary",
+      "exit": 0,
+      "steps": 8,
+      "completed": true
+    },
+    {
+      "scenario": "demo-isolation",
+      "exit": 0,
+      "steps": 7,
+      "completed": true
+    },
+    {
+      "scenario": "settings-draft-apply-cancel",
+      "exit": 0,
+      "steps": 10,
+      "completed": true
+    },
+    {
+      "scenario": "settings-invalid-input",
+      "exit": 0,
+      "steps": 12,
+      "completed": true
+    },
+    {
+      "scenario": "settings-max-10",
+      "exit": 0,
+      "steps": 13,
+      "completed": true
+    },
+    {
+      "scenario": "settings-discovery-capped",
+      "exit": 0,
+      "steps": 6,
+      "completed": true
+    },
+    {
+      "scenario": "settings-discovery-partial",
+      "exit": 0,
+      "steps": 5,
+      "completed": true
+    },
+    {
+      "scenario": "settings-discovery-denied",
+      "exit": 0,
+      "steps": 5,
+      "completed": true
+    },
+    {
+      "scenario": "settings-discovery-identity-mismatch",
+      "exit": 0,
+      "steps": 8,
+      "completed": true
+    },
+    {
+      "scenario": "settings-validation-failure-keeps-active",
+      "exit": 0,
+      "steps": 17,
+      "completed": true
+    },
+    {
+      "scenario": "settings-min-size-long-lists",
+      "exit": 0,
+      "steps": 12,
+      "completed": true
+    },
+    {
+      "scenario": "settings-races-demo-repair",
+      "exit": 0,
+      "steps": 25,
+      "completed": true
+    }
+  ],
+  "preferencesEqual": true,
+  "ghInvoked": false,
+  "saved31897Present": true,
+  "productVerdict": "none: independent judgement required"
+}

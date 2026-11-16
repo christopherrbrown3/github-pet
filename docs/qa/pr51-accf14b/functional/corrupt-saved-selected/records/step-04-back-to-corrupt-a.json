@@ -1,0 +1,184 @@
+{
+  "action" : "account",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61023.5454C9BD-C020-499B-B2DA-5500E467A59F",
+  "inbox" : {
+    "badge" : "?",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened. Correct it in Settings › Monitoring scope"
+    ],
+    "lastSuccess" : null,
+    "rows" : [
+
+    ],
+    "scopeHeader" : "Monitoring scope · configuration error",
+    "scopeQuality" : "Saved selection needs correction in Settings › Monitoring scope; monitoring has not broadened.",
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened. Correct it in Settings › Monitoring scope"
+  },
+  "label" : "back-to-corrupt-a",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : null,
+    "generation" : 6,
+    "identity" : "github:A"
+  },
+  "params" : {
+    "account" : "A"
+  },
+  "pngs" : [
+    "step-04-back-to-corrupt-a-inbox.png",
+    "step-04-back-to-corrupt-a-mascot.png"
+  ],
+  "renders" : [
+    "step-04-back-to-corrupt-a-inbox: 360x278 pt",
+    "step-04-back-to-corrupt-a-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 6,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : true,
+        "scope" : "IdentityOnly",
+        "searchAliases" : [
+
+        ],
+        "serial" : 2,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : true,
+        "scope" : "IdentityOnly",
+        "searchAliases" : [
+
+        ],
+        "serial" : 3,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 3,
+        "identityOnly" : true,
+        "scope" : "IdentityOnly",
+        "searchAliases" : [
+
+        ],
+        "serial" : 4,
+        "targets" : [
+
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 4,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 5,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 5,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 6,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 6 requests · 0 held · complete replies · requested Selected · expected B"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · configuration error",
+    "applyBlockedReason" : "Add at least one organization or repository.",
+    "applyEnabled" : false,
+    "cancelEnabled" : true,
+    "checksLaunched" : 0,
+    "checksReceived" : 0,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 4
+}

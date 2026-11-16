@@ -1,0 +1,5 @@
+{
+  "returncode": 1,
+  "stdout": "",
+  "stderr": "execution error: Error: TypeError: app.terminate is not a function. (In 'app.terminate()', 'app.terminate' is true) (-2700)\n"
+}

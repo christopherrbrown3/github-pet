@@ -1,0 +1,228 @@
+{
+  "action" : "settings-find-suggestions",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61261.EBAB9A4A-2D42-47EB-891C-81BCEAC52E80",
+  "inbox" : {
+    "badge" : "1",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "1 item",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_0",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "find-partial",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 1,
+    "identity" : "github:A"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-02-find-partial-inbox.png",
+    "step-02-find-partial-mascot.png"
+  ],
+  "renders" : [
+    "step-02-find-partial-inbox: 360x257 pt",
+    "step-02-find-partial-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 1,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 1 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 1,
+    "checksReceived" : 1,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions: organizations 100 found (incomplete); repositories 3 found (end of this list). GitHub reported an error. Suggestions are hints, not every repository you can read; you can type any owner\/name.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-a"
+      }
+    ],
+    "organizationSuggestions" : [
+      "demo-org-000",
+      "demo-org-001",
+      "demo-org-002",
+      "demo-org-003",
+      "demo-org-004",
+      "demo-org-005",
+      "demo-org-006",
+      "demo-org-007",
+      "demo-org-008",
+      "demo-org-009",
+      "demo-org-010",
+      "demo-org-011",
+      "demo-org-012",
+      "demo-org-013",
+      "demo-org-014",
+      "demo-org-015",
+      "demo-org-016",
+      "demo-org-017",
+      "demo-org-018",
+      "demo-org-019",
+      "demo-org-020",
+      "demo-org-021",
+      "demo-org-022",
+      "demo-org-023",
+      "demo-org-024",
+      "demo-org-025",
+      "demo-org-026",
+      "demo-org-027",
+      "demo-org-028",
+      "demo-org-029",
+      "demo-org-030",
+      "demo-org-031",
+      "demo-org-032",
+      "demo-org-033",
+      "demo-org-034",
+      "demo-org-035",
+      "demo-org-036",
+      "demo-org-037",
+      "demo-org-038",
+      "demo-org-039",
+      "demo-org-040",
+      "demo-org-041",
+      "demo-org-042",
+      "demo-org-043",
+      "demo-org-044",
+      "demo-org-045",
+      "demo-org-046",
+      "demo-org-047",
+      "demo-org-048",
+      "demo-org-049",
+      "demo-org-050",
+      "demo-org-051",
+      "demo-org-052",
+      "demo-org-053",
+      "demo-org-054",
+      "demo-org-055",
+      "demo-org-056",
+      "demo-org-057",
+      "demo-org-058",
+      "demo-org-059",
+      "demo-org-060",
+      "demo-org-061",
+      "demo-org-062",
+      "demo-org-063",
+      "demo-org-064",
+      "demo-org-065",
+      "demo-org-066",
+      "demo-org-067",
+      "demo-org-068",
+      "demo-org-069",
+      "demo-org-070",
+      "demo-org-071",
+      "demo-org-072",
+      "demo-org-073",
+      "demo-org-074",
+      "demo-org-075",
+      "demo-org-076",
+      "demo-org-077",
+      "demo-org-078",
+      "demo-org-079",
+      "demo-org-080",
+      "demo-org-081",
+      "demo-org-082",
+      "demo-org-083",
+      "demo-org-084",
+      "demo-org-085",
+      "demo-org-086",
+      "demo-org-087",
+      "demo-org-088",
+      "demo-org-089",
+      "demo-org-090",
+      "demo-org-091",
+      "demo-org-092",
+      "demo-org-093",
+      "demo-org-094",
+      "demo-org-095",
+      "demo-org-096",
+      "demo-org-097",
+      "demo-org-098",
+      "demo-org-099"
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+      "demo-a\/pet",
+      "demo-b\/pet",
+      "demo-c\/tools"
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 2 discovery pages · 0 held · discovery partial · validation normal",
+    "status" : "Suggestions: organizations 100 found (incomplete); repositories 3 found (end of this list). GitHub reported an error. Suggestions are hints, not every repository you can read; you can type any owner\/name.",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 2
+}

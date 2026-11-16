@@ -1,0 +1,2 @@
+31897     1 Sat Nov 14 12:44:32 2026     /Users/chris/github-pet-builds/b0127f0/GitHubPet.app/Contents/MacOS/GitHubPet
+63967     1 Sun Nov 15 23:55:29 2026     /Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-accf14b/artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet

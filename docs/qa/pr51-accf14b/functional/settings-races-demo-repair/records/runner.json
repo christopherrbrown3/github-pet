@@ -1,0 +1,14 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61382.1EDABDCB-140F-4AB9-9688-0AA301D2FEE6",
+  "quit" : {
+    "discardedTotal" : 0,
+    "domainKeysAfterCleanup" : 0,
+    "heldAtQuit" : 0,
+    "lateRepliesReceivedAfterCleanup" : 0,
+    "plistOnDisk" : false
+  },
+  "scenario" : "settings-races-demo-repair",
+  "steps" : 25,
+  "verdict" : "none: QA judges the step records"
+}

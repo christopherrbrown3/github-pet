@@ -1,0 +1,194 @@
+{
+  "action" : "settings-apply",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61166.1769C6F8-800C-44FF-A1B2-76827DB055B1",
+  "inbox" : {
+    "badge" : "1",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "1 item",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_0",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 5 organizations, 5 repositories",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "apply-ten",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 2,
+    "identity" : "github:A"
+  },
+  "params" : {
+
+  },
+  "pngs" : [
+    "step-11-apply-ten-inbox.png",
+    "step-11-apply-ten-mascot.png"
+  ],
+  "renders" : [
+    "step-11-apply-ten-inbox: 360x257 pt",
+    "step-11-apply-ten-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 2,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "reviews1",
+          "assigned1",
+          "reviews2",
+          "assigned2",
+          "reviews3",
+          "assigned3",
+          "reviews4",
+          "assigned4",
+          "reviews5",
+          "assigned5",
+          "reviews6",
+          "assigned6",
+          "reviews7",
+          "assigned7",
+          "reviews8",
+          "assigned8",
+          "reviews9",
+          "assigned9"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a",
+          "demo-b",
+          "demo-c",
+          "demo-d",
+          "demo-e",
+          "demo-x\/five",
+          "demo-x\/four",
+          "demo-x\/one",
+          "demo-x\/three",
+          "demo-x\/two"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 2 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · Selected · 5 organizations, 5 repositories",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 1,
+    "checksReceived" : 1,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-a"
+      },
+      {
+        "text" : "demo-b"
+      },
+      {
+        "text" : "demo-c"
+      },
+      {
+        "text" : "demo-d"
+      },
+      {
+        "text" : "demo-e"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+      {
+        "text" : "demo-x\/five"
+      },
+      {
+        "text" : "demo-x\/four"
+      },
+      {
+        "text" : "demo-x\/one"
+      },
+      {
+        "text" : "demo-x\/three"
+      },
+      {
+        "text" : "demo-x\/two"
+      }
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 1 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Monitoring scope applied: Selected · 5 organizations, 5 repositories.",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 11
+}

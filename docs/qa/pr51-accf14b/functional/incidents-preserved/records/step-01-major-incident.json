@@ -1,0 +1,134 @@
+{
+  "action" : "inject-incident",
+  "attention" : {
+    "activeClip" : {
+      "endsAt" : "2026-11-15T12:00:02Z",
+      "origin" : "serviceIncident",
+      "startedAt" : "2026-11-15T12:00:00Z",
+      "state" : "urgent"
+    },
+    "incidentMarker" : "major",
+    "markerBurst" : {
+      "fromTier" : "minor",
+      "start" : "2026-11-15T12:00:00Z"
+    },
+    "mascotState" : "urgent",
+    "showsAlertIcon" : true,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61053.808F59D6-762A-43A3-84F7-EBE7343870DB",
+  "inbox" : {
+    "badge" : "1",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incidents: Git operations outage (+1 more)",
+      "Demo data (simulated scope)",
+      "1 item",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_0",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "major-incident",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 1,
+    "identity" : "github:A"
+  },
+  "params" : {
+    "tier" : "major"
+  },
+  "pngs" : [
+    "step-01-major-incident-inbox.png",
+    "step-01-major-incident-mascot.png"
+  ],
+  "renders" : [
+    "step-01-major-incident-inbox: 360x297 pt",
+    "step-01-major-incident-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 1,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 1 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 2,
+    "status" : "2 active GitHub incidents",
+    "unseenIncidents" : 1
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 0,
+    "checksReceived" : 0,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-a"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 1
+}

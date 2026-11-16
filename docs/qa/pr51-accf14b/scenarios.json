@@ -1,0 +1,20 @@
+[
+  "restore-before-display",
+  "account-a-b-a",
+  "stale-reply-after-apply",
+  "corrupt-saved-selected",
+  "partial-recovery-new-once",
+  "incidents-preserved",
+  "privacy-summary",
+  "demo-isolation",
+  "settings-draft-apply-cancel",
+  "settings-invalid-input",
+  "settings-max-10",
+  "settings-discovery-capped",
+  "settings-discovery-partial",
+  "settings-discovery-denied",
+  "settings-discovery-identity-mismatch",
+  "settings-validation-failure-keeps-active",
+  "settings-min-size-long-lists",
+  "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-accf14b/settings-races-demo-repair.json"
+]

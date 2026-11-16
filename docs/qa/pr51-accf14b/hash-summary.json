@@ -1,0 +1,101 @@
+{
+  "runnerBefore": {
+    "realDomain": {
+      "present": true,
+      "hash": "d78a56120f4010847ce3f71522b450701dc3619b6ea1075aed18fd835bd48c1a",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "globalDomain": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "realPlistSHA256": "d9c54769247bb640cc37ca8fa472b51ca5508c80b20cd153e448c07e9a0b48a1"
+  },
+  "runnerAfter": {
+    "realDomain": {
+      "present": true,
+      "hash": "d78a56120f4010847ce3f71522b450701dc3619b6ea1075aed18fd835bd48c1a",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "globalDomain": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "realPlistSHA256": "d9c54769247bb640cc37ca8fa472b51ca5508c80b20cd153e448c07e9a0b48a1"
+  },
+  "afterUnintended": {
+    "realDomain": {
+      "present": true,
+      "hash": "33df4275eba6706f6e552c252e81ded5acfcec3221d6a96398b832df76effab4",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "globalDomain": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "realPlistSHA256": "693b43474fded9458e3dd18af351be796f15e4245a0fd42d09c8f7935c834f80"
+  },
+  "beforeExplicitSimulation": {
+    "realDomain": {
+      "present": true,
+      "hash": "33df4275eba6706f6e552c252e81ded5acfcec3221d6a96398b832df76effab4",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "globalDomain": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "realPlistSHA256": "693b43474fded9458e3dd18af351be796f15e4245a0fd42d09c8f7935c834f80"
+  },
+  "stopCurrent": {
+    "realDomain": {
+      "present": true,
+      "hash": "33df4275eba6706f6e552c252e81ded5acfcec3221d6a96398b832df76effab4",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "globalDomain": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "realPlistSHA256": "693b43474fded9458e3dd18af351be796f15e4245a0fd42d09c8f7935c834f80"
+  },
+  "authorizedCleanup": {
+    "pid63967Present": false,
+    "process": "",
+    "saved31897": "31897 Sat Nov 14 12:44:32 2026     /Users/chris/github-pet-builds/b0127f0/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "matchesBeforeSimulation": true,
+    "matchesPrequit": true,
+    "ghTripwireInvoked": false,
+    "note": "JXA app.terminate property evaluation returned true and requested termination; trailing () produced TypeError. No retry or other quit issued."
+  },
+  "afterAuthorizedQuit": {
+    "realDomain": {
+      "present": true,
+      "hash": "33df4275eba6706f6e552c252e81ded5acfcec3221d6a96398b832df76effab4",
+      "framesHash": "2b6cc5829186669ba69a121d60a46f4116e746ee6655b117b325c37856fd3448",
+      "framesCount": 2
+    },
+    "globalDomain": {
+      "present": true,
+      "hash": "793228b525462c6e0d6942b133f8cd1f003d239fb0ba82b77e9042ee8b093269",
+      "framesHash": "9261ecceda608ef174256e5fdc774c1e6e3dcf533409c1bc393d490d01c713f1",
+      "framesCount": 0
+    },
+    "realPlistSHA256": "693b43474fded9458e3dd18af351be796f15e4245a0fd42d09c8f7935c834f80"
+  }
+}

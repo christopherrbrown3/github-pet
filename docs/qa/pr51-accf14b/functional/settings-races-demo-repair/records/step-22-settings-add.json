@@ -1,0 +1,147 @@
+{
+  "action" : "settings-add",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61382.1EDABDCB-140F-4AB9-9688-0AA301D2FEE6",
+  "inbox" : {
+    "badge" : "?",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened. Correct it in Settings › Monitoring scope"
+    ],
+    "lastSuccess" : null,
+    "rows" : [
+
+    ],
+    "scopeHeader" : "Monitoring scope · configuration error",
+    "scopeQuality" : "Saved selection needs correction in Settings › Monitoring scope; monitoring has not broadened.",
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Error: Saved monitoring scope is invalid; monitoring is paused and has not broadened. Correct it in Settings › Monitoring scope"
+  },
+  "label" : "settings-add",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : null,
+    "generation" : 5,
+    "identity" : "github:A"
+  },
+  "params" : {
+    "kind" : "organization",
+    "text" : "demo-b"
+  },
+  "pngs" : [
+    "step-22-settings-add-inbox.png",
+    "step-22-settings-add-mascot.png"
+  ],
+  "renders" : [
+    "step-22-settings-add-inbox: 360x278 pt",
+    "step-22-settings-add-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 3,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 4,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 5,
+        "identityOnly" : true,
+        "scope" : "IdentityOnly",
+        "searchAliases" : [
+
+        ],
+        "serial" : 3,
+        "targets" : [
+
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 3 requests · 0 held · complete replies · requested identity only · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · configuration error",
+    "applyEnabled" : true,
+    "cancelEnabled" : true,
+    "checksLaunched" : 3,
+    "checksReceived" : 3,
+    "discardedReplies" : 3,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-b"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 3 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Organization added to the draft.",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 22
+}

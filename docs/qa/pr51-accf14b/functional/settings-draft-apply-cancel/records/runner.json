@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61110.1DB3B04E-BEAE-4D88-AA47-8C2B6EFF670D",
+  "scenario" : "settings-draft-apply-cancel",
+  "steps" : 9,
+  "verdict" : "none: QA judges the step records"
+}

@@ -1,0 +1,7 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.61037.49DADE9F-D0EF-4830-AB9D-72A69DFAFDBB",
+  "scenario" : "partial-recovery-new-once",
+  "steps" : 5,
+  "verdict" : "none: QA judges the step records"
+}
