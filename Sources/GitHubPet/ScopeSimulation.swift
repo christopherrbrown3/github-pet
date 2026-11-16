@@ -12,6 +12,10 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     private var currentAccount = accountA
     private var sequence: [ScopeAccount: Int] = [:]
     private var partial = false
+    /// #35 fixtures, per review search: `hidden` adds 3 matches the viewer can't see, `hiddenOnly`
+    /// returns no nodes with 3 hidden matches, `capped` reports more matches plus hasNextPage.
+    enum Visibility: String, CaseIterable { case complete, hidden, hiddenOnly = "hidden-only", capped }
+    private var visibility = Visibility.complete
     private var holdNext = 0
     private var entered = 0, finished = 0
     private var held: [DispatchSemaphore] = []
@@ -33,6 +37,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     func switchAccount(_ account: ScopeAccount) { lock.lock(); currentAccount = account; lock.unlock() }
     func inject() { lock.lock(); sequence[currentAccount] = min(31, sequence[currentAccount, default: 0] + 1); lock.unlock() }
     func setPartial(_ on: Bool) { lock.lock(); partial = on; lock.unlock() }
+    func setVisibility(_ mode: Visibility) { lock.lock(); visibility = mode; lock.unlock() }
+    var currentVisibility: Visibility { lock.lock(); defer { lock.unlock() }; return visibility }
     func holdNextReply(_ count: Int = 1) { lock.lock(); holdNext += max(0, count); lock.unlock() }
     func releaseReplies() {
         lock.lock(); let replies = held; held = []; lock.unlock()
@@ -93,7 +99,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
         catch { return .failure(.cancelled) }
         lock.lock()
-        let account = currentAccount, count = sequence[account, default: 0], partial = self.partial
+        let account = currentAccount, count = sequence[account, default: 0], partial = self.partial, visibility = self.visibility
         let gate = holdNext > 0 ? DispatchSemaphore(value: 0) : nil
         var ready: [CheckedContinuation<Void, Never>] = []
         if let gate {
@@ -130,7 +136,16 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                                   "updatedAt": "2026-11-15T12:00:00Z", "repository": ["nameWithOwner": repo]])
                 }
             }
-            body[search.alias] = ["issueCount": nodes.count, "nodes": nodes, "pageInfo": ["hasNextPage": false]]
+            var total = nodes.count, more = false
+            if search.kind == .reviewRequest {
+                switch visibility {
+                case .complete: break
+                case .hidden: total += 3
+                case .hiddenOnly: nodes = []; total = 3
+                case .capped: total += 15; more = true
+                }
+            }
+            body[search.alias] = ["issueCount": total, "nodes": nodes, "pageInfo": ["hasNextPage": more]]
         }
         var envelope: [String: Any] = ["data": body]
         if partial { envelope["errors"] = [] }
@@ -156,6 +171,6 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         let parsed = ScopedResponseParser.parse(bytes, plan: plan)
         return ScopedPollResult(viewer: parsed.viewer, items: parsed.items.map {
             var item = $0; item.isDemo = true; return item
-        }, issues: parsed.issues, successfulSources: parsed.successfulSources)
+        }, issues: parsed.issues, successfulSources: parsed.successfulSources, hidden: parsed.hidden)
     }
 }

@@ -256,6 +256,27 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         app.refresh(); try await settled(app)
         #expect(app.items.count == 3 && app.unseenCount == 1)
     }
+    /// #35 through the real app path (simulated gh replies -> session -> engine -> model).
+    @Test func hiddenMatchesAreInformationalAndNeverAllClearThroughTheApp() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
+        app.simulateScopeVisibility(.hidden); try await settled(app)
+        #expect(app.dataState == .ready && app.items.count == 1 && app.hiddenResultCount == 3)
+        #expect(app.hiddenResultsNote == "3 matching items aren't visible to your account")
+        #expect(app.badge == "1" && app.scopeQuality == nil && app.mascotState == .idle, "no Partial badge, quality or mood change")
+        app.simulateScopeVisibility(.hiddenOnly); try await settled(app)
+        #expect(app.dataState == .hiddenOnly(3) && app.items.isEmpty && app.badge == "0")
+        #expect(app.dataState.statusText == "No visible items · 3 matches hidden from your account" && app.hiddenResultsNote == nil)
+        app.simulateScopeVisibility(.capped); try await settled(app)
+        #expect(app.dataState == .partial && app.hiddenResultCount == 0 && app.badge == "1+")
+        app.simulateScopeVisibility(.hidden); app.simulateScopePartial(true); try await settled(app)
+        #expect(app.dataState == .partial && app.hiddenResultCount == 0 && app.hiddenResultsNote == nil, "errors keep Partial")
+        app.simulateScopePartial(false); try await settled(app)
+        #expect(app.dataState == .ready && app.unseenCount == 0 && app.hiddenResultCount == 3, "recovery is silent")
+        app.simulateScopeInject(); try await settled(app)
+        #expect(app.unseenCount == 1, "a genuinely new visible row still alerts once")
+        app.settings.privacyMode = false
+        #expect(app.hiddenResultsNote?.contains("demo") == false, "counts only, never names")
+    }
     @Test func scopeApplyPreservesPublicIncidentStateUnseenBurstAndAttention() async throws {
         let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         app.simulateScopeInject(); try await settled(app)

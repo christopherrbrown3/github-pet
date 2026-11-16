@@ -24,6 +24,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var discardedScopeReplies = 0
     @Published private(set) var receivedScopeReplies = 0
     @Published private(set) var lastSuccess: Date?
+    /// Matches GitHub counted but the viewer can't see, from the last complete snapshot (#35).
+    @Published private(set) var hiddenResultCount = 0
     @Published private(set) var unseen = UnseenItems()
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
     /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
@@ -199,6 +201,12 @@ final class AppModel: ObservableObject {
     var mascotBadge: String? { MascotPolicy.mascotBadge(dataState: dataState, count: items.count) }
 
     /// Fixture data is always identified as Demo, in every surface and in privacy mode.
+    /// Informational note beside visible rows; never a Partial badge, warning or mood change.
+    /// (Zero visible rows use the `.hiddenOnly` state instead.)
+    var hiddenResultsNote: String? {
+        dataState == .ready && hiddenResultCount > 0 ? HiddenResults.notVisible(hiddenResultCount) : nil
+    }
+
     var isDemo: Bool { usingFixtures }
 
     var summaryLines: [String] {
@@ -407,8 +415,8 @@ final class AppModel: ObservableObject {
         if settings.dataSource == .fixtures {
             guard let scope = scopeSession.scope else { apply(scopeSession.configurationFailure); return }
             let outcome = simulator.poll()
-            if case .snapshot(let items, let complete) = outcome {
-                apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete))
+            if case .snapshot(let items, let complete, let hidden) = outcome {
+                apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete, hidden: hidden))
             } else { apply(outcome) }
         } else if let request = scopeSession.beginPoll() {
             launchRepositoryPoll(request, budget: runtime.repositoryBudget(), refetches: 1)
@@ -487,6 +495,7 @@ final class AppModel: ObservableObject {
         if items != engine.items { items = engine.items }
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
+        if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
         if serviceState != serviceMonitor.state { serviceState = serviceMonitor.state }
         if serviceIncidents != serviceMonitor.incidents { serviceIncidents = serviceMonitor.incidents }
         if serviceLastSuccess != serviceMonitor.lastSuccess { serviceLastSuccess = serviceMonitor.lastSuccess }
@@ -629,6 +638,12 @@ final class AppModel: ObservableObject {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.setPartial(on); refreshRepositoriesOnly()
     }
+    /// #35 fixtures: matches hidden from the viewer, hidden-only, or capped review searches.
+    func simulateScopeVisibility(_ mode: ScopeSimulation.Visibility) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.setVisibility(mode); refreshRepositoriesOnly()
+    }
+    var simulatedVisibility: ScopeSimulation.Visibility? { scopeSimulation?.currentVisibility }
     func simulateScopeReload(corrupt: Bool = false, forgetViewer: Bool = false,
                              account: ScopeAccount = ScopeSimulation.accountA) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }

@@ -75,15 +75,18 @@ public struct ScopedPollResult: Equatable, Sendable {
     public let items: [InboxItem]
     public let issues: [ScopedFetchIssue]
     public let successfulSources: Int
-    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int) {
+    /// Matches GitHub counted but the viewer can't see (#35): only for a fully clean response.
+    public let hidden: Int
+    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int, hidden: Int = 0) {
         self.viewer = viewer; self.items = items; self.issues = issues; self.successfulSources = successfulSources
+        self.hidden = hidden
     }
     public var complete: Bool { viewer != nil && successfulSources > 0 && issues.isEmpty }
     public var outcome: FetchOutcome {
         if issues.contains(.ghMissing) { return .failure(.ghMissing) }
         if issues.contains(.signedOut) { return .failure(.unauthenticated) }
         guard viewer != nil, successfulSources > 0 else { return .failure(.failed("Monitoring scope could not be verified")) }
-        return .snapshot(items: items, complete: complete)
+        return .snapshot(items: items, complete: complete, hidden: complete ? hidden : 0)
     }
     public static func failure(_ issue: ScopedFetchIssue, viewer: ScopeViewer? = nil) -> Self {
         Self(viewer: viewer, items: [], issues: [issue], successfulSources: 0)
@@ -144,6 +147,7 @@ public enum ScopedResponseParser {
         let viewer = ScopeViewer(account: account, login: login)
         if let expected = plan.expectedAccount, expected != account { return .failure(.identityMismatch, viewer: viewer) }
         var verified = Set<Int>()
+        var verifiedOwners: [Int: String] = [:]
         for (index, target) in plan.scope.targets.enumerated() {
             guard let metadata = body["target\(index)"] as? [String: Any] else {
                 issues.append(.targetUnavailable(index)); continue
@@ -158,10 +162,16 @@ public enum ScopedResponseParser {
             } else {
                 matches = type == "Repository" && (metadata["nameWithOwner"] as? String)?.lowercased() == "\(target.owner)/\(target.name!)"
             }
-            if matches { verified.insert(index) } else { issues.append(.malformedTarget(index)) }
+            if matches {
+                verified.insert(index)
+                // Use the canonical response name only after metadata has verified this target.
+                let canonicalName = metadata[target.kind == .organization ? "login" : "nameWithOwner"] as? String
+                verifiedOwners[index] = canonicalName?.split(separator: "/").first.map { String($0).lowercased() }
+            } else { issues.append(.malformedTarget(index)) }
         }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
+        var hiddenByAlias: [String: Int] = [:]
         for search in plan.searches {
             if let index = search.targetIndex, !verified.contains(index) { continue }
             guard let page = body[search.alias] as? [String: Any] else { issues.append(.missingSource(search.alias)); continue }
@@ -171,7 +181,13 @@ public enum ScopedResponseParser {
                 issues.append(.malformedSource(search.alias)); continue
             }
             successes += 1
-            if count > nodes.count || more { issues.append(.capped(search.alias)) }
+            // #35: a full page with more matches (or a next page) is capped: Partial. Fewer nodes
+            // than a page with no next page means GitHub counted matches the viewer can't see.
+            if more || (nodes.count >= ScopeQueryPlan.rowsPerCategory && count > nodes.count) {
+                issues.append(.capped(search.alias))
+            } else if count > nodes.count {
+                hiddenByAlias[search.alias] = count - nodes.count
+            }
             if count < nodes.count { issues.append(.malformedSource(search.alias)) }
             var sourceIDs = Set<String>()
             for node in nodes {
@@ -193,8 +209,40 @@ public enum ScopedResponseParser {
                 if items[key].map({ $0.updatedAt > item.updatedAt }) != true { items[key] = item }
             }
         }
+        // Hidden counts are trusted only in a clean response. With any error, malformed or missing
+        // source/row, those aliases stay capped (Partial) exactly as before: when in doubt, Partial.
+        // An org search already counts its repositories for the same category, so a covered
+        // repository's hidden count is excluded. No containment is inferred for unverified owners.
+        var organizationHidden: [ItemKind: [String: Int]] = [:]
+        for search in plan.searches {
+            guard let index = search.targetIndex, plan.scope.targets[index].kind == .organization,
+                  let owner = verifiedOwners[index] else { continue }
+            organizationHidden[search.kind, default: [:]][owner] = max(organizationHidden[search.kind]?[owner] ?? 0,
+                                                                      hiddenByAlias[search.alias] ?? 0)
+        }
+        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
+            guard let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
+                  let owner = verifiedOwners[index] else { return nil }
+            return organizationHidden[search.kind]?[owner]
+        }
+        // A covered repository with more hidden matches than its org contradicts that coverage
+        // (#35 MED-1): never drop it into All clear; treat the response as capped (Partial).
+        if issues.isEmpty {
+            issues += plan.searches.filter { search in
+                coveringHidden(search).map { (hiddenByAlias[search.alias] ?? 0) > $0 } ?? false
+            }.map { ScopedFetchIssue.capped($0.alias) }
+        }
+        var hidden = 0
+        if issues.isEmpty {
+            for search in plan.searches where coveringHidden(search) == nil {
+                hidden += hiddenByAlias[search.alias] ?? 0
+            }
+        } else {
+            let capped = Set(issues.compactMap { issue -> String? in if case .capped(let alias) = issue { return alias }; return nil })
+            issues += hiddenByAlias.keys.sorted().filter { !capped.contains($0) }.map { ScopedFetchIssue.capped($0) }
+        }
         return ScopedPollResult(viewer: viewer, items: InboxEngine.dedupe(Array(items.values)), issues: issues,
-                                successfulSources: successes)
+                                successfulSources: successes, hidden: hidden)
     }
 }
 

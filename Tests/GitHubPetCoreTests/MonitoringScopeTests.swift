@@ -186,7 +186,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
                 let result = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow, errorsJSON: errors), plan: plan)
                 #expect(!result.complete && result.issues == [.graphQLError], "present errors shape \(errors)")
                 #expect(result.viewer?.account == accountA && result.items.count == (includeRow ? 1 : 0))
-                if case .snapshot(_, false) = result.outcome {} else { Issue.record("errors member cannot produce complete empty/data") }
+                if case .snapshot(_, false, _) = result.outcome {} else { Issue.record("errors member cannot produce complete empty/data") }
             }
             let valid = ScopedResponseParser.parse(try scopedErrorPayload(plan, includeRow: includeRow), plan: plan)
             #expect(valid.complete && valid.items.count == (includeRow ? 1 : 0), "absent errors control")
@@ -242,9 +242,159 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(engine.apply(changed.outcome, now: now + 2).isEmpty)
     }
 
+    /// #35 decision table, per alias: capped -> Partial; fewer than a page with a larger count and no
+    /// next page in a clean response -> complete for visible results plus a hidden count; anything
+    /// unclear -> Partial exactly as before (hidden aliases revert to capped).
+    @Test func hiddenMatchesAreInformationalOnlyInACleanResponse() throws {
+        let plan = try ScopeQueryPlan()
+        let fullPage = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
+        func parse(_ reviews: [String: Any], assigned: [String: Any] = page(), errors: [[String: Any]]? = nil) throws -> ScopedPollResult {
+            var body = envelope(plan); body["reviews0"] = reviews; body["assigned0"] = assigned
+            return ScopedResponseParser.parse(try response(body, errors: errors), plan: plan)
+        }
+        // Rows plus hidden: complete, rows kept, hidden summed across aliases, no capped issue.
+        let withRows = try parse(page([row()], total: 4), assigned: page([], total: 2))
+        #expect(withRows.complete && withRows.items.count == 1 && withRows.hidden == 5 && withRows.issues.isEmpty)
+        if case .snapshot(let items, true, 5) = withRows.outcome { #expect(items.count == 1) } else { Issue.record("complete with hidden 5") }
+        // Zero visible: complete, but hidden > 0 (the engine turns this into .hiddenOnly, never .empty).
+        let none = try parse(page([], total: 3))
+        #expect(none.complete && none.items.isEmpty && none.hidden == 3)
+        // Capped: a full page with more matches, or hasNextPage, is Partial with no hidden count.
+        for capped in [page(fullPage, total: 45), page([row()], total: 4, more: true)] {
+            let result = try parse(capped)
+            #expect(!result.complete && result.hidden == 0 && result.issues.contains(.capped("reviews0")))
+            if case .snapshot(_, false, 0) = result.outcome {} else { Issue.record("capped stays Partial") }
+        }
+        // Unclear: GraphQL errors, a malformed row, or a missing source keep Partial and the hidden alias capped.
+        let errored = try parse(page([row()], total: 4), errors: [["message": "partial failure"]])
+        var bad = row("PR_fixture_9"); bad["url"] = "https://evil.example/x"
+        let malformed = try parse(page([row(), bad], total: 6))
+        var missingBody = envelope(plan); missingBody["reviews0"] = page([row()], total: 4); missingBody["assigned0"] = nil
+        let missing = ScopedResponseParser.parse(try response(missingBody), plan: plan)
+        for unclear in [errored, malformed, missing] {
+            #expect(!unclear.complete && unclear.hidden == 0 && unclear.issues.contains(.capped("reviews0")))
+            if case .snapshot(_, false, 0) = unclear.outcome {} else { Issue.record("unclear stays Partial without a hidden count") }
+        }
+        // Exact count: complete, nothing hidden.
+        let exact = try parse(page([row()]))
+        #expect(exact.complete && exact.hidden == 0)
+    }
+
+    @Test func verifiedOrganizationCoverageCountsHiddenMatchesOncePerCategory() throws {
+        let org = try MonitoringTarget(organization: "ExAmPlE")
+        let repo = try MonitoringTarget(repository: "EXAMPLE/Pet")
+        for targets in [[org, repo], [repo, org]] {
+            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+            for kind in [ItemKind.reviewRequest, .assignedIssue] {
+                var body = envelope(plan)
+                for (index, target) in plan.scope.targets.enumerated() {
+                    var metadata = body["target\(index)"] as! [String: Any]
+                    metadata[target.kind == .organization ? "login" : "nameWithOwner"] =
+                        target.kind == .organization ? "EXAMPLE" : "Example/PET"
+                    body["target\(index)"] = metadata
+                }
+                for search in plan.searches where search.kind == kind { body[search.alias] = page([], total: 1) }
+                let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                #expect(result.complete && result.items.isEmpty && result.hidden == 1)
+                let engine = InboxEngine()
+                #expect(engine.apply(result.outcome, now: Date()).isEmpty)
+                #expect(engine.state == .hiddenOnly(1), "Hidden-only overlap must never become All clear or double-count")
+            }
+        }
+
+        // Multiple covered repositories add no duplicate count; unrelated owners and the
+        // disjoint issue/review categories still contribute independently. Visible IDs dedupe.
+        let targets = try [org, repo, MonitoringTarget(repository: "example/tools"),
+                           MonitoringTarget(repository: "other/pet")]
+        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+        var body = envelope(plan)
+        for search in plan.searches {
+            let target = plan.scope.targets[search.targetIndex!]
+            if target.owner == "other" {
+                body[search.alias] = page([], total: search.kind == .reviewRequest ? 2 : 0)
+            } else if search.kind == .reviewRequest {
+                body[search.alias] = page([row(repo: "example/pet")], total: 4)
+                if target.name == "tools" { body[search.alias] = page([], total: 1) }
+            } else { body[search.alias] = page([], total: 5) }
+        }
+        let result = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(result.complete && result.items.count == 1 && result.hidden == 10)
+    }
+
+    /// #35 MED-1: a covered repository reporting more hidden matches than its organization in the
+    /// same category is a contradiction, so it must not be dropped into an All clear.
+    @Test func coveredRepositoryHiddenAboveItsOrganizationIsPartialNeverAllClear() throws {
+        let org = try MonitoringTarget(organization: "example")
+        let repo = try MonitoringTarget(repository: "example/pet")
+        for targets in [[org, repo], [repo, org]] {
+            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+            let orgIndex = plan.scope.targets.firstIndex(of: org)!, repoIndex = plan.scope.targets.firstIndex(of: repo)!
+            for kind in [ItemKind.reviewRequest, .assignedIssue] {
+                let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+                for (orgHidden, repoHidden, contradiction) in [(0, 3, true), (2, 3, true), (3, 3, false), (5, 3, false)] {
+                    var body = envelope(plan)
+                    for search in plan.searches { body[search.alias] = page([], total: 0) }
+                    body[prefix + String(orgIndex)] = page([], total: orgHidden)
+                    body[prefix + String(repoIndex)] = page([], total: repoHidden)
+                    let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                    let engine = InboxEngine()
+                    _ = engine.apply(result.outcome, now: Date())
+                    if contradiction {
+                        #expect(!result.complete && result.hidden == 0, "\(prefix) org \(orgHidden) < repo \(repoHidden)")
+                        #expect(result.issues.contains(.capped(prefix + String(repoIndex))))
+                        #expect(engine.state == .partial, "never All clear or a trusted hidden count")
+                    } else {
+                        #expect(result.complete && result.hidden == orgHidden, "\(prefix) org \(orgHidden) covers repo \(repoHidden)")
+                        #expect(engine.state == .hiddenOnly(orgHidden))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func overlappingAliasesStillFailClosedForEveryQualityAndIdentityGuard() throws {
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        let org = plan.scope.targets.firstIndex { $0.kind == .organization }!
+        let repo = plan.scope.targets.firstIndex { $0.kind == .repository }!
+        let full = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
+        for kind in [ItemKind.reviewRequest, .assignedIssue] {
+            let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+            for defect in ["missing", "cap", "contradiction", "row", "metadata", "unverified-org", "error", "account"] {
+                var body = envelope(plan)
+                body[prefix + String(org)] = page([], total: 1)
+                body[prefix + String(repo)] = page([], total: 1)
+                var errors: [[String: Any]]?
+                var validRow = row()
+                if kind == .assignedIssue {
+                    validRow["__typename"] = "Issue"
+                    validRow["url"] = "https://github.com/example/pet/issues/1"
+                }
+                switch defect {
+                case "missing": body.removeValue(forKey: prefix + String(repo))
+                case "cap": body[prefix + String(repo)] = page([], total: 1, more: true)
+                case "contradiction": body[prefix + String(repo)] = page([validRow], total: 0)
+                case "row": body[prefix + String(repo)] = page([NSNull()], total: 2)
+                case "metadata": body["target\(repo)"] = ["__typename": "Repository", "id": "R_fixture", "nameWithOwner": "different/pet"]
+                case "unverified-org": body.removeValue(forKey: "target\(org)")
+                case "error": errors = [["message": "fixture failure"]]
+                default: body["viewer"] = ["id": accountB.viewerID, "login": "other-user"]
+                }
+                let result = ScopedResponseParser.parse(try response(body, errors: errors), plan: plan)
+                #expect(!result.complete && result.hidden == 0, "\(prefix) \(defect) must remain unverified")
+            }
+        }
+        // A full-page cap must also survive exclusion of the repository's hidden contribution.
+        var body = envelope(plan)
+        body["reviews\(org)"] = page([], total: 1)
+        body["reviews\(repo)"] = page(full, total: 40)
+        let capped = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(!capped.complete && capped.hidden == 0 && capped.issues.contains(.capped("reviews\(repo)")))
+    }
+
     @Test func malformedRowsCapsAndGraphQLErrorsCannotLookComplete() throws {
         let plan = try ScopeQueryPlan()
-        for badPage in [page([row(), NSNull()]), page([row(repo: "outside/pet")], total: 40),
+        let fullPage = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
+        for badPage in [page([row(), NSNull()]), page(fullPage, total: 40),
                         page([], more: true), ["issueCount": true, "nodes": [], "pageInfo": ["hasNextPage": false]],
                         ["issueCount": 0, "nodes": []]] as [[String: Any]] {
             var body = envelope(plan); body["reviews0"] = badPage

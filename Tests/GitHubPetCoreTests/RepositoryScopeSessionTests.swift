@@ -33,7 +33,7 @@ import Testing
                 let bound = try #require(session.beginPoll())
                 #expect(!bound.identityOnly && bound.expectedAccount == a)
                 #expect(bound.scope == (savedEverything ? .everything : selected))
-                if case .apply(.snapshot(_, true)) = session.receive(result(a), for: bound).action {} else { Issue.record("bound fetch applies") }
+                if case .apply(.snapshot(_, true, _)) = session.receive(result(a), for: bound).action {} else { Issue.record("bound fetch applies") }
             }
         }
     }
@@ -167,7 +167,7 @@ import Testing
             #expect(!session.summary.contains("demo-a"))
             for issue in [ScopedFetchIssue.rateLimited, .outputLimit, .transport, .targetUnavailable(0), .capped("reviews0")] {
                 let request = try #require(session.beginPoll())
-                if case .apply(.snapshot(_, false)) = session.receive(result(a, issues: [issue]), for: request).action {} else { Issue.record("quality reaches engine incomplete") }
+                if case .apply(.snapshot(_, false, _)) = session.receive(result(a, issues: [issue]), for: request).action {} else { Issue.record("quality reaches engine incomplete") }
                 #expect(session.qualitySummary != nil && !session.qualitySummary!.contains("demo-a"))
             }
         }
