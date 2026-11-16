@@ -1,0 +1,198 @@
+{
+  "action" : "source",
+  "attention" : {
+    "activeClip" : null,
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.89743.4122D7CF-E548-4218-891F-C85299A80DB1",
+  "inbox" : {
+    "badge" : "3",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "3 items",
+      "Demo · Review request",
+      "Demo · Review request"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "reviewRequest:example\/pet-demo#42",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "reviewRequest:example\/pet-tools#7",
+        "isDemo" : true,
+        "repository" : "example\/pet-tools",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request",
+        "visibleTitle" : "Review request"
+      },
+      {
+        "id" : "assignedIssue:example\/pet-demo#18",
+        "isDemo" : true,
+        "repository" : "example\/pet-demo",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Assigned issue",
+        "visibleTitle" : "Assigned issue"
+      }
+    ],
+    "scopeHeader" : "Demo scope · Everything",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "switch-fixtures-clears-hints",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Everything",
+    "generation" : 6,
+    "identity" : "demo"
+  },
+  "params" : {
+    "source" : "fixtures"
+  },
+  "pngs" : [
+    "step-06-switch-fixtures-clears-hints-inbox.png",
+    "step-06-switch-fixtures-clears-hints-mascot.png"
+  ],
+  "renders" : [
+    "step-06-switch-fixtures-clears-hints-inbox: 360x361 pt",
+    "step-06-switch-fixtures-clears-hints-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 5,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 2,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 3,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 3,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "B",
+        "generation" : 4,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 4,
+        "targets" : [
+          "demo-b\/pet"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 5,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0"
+        ],
+        "serial" : 5,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 5 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "fixtures",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : true,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "Demo (offline fixtures)",
+    "activeSummary" : "Demo scope · Everything",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 2,
+    "checksReceived" : 2,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions need the GitHub CLI source.",
+    "findSuggestionsEnabled" : false,
+    "mode" : "everything",
+    "organizationInput" : "",
+    "organizations" : [
+
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 2 discovery pages · 0 held · discovery complete · validation normal",
+    "status" : "Suggestions: organizations 3 found (end of this list); repositories 3 found (end of this list). Suggestions are hints, not every repository you can read; you can type any owner\/name.",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "step" : 6
+}

@@ -1,0 +1,11 @@
+{
+  "pid": 89717,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-3f89207/app-artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--simulate-monitoring-scope",
+    "--qa-scenario",
+    "settings-discovery-partial",
+    "--qa-output",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr51-3f89207/functional/settings-discovery-partial/records"
+  ]
+}
