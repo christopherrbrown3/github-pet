@@ -605,6 +605,49 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(client(ScopeRunner([CommandResult(exitCode: 4)])).fetch().outcome == .failure(.unauthenticated))
     }
 
+    /// QA MED-1 on PR64: one SAML-enforced org in a Selected scope makes gh exit 1 with the SAML
+    /// message on stderr AND the other targets' data on stdout. That is Partial with the readable
+    /// rows and the denial quality line, not a whole-poll failure.
+    @Test func samlDenialWithReadablePartialDataStaysPartialWithRows() throws {
+        let scope = try mixedScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        let org = plan.scope.targets.firstIndex { $0.kind == .organization }!
+        var body = envelope(plan)
+        body["target\(org)"] = NSNull()
+        for search in plan.searches where search.targetIndex == org { body[search.alias] = NSNull() }
+        let repo = plan.scope.targets.firstIndex { $0.kind == .repository }!
+        body["reviews\(repo)"] = page([row()])
+        let stderr = Data("GraphQL: Resource protected by organization SAML enforcement. You must grant your Personal Access token access to this organization. (target0)".utf8)
+        for errors in [[["type": "FORBIDDEN", "path": ["target\(org)"], "message": "Resource protected by organization SAML enforcement."]], nil] as [[[String: Any]]?] {
+            let stdout = try response(body, errors: errors)
+            let result = client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1, stdout: stdout, stderr: stderr)]))
+                .fetch(scope: scope, expectedAccount: accountA)
+            #expect(result.viewer?.account == accountA && result.items.count == 1, "readable rows survive (errors member: \(errors != nil))")
+            #expect(result.issues.contains(.accessDenied) && !result.complete)
+            guard case .snapshot(let items, false, 0) = result.outcome else { Issue.record("Partial expected: \(result.outcome)"); continue }
+            #expect(items.count == 1)
+            #expect(RepositoryScopeSession.qualitySummary(for: result.issues) == RepositoryScopeSession.accessDeniedQuality)
+        }
+        // Nothing usable came back: the whole poll is the fixed denial message.
+        let nothing = client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1, stderr: stderr)])).fetch()
+        #expect(nothing.issues == [.accessDenied] && nothing.outcome == .failure(.failed(ScopedPollResult.accessDeniedMessage)))
+    }
+
+    /// QA LOW-2 on PR64: a target named like "saml-team" is not a SAML denial.
+    @Test func targetNamesContainingSamlAreNotDenials() throws {
+        let notFound = "GraphQL: Could not resolve to an Organization with the login of 'saml-team'. (target0)"
+        #expect(!ScopedGhClient.deniesAccess(notFound) && !ScopedGhClient.deniesAccess("Could not resolve repository 'sso-tools/single-sign-on'"))
+        let result = client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1, stderr: Data(notFound.utf8))])).fetch()
+        #expect(result.issues == [.transport])
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        let parsed = ScopedResponseParser.parse(try response(envelope(plan), errors: [["type": "NOT_FOUND", "message": notFound]]), plan: plan)
+        #expect(parsed.issues.first == .graphQLError)
+        // The GitHub SAML and SSO forms still match.
+        for denial in ["Resource protected by organization SAML enforcement.", "the org has enabled SAML SSO",
+                       "This organization has enabled or enforced SAML SSO", "requires single sign-on (SSO) authorization"] {
+            #expect(ScopedGhClient.deniesAccess(denial), "\(denial)")
+        }
+    }
+
     @Test func graphQLDenialsAreClassifiedInsideTheResponse() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
         let shapes: [([String: Any], ScopedFetchIssue)] = [

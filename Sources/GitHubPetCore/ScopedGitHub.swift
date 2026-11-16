@@ -274,9 +274,12 @@ public struct ScopedGhClient: ScopedPolling {
         self.locator = locator; self.runner = runner; self.timeout = timeout
     }
     /// Scope, SAML/SSO and 403 wording from gh or GitHub. Checked after rate limits, which are 403s too.
+    /// Multi-word phrases only: a target login can't contain a space, so a name such as
+    /// "saml-team" in a "Could not resolve" message never reads as a denial.
     static func deniesAccess(_ text: String) -> Bool {
         let message = text.lowercased()
-        return ["http 403", "saml", "single sign-on", "required scopes", "insufficient_scopes", "not been granted"]
+        return ["http 403", "saml enforcement", "saml sso", "saml single sign-on", "single sign-on (sso)",
+                "required scopes", "insufficient_scopes", "not been granted"]
             .contains(where: message.contains)
     }
     private static func authFailure(_ result: CommandResult) -> Bool {
@@ -313,9 +316,16 @@ public struct ScopedGhClient: ScopedPolling {
             if Self.authFailure(result) { return .failure(.signedOut) }
             guard result.outputComplete else { return .failure(.incompleteOutput) }
             if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .failure(.rateLimited) }
-            if result.exitCode != 0 && Self.deniesAccess(result.stderrText) { return .failure(.accessDenied) }
             let parsed = ScopedResponseParser.parse(result.stdout, plan: plan)
             try budget.check()
+            // One SAML-enforced or forbidden target still leaves the others' rows on stdout:
+            // Partial with those rows. Fail the whole poll only when nothing usable came back.
+            if result.exitCode != 0 && Self.deniesAccess(result.stderrText) {
+                guard parsed.viewer != nil, parsed.successfulSources > 0 else { return .failure(.accessDenied) }
+                let issues = parsed.issues.contains(.accessDenied) ? parsed.issues : parsed.issues + [.accessDenied]
+                return ScopedPollResult(viewer: parsed.viewer, items: parsed.items, issues: issues,
+                                        successfulSources: parsed.successfulSources)
+            }
             if result.exitCode != 0 && parsed.viewer == nil && !parsed.issues.contains(.graphQLError)
                 && !parsed.issues.contains(.rateLimited) && !parsed.issues.contains(.accessDenied) { return .failure(.transport) }
             // A failing gh process cannot turn a superficially valid empty JSON payload into success.
