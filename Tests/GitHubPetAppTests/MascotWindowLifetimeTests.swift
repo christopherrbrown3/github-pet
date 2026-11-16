@@ -3,21 +3,58 @@ import Testing
 @testable import GitHubPetCore
 @testable import GitHubPet
 
+/// Never touches SMAppService: these launches look normal to AppModel, so a fake is injected.
+private final class InertLoginBackend: LoginItemBackend, @unchecked Sendable {
+    private(set) var calls = 0
+    var status: LoginItemStatus { calls += 1; return .disabled }
+    func register() throws { calls += 1 }
+    func unregister() throws { calls += 1 }
+}
+
+/// What the run could have written outside its in-memory defaults: GitHubPet keys in the test
+/// process's standard domain, and dev.github-pet preference files.
+private struct WriteGuard {
+    let defaults: EphemeralDefaults
+    let loginBackend: InertLoginBackend
+    let standardValues: [String: String]
+    let preferenceFiles: Set<String>
+
+    /// Every standard-domain entry whose key mentions GitHubPet, including AppKit's
+    /// "NSWindow Frame GitHubPet.*" autosaves, with its value so a changed value counts too.
+    static func gitHubPetStandardValues() -> [String: String] {
+        UserDefaults.standard.dictionaryRepresentation()
+            .filter { $0.key.contains("GitHubPet") }
+            .mapValues { String(describing: $0) }
+    }
+    static func preferenceFiles() -> Set<String> {
+        let directory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences")
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
+        return Set(names.filter { $0.hasPrefix("dev.github-pet") })
+    }
+}
+
 /// #41: the real mascot window controller's object lifetimes and popover dismissal.
 /// Fixtures only (no gh, no network). The defaults are in memory (EphemeralDefaults), so no
 /// preferences file is created; the relaunch baseline (#12) a fixtures launch saves lands there too.
 @Suite(.serialized) @MainActor struct MascotWindowLifetimeTests {
-    private func model() -> (AppModel, EphemeralDefaults) {
+    private func model() -> (AppModel, WriteGuard) {
         let defaults = EphemeralDefaults(name: "dev.github-pet.tests.mascot-window.\(UUID().uuidString)")
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures"], environment: [:])
         options.forcePlaceholder = true
         options.userDefaultsOverride = defaults
         _ = NSApplication.shared
-        return (AppModel(options: options), defaults)
+        let backend = InertLoginBackend()
+        let guarded = WriteGuard(defaults: defaults, loginBackend: backend,
+                                 standardValues: WriteGuard.gitHubPetStandardValues(), preferenceFiles: WriteGuard.preferenceFiles())
+        return (AppModel(options: options, runtime: AppModel.Runtime(loginItemBackend: backend)), guarded)
     }
-    private func assertNothingWritten(_ defaults: EphemeralDefaults) {
-        #expect(defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
-        #expect(!preferencesFileExists(defaults.name), "nothing reaches ~/Library/Preferences")
+    private func assertNothingWritten(_ guarded: WriteGuard) {
+        #expect(guarded.defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
+        #expect(WriteGuard.gitHubPetStandardValues() == guarded.standardValues,
+                "no GitHubPet key or window frame is added to or changed in the standard (on-disk) defaults")
+        #expect(WriteGuard.preferenceFiles().subtracting(guarded.preferenceFiles).isEmpty,
+                "no dev.github-pet preferences file appears")
+        #expect(guarded.loginBackend.calls == 0, "the window tests never consult a login item")
     }
 
     @Test func droppedControllerFreesItsPanelAndContainer() async throws {
