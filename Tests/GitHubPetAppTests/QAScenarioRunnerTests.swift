@@ -65,6 +65,11 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"fly"}]}"#)])?.contains("unknown action") == true)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"hold","cnt":2}]}"#)])?.contains("unknown key") == true)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"hold","count":true}]}"#)]) != nil, "a boolean is not a count")
+        for value in ["1", "0", "\"true\"", "null"] {
+            #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"partial","on":\#(value)}]}"#)])?
+                .contains("must be true or false") == true, "on: \(value) is not a boolean")
+        }
+        #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"partial","on":false}]}"#)]) == nil)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"hold","count":9}]}"#)]) != nil)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"quit"},{"action":"capture"}]}"#)])?.contains("last step") == true)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"capture","label":"../x"}]}"#)])?.contains("label") == true)

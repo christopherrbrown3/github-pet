@@ -313,14 +313,20 @@ final class AppModel: ObservableObject {
                 // starved every other task (CI 43776871945 hung with all pool threads blocked).
                 result = await withCheckedContinuation { done in
                     DispatchQueue.global(qos: .userInitiated).async {
-                        done.resume(returning: client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget))
+                        done.resume(returning: Self.poll(client, request, budget))
                     }
                 }
             } else {
-                result = client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+                result = Self.poll(client, request, budget)
             }
             await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
         }
+    }
+
+    nonisolated private static func poll(_ client: any ScopedPolling, _ request: ScopePollRequest,
+                                         _ budget: CommandBudget) -> ScopedPollResult {
+        request.identityOnly ? client.fetchIdentity(expectedAccount: request.expectedAccount, budget: budget)
+            : client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
     }
 
     private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
