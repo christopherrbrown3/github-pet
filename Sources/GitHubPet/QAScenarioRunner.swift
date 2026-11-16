@@ -112,15 +112,29 @@ enum QAScenarioRunner {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return url }
         guard isDirectory.boolValue else { throw HarnessError(description: "--qa-output \(url.path) exists and is not a directory") }
-        let entries = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []
-        guard !entries.isEmpty else { return url }
-        guard entries.contains(markerName) else {
-            throw HarnessError(description: "--qa-output \(url.path) is not empty and was not created by this runner (no \(markerName))")
-        }
-        if let foreign = entries.first(where: { $0 != markerName && !isRunnerFile($0) }) {
-            throw HarnessError(description: "--qa-output contains a file this runner did not write: \(foreign)")
-        }
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []
+        try validate(names.map { name -> (name: String, kind: QAOutputDirectory.Kind) in
+            var info = stat()
+            let regular = lstat(url.appendingPathComponent(name).path, &info) == 0 && (info.st_mode & S_IFMT) == S_IFREG
+            return (name, regular ? .regular : .other)
+        }, path: url.path)
         return url
+    }
+
+    /// Empty, or the marker plus runner files only, every one a regular file (no symlinks or directories).
+    static func validate(_ entries: [(name: String, kind: QAOutputDirectory.Kind)], path: String) throws {
+        guard !entries.isEmpty else { return }
+        guard entries.contains(where: { $0.name == markerName }) else {
+            throw HarnessError(description: "--qa-output \(path) is not empty and was not created by this runner (no \(markerName))")
+        }
+        for entry in entries {
+            guard entry.name == markerName || isRunnerFile(entry.name) else {
+                throw HarnessError(description: "--qa-output contains a file this runner did not write: \(entry.name)")
+            }
+            guard entry.kind == .regular else {
+                throw HarnessError(description: "--qa-output entry \(entry.name) is not a regular file (symlink, directory or other); refusing")
+            }
+        }
     }
 
     static func isRunnerFile(_ name: String) -> Bool {
@@ -142,19 +156,23 @@ enum QAScenarioRunner {
 
     /// Runs every step and writes the records; returns the runner.json summary. Never terminates.
     static func execute(_ plan: Plan, model: AppModel) async throws -> [String: Any] {
-        let fm = FileManager.default
-        try fm.createDirectory(at: plan.output, withIntermediateDirectories: true)
-        for entry in try fm.contentsOfDirectory(atPath: plan.output.path) where isRunnerFile(entry) {
-            try fm.removeItem(at: plan.output.appendingPathComponent(entry))
-        }
-        try Data("GitHub Pet QA scenario runner output. Only runner files may live here.\n".utf8)
-            .write(to: plan.output.appendingPathComponent(markerName))
+        try FileManager.default.createDirectory(at: plan.output.deletingLastPathComponent(), withIntermediateDirectories: true)
+        // From here on, all output goes through one O_NOFOLLOW directory descriptor; entries are
+        // validated again through it, since the path may have changed since preflight.
+        let out = try QAOutputDirectory(plan.output)
+        let existing = try out.entries()
+        try validate(existing, path: plan.output.path)
+        for entry in existing where isRunnerFile(entry.name) { try out.removeRegularFile(entry.name) }
+        try out.write(Data("GitHub Pet QA scenario runner output. Only runner files may live here.\n".utf8), name: markerName)
         var summary: [String: Any] = ["scenario": plan.name, "defaultsDomain": model.simulationDomain ?? NSNull(),
                                       "steps": plan.steps.count, "verdict": "none: QA judges the step records"]
         try await settle(model, plan)
-        try await record(index: 0, step: Step(action: "launch", label: "launch", params: [:]), plan: plan, model: model, renders: [])
+        try await record(index: 0, step: Step(action: "launch", label: "launch", params: [:]), plan: plan, model: model,
+                         out: out, context: Context(step: Step(action: "launch", label: "launch", params: [:]), model: model, plan: plan))
         for (offset, step) in plan.steps.enumerated() {
             let context = Context(step: step, model: model, plan: plan)
+            context.output = out
+            context.index = offset + 1
             let spec = actions[step.action]!
             try await spec.perform(context)
             if step.action == "quit" {
@@ -163,10 +181,10 @@ enum QAScenarioRunner {
             }
             try await settle(model, plan)
             model.tick()
-            try await record(index: offset + 1, step: step, plan: plan, model: model, renders: context.renders)
+            try await record(index: offset + 1, step: step, plan: plan, model: model, out: out, context: context)
         }
         summary["completed"] = true
-        try write(summary, to: plan.output.appendingPathComponent("runner.json"))
+        try write(summary, name: "runner.json", to: out)
         return summary
     }
 
@@ -187,7 +205,10 @@ enum QAScenarioRunner {
         let model: AppModel!
         let plan: Plan?
         var renders: [String] = []
+        var pngs: [String] = []
         var notes: [String: Any] = [:]
+        var output: QAOutputDirectory?
+        var index = 0
         init(step: Step, model: AppModel?, plan: Plan?) { self.step = step; self.model = model; self.plan = plan }
 
         func string(_ key: String, _ allowed: [String], default fallback: String? = nil) throws -> String {
@@ -279,9 +300,8 @@ enum QAScenarioRunner {
             try await Task.sleep(nanoseconds: UInt64(try c.number("seconds", 0...60) * 1e9))
         },
         "open-settings": Action { c in
-            guard c.plan!.rendersPNGs else { return }
-            c.renders += await SnapshotRenderer.render(SettingsView(model: c.model), name: stem(c) + "-settings",
-                                                       directory: c.plan!.output, appearance: .aqua, asWindow: true)
+            guard c.plan!.rendersPNGs, let out = c.output else { return }
+            try await renderPNG(SettingsView(model: c.model), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
         },
         "quit": Action { c in
             // Normal-quit path with replies possibly still held; then prove no late callback revives the domain.
@@ -298,32 +318,46 @@ enum QAScenarioRunner {
         },
     ]
 
-    private static var currentIndex = 0
-    private static func stem(_ c: Context) -> String { String(format: "step-%02d-", currentIndex) + c.step.label }
+    private static func stem(_ c: Context) -> String { String(format: "step-%02d-", c.index) + c.step.label }
+
+    /// Renders into a private scratch directory, then copies a decoded-and-checked PNG into the
+    /// output through the descriptor. A missing or invalid image is a harness error.
+    static func renderPNG<V: View>(_ view: V, name: String, out: QAOutputDirectory, asWindow: Bool = false,
+                                   into context: Context) async throws {
+        let scratch = FileManager.default.temporaryDirectory
+            .appendingPathComponent("github-pet-qa-render-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        context.renders += await SnapshotRenderer.render(view, name: name, directory: scratch, appearance: .aqua, asWindow: asWindow)
+        let png: Data
+        do { png = try QAOutputDirectory.validatedPNG(try? Data(contentsOf: scratch.appendingPathComponent(name + ".png"))) } catch {
+            throw HarnessError(description: "\(name).png: \(error)")
+        }
+        try out.write(png, name: name + ".png")
+        context.pngs.append(name + ".png")
+    }
 
     // MARK: Records
 
-    static func record(index: Int, step: Step, plan: Plan, model: AppModel, renders: [String]) async throws {
-        currentIndex = index
+    static func record(index: Int, step: Step, plan: Plan, model: AppModel, out: QAOutputDirectory, context: Context) async throws {
         let stem = String(format: "step-%02d-", index) + step.label
-        var lines = renders
         if plan.rendersPNGs {
-            lines += await SnapshotRenderer.render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
-                                                   name: stem + "-inbox", directory: plan.output, appearance: .aqua, asWindow: true)
+            try await renderPNG(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+                                name: stem + "-inbox", out: out, asWindow: true, into: context)
             let panel = model.layout(model.settings.mascotSize).panelSize
-            lines += await SnapshotRenderer.render(MascotView(model: model).frame(width: panel.width, height: panel.height),
-                                                   name: stem + "-mascot", directory: plan.output, appearance: .aqua)
+            // Rendered at the scenario clock, so the pose/clip/burst phase matches this record.
+            try await renderPNG(MascotView(model: model, renderDate: model.clock()).frame(width: panel.width, height: panel.height),
+                                name: stem + "-mascot", out: out, into: context)
         }
         var state = snapshot(model, clock: plan.clock)
         state["step"] = index
         state["label"] = step.label
         state["action"] = step.action
         state["params"] = step.params
-        state["renders"] = lines
-        state["pngs"] = ((try? FileManager.default.contentsOfDirectory(atPath: plan.output.path)) ?? [])
-            .filter { $0.hasPrefix(stem + "-") && $0.hasSuffix(".png") }.sorted()
-        try write(state, to: plan.output.appendingPathComponent(stem + ".json"))
-        currentIndex = index + 1
+        state["renders"] = context.renders
+        state["pngs"] = context.pngs.sorted()
+        state["mascotRenderedAt"] = ISO8601DateFormatter().string(from: model.clock())
+        try write(state, name: stem + ".json", to: out)
     }
 
     /// What the user would see, read from the same model properties the views render.
@@ -380,9 +414,8 @@ enum QAScenarioRunner {
         ]
     }
 
-    static func write(_ object: [String: Any], to url: URL) throws {
-        let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
-        try data.write(to: url)
+    static func write(_ object: [String: Any], name: String, to out: QAOutputDirectory) throws {
+        try out.write(try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]), name: name)
     }
 
     // MARK: Built-in PR A scenarios (docs/monitoring-scope-application.md)

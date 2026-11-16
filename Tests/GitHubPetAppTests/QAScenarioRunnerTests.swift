@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import GitHubPetCore
@@ -93,6 +94,76 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(throws: QAScenarioRunner.HarnessError.self) { try QAScenarioRunner.checkOutput(file.path) }
         #expect(QAScenarioRunner.isRunnerFile("step-03-hold-one-inbox.png") && QAScenarioRunner.isRunnerFile("runner.json"))
         #expect(!QAScenarioRunner.isRunnerFile("notes.txt") && !QAScenarioRunner.isRunnerFile("step-1-x.json"))
+    }
+
+    @Test func linksAndRunnerNamedDirectoriesAreRefusedAndNeverFollowedOrDeleted() async throws {
+        let fm = FileManager.default
+        let sentinel = temporaryDirectory().appendingPathExtension("sentinel")
+        try Data("outside".utf8).write(to: sentinel)
+        func outsideIntact() throws -> Bool { try String(contentsOf: sentinel, encoding: .utf8) == "outside" }
+
+        // Preflight: a symlinked marker, a symlinked step file and a runner-named directory are refused.
+        for variant in ["marker-link", "step-link", "step-dir"] {
+            let dir = temporaryDirectory()
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+            let marker = dir.appendingPathComponent(QAScenarioRunner.markerName)
+            if variant == "marker-link" { try fm.createSymbolicLink(at: marker, withDestinationURL: sentinel) }
+            else { try Data().write(to: marker) }
+            if variant == "step-link" { try fm.createSymbolicLink(at: dir.appendingPathComponent("step-01-x.json"), withDestinationURL: sentinel) }
+            if variant == "step-dir" {
+                let nested = dir.appendingPathComponent("step-01-notes.json")
+                try fm.createDirectory(at: nested, withIntermediateDirectories: false)
+                try Data("keep".utf8).write(to: nested.appendingPathComponent("inner.txt"))
+            }
+            #expect(throws: QAScenarioRunner.HarnessError.self, "\(variant)") { try QAScenarioRunner.checkOutput(dir.path) }
+            #expect(try outsideIntact())
+            if variant == "step-dir" { #expect(fm.fileExists(atPath: dir.appendingPathComponent("step-01-notes.json/inner.txt").path)) }
+        }
+
+        // After validation: swaps through the descriptor never write through a link or recurse.
+        let dir = temporaryDirectory()
+        let out = try QAOutputDirectory(dir)
+        try out.write(Data("marker".utf8), name: QAScenarioRunner.markerName)
+        try fm.removeItem(at: dir.appendingPathComponent(QAScenarioRunner.markerName))
+        try fm.createSymbolicLink(at: dir.appendingPathComponent(QAScenarioRunner.markerName), withDestinationURL: sentinel)
+        #expect(throws: QAOutputDirectory.Failure.self) { try out.write(Data("overwrite".utf8), name: QAScenarioRunner.markerName) }
+        #expect(throws: QAOutputDirectory.Failure.self) { try out.removeRegularFile(QAScenarioRunner.markerName) }
+        #expect(try outsideIntact())
+        let nested = dir.appendingPathComponent("step-02-x.json")
+        try fm.createDirectory(at: nested, withIntermediateDirectories: false)
+        try Data("keep".utf8).write(to: nested.appendingPathComponent("inner.txt"))
+        #expect(throws: QAOutputDirectory.Failure.self) { try out.removeRegularFile("step-02-x.json") }
+        #expect(throws: QAOutputDirectory.Failure.self) { try out.write(Data(), name: "step-02-x.json") }
+        #expect(fm.fileExists(atPath: nested.appendingPathComponent("inner.txt").path))
+        #expect(throws: QAScenarioRunner.HarnessError.self) { try QAScenarioRunner.validate(try out.entries(), path: dir.path) }
+        #expect(throws: QAOutputDirectory.Failure.self) { try out.write(Data(), name: "../escape.json") }
+
+        // The output path itself may not be a symlink when it is opened.
+        let link = temporaryDirectory()
+        try fm.createSymbolicLink(at: link, withDestinationURL: dir)
+        #expect(throws: QAOutputDirectory.Failure.self) { _ = try QAOutputDirectory(link) }
+
+        // A full run into a directory whose step file was swapped for a link fails without touching the sentinel.
+        let runDir = temporaryDirectory()
+        try fm.createDirectory(at: runDir, withIntermediateDirectories: true)
+        try Data().write(to: runDir.appendingPathComponent(QAScenarioRunner.markerName))
+        try Data().write(to: runDir.appendingPathComponent("step-00-launch.json"))
+        let plan = try QAScenarioRunner.makePlan(options(["--simulate-monitoring-scope", "--qa-scenario", "account-a-b-a", "--qa-output", runDir.path]))
+        try fm.removeItem(at: runDir.appendingPathComponent("step-00-launch.json"))
+        try fm.createSymbolicLink(at: runDir.appendingPathComponent("step-00-launch.json"), withDestinationURL: sentinel)
+        await #expect(throws: QAScenarioRunner.HarnessError.self) { _ = try await execute(plan) }
+        #expect(try outsideIntact())
+    }
+
+    @Test func onlyDecodablePNGsAreAccepted() throws {
+        #expect(throws: QAOutputDirectory.Failure.self) { try QAOutputDirectory.validatedPNG(nil) }
+        #expect(throws: QAOutputDirectory.Failure.self) { try QAOutputDirectory.validatedPNG(Data()) }
+        #expect(throws: QAOutputDirectory.Failure.self) { try QAOutputDirectory.validatedPNG(Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0])) }
+        let context = try #require(CGContext(data: nil, width: 2, height: 2, bitsPerComponent: 8, bytesPerRow: 0,
+                                             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let image = try #require(context.makeImage())
+        let png = try #require(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+        #expect(try QAOutputDirectory.validatedPNG(png) == png)
     }
 
     @Test func twoHeldRepliesDeliveredNewestFirstAreBothDiscardedAndStepsRecordWhatIsVisible() async throws {

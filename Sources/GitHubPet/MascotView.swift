@@ -16,12 +16,17 @@ struct MascotView: View {
     var drawsLabels = true
     /// Incident marker (#37); by default only in full renders, not in single-layer probes.
     var drawsMarker: Bool?
+    /// QA runner only: draw one still at this app-clock instant instead of the live timeline,
+    /// so the rendered phase matches the recorded scenario clock. Production leaves it nil.
+    var renderDate: Date?
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
         let layout = model.layout(model.settings.mascotSize)
         Group {
-            if reduced {
+            if let renderDate {
+                scene(at: renderDate, reduced: reduced, layout: layout)
+            } else if reduced {
                 scene(at: model.clock(), reduced: true, layout: layout)
             } else {
                 // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
