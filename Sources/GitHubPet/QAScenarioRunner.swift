@@ -115,13 +115,13 @@ enum QAScenarioRunner {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []
         try validate(names.map { name -> (name: String, kind: QAOutputDirectory.Kind) in
             var info = stat()
-            let regular = lstat(url.appendingPathComponent(name).path, &info) == 0 && (info.st_mode & S_IFMT) == S_IFREG
+            let regular = lstat(url.appendingPathComponent(name).path, &info) == 0 && QAOutputDirectory.isRegularOutput(info)
             return (name, regular ? .regular : .other)
         }, path: url.path)
         return url
     }
 
-    /// Empty, or the marker plus runner files only, every one a regular file (no symlinks or directories).
+    /// Empty, or the marker plus runner files only, each a single-link regular file.
     static func validate(_ entries: [(name: String, kind: QAOutputDirectory.Kind)], path: String) throws {
         guard !entries.isEmpty else { return }
         guard entries.contains(where: { $0.name == markerName }) else {
@@ -132,7 +132,7 @@ enum QAScenarioRunner {
                 throw HarnessError(description: "--qa-output contains a file this runner did not write: \(entry.name)")
             }
             guard entry.kind == .regular else {
-                throw HarnessError(description: "--qa-output entry \(entry.name) is not a regular file (symlink, directory or other); refusing")
+                throw HarnessError(description: "--qa-output entry \(entry.name) is not a single-link regular file (hard link, symlink, directory or other); refusing")
             }
         }
     }
@@ -326,7 +326,7 @@ enum QAScenarioRunner {
                                    into context: Context) async throws {
         let scratch = FileManager.default.temporaryDirectory
             .appendingPathComponent("github-pet-qa-render-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: false)
+        try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: scratch) }
         context.renders += await SnapshotRenderer.render(view, name: name, directory: scratch, appearance: .aqua, asWindow: asWindow)
         let png: Data

@@ -5,8 +5,9 @@ import ImageIO
 /// The QA runner's output directory, used only through one O_NOFOLLOW directory descriptor.
 /// Every read, write and removal is relative to that descriptor and never follows a link, so
 /// swapping the path, the marker or a step file for a symlink between validation and use
-/// cannot redirect a write outside the directory. Removal unlinks regular files only and
-/// never recurses.
+/// cannot redirect a write outside the directory. Writes replace entries with fresh inodes,
+/// never truncate an existing inode (which could have an outside hard link). Removal unlinks
+/// single-link regular files only and never recurses.
 final class QAOutputDirectory {
     struct Failure: Error, CustomStringConvertible { let description: String }
 
@@ -51,28 +52,52 @@ final class QAOutputDirectory {
     func kind(_ name: String) -> Kind? {
         var info = stat()
         guard fstatat(fd, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return nil }
-        return (info.st_mode & S_IFMT) == S_IFREG ? .regular : .other
+        return Self.isRegularOutput(info) ? .regular : .other
     }
 
-    /// Writes (create or truncate) a regular file. A symlink, directory or other node is refused.
+    static func isRegularOutput(_ info: stat) -> Bool {
+        (info.st_mode & S_IFMT) == S_IFREG && info.st_nlink == 1
+    }
+
+    /// Writes only to an exclusively created inode, then atomically replaces the final entry.
+    /// The destination checks reject known unsafe entries; safety does not depend on them:
+    /// renameat never follows or truncates a destination swapped in after the last check.
     func write(_ data: Data, name: String) throws {
         try Self.checkName(name)
-        let file = openat(fd, name, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, 0o644)
+        try checkDestination(name)
+        let temporary = ".github-pet-qa-write-\(UUID().uuidString)"
+        let file = openat(fd, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard file >= 0 else {
-            throw Failure(description: "refusing to write \(name): \(String(cString: strerror(errno))) (symlinks and directories are never written through)")
+            throw Failure(description: "cannot create fresh output for \(name): \(String(cString: strerror(errno)))")
         }
-        defer { close(file) }
-        var info = stat()
-        guard fstat(file, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG else {
-            throw Failure(description: "refusing to write \(name): not a regular file")
+        defer {
+            close(file)
+            // Also runs on failure; unlinkat never follows a swapped link or recurses.
+            unlinkat(fd, temporary, 0)
         }
         try data.withUnsafeBytes { buffer in
             var offset = 0
             while offset < buffer.count {
                 let written = Darwin.write(file, buffer.baseAddress! + offset, buffer.count - offset)
+                if written < 0 && errno == EINTR { continue }
                 guard written > 0 else { throw Failure(description: "write to \(name) failed: \(String(cString: strerror(errno)))") }
                 offset += written
             }
+        }
+        try checkDestination(name)
+        guard renameat(fd, temporary, fd, name) == 0 else {
+            throw Failure(description: "cannot replace \(name): \(String(cString: strerror(errno)))")
+        }
+    }
+
+    private func checkDestination(_ name: String) throws {
+        var info = stat()
+        if fstatat(fd, name, &info, AT_SYMLINK_NOFOLLOW) != 0 {
+            if errno == ENOENT { return }
+            throw Failure(description: "cannot inspect \(name): \(String(cString: strerror(errno)))")
+        }
+        guard Self.isRegularOutput(info) else {
+            throw Failure(description: "refusing to write \(name): not a single-link regular file")
         }
     }
 
@@ -80,14 +105,14 @@ final class QAOutputDirectory {
     /// directory, so even a swap after the check cannot delete anything outside or recursively.
     func removeRegularFile(_ name: String) throws {
         try Self.checkName(name)
-        guard kind(name) == .regular else { throw Failure(description: "refusing to remove \(name): not a regular file") }
+        guard kind(name) == .regular else { throw Failure(description: "refusing to remove \(name): not a single-link regular file") }
         guard unlinkat(fd, name, 0) == 0 else {
             throw Failure(description: "cannot remove \(name): \(String(cString: strerror(errno)))")
         }
     }
 
     private static func checkName(_ name: String) throws {
-        guard !name.isEmpty, !name.contains("/"), name != ".", name != ".." else {
+        guard !name.isEmpty, !name.contains("/"), !name.contains("\0"), name != ".", name != ".." else {
             throw Failure(description: "invalid output file name \(name)")
         }
     }

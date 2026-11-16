@@ -155,6 +155,71 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(try outsideIntact())
     }
 
+    @Test func hardLinkedOutputsAreRefusedAtPreflightWriteAndCleanup() async throws {
+        let fm = FileManager.default
+        let root = temporaryDirectory()
+        try fm.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        defer { try? fm.removeItem(at: root) }
+        // The "outside" file is test-owned and stays inside this fresh private sandbox.
+        let sentinel = root.appendingPathComponent("outside-sentinel")
+        let original = Data("test-owned outside contents must survive".utf8)
+        try original.write(to: sentinel)
+        for (index, name) in [QAScenarioRunner.markerName, "runner.json", "step-00-launch.json", "step-00-launch-inbox.png",
+                              "step-00-launch-mascot.png", "step-01-open-settings-settings.png"].enumerated() {
+            let dir = root.appendingPathComponent("output-\(index)")
+            let out = try QAOutputDirectory(dir)
+            try out.write(Data("marker".utf8), name: QAScenarioRunner.markerName)
+            // Validate a safe plan first, then insert the hard link before descriptor revalidation.
+            let plan = try QAScenarioRunner.makePlan(options(["--simulate-monitoring-scope", "--qa-scenario", "account-a-b-a", "--qa-output", dir.path]))
+            let target = dir.appendingPathComponent(name)
+            if name == QAScenarioRunner.markerName { try fm.removeItem(at: target) }
+            try fm.linkItem(at: sentinel, to: target)
+            #expect(throws: QAScenarioRunner.HarnessError.self, "preflight: \(name)") { try QAScenarioRunner.checkOutput(dir.path) }
+            #expect(throws: QAScenarioRunner.HarnessError.self, "dirfd: \(name)") { try QAScenarioRunner.validate(try out.entries(), path: dir.path) }
+            #expect(throws: QAOutputDirectory.Failure.self, "write: \(name)") { try out.write(Data("must not truncate".utf8), name: name) }
+            #expect(throws: QAOutputDirectory.Failure.self, "cleanup: \(name)") { try out.removeRegularFile(name) }
+            await #expect(throws: QAScenarioRunner.HarnessError.self, "execution revalidation: \(name)") { _ = try await execute(plan) }
+            #expect(try Data(contentsOf: sentinel) == original)
+            #expect(try Data(contentsOf: target) == original)
+            // A rejected write must leave no temporary output behind.
+            #expect(try out.entries().allSatisfy { !$0.name.hasPrefix(".github-pet-qa-write-") })
+        }
+    }
+
+    @Test func writesReplaceInodesAndKeepTheOpenedDirectoryWhenItsPathChanges() throws {
+        let fm = FileManager.default
+        let root = temporaryDirectory()
+        try fm.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        defer { try? fm.removeItem(at: root) }
+        let dir = root.appendingPathComponent("output")
+        let out = try QAOutputDirectory(dir)
+        for name in [QAScenarioRunner.markerName, "runner.json", "step-00-launch.json", "step-00-launch-inbox.png"] {
+            let original = Data("old inode".utf8), replacement = Data("complete new output".utf8)
+            try out.write(original, name: name)
+            let reader = try FileHandle(forReadingFrom: dir.appendingPathComponent(name))
+            defer { try? reader.close() }
+            try out.write(replacement, name: name)
+            // This fails for in-place truncate/write even if a pre-open nlink check is added.
+            #expect(try reader.readToEnd() == original)
+            #expect(try Data(contentsOf: dir.appendingPathComponent(name)) == replacement)
+            #expect(out.kind(name) == .regular)
+        }
+        let moved = root.appendingPathComponent("opened-output")
+        let outside = root.appendingPathComponent("outside")
+        try fm.createDirectory(at: outside, withIntermediateDirectories: false)
+        let sentinel = outside.appendingPathComponent("runner.json")
+        try Data("outside".utf8).write(to: sentinel)
+        try fm.moveItem(at: dir, to: moved)
+        try fm.createSymbolicLink(at: dir, withDestinationURL: outside)
+        try out.write(Data("held directory".utf8), name: "runner.json")
+        #expect(try Data(contentsOf: sentinel) == Data("outside".utf8))
+        #expect(try Data(contentsOf: moved.appendingPathComponent("runner.json")) == Data("held directory".utf8))
+        try out.removeRegularFile("runner.json")
+        #expect(try Data(contentsOf: sentinel) == Data("outside".utf8))
+        #expect(throws: QAOutputDirectory.Failure.self) { try out.write(Data(), name: "runner.json\0ignored") }
+        #expect(try out.entries().allSatisfy { !$0.name.hasPrefix(".github-pet-qa-write-") })
+    }
+
     @Test func onlyDecodablePNGsAreAccepted() throws {
         #expect(throws: QAOutputDirectory.Failure.self) { try QAOutputDirectory.validatedPNG(nil) }
         #expect(throws: QAOutputDirectory.Failure.self) { try QAOutputDirectory.validatedPNG(Data()) }
