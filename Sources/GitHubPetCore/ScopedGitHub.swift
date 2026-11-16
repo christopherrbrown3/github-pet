@@ -13,6 +13,14 @@ public struct ScopeQueryPlan: Sendable {
     public let expectedAccount: ScopeAccount?
     public let searches: [Search]
     public let arguments: [String]
+    /// Viewer only: no search aliases and no target lookups, so no rows and no search cost.
+    public let identityOnly: Bool
+
+    /// Identity-only request: resolves (or verifies) the viewer while no valid selection is known.
+    public init(identityFor expectedAccount: ScopeAccount?) {
+        scope = .everything; self.expectedAccount = expectedAccount; searches = []; identityOnly = true
+        arguments = ["api", "graphql", "--hostname", "github.com", "-f", "query=query {\nviewer { id login }\n}"]
+    }
 
     public init(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil) throws {
         guard scope.mode == .everything || expectedAccount != nil else { throw ScopeValidationError.invalidIdentity }
@@ -48,6 +56,7 @@ public struct ScopeQueryPlan: Sendable {
             }
         }
         self.searches = searches
+        identityOnly = false
         let query = "query(\(definitions.joined(separator: ", "))) {\n\(fields.joined(separator: "\n"))\n}"
         self.arguments = ["api", "graphql", "--hostname", "github.com", "-f", "query=\(query)"]
             + variables.flatMap { ["-f", "\($0.0)=\($0.1)"] }
@@ -192,6 +201,8 @@ public enum ScopedResponseParser {
 /// Account-bound repository polling. Callers can share one budget across bootstrap/refetch.
 public protocol ScopedPolling: Sendable {
     func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult
+    /// Viewer only (no search aliases): used while no valid saved selection is known.
+    func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult
 }
 
 public struct ScopedGhClient: ScopedPolling {
@@ -212,6 +223,12 @@ public struct ScopedGhClient: ScopedPolling {
         guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount) else {
             return .failure(.identityRequired)
         }
+        return run(plan, budget: budget)
+    }
+    public func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
+        run(ScopeQueryPlan(identityFor: expectedAccount), budget: budget)
+    }
+    private func run(_ plan: ScopeQueryPlan, budget: CommandBudget) -> ScopedPollResult {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
         do {
             let auth = try runner.run(executable: gh, arguments: GhClient.authStatusArguments, budget: budget)

@@ -20,7 +20,12 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     /// budget and explicit release/teardown, so passing never depends on runner speed.
     private let holdLimit: Duration?
     init(holdLimit: Duration? = .seconds(20)) { self.holdLimit = holdLimit }
-    struct Request: Equatable { let scope: MonitoringScope; let expected: ScopeAccount? }
+    struct Request: Equatable {
+        let scope: MonitoringScope; let expected: ScopeAccount?
+        var identityOnly = false
+        /// The search aliases this request asked GitHub for (none for identity-only).
+        var searchAliases: [String] = []
+    }
     private var history: [Request] = []
     private var calls = 0
     var requestHistory: [Request] { lock.lock(); defer { lock.unlock() }; return history }
@@ -55,7 +60,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     }
     var status: String {
         lock.lock(); defer { lock.unlock() }
-        let last = history.last.map { " · requested \($0.scope.mode == .selected ? "Selected" : "Everything") · expected \($0.expected == nil ? "unknown" : $0.expected == Self.accountA ? "A" : "B")" } ?? ""
+        let last = history.last.map { " · requested \($0.identityOnly ? "identity only" : $0.scope.mode == .selected ? "Selected" : "Everything") · expected \($0.expected == nil ? "unknown" : $0.expected == Self.accountA ? "A" : "B")" } ?? ""
         return "Simulated account \(currentAccount == Self.accountA ? "A" : "B") · \(calls) requests · \(held.count) held · \(partial ? "partial" : "complete") replies" + last
     }
     var heldCount: Int { lock.lock(); defer { lock.unlock() }; return held.count }
@@ -74,6 +79,13 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     }
 
     func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
+        respond(scope: scope, expectedAccount: expectedAccount, identityOnly: false, budget: budget)
+    }
+    func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
+        respond(scope: .everything, expectedAccount: expectedAccount, identityOnly: true, budget: budget)
+    }
+    private func respond(scope: MonitoringScope, expectedAccount: ScopeAccount?, identityOnly: Bool,
+                         budget: CommandBudget) -> ScopedPollResult {
         lock.lock(); entered += 1; lock.unlock()
         defer { lock.lock(); finished += 1; lock.unlock() }
         do { try budget.check() }
@@ -90,13 +102,16 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
             heldWaiters.removeAll { $0.count <= held.count }
         }
         holdNext = max(0, holdNext - 1); calls += 1
-        history.append(Request(scope: scope, expected: expectedAccount))
+        let plan = identityOnly ? ScopeQueryPlan(identityFor: expectedAccount)
+            : try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount)
+        history.append(Request(scope: scope, expected: expectedAccount, identityOnly: identityOnly,
+                               searchAliases: plan?.searches.map(\.alias) ?? []))
         if history.count > 32 { history.removeFirst(history.count - 32) }
         lock.unlock()
         for waiter in ready { waiter.resume() }
-        guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount) else { return .failure(.identityRequired) }
+        guard let plan else { return .failure(.identityRequired) }
         var body: [String: Any] = ["viewer": ["id": account.viewerID, "login": account == Self.accountA ? "demo-a_sim" : "demo-b_sim"]]
-        for (index, target) in scope.targets.enumerated() {
+        for (index, target) in plan.scope.targets.enumerated() {
             if target.kind == .organization {
                 body["target\(index)"] = ["__typename": "Organization", "id": "O_demo_\(index)", "login": target.owner]
             } else {
