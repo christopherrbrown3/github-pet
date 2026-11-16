@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import GitHubPetCore
 
-@Suite struct RepositoryScopeSessionTests {
+@Suite @MainActor struct RepositoryScopeSessionTests {
     private let a = try! ScopeAccount(viewerID: "U_demo_A")
     private let b = try! ScopeAccount(viewerID: "U_demo_B")
     private var selected: MonitoringScope { try! MonitoringScope(selected: [MonitoringTarget(organization: "demo-a")]) }

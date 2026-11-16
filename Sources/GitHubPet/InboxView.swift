@@ -56,17 +56,14 @@ struct InboxView: View {
                                                                           count: model.items.count))
                 }
             }
-            if model.isDemo {
-                Text("Demo data (fixtures): invented items, not from GitHub.")
-                    .font(.caption).foregroundStyle(.secondary)
+            if let notice = model.demoNotice {
+                Text(notice).font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("inbox.demoNotice")
             }
             Text(model.scopeSummary).font(.caption).foregroundStyle(.secondary)
                 .accessibilityIdentifier("inbox.monitoringScope")
             if let quality = model.scopeQuality {
                 Text(quality).font(.caption).accessibilityIdentifier("inbox.scopeQuality")
-            }
-            if model.simulatesScope {
-                Text("Simulated/Demo accounts · offline · temporary settings").font(.caption)
             }
             HStack(spacing: 4) {
                 // Meaning is carried by primary-label words plus a symbol, never by colour

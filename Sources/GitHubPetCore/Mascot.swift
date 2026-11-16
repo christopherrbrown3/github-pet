@@ -87,7 +87,7 @@ public enum PrivacyText {
     /// count, and the count's quality. Unknown, partial, stale and failed data stay explicit;
     /// item details are left to the Inbox.
     public static func compactSummary(dataState: DataState, items: [InboxItem], unseenCount: Int,
-                                      demo: Bool = false) -> [String] {
+                                      demo: Bool = false, demoSource: String = "fixtures") -> [String] {
         let quality: String
         switch dataState {
         case .ready:
@@ -99,12 +99,13 @@ public enum PrivacyText {
         default:
             quality = dataState.statusText
         }
-        return demo ? ["\(demoLabel) data (fixtures)", quality] : [quality, "Open the Inbox for details"]
+        return demo ? ["\(demoLabel) data (\(demoSource))", quality] : [quality, "Open the Inbox for details"]
     }
 
     public static func summary(dataState: DataState, items: [InboxItem], unseenCount: Int,
-                               privacy: Bool, demo: Bool = false, maxLines: Int = 3) -> [String] {
-        var lines: [String] = demo ? ["\(demoLabel) data (fixtures)"] : []
+                               privacy: Bool, demo: Bool = false, demoSource: String = "fixtures", maxLines: Int = 3) -> [String] {
+        // `demoSource` names where invented data comes from: fixtures, or the simulated scope launch.
+        var lines: [String] = demo ? ["\(demoLabel) data (\(demoSource))"] : []
         switch dataState {
         case .ready, .partial:
             let badge = MascotPolicy.badge(dataState: dataState, count: items.count) ?? ""

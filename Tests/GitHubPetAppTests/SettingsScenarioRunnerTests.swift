@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import GitHubPetCore
 @testable import GitHubPet
@@ -159,5 +160,78 @@ private final class FrozenClock: @unchecked Sendable {
         #expect(defaults.dictionaryRepresentation().isEmpty)
         let plain = LaunchOptions.parse(arguments: ["GitHubPet", "--defaults-suite", LaunchOptions.snapshotDefaultsSuite], environment: [:])
         #expect(!(plain.userDefaults is EphemeralDefaults), "only an actual snapshot launch is redirected")
+    }
+
+    /// Copilot on #49: "simulated launches can persist real user preferences". Every persistence
+    /// path reachable in a simulated launch, driven for real, must leave the user's actual
+    /// preferences untouched: the app's own domain and this process's standard defaults.
+    @Test func simulatedLaunchesNeverPersistRealPreferences() async throws {
+        func realState() -> (app: NSDictionary, standard: NSDictionary) {
+            let app = UserDefaults.standard.persistentDomain(forName: "dev.github-pet.GitHubPet") ?? [:]
+            let standard = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.contains("GitHubPet") }
+            return (NSDictionary(dictionary: app), NSDictionary(dictionary: standard))
+        }
+        let before = realState()
+        // Every built-in runner scenario (PR A and PR B): privacy/motion/source toggles, scope
+        // Apply, corrupt/seed/repair, account switches, editor and discovery steps, quit.
+        for name in QAScenarioRunner.builtInScenarios.keys.sorted() { _ = try await run(name) }
+
+        // The remaining write paths, on one simulated model, outside the runner.
+        let budget = FrozenClock()
+        var launch = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
+        launch.forcePlaceholder = true
+        let model = AppModel(options: launch, runtime: AppModel.Runtime(
+            now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false }, schedulesTimers: false,
+            repositoryBudget: { CommandBudget(timeout: 20, now: { budget.now() }) }, scopeSimulationHoldLimit: nil))
+        model.scopeEditor.budget = { CommandBudget(timeout: 20, now: { budget.now() }) }
+        model.scopeEditor.announce = { _ in }
+        defer { model.cleanupScopeSimulation() }
+        model.settings.privacyMode.toggle()
+        model.settings.reducedMotion.toggle()
+        model.settings.mascotSize = 96
+        model.settings.mascotOriginX = 40; model.settings.mascotOriginY = 40
+        model.settings.quietHours.enabled = true
+        model.snooze(.oneHour)
+        model.settings.dataSource = .fixtures
+        model.settings.dataSource = .githubCLI
+        let deadline = ContinuousClock.now.advanced(by: .seconds(10))
+        func settle() async { while !model.simulatedScopeQuiescent && ContinuousClock.now < deadline { await Task.yield() } }
+        await settle()
+        model.scopeEditor.repositoryInput = "demo-a/pet"; model.scopeEditor.addRepository()
+        model.scopeEditor.apply(); await settle()
+        model.scopeEditor.loadSuggestions(); await settle()
+        #expect(model.activeMonitoringScope?.targets.count == 2, "the editor Apply really ran")
+        #expect(!model.persistsWindowFrames, "simulated launches never autosave window frames")
+        for identifier in ["inbox", "settings"] {
+            let window = WindowPresenter.makeWindow(title: identifier, content: Text(identifier), identifier: identifier,
+                                                    autosavesFrame: model.persistsWindowFrames)
+            window.setFrame(CGRect(x: 123, y: 321, width: 400, height: 300), display: false)
+            #expect(window.frameAutosaveName.isEmpty)
+            window.close()
+        }
+        // Positive control: the writes happened, in the launch's in-memory domain.
+        let domain = try #require(model.simulationDomain)
+        #expect(EphemeralDefaults.named(domain).dictionaryRepresentation().keys.contains { $0.hasPrefix("GitHubPet.") })
+
+        let after = realState()
+        #expect(after.app == before.app, "the app's real preferences domain is unchanged")
+        #expect(after.standard == before.standard, "no GitHubPet key reached standard defaults")
+    }
+
+    /// Copilot on #49 (InboxView:70): the simulated scope launch is not fixtures, so its notice
+    /// and hover say so; the Fixtures source keeps its existing wording.
+    @Test func demoNoticeDistinguishesSimulationFromFixtures() async throws {
+        let launch = try step(try await run("account-a-b-a"), "launch")
+        let inbox = try #require(launch["inbox"] as? [String: Any])
+        #expect(inbox["demoNotice"] as? String == "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.")
+        let hover = inbox["hoverLines"] as? [String] ?? []
+        #expect(hover.contains("Demo data (simulated scope)") && !hover.contains("Demo data (fixtures)"))
+        #expect(inbox["demoLabel"] as? Bool == true, "simulated data is still Demo-tagged")
+        let fixtures = try step(try await run("demo-isolation"), "switch-to-fixtures")["inbox"] as? [String: Any]
+        #expect(fixtures?["demoNotice"] as? String == "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+                "Fixtures inside a simulated launch are still the simulated launch")
+        #expect(PrivacyText.summary(dataState: .ready, items: [], unseenCount: 0, privacy: true, demo: true).first == "Demo data (fixtures)")
+        #expect(PrivacyText.compactSummary(dataState: .ready, items: [], unseenCount: 0, demo: true, demoSource: "simulated scope").first
+                == "Demo data (simulated scope)")
     }
 }

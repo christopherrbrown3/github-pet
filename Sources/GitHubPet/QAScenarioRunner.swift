@@ -415,6 +415,7 @@ enum QAScenarioRunner {
                          "reducedMotion": model.settings.reducedMotion, "effectiveReducedMotion": model.effectiveReducedMotion,
                          "alertsAllowed": model.alertsAllowed],
             "inbox": ["demoLabel": model.isDemo, "simulatedLabel": model.simulatesScope,
+                      "demoNotice": optional(model.demoNotice), "hoverLines": model.hoverLines(compact: false),
                       "scopeHeader": model.scopeSummary, "scopeQuality": optional(model.scopeQuality),
                       "status": model.dataState.statusText, "hint": optional(model.dataState.hint),
                       "badge": optional(model.badge), "lastSuccess": iso(model.lastSuccess),
