@@ -98,6 +98,10 @@ the app, proving shallow histories fail before reaching Swift.
   the accessibility labels say "Demo data". Privacy mode never hides it. The opt-in
   `--simulate-monitoring-scope` launch is Demo too, but it is not fixtures: its explanatory line
   reads "Simulated scope (demo): …" and its hover says "Demo data (simulated scope)".
+- Refresh during an in-flight GitHub CLI poll reads "Refreshing…" and is queued once, then runs
+  after that reply lands. A source, account or scope change in the meantime drops the queued
+  request, since that change already started its own poll. Waking the Mac refreshes the live source
+  once, after 5 s, with repeated wakes collapsed. Snapshot and simulated launches don't observe wake.
 - Switching the data source clears the inbox to Loading. Rows, counts and baseline from the
   previous source are never shown as the new source's data, and a slow fetch from an earlier
   session is discarded.
