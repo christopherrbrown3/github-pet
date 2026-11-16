@@ -89,6 +89,11 @@ scripts/package-zip.sh
 open .build/app/GitHubPet.app
 ```
 
+To remove it, quit the app and delete GitHubPet.app; the installation guide also shows the
+optional `defaults delete` command for its saved settings (you run it yourself), notes that
+settings should survive an update but that this is untested, and explains keyboard access: the
+menu-bar icon and Settings are the keyboard route, and the floating mascot isn't focusable.
+
 See the [development guide](docs/development.md) for tests and QA hooks.
 
 ## Distribution plan
