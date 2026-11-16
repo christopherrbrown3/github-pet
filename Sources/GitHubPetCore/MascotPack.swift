@@ -35,11 +35,38 @@ public enum PackLabel {
     /// Scalar cap applied first so a single enormous grapheme (stacked combining marks) stays bounded.
     public static let maxScalars = 256
     public static let fallbackID = "(unnamed pack)"
+    /// Paths get a larger cap, cut in the middle so the identifying tail stays visible.
+    public static let maxPathGraphemes = 160
+    /// Leading graphemes kept when a path is cut in the middle (enough for e.g. "/Users/name").
+    static let pathHeadGraphemes = 24
+    /// Scalar cap for paths: well above any real path, still bounded.
+    public static let maxPathScalars = 2048
 
     /// Control characters (C0, DEL, C1, line/paragraph separators) become a space, invisible format
     /// characters (zero-width, bidi overrides/isolates and marks, BOM, soft hyphen) are dropped,
     /// runs of spaces collapse, and the result is trimmed and bounded. Empty results give `fallback`.
     public static func sanitize(_ raw: String, fallback: String = fallbackID) -> String {
+        let (text, truncated) = clean(raw, scalarCap: maxScalars)
+        guard !text.isEmpty else { return fallback }
+        guard text.count > maxGraphemes else { return truncated ? text + "…" : text }
+        return String(text.prefix(maxGraphemes)) + "…"
+    }
+
+    /// Same cleaning for a file-system path, bounded at `maxPathGraphemes`. A longer path keeps its
+    /// first `pathHeadGraphemes` and its tail (starting at a component boundary when one is near),
+    /// joined by "…", so the pack directory's own name is never the part cut off.
+    public static func sanitizePath(_ raw: String, fallback: String = "(unknown path)") -> String {
+        let (text, truncated) = clean(raw, scalarCap: maxPathScalars)
+        guard !text.isEmpty else { return fallback }
+        let characters = Array(text)
+        guard characters.count > maxPathGraphemes else { return truncated ? text + "…" : text }
+        let head = String(characters.prefix(pathHeadGraphemes))
+        var tail = Array(characters.suffix(maxPathGraphemes - pathHeadGraphemes - 1))
+        if let slash = tail.prefix(32).firstIndex(of: "/") { tail.removeFirst(slash) }
+        return head + "…" + String(tail) + (truncated ? "…" : "")
+    }
+
+    private static func clean(_ raw: String, scalarCap maxScalars: Int) -> (text: String, truncated: Bool) {
         var scalars = String.UnicodeScalarView()
         var pendingSpace = false
         var truncated = false
@@ -57,10 +84,7 @@ public enum PackLabel {
                 scalars.append(scalar)
             }
         }
-        let text = String(scalars)
-        guard !text.isEmpty else { return fallback }
-        guard text.count > maxGraphemes else { return truncated ? text + "…" : text }
-        return String(text.prefix(maxGraphemes)) + "…"
+        return (String(scalars), truncated)
     }
 }
 

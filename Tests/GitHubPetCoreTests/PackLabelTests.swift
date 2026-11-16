@@ -109,4 +109,36 @@ struct PackLabelTests {
         }
         #expect(MascotPackError.notPNG("\n").description == "not a PNG '(invalid)'")
     }
+
+    @Test func shortPathPassesThroughAndIsCleaned() {
+        #expect(PackLabel.sanitizePath("/Users/me/packs/mona-pet-v1") == "/Users/me/packs/mona-pet-v1")
+        #expect(PackLabel.sanitizePath("/tmp/a\n\u{1B}[2Jb\u{202E}c") == "/tmp/a [2Jbc")
+        #expect(PackLabel.sanitizePath("\u{200B}") == "(unknown path)")
+    }
+
+    @Test func longPathKeepsTheIdentifyingTail() {
+        let tail = "/work/custom-packs/hostile-pack-B"
+        let path = "/Users/someone" + String(repeating: "/very-long-directory-name", count: 20) + tail
+        let out = PackLabel.sanitizePath(path)
+        #expect(out.count <= PackLabel.maxPathGraphemes)
+        #expect(out.hasPrefix("/Users/someone"))
+        #expect(out.hasSuffix(tail))
+        #expect(out.contains("…"))
+        // Names and ids keep the short cap.
+        #expect(PackLabel.sanitize(path).count == PackLabel.maxGraphemes + 1)
+    }
+
+    @Test func longLastComponentKeepsItsEnd() {
+        let path = "/p/" + String(repeating: "x", count: 500) + "-END"
+        let out = PackLabel.sanitizePath(path)
+        #expect(out.count <= PackLabel.maxPathGraphemes)
+        #expect(out.hasSuffix("-END"))
+    }
+
+    @Test func pathAtTheCapIsUntouchedAndHugePathsAreBounded() {
+        let exact = String(repeating: "a", count: PackLabel.maxPathGraphemes)
+        #expect(PackLabel.sanitizePath(exact) == exact)
+        let huge = PackLabel.sanitizePath("/" + String(repeating: "d/", count: 1_000_000))
+        #expect(huge.count <= PackLabel.maxPathGraphemes + 1)
+    }
 }

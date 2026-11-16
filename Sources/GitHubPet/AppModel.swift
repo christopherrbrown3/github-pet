@@ -85,7 +85,7 @@ final class AppModel: ObservableObject {
             packErrors = []
         }
         // One launch line on stderr so QA can confirm which mascot is in use.
-        let packStatus = pack.map { "mascot pack \($0.manifest.displayID) loaded from \(PackLabel.sanitize($0.directory.path, fallback: "(unknown path)"))" }
+        let packStatus = pack.map { "mascot pack \($0.manifest.displayID) loaded from \(PackLabel.sanitizePath($0.directory.path))" }
             ?? (packErrors.isEmpty ? "mascot placeholder (no pack)"
                 : "mascot placeholder (pack rejected: \(packErrors.map(\.description).joined(separator: "; ")))")
         FileHandle.standardError.write(Data("GitHubPet: \(packStatus)\n".utf8))
