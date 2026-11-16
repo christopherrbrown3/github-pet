@@ -11,17 +11,25 @@ binary=${1:-.build/app/GitHubPet.app/Contents/MacOS/GitHubPet}
 out=${2:-.build/render-check}
 rm -rf "$out"
 
-# Snapshot mode must ignore saved settings and leave them alone. Seed a test preferences suite
-# with a live source and privacy off, point the app at it with --defaults-suite and --gh, then
-# check the render used Demo fixtures with default privacy and the suite is unchanged. (The app's
-# real preferences domain is never touched: a running copy of the app may be writing to it.)
-suite=dev.github-pet.render-check.$$
+# Snapshot mode must ignore saved settings and leave them alone. Seed a preferences file with a
+# live source and privacy off, point the app at it with --defaults-suite and --gh, then check the
+# render used Demo fixtures with default privacy and the file is unchanged. The seed lives in a
+# temp directory as an absolute-path domain: a named `defaults write` suite left an empty
+# ~/Library/Preferences/dev.github-pet.render-check.<pid>.plist behind even after `defaults
+# delete` (cfprefsd rewrites it), and the app's real preferences domain is never touched.
 scratch=$(mktemp -d)
-trap 'defaults delete "$suite" >/dev/null 2>&1 || true' EXIT
-seed=$(printf '%s' '{"schemaVersion":1,"dataSource":"githubCLI","privacyMode":false}' | xxd -p | tr -d '\n')
-defaults write "$suite" GitHubPet.settings.v1 -data "$seed"
-# Key-sorted dump: the exported plist's byte order is not stable.
-prefs() { defaults export "$suite" "$scratch/$1.plist" && plutil -p "$scratch/$1.plist"; }
+trap 'rm -rf "$scratch"' EXIT
+suite=$scratch/seeded-preferences
+seed=$(printf '%s' '{"schemaVersion":1,"dataSource":"githubCLI","privacyMode":false}' | base64)
+# Written directly: plutil -insert would read the dotted key as a key path.
+cat > "$suite.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>GitHubPet.settings.v1</key><data>$seed</data></dict></plist>
+PLIST
+plutil -lint -s "$suite.plist"
+# Exact bytes plus a readable dump, so any rewrite (even an identical-looking one) is caught.
+prefs() { shasum -a 256 "$suite.plist" && plutil -p "$suite.plist"; }
 before=$(prefs before)
 
 # An executable gh trap proves snapshot CLI selection cannot launch even an installed CLI.

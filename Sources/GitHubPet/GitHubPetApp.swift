@@ -6,6 +6,11 @@ import SwiftUI
 struct GitHubPetApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    init() {
+        // Before any model or defaults domain exists: misused QA runner flags exit non-zero.
+        QAScenarioRunner.preflight()
+    }
+
     var body: some Scene {
         MenuBarExtra {
             InboxView(model: appDelegate.model)
@@ -40,12 +45,20 @@ struct MenuBarLabel: View {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let options = LaunchOptions.parse()
-    lazy var model = AppModel(options: options)
+    lazy var model = AppModel(options: options, runtime: QAScenarioRunner.plan?.runtime ?? AppModel.Runtime())
     private var mascot: MascotWindowController?
+
+    func applicationWillTerminate(_ notification: Notification) {
+        model.cleanupScopeSimulation()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Menu-bar utility: no Dock icon even when run straight from `swift run`.
         NSApp.setActivationPolicy(.accessory)
+        if let plan = QAScenarioRunner.plan {
+            Task { @MainActor in await QAScenarioRunner.run(plan, model: model) }
+            return
+        }
         if let directory = options.snapshotDirectory {
             Task { @MainActor in
                 await SnapshotRenderer.run(model: model, directory: directory)

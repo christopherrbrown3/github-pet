@@ -12,6 +12,7 @@ import GitHubPetCore
 ///   GITHUB_PET_GH_PATH=<path>     use this gh executable (missing/fake gh testing)
 ///   --render-snapshots <dir>      render a fixture scenario offscreen to PNG + AX report, then quit;
 ///                                 always fixtures, default settings and a throwaway preferences suite
+///   --simulate-monitoring-scope  opt-in offline scope controls, fresh throwaway defaults, no network
 ///   --placeholder                 draw the native placeholder instead of the bundled pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
 struct LaunchOptions {
@@ -22,6 +23,11 @@ struct LaunchOptions {
     var packDirectory: URL?
     var forcePlaceholder = false
     var snapshotDirectory: URL?
+    /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
+    var simulatesMonitoringScope = false
+    /// QA scenario runner (QAScenarioRunner); refused unless simulatesMonitoringScope.
+    var qaScenario: String?
+    var qaOutput: String?
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
 
@@ -46,6 +52,9 @@ struct LaunchOptions {
             case "--placeholder": options.forcePlaceholder = true
             case "--render-snapshots":
                 if let dir = iterator.next() { options.snapshotDirectory = URL(fileURLWithPath: dir, isDirectory: true) }
+            case "--simulate-monitoring-scope": options.simulatesMonitoringScope = true
+            case "--qa-scenario": options.qaScenario = iterator.next() ?? ""
+            case "--qa-output": options.qaOutput = iterator.next() ?? ""
             case "--fixtures": options.forcedSource = "fixtures"
             case "--gh": options.forcedSource = "gh"
             case "--inject-event-after":
@@ -60,7 +69,13 @@ struct LaunchOptions {
         // Snapshot evidence is shared, so it must never contain live GitHub data or touch the
         // user's preferences: force Demo fixtures and fresh settings in a throwaway suite,
         // whatever other flags or saved settings say. Applied before AppModel exists.
+        if options.simulatesMonitoringScope {
+            options.forcedSource = "gh"
+            options.defaultsSuite = "dev.github-pet.scope-simulation.\(ProcessInfo.processInfo.processIdentifier).\(UUID().uuidString)"
+            options.resetSettings = true
+        }
         if options.snapshotDirectory != nil {
+            options.simulatesMonitoringScope = false
             options.forcedSource = "fixtures"
             options.defaultsSuite = Self.snapshotDefaultsSuite
             options.resetSettings = true
@@ -92,26 +107,23 @@ struct LaunchOptions {
 
     static let snapshotDefaultsSuite = "dev.github-pet.render-snapshots.\(ProcessInfo.processInfo.processIdentifier)"
 
+    /// Test seam: an in-memory store for a normal (non-simulated) launch.
+    var userDefaultsOverride: UserDefaults?
+
     var userDefaults: UserDefaults {
-        // Snapshot mode keeps its settings in memory: a throwaway suite, even cleared, leaves a
-        // plist in ~/Library/Preferences when the process exits.
-        if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite { return EphemeralDefaults() }
+        if let userDefaultsOverride { return userDefaultsOverride }
+        // The simulated launch's throwaway domain lives only in memory: nothing reaches disk.
+        if simulatesMonitoringScope, let defaultsSuite, defaultsSuite.hasPrefix("dev.github-pet.scope-simulation.") {
+            return EphemeralDefaults.named(defaultsSuite)
+        }
+        // Snapshot renders also use a throwaway domain; a real suite left an empty
+        // render-snapshots.<pid>.plist behind on every run, even after removePersistentDomain.
+        if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite {
+            return EphemeralDefaults.named(Self.snapshotDefaultsSuite)
+        }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {
             return suite
         }
         return .standard
     }
-}
-
-/// In-memory stand-in for the settings store's `UserDefaults` calls (`data`, `set`,
-/// `removeObject`): nothing reaches cfprefsd, so no preferences file is created.
-final class EphemeralDefaults: UserDefaults {
-    private var values: [String: Any] = [:]
-
-    init() { super.init(suiteName: nil)! }
-
-    override func object(forKey defaultName: String) -> Any? { values[defaultName] }
-    override func data(forKey defaultName: String) -> Data? { values[defaultName] as? Data }
-    override func set(_ value: Any?, forKey defaultName: String) { values[defaultName] = value }
-    override func removeObject(forKey defaultName: String) { values[defaultName] = nil }
 }

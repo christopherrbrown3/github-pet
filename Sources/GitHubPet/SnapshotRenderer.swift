@@ -174,6 +174,21 @@ enum SnapshotRenderer {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
         }
+        // Monitoring scope editor with a full 10-entry Demo draft and inline errors; nothing is
+        // applied. The Form keeps its 520 pt width and scrolls rather than growing the window.
+        report.append("## settings monitoring scope (long draft)")
+        let editor = model.scopeEditor
+        editor.setMode(.selected)
+        for index in 0..<5 { editor.organizationInput = "demo-org-with-a-long-name-\(index)"; editor.addOrganization() }
+        for index in 0..<5 { editor.repositoryInput = "demo-owner/a-much-longer-demo-repository-name-\(index)"; editor.addRepository() }
+        editor.update(editor.draft.rows[1].id, text: "org:demo is:pr")
+        editor.repositoryInput = "demo-owner/one-too-many"; editor.addRepository()
+        report.append("scope editor: rows=\(editor.draft.rows.count) apply=\(editor.canApply) blocked=\(editor.applyBlockedReason ?? "none")")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(Form { MonitoringScopeSection(model: model, editor: editor) }.formStyle(.grouped).frame(width: 520),
+                                   name: "settings-scope-long\(suffix)", directory: directory, appearance: appearance)
+        }
+        editor.cancel()
 
         // gh setup links (#52): the real engine in each setup state, never a live gh call.
         report.append("## gh setup links")
@@ -198,12 +213,13 @@ enum SnapshotRenderer {
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
+        EphemeralDefaults.release(LaunchOptions.snapshotDefaultsSuite)
         FileHandle.standardError.write(Data("GitHubPet: snapshots written to \(directory.path)\n".utf8))
     }
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
-    private static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
+    static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
         let window: NSWindow
         if asWindow {

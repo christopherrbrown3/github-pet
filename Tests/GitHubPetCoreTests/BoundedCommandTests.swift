@@ -131,6 +131,70 @@ import Testing
         }
         #expect(unrelated.isRunning, "cancellation must not signal another process or process group")
     }
+
+    /// Dispatch threads have no Task, so the latched budget flag is the only cancellation signal.
+    @Test func latchedBudgetCancellationReachesWorkWithoutATaskContext() {
+        let budget = CommandBudget(timeout: 5)
+        #expect(!budget.isCancelled)
+        budget.cancel(); budget.cancel()
+        #expect(budget.isCancelled)
+        let group = DispatchGroup(), receipt = ErrorReceipt()
+        group.enter()
+        // A dedicated queue gets its own thread even while the suite saturates the global pool.
+        DispatchQueue(label: "scope.tests.taskless-check").async {
+            defer { group.leave() }
+            do { try budget.check() } catch { receipt.record(error) }
+        }
+        #expect(waitForGroup(group, seconds: 20), "bound only limits a broken run")
+        #expect(receipt.value as? CommandError == .cancelled)
+        #expect(budget.remaining > 0, "cancellation is not reported as a deadline")
+        #expect(CommandBudget(timeout: 5).isCancelled == false, "a replacement budget is independent")
+    }
+
+    @Test func budgetCancellationFromAnotherThreadStopsAndReapsTheChild() throws {
+        let directory = try cancellationDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fifo = directory.appendingPathComponent("started")
+        #expect(mkfifo(fifo.path, 0o600) == 0)
+        let fd = open(fifo.path, O_RDWR | O_NONBLOCK)
+        guard fd >= 0 else { Issue.record("could not open child-start handshake"); return }
+        defer { close(fd) }
+        let budget = CommandBudget(timeout: 10), receipt = CancellationReceipt(), errors = ErrorReceipt()
+        let done = DispatchGroup()
+        done.enter()
+        // The runner executes on a plain Dispatch thread, exactly like ScopeEditor's off-pool work.
+        DispatchQueue(label: "scope.tests.offpool-runner").async {
+            defer { done.leave() }
+            do {
+                _ = try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"),
+                    arguments: ["-c", "printf '%s\\n' $$ > \"$1\"; exec /bin/sleep 3", "fixture", fifo.path], budget: budget)
+            } catch { errors.record(error) }
+        }
+        let pid = waitForChildPID(fd, seconds: 5)
+        receipt.record(pid: pid, remaining: budget.remaining)
+        budget.cancel()
+        #expect(waitForGroup(done, seconds: 5), "bounded runner must return")
+        #expect(errors.value as? CommandError == .cancelled, "never timedOut or a normal exit")
+        let observed = receipt.value
+        #expect(observed.pid != nil && observed.alive, "actual child-start receipt is required")
+        if let pid = observed.pid {
+            let status = kill(pid, 0), error = errno
+            #expect(status == -1 && error == ESRCH, "cancelled child is gone/reaped")
+        }
+    }
+
+    @Test func cancelledBudgetLaunchesNoChild() throws {
+        let directory = try cancellationDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let marker = directory.appendingPathComponent("launched")
+        let budget = CommandBudget(timeout: 5)
+        budget.cancel()
+        #expect(throws: CommandError.cancelled) {
+            try ProcessCommandRunner().run(executable: URL(fileURLWithPath: "/bin/sh"),
+                arguments: ["-c", "printf launched > \"$1\"", "fixture", marker.path], budget: budget)
+        }
+        #expect(!FileManager.default.fileExists(atPath: marker.path))
+    }
 }
 
 private func cancellationDirectory() throws -> URL {
@@ -158,6 +222,12 @@ private func waitForChildPID(_ fd: Int32, seconds: TimeInterval) -> Int32? {
             .trimmingCharacters(in: .whitespacesAndNewlines)), pid > 1 else { return nil }
         return pid
     }
+}
+private final class ErrorReceipt: @unchecked Sendable {
+    private let lock = NSLock()
+    private var error: Error?
+    func record(_ error: Error) { lock.lock(); self.error = error; lock.unlock() }
+    var value: Error? { lock.lock(); defer { lock.unlock() }; return error }
 }
 private final class CancellationReceipt: @unchecked Sendable {
     private let lock = NSLock()
