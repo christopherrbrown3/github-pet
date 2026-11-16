@@ -115,9 +115,12 @@ has **not been tested** on a clean install yet, so check Settings after updating
    defaults delete dev.github-pet.GitHubPet
    ```
 
-4. GitHub Pet does not open at login yet. When that option exists, remove it under **System
-   Settings → General → Login Items** (or turn it off in GitHub Pet's Settings) before deleting the
-   app.
+4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Startup**,
+   or under **System Settings → General → Login Items**. Do this before step 2, while the app is
+   still installed. If you already deleted the app, check Login Items and remove GitHub Pet there
+   if it is still listed. Open at login has **not been verified on a real Mac** with this
+   ad-hoc-signed build yet; Settings shows whatever macOS reports (On, Off, Pending approval or
+   Unavailable).
 
 Uninstalling does not touch the GitHub CLI or its sign-in. A Homebrew cask is planned but not
 available, so there is no `brew uninstall` path yet.

@@ -16,6 +16,16 @@ public struct EventTracker: Sendable {
         self.capacity = max(1, capacity)
     }
 
+    /// Restores a persisted tracker: `ids` oldest first, keeping only the newest `capacity`.
+    public init<S: Sequence>(capacity: Int = 1024, restoring ids: S, baselineEstablished: Bool) where S.Element == String {
+        self.init(capacity: capacity)
+        for id in ids { remember(id) }
+        self.baselineEstablished = baselineEstablished
+    }
+
+    /// Known IDs, oldest first (eviction order).
+    public var orderedIDs: [String] { order }
+
     public var count: Int { known.count }
 
     public func contains(_ id: String) -> Bool { known.contains(id) }
