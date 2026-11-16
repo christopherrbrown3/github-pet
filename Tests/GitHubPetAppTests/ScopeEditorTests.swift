@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Testing
 @testable import GitHubPetCore
 @testable import GitHubPet
@@ -6,6 +7,92 @@ import Testing
 private final class FrozenBudgetClock: @unchecked Sendable {
     private let instant = ContinuousClock.now
     func now() -> ContinuousClock.Instant { instant }
+}
+
+/// Test-only transport: each discovery completes only when its own gate is released. The
+/// blocking work runs on ScopeEditor's GCD queue, never the cooperative pool or main actor.
+private final class ControlledDiscovery: ScopeAccessChecking, @unchecked Sendable {
+    private let lock = NSLock()
+    private var gates: [DispatchSemaphore] = []
+    var started: Int { lock.lock(); defer { lock.unlock() }; return gates.count }
+    func release(_ index: Int) {
+        lock.lock(); let gate = gates[index]; lock.unlock(); gate.signal()
+    }
+    func releaseAll() {
+        lock.lock(); let all = gates; lock.unlock(); all.forEach { $0.signal() }
+    }
+    func validate(scope: MonitoringScope, expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeAccessOutcome {
+        .failed(.transport)
+    }
+    func discover(expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeDiscoveryResult {
+        let gate = DispatchSemaphore(value: 0)
+        lock.lock(); let index = gates.count; gates.append(gate); lock.unlock()
+        guard gate.wait(timeout: .now() + 10) == .success else { return .failed(.deadline) }
+        let name = index == 0 ? "demo-old" : "demo-new"
+        return ScopeDiscoveryResult(viewer: ScopeViewer(account: expectedAccount, login: "demo-user"),
+            organizations: .init(suggestions: [name], completion: .exhausted, pages: 1),
+            repositories: .init(suggestions: [name + "/pet"], completion: .exhausted, pages: 1))
+    }
+}
+
+/// Test-only paged transport: real ScopeDiscovery.run over fixture pages that always report
+/// more. The first run's first page blocks until the test releases it after cancellation, so
+/// any later page of that run proves cancellation never reached the Dispatch thread.
+private final class PagedDiscovery: ScopeAccessChecking, @unchecked Sendable {
+    private let lock = NSLock()
+    private let firstPage = DispatchSemaphore(value: 0)
+    private var pages: [Int] = []
+    private var results: [Int: ScopeDiscoveryResult] = [:]
+    var started: Int { lock.lock(); defer { lock.unlock() }; return pages.count }
+    func pages(_ run: Int) -> Int { lock.lock(); defer { lock.unlock() }; return pages[run] }
+    func result(_ run: Int) -> ScopeDiscoveryResult? { lock.lock(); defer { lock.unlock() }; return results[run] }
+    func releaseFirstPage() { firstPage.signal() }
+    func validate(scope: MonitoringScope, expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeAccessOutcome {
+        .failed(.transport)
+    }
+    func discover(expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeDiscoveryResult {
+        lock.lock(); let run = pages.count; pages.append(0); lock.unlock()
+        let result = ScopeDiscovery.run(expectedAccount: expectedAccount, budget: budget) { plan in
+            self.lock.lock(); self.pages[run] += 1; let number = self.pages[run]; self.lock.unlock()
+            if run == 0 && number == 1 { _ = self.firstPage.wait(timeout: .now() + 10) }
+            let name = "demo-\(run == 0 ? "old" : "new")-\(number)"
+            var viewer: [String: Any] = ["id": expectedAccount.viewerID, "login": "demo-user"]
+            let more: [String: Any] = ["hasNextPage": true, "endCursor": "cursor\(number)"]
+            if case .some = plan.organizationCursor { viewer["organizations"] = ["nodes": [["login": name]], "pageInfo": more] }
+            if case .some = plan.repositoryCursor { viewer["repositories"] = ["nodes": [["nameWithOwner": name + "/pet"]], "pageInfo": more] }
+            let bytes = try JSONSerialization.data(withJSONObject: ["data": ["viewer": viewer]])
+            guard budget.reserve(bytes.count) else { throw CommandError.outputLimitExceeded }
+            return CommandResult(exitCode: 0, stdout: bytes, stderr: Data())
+        }
+        lock.lock(); results[run] = result; lock.unlock()
+        return result
+    }
+}
+
+/// Real gh transport pointed at a fixture executable that reports its PID through a FIFO, then
+/// execs a short sleep. Records each outcome so the test sees what the Dispatch thread returned.
+private final class RecordingGhAccess: ScopeAccessChecking, @unchecked Sendable {
+    let base: ScopeGhAccess
+    private let lock = NSLock()
+    private var outcomes: [ScopeAccessOutcome] = []
+    init(_ base: ScopeGhAccess) { self.base = base }
+    var recorded: [ScopeAccessOutcome] { lock.lock(); defer { lock.unlock() }; return outcomes }
+    func validate(scope: MonitoringScope, expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeAccessOutcome {
+        let outcome = base.validate(scope: scope, expectedAccount: expectedAccount, budget: budget)
+        lock.lock(); outcomes.append(outcome); lock.unlock()
+        return outcome
+    }
+    func discover(expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeDiscoveryResult { .failed(.transport) }
+}
+
+/// Nonblocking: the main actor must stay free to start the validation Task under test.
+private func readChildPID(_ fd: Int32) -> Int32? {
+    var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+    guard poll(&descriptor, 1, 0) > 0 else { return nil }
+    var buffer = [UInt8](repeating: 0, count: 64)
+    let count = read(fd, &buffer, buffer.count)
+    guard count > 0 else { return nil }
+    return Int32(String(decoding: buffer.prefix(count), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
 }
 
 /// Drives the Settings editor through the real AppModel in the offline simulated launch.
@@ -217,5 +304,116 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(!editor.suggestions.organizations.isEmpty)
         app.simulateScopeAccount(true); try await settled(app)
         #expect(editor.discovery == .idle && editor.suggestions.organizations.isEmpty, "hints belong to one account")
+    }
+
+    @Test func cancelledDiscoveryCannotMutateReplacementAfterIdentityOrSourceRoundTrip() async throws {
+        for accountRoundTrip in [true, false] {
+            for oldCompletesFirst in [true, false] {
+                let app = model(), access = ControlledDiscovery()
+                defer { access.releaseAll(); app.cleanupScopeSimulation() }
+                try await settled(app)
+                let editor = ScopeEditor(model: app, access: access)
+                editor.announce = { _ in }
+                editor.observeActive()
+                editor.loadSuggestions()
+                try await wait { access.started == 1 }
+                // Drive actual model changes, then the same observer AppModel.sync calls.
+                if accountRoundTrip {
+                    app.simulateScopeAccount(true); try await settled(app); editor.observeActive()
+                    app.simulateScopeAccount(false); try await settled(app); editor.observeActive()
+                } else {
+                    app.settings.dataSource = .fixtures; editor.observeActive()
+                    app.settings.dataSource = .githubCLI; try await settled(app); editor.observeActive()
+                }
+                #expect(editor.discovery == .idle && !editor.discoveryInFlight)
+                editor.loadSuggestions()
+                try await wait { access.started == 2 }
+                let loadingStatus = editor.status
+                access.release(oldCompletesFirst ? 0 : 1)
+                try await wait { editor.receivedChecks == 1 }
+                if oldCompletesFirst {
+                    #expect(editor.discovery == .loading && editor.discoveryInFlight,
+                            "Cancelled origin must not clear the replacement task or finish its loading state")
+                    #expect(editor.suggestions.organizations.isEmpty && editor.status == loadingStatus)
+                    #expect(!editor.canLoadSuggestions, "The replacement still owns Find suggestions")
+                } else {
+                    #expect(editor.suggestions.organizations == ["demo-new"])
+                }
+                access.release(oldCompletesFirst ? 1 : 0)
+                try await wait { editor.receivedChecks == 2 }
+                #expect(!editor.discoveryInFlight && editor.canLoadSuggestions)
+                #expect(editor.suggestions.organizations == ["demo-new"])
+                #expect(editor.suggestions.repositories == ["demo-new/pet"])
+                #expect(editor.discardedReplies == 1)
+            }
+        }
+    }
+
+    @Test func cancelledDiscoveryStopsBeforeLaterPagesWhileReplacementCompletes() async throws {
+        let app = model(), access = PagedDiscovery()
+        defer { access.releaseFirstPage(); app.cleanupScopeSimulation() }
+        try await settled(app)
+        let editor = ScopeEditor(model: app, access: access)
+        let clock = FrozenBudgetClock()
+        editor.budget = { CommandBudget(timeout: 20, now: { clock.now() }) }
+        editor.announce = { _ in }
+        editor.observeActive()
+        editor.loadSuggestions()
+        try await wait { access.started == 1 }
+        // Account round-trip cancels the origin Task while its first page is still in flight.
+        app.simulateScopeAccount(true); try await settled(app); editor.observeActive()
+        app.simulateScopeAccount(false); try await settled(app); editor.observeActive()
+        editor.loadSuggestions()
+        try await wait { editor.receivedChecks == 1 }
+        // The replacement owns an independent budget and completes all three pages first.
+        #expect(access.pages(1) == 3)
+        #expect(editor.suggestions.organizations == ["demo-new-1", "demo-new-2", "demo-new-3"])
+        guard case .finished(let replacement) = editor.discovery else { Issue.record("replacement unfinished"); return }
+        #expect(replacement.failure == nil && replacement.organizations.completion == .capped)
+        access.releaseFirstPage()
+        try await wait { editor.receivedChecks == 2 }
+        #expect(access.pages(0) == 1, "a cancelled run never starts a later page")
+        let old = try #require(access.result(0))
+        #expect(old.failure == .cancelled)
+        #expect(![ScopeDiscoveryCompletion.exhausted, .capped].contains(old.organizations.completion))
+        #expect(![ScopeDiscoveryCompletion.exhausted, .capped].contains(old.repositories.completion))
+        #expect(editor.discardedReplies == 1 && editor.discovery == .finished(replacement), "no old hints reach state")
+        #expect(!editor.suggestions.organizations.contains { $0.hasPrefix("demo-old") })
+    }
+
+    @Test func cancelledValidationStopsItsRealChildOffPool() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let fifo = directory.appendingPathComponent("started"), script = directory.appendingPathComponent("gh")
+        #expect(mkfifo(fifo.path, 0o600) == 0)
+        let fd = open(fifo.path, O_RDWR | O_NONBLOCK)
+        try #require(fd >= 0)
+        defer { close(fd) }
+        try "#!/bin/sh\nprintf '%s\\n' $$ > '\(fifo.path)'\nexec /bin/sleep 3\n".write(to: script, atomically: true, encoding: .utf8)
+        #expect(chmod(script.path, 0o700) == 0)
+        let access = RecordingGhAccess(ScopeGhAccess(
+            locator: GhLocator(environment: [GhLocator.overrideVariable: script.path]), runner: ProcessCommandRunner()))
+        let editor = ScopeEditor(model: app, access: access)
+        editor.budget = { CommandBudget(timeout: 10) } // real process: system clock
+        editor.announce = { _ in }
+        editor.observeActive()
+        editor.repositoryInput = "demo-b/pet"; editor.addRepository()
+        editor.apply()
+        #expect(editor.validationInFlight)
+        var pid: Int32?
+        try await wait { pid = pid ?? readChildPID(fd); return pid != nil }
+        let child = try #require(pid, "actual child-start receipt")
+        #expect(kill(child, 0) == 0)
+        editor.cancel()
+        try await wait { editor.receivedChecks == 1 }
+        // Before the fix the Dispatch thread waited for the child to exit on its own and parsed
+        // its empty output; now it observes the cancelled budget and tears the child down.
+        #expect(access.recorded == [.failed(.cancelled)])
+        let status = kill(child, 0), error = errno
+        #expect(status == -1 && error == ESRCH, "cancelled child is gone/reaped")
+        #expect(editor.discardedReplies == 1 && app.activeMonitoringScope == ScopeSimulation.selectedA)
     }
 }

@@ -12,6 +12,7 @@ public final class CommandBudget: @unchecked Sendable {
     private let limit: Int
     private var used = 0
     private var overflow = false
+    private var cancelled = false
 
     public convenience init(timeout: TimeInterval = CommandBudget.maximumSeconds, maximumBytes: Int = CommandBudget.maximumBytes) {
         self.init(timeout: timeout, maximumBytes: maximumBytes, now: { ContinuousClock.now }, usesSystemClock: true)
@@ -52,12 +53,17 @@ public final class CommandBudget: @unchecked Sendable {
         return true
     }
 
-    /// Check the latched byte error, current Task cancellation and monotonic deadline.
+    /// Latch cancellation for every command sharing this budget. Work on Dispatch threads has no
+    /// Task to observe, so the owner bridges its Task cancellation here; it is never cleared.
+    public func cancel() { lock.lock(); cancelled = true; lock.unlock() }
+    public var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+
+    /// Check the latched byte error, latched or current-Task cancellation and monotonic deadline.
     /// Real-I/O implementations call this while collecting and waiting, not only on exit.
     public func check() throws {
-        lock.lock(); let exceeded = overflow; lock.unlock()
+        lock.lock(); let exceeded = overflow, cancelled = cancelled; lock.unlock()
         if exceeded { throw CommandError.outputLimitExceeded }
-        if Task.isCancelled { throw CommandError.cancelled }
+        if cancelled || Task.isCancelled { throw CommandError.cancelled }
         if remaining <= 0 { throw CommandError.timedOut }
     }
 }

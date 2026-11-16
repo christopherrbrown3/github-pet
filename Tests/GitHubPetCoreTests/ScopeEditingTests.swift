@@ -218,8 +218,10 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
 @Suite struct ScopeDiscoveryTests {
     private func page(organizations: [String]? = nil, organizationsMore: Bool = false, organizationCursor: Any? = "orgcursor",
                       repositories: [String]? = nil, repositoriesMore: Bool = false, repositoryCursor: Any? = "repocursor",
-                      viewer account: ScopeAccount = accountA, errors: Any? = nil) -> CommandResult {
+                      viewer account: ScopeAccount = accountA, login: String = "fixture-user",
+                      errors: Any? = nil) -> CommandResult {
         var raw = viewer(account)
+        raw["login"] = login
         if let organizations {
             raw["organizations"] = ["nodes": organizations.map { ["login": $0] },
                                     "pageInfo": ["hasNextPage": organizationsMore, "endCursor": organizationCursor ?? NSNull()]]
@@ -294,6 +296,63 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(first == .failed(.identityMismatch) && runner.calls.count == 1)
     }
 
+    @Test func loginRenameBetweenPagesKeepsHintsButAnIDChangeStillFailsClosed() {
+        let (renamed, runner) = discover([
+            page(organizations: ["first-org"], organizationsMore: true, organizationCursor: "c1",
+                 repositories: ["demo/first"], login: "old-login"),
+            page(organizations: ["second-org"], login: "new-login"),
+        ])
+        #expect(runner.calls.count == 2)
+        #expect(renamed.failure == nil, "a display-login rename of the same opaque ID is the same account")
+        #expect(renamed.viewer == ScopeViewer(account: accountA, login: "new-login"))
+        #expect(renamed.organizations == .init(suggestions: ["first-org", "second-org"], completion: .exhausted, pages: 2))
+        #expect(renamed.repositories == .init(suggestions: ["demo/first"], completion: .exhausted, pages: 1))
+        // Same display login, different opaque ID: still a different account.
+        let (sameLogin, _) = discover([
+            page(organizations: ["first-org"], organizationsMore: true, organizationCursor: "c1", repositories: [], login: "same-login"),
+            page(organizations: ["other-org"], viewer: accountB, login: "same-login"),
+        ])
+        #expect(sameLogin == .failed(.identityMismatch))
+    }
+
+    /// JSON 0/1 bridge to NSNumber and would pass `as? Bool`; only a genuine JSON boolean may
+    /// certify the end (or cap) of a category.
+    @Test func hasNextPageMustBeAGenuineJSONBooleanForBothCategories() {
+        func reply(_ more: Any?, cursor: String = "c1") -> CommandResult {
+            var info: [String: Any] = ["endCursor": cursor]
+            if let more { info["hasNextPage"] = more }
+            var raw = viewer()
+            raw["organizations"] = ["nodes": [["login": "org-\(cursor)"]], "pageInfo": info]
+            raw["repositories"] = ["nodes": [["nameWithOwner": "demo/\(cursor)"]], "pageInfo": info]
+            return ok(["data": ["viewer": raw]])
+        }
+        for bad in [0, 1] as [Any] {
+            // First page: nothing is certified and no cursor is followed.
+            let (first, runner) = discover([reply(bad)])
+            #expect(runner.calls.count == 1, "numeric \(bad) never opens a later page")
+            #expect(first.organizations.completion == .failed && first.repositories.completion == .failed)
+            #expect(first.organizations.suggestions.isEmpty && first.repositories.suggestions.isEmpty)
+            // Last page: earlier hints remain, but neither end nor cap is certified.
+            let (last, lastRunner) = discover([reply(true, cursor: "c1"), reply(true, cursor: "c2"), reply(bad, cursor: "c3")])
+            #expect(lastRunner.calls.count == 3)
+            #expect(last.organizations == .init(suggestions: ["org-c1", "org-c2"], completion: .partial, pages: 2))
+            #expect(last.repositories == .init(suggestions: ["demo/c1", "demo/c2"], completion: .partial, pages: 2))
+        }
+        for bad in ["false", "true", NSNull(), nil] as [Any?] {
+            let (malformed, _) = discover([reply(bad)])
+            #expect(malformed.organizations.completion == .failed && malformed.repositories.completion == .failed)
+        }
+        let (exhausted, _) = discover([reply(false)])
+        #expect(exhausted.organizations.completion == .exhausted && exhausted.repositories.completion == .exhausted)
+        let (capped, cappedRunner) = discover([reply(true, cursor: "c1"), reply(true, cursor: "c2"), reply(true, cursor: "c3")])
+        #expect(cappedRunner.calls.count == 3)
+        #expect(capped.organizations.completion == .capped && capped.repositories.completion == .capped)
+        let (errored, _) = discover([CommandResult(exitCode: 0, stdout: json(["data": ["viewer": {
+            var raw = viewer(); raw["organizations"] = ["nodes": [], "pageInfo": ["hasNextPage": false]]; return raw }()],
+            "errors": [["message": "fixture"]]]))])
+        #expect(errored.failure == .graphQLError && errored.organizations.completion == .partial)
+    }
+
     @Test func malformedEntriesCursorsAndConnectionsAreVisiblyIncomplete() {
         let (badNode, _) = discover([page(organizations: ["good", "bad org", "org:x"], repositories: ["demo/pet", "no-slash"])])
         #expect(badNode.organizations == ScopeDiscoveryCategory(suggestions: ["good"], completion: .partial, pages: 1))
@@ -308,6 +367,23 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(oversized.organizations.completion == .failed, "more nodes than requested is malformed")
     }
 
+    @Test func malformedConnectionOnACleanPageNamesAFailureReason() {
+        let (first, _) = discover([page(organizations: nil, repositories: ["demo/pet"])])
+        #expect(first.organizations.completion == .failed && first.repositories.completion == .exhausted)
+        #expect(first.failure == .malformedResponse, "a failed category always carries a reason")
+        let (later, runner) = discover([
+            page(organizations: ["a"], organizationsMore: true, organizationCursor: "c1", repositories: ["demo/pet"]),
+            ok(["data": ["viewer": viewer()]]),
+        ])
+        #expect(runner.calls.count == 2)
+        #expect(later.organizations == .init(suggestions: ["a"], completion: .partial, pages: 1))
+        #expect(later.failure == .malformedResponse && later.repositories.completion == .exhausted)
+        let (clean, _) = discover([page(organizations: ["a"], repositories: ["demo/pet"])])
+        #expect(clean.failure == nil, "control: well-formed pages report no failure")
+        let (errored, _) = discover([page(organizations: nil, repositories: [], errors: [["message": "fixture"]])])
+        #expect(errored.failure == .graphQLError, "an explicit page error keeps its own reason")
+    }
+
     @Test func deniedSignedOutRateLimitedAndMissingGhAreFailuresNotEmptyLists() {
         let (denied, _) = discover([CommandResult(exitCode: 4, stderr: Data("run gh auth login".utf8))])
         #expect(denied.failure == .signedOut && denied.organizations.completion == .failed && denied.repositories.completion == .failed)
@@ -317,8 +393,55 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(transport.failure == .transport && transport.organizations.suggestions.isEmpty)
         let (failedExit, _) = discover([CommandResult(exitCode: 1, stdout: page(organizations: ["a"], repositories: []).stdout)])
         #expect(failedExit.failure == .transport, "a failed gh exit never reports a clean exhausted list")
+        #expect(failedExit.organizations.completion == .partial && failedExit.organizations.suggestions == ["a"])
+        #expect(failedExit.repositories.completion == .partial, "even an empty category from a failed page is unverified")
         let missing = ScopeGhAccess(locator: GhLocator(environment: ["PATH": "/nowhere"], isExecutable: { _ in false }), runner: ScriptedRunner([]))
         #expect(missing.discover(expectedAccount: accountA, budget: CommandBudget(timeout: 20)) == .failed(.ghMissing))
+    }
+
+    @Test func parseableFailedExitCannotCertifyExhaustionOrCapForEitherCategory() {
+        let first = page(organizations: ["first-org"], organizationsMore: true,
+                         repositories: ["demo/first"], repositoriesMore: true)
+        let second = page(organizations: ["second-org"], organizationsMore: true,
+                          repositories: ["demo/second"], repositoriesMore: true)
+        for more in [false, true] {
+            let last = page(organizations: ["last-org"], organizationsMore: more,
+                            repositories: ["demo/last"], repositoriesMore: more)
+            let (result, runner) = discover([first, second, CommandResult(exitCode: 1, stdout: last.stdout)])
+            #expect(runner.calls.count == 3 && result.failure == .transport)
+            #expect(result.organizations == .init(suggestions: ["first-org", "second-org", "last-org"], completion: .partial, pages: 3))
+            #expect(result.repositories == .init(suggestions: ["demo/first", "demo/second", "demo/last"], completion: .partial, pages: 3))
+        }
+        // A category exhausted on an earlier successful page keeps that proof. Only the
+        // still-open category is affected by the later failed process.
+        let (earlierComplete, _) = discover([
+            page(organizations: ["a"], organizationsMore: true, repositories: ["demo/pet"]),
+            CommandResult(exitCode: 1, stdout: page(organizations: ["b"]).stdout),
+        ])
+        #expect(earlierComplete.organizations.completion == .partial && earlierComplete.organizations.suggestions == ["a", "b"])
+        #expect(earlierComplete.repositories.completion == .exhausted)
+    }
+
+    @Test func cancelledBudgetStopsBeforeTheNextPageAndCertifiesNothing() {
+        let budget = CommandBudget(timeout: 20)
+        let runner = ScriptedRunner([
+            page(organizations: ["first-org"], organizationsMore: true, repositories: ["demo/first"], repositoriesMore: true),
+            page(organizations: ["second-org"], repositories: ["demo/second"]),
+        ])
+        let result = ScopeDiscovery.run(expectedAccount: accountA, budget: budget) { plan in
+            let reply = try runner.run(executable: URL(fileURLWithPath: "/fixture/gh"), arguments: plan.arguments, timeout: 1)
+            budget.cancel() // as ScopeEditor's cancellation handler does while a page is in flight
+            return reply
+        }
+        #expect(runner.calls.count == 1, "no later page after cancellation")
+        #expect(result.failure == .cancelled)
+        #expect(result.organizations.completion == .failed && result.repositories.completion == .failed,
+                "the in-flight page lands after cancellation and is not trusted")
+        #expect(result.organizations.suggestions.isEmpty && result.repositories.suggestions.isEmpty)
+        let precancelled = CommandBudget(timeout: 20)
+        precancelled.cancel()
+        let (none, idle) = discover([page(organizations: ["x"], repositories: [])], budget: precancelled)
+        #expect(idle.calls.isEmpty && none.failure == .cancelled && none.organizations.completion == .failed)
     }
 
     @Test func sharedDeadlineAndByteBudgetSpanAllPages() {

@@ -324,6 +324,11 @@ public enum ScopeDiscovery {
         guard let value = value as? String, ScopeASCII.nodeID(value, maximum: 1024) else { return nil }
         return value
     }
+    /// Only a genuine JSON boolean; `as? Bool` would also accept the NSNumbers JSON 0/1 decode to.
+    static func boolean(_ value: Any?) -> Bool? {
+        guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else { return nil }
+        return number.boolValue
+    }
 
     public static func run(expectedAccount: ScopeAccount, budget: CommandBudget,
                            page fetch: (ScopeDiscoveryPagePlan) throws -> CommandResult) -> ScopeDiscoveryResult {
@@ -348,26 +353,31 @@ public enum ScopeDiscovery {
             guard let envelope = ScopeGraphQL.envelope(reply.stdout) else {
                 finishOpen(reply.stdout.count > CommandBudget.maximumBytes ? .outputLimit : reply.exitCode != 0 ? .transport : .malformedResponse); break
             }
-            var pageError: ScopeAccessFailure?
+            // A failed process can print useful data, but cannot certify the end or cap of
+            // any category requested on this page. Classify before consume clears cursors.
+            var pageError: ScopeAccessFailure? = reply.exitCode != 0 ? .transport : nil
             if let errors = envelope["errors"] {
                 pageError = ScopeGraphQL.rateLimited(errors as? [[String: Any]] ?? []) ? .rateLimited : .graphQLError
             }
             let data = envelope["data"] as? [String: Any]
             guard let viewer = ScopeGraphQL.viewer(data) else { finishOpen(pageError ?? .viewerUnavailable); break }
             // Every page must name the same, expected account; a mismatch discards all hints.
-            guard viewer.account == expectedAccount, result.viewer.map({ $0 == viewer }) ?? true else {
+            // Identity is the opaque viewer ID: a display-login rename mid-run is the same account.
+            guard viewer.account == expectedAccount, result.viewer.map({ $0.account == viewer.account }) ?? true else {
                 return .failed(.identityMismatch)
             }
             result.viewer = viewer
             let raw = data?["viewer"] as? [String: Any]
+            var malformedConnection = false
 
             func consume(_ field: String, cursor: inout String??, seen: inout Set<String>, malformed: inout Bool,
                          category: inout ScopeDiscoveryCategory, normalize: (String) -> MonitoringTarget?) {
                 guard cursor != nil else { return }
                 guard let connection = raw?[field] as? [String: Any], let nodes = connection["nodes"] as? [Any],
                       nodes.count <= ScopeDiscoveryPagePlan.pageSize, let info = connection["pageInfo"] as? [String: Any],
-                      let more = info["hasNextPage"] as? Bool else {
-                    category.completion = category.pages > 0 ? .partial : .failed; cursor = nil; return
+                      let more = Self.boolean(info["hasNextPage"]) else {
+                    category.completion = reply.exitCode != 0 || category.pages > 0 ? .partial : .failed
+                    malformedConnection = true; cursor = nil; return
                 }
                 category.pages += 1
                 let key = field == "organizations" ? "login" : "nameWithOwner"
@@ -386,7 +396,8 @@ public enum ScopeDiscovery {
             consume("repositories", cursor: &repositoryCursor, seen: &repositorySeen, malformed: &repositoryMalformed,
                     category: &result.repositories) { try? MonitoringTarget(repository: $0) }
             if let pageError { result.failure = pageError; break }
-            if reply.exitCode != 0 { finishOpen(.transport); break }
+            // A clean page with an unreadable connection still says why that category stopped.
+            if malformedConnection, result.failure == nil { result.failure = .malformedResponse }
         }
         return result
     }

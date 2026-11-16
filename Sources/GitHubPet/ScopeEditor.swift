@@ -44,6 +44,8 @@ final class ScopeEditor: ObservableObject {
     private var revision = 0
     private var validationTask: Task<Void, Never>?
     private var discoveryTask: Task<Void, Never>?
+    /// A cancelled origin never owns a later discovery, even if account/source round-trip.
+    private var discoveryEpoch = 0
 
     init(model: AppModel, access: any ScopeAccessChecking) {
         self.model = model; self.access = access
@@ -185,7 +187,7 @@ final class ScopeEditor: ObservableObject {
         report("Checking access to \(Self.counts(scope))…")
         launchedChecks += 1
         validationTask = Task { [weak self] in
-            let outcome = await Self.offPool { access.validate(scope: scope, expectedAccount: account, budget: budget) }
+            let outcome = await Self.offPool(budget) { access.validate(scope: scope, expectedAccount: account, budget: budget) }
             self?.receiveValidation(outcome, scope: scope, identity: identity, generation: generation, revision: expectedRevision)
         }
     }
@@ -240,25 +242,33 @@ final class ScopeEditor: ObservableObject {
     func loadSuggestions() {
         guard canLoadSuggestions, case .github(let account) = identity else { return }
         let access = access, budget = budget(), expectedIdentity = identity
+        discoveryEpoch += 1
+        let expectedEpoch = discoveryEpoch
         discovery = .loading
         report("Loading suggestions…")
         launchedChecks += 1
         discoveryTask = Task { [weak self] in
-            let result = await Self.offPool { access.discover(expectedAccount: account, budget: budget) }
-            self?.receiveDiscovery(result, identity: expectedIdentity)
+            let result = await Self.offPool(budget) { access.discover(expectedAccount: account, budget: budget) }
+            self?.receiveDiscovery(result, identity: expectedIdentity, epoch: expectedEpoch)
         }
     }
 
-    private func receiveDiscovery(_ result: ScopeDiscoveryResult, identity expected: ScopeIdentity?) {
-        receivedChecks += 1
+    private func receiveDiscovery(_ result: ScopeDiscoveryResult, identity expected: ScopeIdentity?, epoch: Int) {
         // Draft edits don't invalidate hints; account/source changes do (they cancel the task).
-        guard discoveryTask != nil, identity == expected else { discardedReplies += 1; return }
+        // Check the originating task and epoch before touching the current handle or UI state.
+        guard !Task.isCancelled, discoveryEpoch == epoch, discoveryTask != nil, identity == expected else {
+            receivedChecks += 1; discardedReplies += 1; return
+        }
+        receivedChecks += 1
         discoveryTask = nil
         discovery = .finished(result)
         report(Self.discoverySummary(result))
     }
 
-    private func cancelDiscovery() { discoveryTask?.cancel(); discoveryTask = nil }
+    private func cancelDiscovery() {
+        discoveryEpoch += 1
+        discoveryTask?.cancel(); discoveryTask = nil
+    }
 
     static func completionText(_ completion: ScopeDiscoveryCompletion, count: Int) -> String {
         switch completion {
@@ -277,12 +287,17 @@ final class ScopeEditor: ObservableObject {
     }
 
     /// gh calls (and held simulated replies) block their thread for up to the 20 s budget. Run
-    /// them on a Dispatch queue so they can never saturate Swift's cooperative pool; a reply
-    /// that outlives Cancel or an account/source change is rejected by the guards above.
-    nonisolated private static func offPool<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async { continuation.resume(returning: work()) }
-        }
+    /// them on a Dispatch queue so they can never saturate Swift's cooperative pool. That thread
+    /// cannot see Task cancellation, so cancelling the Task latches the run's own budget: the
+    /// runner tears down its child and no later page starts. A reply that outlives Cancel or an
+    /// account/source change is still rejected by the guards above.
+    nonisolated private static func offPool<T: Sendable>(_ budget: CommandBudget,
+                                                         _ work: @escaping @Sendable () -> T) async -> T {
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async { continuation.resume(returning: work()) }
+            }
+        } onCancel: { budget.cancel() }
     }
 
     // MARK: Announcements
