@@ -67,6 +67,10 @@ struct SettingsView: View {
                     Text("Fixtures (offline)").tag(DataSourceMode.fixtures)
                     Text("GitHub CLI (gh)").tag(DataSourceMode.githubCLI)
                 }
+                if let hint = model.dataState.hint, !GhSetup.links(for: model.dataState).isEmpty {
+                    Text("\(model.dataState.statusText). \(hint)").font(.caption.monospaced()).textSelection(.enabled)
+                    GhSetupView(state: model.dataState)
+                }
                 Text("GitHub data comes only from your installed gh CLI. GitHub Pet never reads or stores tokens.")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("With the GitHub CLI source, service incidents come from the public githubstatus.com API, without sign-in. Fixtures use demo incidents.")

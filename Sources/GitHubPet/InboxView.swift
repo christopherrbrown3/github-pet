@@ -89,6 +89,7 @@ struct InboxView: View {
             if let hint = model.dataState.hint {
                 Text(hint).font(.caption.monospaced()).textSelection(.enabled)
             }
+            GhSetupView(state: model.dataState)
             if model.settings.isSnoozed(at: model.now), let until = model.settings.snoozeUntil {
                 Text("Snoozed until \(until.formatted(date: .abbreviated, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)

@@ -58,6 +58,9 @@ final class AppModel: ObservableObject {
     private let store: SettingsStore
     let clockOffset: TimeInterval
     private let pollsPeriodically: Bool
+    // Snapshot-only CLI transport (#52): selecting the real CLI UI must never launch gh.
+    private let snapshotMode: Bool
+    private var snapshotCLIFailure: FetchFailure = .ghMissing
     private let engine = InboxEngine()
     private let simulator = FixtureSimulator()
     private let scopedClient: any ScopedPolling
@@ -119,6 +122,7 @@ final class AppModel: ObservableObject {
         // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
         // would refresh a step it just made stale (flaky render-check).
         pollsPeriodically = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
+        snapshotMode = options.snapshotDirectory != nil && !options.simulatesMonitoringScope
         if options.resetSettings { store.reset() }
         var loaded = store.load()
         switch options.forcedSource {
@@ -380,6 +384,11 @@ final class AppModel: ObservableObject {
     }
 
     private func refreshRepositoriesOnly() {
+        // Snapshot renders show the actual CLI source with an injected failure, never a gh call
+        // or a scoped request (#52).
+        if snapshotMode && settings.dataSource == .githubCLI {
+            apply(.failure(snapshotCLIFailure)); return
+        }
         if settings.dataSource == .fixtures {
             guard let scope = scopeSession.scope else { apply(scopeSession.configurationFailure); return }
             let outcome = simulator.poll()
@@ -754,6 +763,18 @@ final class AppModel: ObservableObject {
     }
 
     var simulatorConnected: Bool { simulator.connected }
+
+    /// Render hook only: show a gh setup failure through the real engine, without polling.
+    func showSourceFailureForSnapshot(_ failure: FetchFailure) {
+        guard snapshotMode else { return }
+        snapshotCLIFailure = failure
+        if settings.dataSource != .githubCLI {
+            settings.dataSource = .githubCLI
+            return // switchSource resets both baselines and refreshes the injected source.
+        }
+        resetSession()
+        refresh()
+    }
 
     /// Render hook only: show the Loading state of a fresh source without polling.
     func showLoadingForSnapshot() {

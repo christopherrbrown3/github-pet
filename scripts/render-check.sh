@@ -32,8 +32,15 @@ plutil -lint -s "$suite.plist"
 prefs() { shasum -a 256 "$suite.plist" && plutil -p "$suite.plist"; }
 before=$(prefs before)
 
+# An executable gh trap proves snapshot CLI selection cannot launch even an installed CLI.
+cat > "$scratch/gh" <<'SH'
+#!/bin/sh
+printf 'unexpected gh invocation\n' >> "$GITHUB_PET_SNAPSHOT_GH_TRAP"
+exit 99
+SH
+chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
-GITHUB_PET_GH_PATH=/nonexistent/gh "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
+GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
 for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
@@ -44,6 +51,8 @@ report=$out/report.txt
 [[ -f $report ]] || { echo "render-check: no report at $report" >&2; exit 1; }
 
 failures=0
+if [[ ! -e $scratch/gh-called ]]; then echo "ok   snapshot CLI never launched gh"
+else echo "FAIL snapshot CLI launched gh"; failures=$((failures + 1)); fi
 check() {
   if grep -qE -- "$2" "$report"; then echo "ok   $1"; else echo "FAIL $1 (expected /$2/)"; failures=$((failures + 1)); fi
 }
@@ -195,6 +204,16 @@ if (( $(grep -cE '^incident renders @[0-9]+: 24 PNGs' "$report") == 3 )); then e
 else echo "FAIL incident renders missing"; failures=$((failures + 1)); fi
 check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
+for state title in ghmissing 'Get GitHub CLI' unauthenticated 'How to sign in'; do
+  check_in 'gh setup links' "$state uses silent actual CLI source" \
+    "^setup=$state source=githubCLI demo=false badge=\\? rows=0 unseen=0 clip=none state=.*links=.*$title"
+  for surface in inbox settings; do
+    for theme in '' '-dark'; do
+      png="gh-setup-$state-$surface$theme"
+      [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+    done
+  done
+done
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do

@@ -151,11 +151,9 @@ enum SnapshotRenderer {
             .frame(width: model.layout(model.settings.mascotSize).panelSize.width,
                    height: model.layout(model.settings.mascotSize).panelSize.height),
                                name: "count-cap-mascot", directory: directory, appearance: .aqua)
-        // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
-        // is deterministic and can never contain live GitHub data.
-        if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
-           !FileManager.default.fileExists(atPath: path) {
-            model.settings.dataSource = .githubCLI
+        // Snapshot-only CLI transport, independent of the installed gh or saved account.
+        do {
+            model.showSourceFailureForSnapshot(.ghMissing)
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await capture("11-gh-override")
         }
@@ -191,6 +189,27 @@ enum SnapshotRenderer {
                                    name: "settings-scope-long\(suffix)", directory: directory, appearance: appearance)
         }
         editor.cancel()
+
+        // gh setup links (#52): the real engine in each setup state, never a live gh call.
+        report.append("## gh setup links")
+        for (name, failure) in [("ghmissing", FetchFailure.ghMissing), ("unauthenticated", .unauthenticated)] {
+            model.showSourceFailureForSnapshot(failure)
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            // Refresh again to prove a later poll retains the injected state, without gh.
+            model.refresh()
+            report.append("setup=\(name) source=\(model.settings.dataSource.rawValue) demo=\(model.usingFixtures) "
+                          + "badge=\(model.badge ?? "none") rows=\(model.items.count) "
+                          + "unseen=\(model.unseenCount) clip=\(model.activeClip == nil ? "none" : "active") "
+                          + "state=\(model.dataState.statusText) links=\(GhSetup.links(for: model.dataState).map(\.title))")
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+                                       name: "gh-setup-\(name)-inbox\(suffix)", directory: directory,
+                                       appearance: appearance, asWindow: true)
+                report += await render(SettingsView(model: model).frame(height: 1000),
+                                       name: "gh-setup-\(name)-settings\(suffix)",
+                                       directory: directory, appearance: appearance, asWindow: true)
+            }
+        }
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
