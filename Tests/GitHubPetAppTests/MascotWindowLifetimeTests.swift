@@ -17,6 +17,7 @@ import Testing
     }
     private func assertNothingWritten(_ defaults: EphemeralDefaults) {
         #expect(defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
+        #expect(!preferencesFileExists(defaults.name), "nothing reaches ~/Library/Preferences")
     }
 
     @Test func droppedControllerFreesItsPanelAndContainer() async throws {
@@ -89,4 +90,11 @@ import Testing
         #expect(controller.summaryPopover === second && second.isShown)
         second.close()
     }
+}
+
+/// A real (cfprefsd-backed) domain would leave this file behind; in-memory defaults never do.
+func preferencesFileExists(_ domain: String) -> Bool {
+    let file = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences/\(domain).plist")
+    return FileManager.default.fileExists(atPath: file.path)
+        || UserDefaults.standard.persistentDomain(forName: domain) != nil
 }

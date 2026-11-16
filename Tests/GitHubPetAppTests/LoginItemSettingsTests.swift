@@ -90,6 +90,7 @@ private final class FakeLoginBackend: LoginItemBackend, @unchecked Sendable {
             #expect(!settings.isAvailable, "\(arguments)")
             settings.refresh(); settings.setEnabled(true)
             #expect(settings.status == nil && !settings.isOn && settings.summary.hasPrefix("Not available"))
+            if let suite = options.defaultsSuite { #expect(!preferencesFileExists(suite), "no preferences file on disk") }
         }
     }
 
