@@ -140,11 +140,12 @@ import Testing
         #expect(budget.isCancelled)
         let group = DispatchGroup(), receipt = ErrorReceipt()
         group.enter()
-        DispatchQueue.global().async {
+        // A dedicated queue gets its own thread even while the suite saturates the global pool.
+        DispatchQueue(label: "scope.tests.taskless-check").async {
             defer { group.leave() }
             do { try budget.check() } catch { receipt.record(error) }
         }
-        #expect(waitForGroup(group, seconds: 2))
+        #expect(waitForGroup(group, seconds: 20), "bound only limits a broken run")
         #expect(receipt.value as? CommandError == .cancelled)
         #expect(budget.remaining > 0, "cancellation is not reported as a deadline")
         #expect(CommandBudget(timeout: 5).isCancelled == false, "a replacement budget is independent")
