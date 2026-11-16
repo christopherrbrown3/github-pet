@@ -1,3 +1,7 @@
+# Checkpoint — t61, 2026-11-16 afternoon
+
+Merged after exact-head CI, Developer before/after regressions and independent QA source + functional review (no Copilot): PR51 → b152656 (#30 stays open because PR46 docs are still a draft; PR49 is auto-marked merged, since its head is reachable via 51), PR50 → 7a66068 (#40 Done), PR59 → b74078b (#35 Done). Non-blocking follow-ups are in #60. Now dispatched: developer t62 works PR57 login-item requiresApproval fix, then PR56 red scanner fixes, then PR58 docs qualification (each merges main first, no rebase). QA t63 does PR55 source+functional, then a safety plan only for PR54 GUI dismissal checks. Holds: none merge without the same gates.
+
 # Current authority — Claude PM t61, 2026-11-16
 
 HANDOFF_GRANTED from t1r: sole PM is **t61** (claude-pm-handoff, Opus5.5). All reports route `hc send t61`; t1r, t49 and the product-manager alias are retired for dispatch. Old Claude t4w/t4x/t4y/t4z and Codex t1s/t1t/t5p/t5q are NOT to resume or take tasks; they follow t61 only and receive no new work unless t61 dispatches it. Fresh specialists, both verified by launch argv + TUI Opus 5.5: **developer t62** (sole writer developer-scope-settings, PR51 three fixes) and **qa-engineer t63** (sole writer qa-engineer, finish e57 report from existing evidence, then independent PR51 source/diff review). No Copilot reviews; PR template Copilot field replaced by QA review. Merge/release constraints unchanged.
