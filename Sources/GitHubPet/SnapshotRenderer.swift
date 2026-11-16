@@ -52,6 +52,13 @@ enum SnapshotRenderer {
         // As if the user pressed "Show details": rows show titles, hover stays generic.
         model.detailsRevealed = true
         await capture("01b-details")
+        // Every Settings section at once, on Demo fixtures before any failure scenario (README
+        // images). The real window clips and scrolls.
+        report.append("## settings full height")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(SettingsView(model: model).frame(height: Self.fullSettingsHeight), name: "settings-full\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+        }
         report.append("## lane labels (native text, widest count)")
         for side in [CGFloat(64), 128, 256] {
             report.append(tagFit(model: model, side: side))
@@ -173,12 +180,6 @@ enum SnapshotRenderer {
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
-        }
-        // Every Settings section at once (README images): the real window clips and scrolls.
-        report.append("## settings full height")
-        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
-            report += await render(SettingsView(model: model).frame(height: Self.fullSettingsHeight), name: "settings-full\(suffix)",
-                                   directory: directory, appearance: appearance, asWindow: true)
         }
         // Monitoring scope editor with a full 10-entry Demo draft and inline errors; nothing is
         // applied. The Form keeps its 520 pt width and scrolls rather than growing the window.
