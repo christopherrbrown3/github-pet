@@ -68,6 +68,8 @@ public enum ScopedFetchIssue: Equatable, Sendable {
     case targetUnavailable(Int), malformedTarget(Int)
     case missingSource(String), malformedSource(String), malformedRow(String), capped(String), inconsistentDuplicate
     case graphQLError, rateLimited, ghMissing, signedOut, transport, deadline, outputLimit, incompleteOutput, cancelled
+    /// Missing token scopes, SAML/SSO authorization or an HTTP 403 that is not a rate limit (#7).
+    case accessDenied
 }
 
 public struct ScopedPollResult: Equatable, Sendable {
@@ -82,10 +84,17 @@ public struct ScopedPollResult: Equatable, Sendable {
         self.hidden = hidden
     }
     public var complete: Bool { viewer != nil && successfulSources > 0 && issues.isEmpty }
+    /// Fixed texts (#7): never gh's stderr or GitHub's message, which can name organizations.
+    public static let accessDeniedMessage = "GitHub denied access: the GitHub CLI sign-in lacks a token scope or SAML single sign-on authorization. Run gh auth refresh, and authorize SSO if your organization requires it"
+    public static let rateLimitedMessage = "GitHub rate limit reached. GitHub Pet will try again on the next refresh"
     public var outcome: FetchOutcome {
         if issues.contains(.ghMissing) { return .failure(.ghMissing) }
         if issues.contains(.signedOut) { return .failure(.unauthenticated) }
-        guard viewer != nil, successfulSources > 0 else { return .failure(.failed("Monitoring scope could not be verified")) }
+        guard viewer != nil, successfulSources > 0 else {
+            if issues.contains(.rateLimited) { return .failure(.failed(Self.rateLimitedMessage)) }
+            if issues.contains(.accessDenied) { return .failure(.failed(Self.accessDeniedMessage)) }
+            return .failure(.failed("Monitoring scope could not be verified"))
+        }
         return .snapshot(items: items, complete: complete, hidden: complete ? hidden : 0)
     }
     public static func failure(_ issue: ScopedFetchIssue, viewer: ScopeViewer? = nil) -> Self {
@@ -132,11 +141,15 @@ public enum ScopedResponseParser {
         var issues: [ScopedFetchIssue] = []
         if let errors = envelope["errors"] {
             let array = errors as? [[String: Any]] ?? []
-            let limited = array.contains {
-                ($0["type"] as? String) == "RATE_LIMITED"
-                    || (($0["extensions"] as? [String: Any])?["type"] as? String) == "RATE_LIMITED"
+            func type(_ error: [String: Any]) -> String? {
+                error["type"] as? String ?? (error["extensions"] as? [String: Any])?["type"] as? String
             }
-            issues.append(limited ? .rateLimited : .graphQLError)
+            let limited = array.contains { type($0) == "RATE_LIMITED" }
+            let denied = array.contains { error in
+                ["FORBIDDEN", "INSUFFICIENT_SCOPES"].contains(type(error) ?? "")
+                    || (error["message"] as? String).map(ScopedGhClient.deniesAccess) == true
+            }
+            issues.append(limited ? .rateLimited : denied ? .accessDenied : .graphQLError)
         }
         guard let body = envelope["data"] as? [String: Any],
               let rawViewer = body["viewer"] as? [String: Any], let id = rawViewer["id"] as? String,
@@ -260,6 +273,12 @@ public struct ScopedGhClient: ScopedPolling {
     public init(locator: GhLocator = GhLocator(), runner: CommandRunner = ProcessCommandRunner(), timeout: TimeInterval = 20) {
         self.locator = locator; self.runner = runner; self.timeout = timeout
     }
+    /// Scope, SAML/SSO and 403 wording from gh or GitHub. Checked after rate limits, which are 403s too.
+    static func deniesAccess(_ text: String) -> Bool {
+        let message = text.lowercased()
+        return ["http 403", "saml", "single sign-on", "required scopes", "insufficient_scopes", "not been granted"]
+            .contains(where: message.contains)
+    }
     private static func authFailure(_ result: CommandResult) -> Bool {
         let message = result.stderrText.lowercased()
         return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
@@ -284,6 +303,7 @@ public struct ScopedGhClient: ScopedPolling {
             if auth.exitCode != 0 && !auth.stderrText.lowercased().contains("unknown flag") {
                 let message = auth.stderrText.lowercased()
                 if message.contains("rate limit") { return .failure(.rateLimited) }
+                if Self.deniesAccess(message) { return .failure(.accessDenied) }
                 if ["network", "could not resolve", "connection", "timed out", "dial tcp"].contains(where: message.contains) {
                     return .failure(.transport)
                 }
@@ -293,10 +313,11 @@ public struct ScopedGhClient: ScopedPolling {
             if Self.authFailure(result) { return .failure(.signedOut) }
             guard result.outputComplete else { return .failure(.incompleteOutput) }
             if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .failure(.rateLimited) }
+            if result.exitCode != 0 && Self.deniesAccess(result.stderrText) { return .failure(.accessDenied) }
             let parsed = ScopedResponseParser.parse(result.stdout, plan: plan)
             try budget.check()
             if result.exitCode != 0 && parsed.viewer == nil && !parsed.issues.contains(.graphQLError)
-                && !parsed.issues.contains(.rateLimited) { return .failure(.transport) }
+                && !parsed.issues.contains(.rateLimited) && !parsed.issues.contains(.accessDenied) { return .failure(.transport) }
             // A failing gh process cannot turn a superficially valid empty JSON payload into success.
             if result.exitCode != 0 && parsed.issues.isEmpty {
                 return ScopedPollResult(viewer: parsed.viewer, items: parsed.items, issues: [.transport],

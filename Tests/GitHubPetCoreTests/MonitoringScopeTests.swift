@@ -578,6 +578,56 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1,
             stderr: Data("API rate limit exceeded".utf8))])).fetch().issues == [.rateLimited])
     }
+    /// #7: scope, SAML/SSO and HTTP 403 denials get one fixed, safe message; rate limits get
+    /// their own. Neither echoes gh's stderr (which can name organizations) nor looks like an
+    /// empty inbox.
+    @Test func accessDenialsAndRateLimitsHaveFixedSafeMessages() throws {
+        let denials = [
+            "HTTP 403: Resource protected by organization SAML enforcement. You must grant your OAuth token access to secret-org.",
+            "GraphQL: Your token has not been granted the required scopes to execute this query. The 'login' field requires one of the following scopes: ['read:org']",
+            "HTTP 403: Must have admin rights to Repository. (https://api.github.com/graphql)",
+            "error: this organization requires single sign-on (SSO) authorization",
+        ]
+        for stderr in denials {
+            let result = client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1, stderr: Data(stderr.utf8))])).fetch()
+            #expect(result.issues == [.accessDenied], "\(stderr)")
+            #expect(result.outcome == .failure(.failed(ScopedPollResult.accessDeniedMessage)))
+        }
+        #expect(!ScopedPollResult.accessDeniedMessage.contains("secret-org"))
+        // A 403 that is a rate limit stays a rate limit.
+        let limited = client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1,
+            stderr: Data("HTTP 403: API rate limit exceeded for user ID 1.".utf8))])).fetch()
+        #expect(limited.issues == [.rateLimited])
+        #expect(limited.outcome == .failure(.failed(ScopedPollResult.rateLimitedMessage)))
+        // Controls keep their existing classification.
+        #expect(client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1,
+            stderr: Data("network unavailable".utf8))])).fetch().outcome == .failure(.failed("Monitoring scope could not be verified")))
+        #expect(client(ScopeRunner([CommandResult(exitCode: 4)])).fetch().outcome == .failure(.unauthenticated))
+    }
+
+    @Test func graphQLDenialsAreClassifiedInsideTheResponse() throws {
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        let shapes: [([String: Any], ScopedFetchIssue)] = [
+            (["type": "INSUFFICIENT_SCOPES", "message": "Your token has not been granted the required scopes"], .accessDenied),
+            (["type": "FORBIDDEN", "path": ["target0"], "message": "Resource protected by organization SAML enforcement."], .accessDenied),
+            (["extensions": ["type": "FORBIDDEN"], "message": "x"], .accessDenied),
+            (["message": "Although you appear to have the correct authorization credentials, the org has enabled SAML SSO"], .accessDenied),
+            (["type": "RATE_LIMITED", "message": "API rate limit exceeded"], .rateLimited),
+            (["message": "fixture failure"], .graphQLError),
+        ]
+        for (error, issue) in shapes {
+            let result = ScopedResponseParser.parse(try response(envelope(plan), errors: [error]), plan: plan)
+            #expect(!result.complete && result.issues.first == issue, "\(error)")
+        }
+        // Rate limit wins when both appear; a denial wins over a generic error.
+        let both = ScopedResponseParser.parse(try response(envelope(plan), errors: [
+            ["type": "FORBIDDEN", "message": "x"], ["type": "RATE_LIMITED", "message": "y"]]), plan: plan)
+        #expect(both.issues.first == .rateLimited)
+        #expect(RepositoryScopeSession.qualitySummary(for: [.accessDenied, .graphQLError]) == RepositoryScopeSession.accessDeniedQuality)
+        #expect(RepositoryScopeSession.qualitySummary(for: [.accessDenied, .rateLimited]) == "GitHub rate limit; scope results are incomplete.")
+        #expect(!RepositoryScopeSession.accessDeniedQuality.contains("SAML enforcement."), "fixed text, not GitHub's message")
+    }
+
     @Test func combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() throws {
         let bytes = try response(envelope(ScopeQueryPlan()))
         let overflow = ScopeRunner([CommandResult(exitCode: 0, stderr: Data(count: CommandBudget.maximumBytes)),
