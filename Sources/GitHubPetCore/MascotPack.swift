@@ -121,7 +121,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .wrongLoopFlag(let s, let expected):
-            return "state '\(s)' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
+            return "state '\(q(s))' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
         case .badCanvas: return "canvas must be 256×256"
         case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
         case .missingState(let s): return "required state '\(q(s))' missing"

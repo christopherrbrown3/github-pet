@@ -140,6 +140,9 @@ private struct PackFixture {
         #expect(try errors(setting: "urgent", loop: false).isEmpty)
         #expect(MascotPackError.wrongLoopFlag("idle", expected: true).description.contains("\"loop\": true"))
         #expect(MascotPackError.wrongLoopFlag("urgent", expected: false).description.contains("\"loop\": false"))
+        // State names in the message go through the same label sanitizer as every other state error.
+        let hostile = MascotPackError.wrongLoopFlag("id\u{202E}le\nx", expected: true).description
+        #expect(hostile == "state 'idle x' must declare \"loop\": true (idle loops; attention and urgent play once)")
     }
 
     @Test func oneShotSequencesMustFitTheirEventClip() throws {
