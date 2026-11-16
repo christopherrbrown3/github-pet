@@ -1,3 +1,13 @@
+# Current authority — Codex fallback, 2026-11-16 UTC
+
+Sole PM is **t1r**, under Chris's standing allowance-fallback instruction. Claude PM t49 hit the session limit (reset shown as 3:20 AM America/New_York); its repeated automatic retries were stopped intentionally. Exit129 is expected. No automatic PM or specialist resumption into occupied worktrees. Reports route `hc send t1r`; the product-manager alias belongs to retired t49. This block, the new handoff and live GitHub state supersede historical snapshots below.
+
+Verified specialists: t5q codex-dev-night, Sol/high (Developer units/regressions/CI; PR59 narrow quality fixes); t5p codex-qa-night, Sol/medium (functional QA of combined PR51). One writer per task/worktree; preserved Claude sessions and all old artifacts. No model substitution or allowance bypass.
+
+PR51 accf14bb contains main9d8299a and PR49 59672f1 already. PM selected that unchanged combined candidate, retargeted51 to main and requested Copilot once. No source merge or push was needed. CI43805334701 green; eighteen independent offline runs completed, final functional judgement/review pending. Do not merge standalone49: its remaining review fixes are on51. See handoffs/codex-pm-2026-11-16-night.md.
+
+Developer owns unit/logic/regression tests and build CI; QA is FUNCTIONAL ONLY. Ready merges remain conditional on review/current checks/acceptance. No release/tag/auto-merge/Homebrew, force push, TCC change or bulk preference cleanup.
+
 # Overnight checkpoint — 2026-11-15 ~22:45 EST, Claude PM t49 again
 
 t1r handed sole PM back to t49 (HANDOFF_GRANTED/ACCEPTED) to spend the Claude allowance and conserve Codex weekly quota (21%). See handoffs/claude-overnight-2026-11-15.md. Dispatch (one writer per worktree):
