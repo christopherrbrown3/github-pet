@@ -357,7 +357,8 @@ public enum ScopeDiscovery {
             let data = envelope["data"] as? [String: Any]
             guard let viewer = ScopeGraphQL.viewer(data) else { finishOpen(pageError ?? .viewerUnavailable); break }
             // Every page must name the same, expected account; a mismatch discards all hints.
-            guard viewer.account == expectedAccount, result.viewer.map({ $0 == viewer }) ?? true else {
+            // Identity is the opaque viewer ID: a display-login rename mid-run is the same account.
+            guard viewer.account == expectedAccount, result.viewer.map({ $0.account == viewer.account }) ?? true else {
                 return .failed(.identityMismatch)
             }
             result.viewer = viewer

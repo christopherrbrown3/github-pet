@@ -218,8 +218,10 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
 @Suite struct ScopeDiscoveryTests {
     private func page(organizations: [String]? = nil, organizationsMore: Bool = false, organizationCursor: Any? = "orgcursor",
                       repositories: [String]? = nil, repositoriesMore: Bool = false, repositoryCursor: Any? = "repocursor",
-                      viewer account: ScopeAccount = accountA, errors: Any? = nil) -> CommandResult {
+                      viewer account: ScopeAccount = accountA, login: String = "fixture-user",
+                      errors: Any? = nil) -> CommandResult {
         var raw = viewer(account)
+        raw["login"] = login
         if let organizations {
             raw["organizations"] = ["nodes": organizations.map { ["login": $0] },
                                     "pageInfo": ["hasNextPage": organizationsMore, "endCursor": organizationCursor ?? NSNull()]]
@@ -292,6 +294,25 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(mismatch == .failed(.identityMismatch), "a mid-run account change discards every hint")
         let (first, runner) = discover([page(organizations: ["x"], repositories: [], viewer: accountB)])
         #expect(first == .failed(.identityMismatch) && runner.calls.count == 1)
+    }
+
+    @Test func loginRenameBetweenPagesKeepsHintsButAnIDChangeStillFailsClosed() {
+        let (renamed, runner) = discover([
+            page(organizations: ["first-org"], organizationsMore: true, organizationCursor: "c1",
+                 repositories: ["demo/first"], login: "old-login"),
+            page(organizations: ["second-org"], login: "new-login"),
+        ])
+        #expect(runner.calls.count == 2)
+        #expect(renamed.failure == nil, "a display-login rename of the same opaque ID is the same account")
+        #expect(renamed.viewer == ScopeViewer(account: accountA, login: "new-login"))
+        #expect(renamed.organizations == .init(suggestions: ["first-org", "second-org"], completion: .exhausted, pages: 2))
+        #expect(renamed.repositories == .init(suggestions: ["demo/first"], completion: .exhausted, pages: 1))
+        // Same display login, different opaque ID: still a different account.
+        let (sameLogin, _) = discover([
+            page(organizations: ["first-org"], organizationsMore: true, organizationCursor: "c1", repositories: [], login: "same-login"),
+            page(organizations: ["other-org"], viewer: accountB, login: "same-login"),
+        ])
+        #expect(sameLogin == .failed(.identityMismatch))
     }
 
     @Test func malformedEntriesCursorsAndConnectionsAreVisiblyIncomplete() {
