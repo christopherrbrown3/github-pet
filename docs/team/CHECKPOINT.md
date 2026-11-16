@@ -1,3 +1,15 @@
+# Latest checkpoint — overnight Claude PM transfer
+
+Nov15 22:22EST / Nov16 03:22UTC. Claude PMt49 readyafterreset; explicitgrant/acceptance transfers soleauthority fromt1r, which stepsback. Codexweekly21% conserved, evening3Codexspecialists deliberately stopped after alljobscomplete. Theircommits areauthorized. Current sourceoftruth: handoffs/claude-overnight-2026-11-15.md +roles/live state.
+
+-49 exact801 CIgreen but ancestor-symlinkrace plausible/notreproduced/notfixed, no merge. Hardlinkfix6before/6after +10runner tests valid; functional8scenariofinalQA pending.
+-50 exactd044 developer40targetedchecks/appboundaryPASS, but CI43782775647 FAILEDfd11<=10 (329tests1issue), noCIrender/appartifact. Old33eighteen-casehelperexit0; newd044boundarycompletionexit0/scalars256/packloaded/208PNGs; **AWAIT_VISUAL_INSPECTION**, notPASS. Newemptyrender-snapshots.79350plist, realexistingprefchanges0. QA4x directory-pathtruncation/ZWJ observations needcalibratedtriage.
+-53 exact09b CI43782147405green,66targetedchecks/eightactualCLI-sourcePNGs/ghtrapvalid. Functional/currentreview gate stillneedsassessment; rawRESTbot422 correctedbyPM ghprreviewrequest.
+-51 exact03bd old49stackgreen; history-preservingmerge once49final, noforcepush.
+-PR46PMdraft holds this checkpoint. #35Readyafter49, #41later. No merges/releases since Codexeveningreturn. Saveduserapp31897 andprefsuntouched.
+
+---
+
 # Live dispatch update — PR49/50/53, 2026-11-15 evening
 
 PR49 new801ddcb2a0d24ee8efa24970425cff3522b6e4a7 fixes hardlink writes with exclusive temporary output/atomic rename and single-link guards. Six before-overwrites/six after-preserved-refused controls and ten runner tests PASS. CI43782047042 pending; stale-head helper stop was GitHub propagation lag, not tests/source failure, no rerun. Functional49 awaits current green app artifact.

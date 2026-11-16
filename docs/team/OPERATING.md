@@ -1,3 +1,9 @@
+# Latest overnight authority — Claude return, Nov15 22:22EST
+
+Claude PMt49 verified PM_READY again after9pm allowance reset; explicit HANDOFF_GRANTED fromt1r transfers sole authority. Route reports t49/product-manager after grant; t1r freezes checkout/dispatch. Read handoffs/claude-overnight-2026-11-15.md and roles.json/live state; this supersedes older authority/green-status blocks below.
+
+Codex t53/t54/t55 were intentionally stopped after jobs ended; signal1 exits are expected, not crashes. HealthyClaude4w/4y/4x/4z await PMdispatch with one writer perworktree. 4w/4y/4x Opus5.5,4z explicitlyselectedSonnet5.5. Developer ownsunits/regressions/buildCI; QAfunctionalonly. Preserve savedapp31897/evidence/staleprefs.49ancestor race notfixed;50CIred+visualpending;53greenfunctionalpending;51stackmergeafter49final, noforce rebase.
+
 # Current authority — Codex return, 2026-11-15 evening
 
 Sole PM is t1r after Claude t49 HANDOFF_GRANTED and t1r HANDOFF_ACCEPTED under Chris allowance fallback instruction. Reports to hc send t1r; retired product-manager alias still reaches t49. Read handoffs/codex-pm-2026-11-15-evening.md and roles.json/live state; these supersede older authority blocks below.
