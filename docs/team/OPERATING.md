@@ -1,3 +1,7 @@
+# Checkpoint — t61, 2026-11-16 evening (beta RC)
+
+All narrow-beta work is merged on main d1a05ac: PR51/59 scope, PR50/55 packs, PR54 popover, PR56 no-token scanner, PR57/62 login item + Settings toggle, PR58 install docs, PR63 restart baseline, PR64 access/SAML messages, PR65 entitlement repos, PR66 refresh queue/wake, PR67/68 test hygiene, PR69 beta README + screenshots. Each was merged with exact-head CI, independent QA source review (+ functional where safely possible), no Copilot. Beta RC build: /Users/chris/github-pet-builds/beta-rc-d1a05ac (from main CI). Remaining: Chris's live smoke with docs/qa/beta-smoke-checklist.md (QA branch 2b0770b), then Chris's explicit release approval. No tag/release/Homebrew before that. Follow-ups in #60. Agents idle: developer t62, developer-2 t64, QA t63.
+
 **Merge rule (t61, after main went red on 632f1d0):** a PR merges only when its exact head is green AND that head contains current main. If main moved since the PR's CI, the PR merges main and gets green CI first. Use --match-head-commit; merge commits only.
 
 # Narrow beta decision — Chris, 2026-11-16
