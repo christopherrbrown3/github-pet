@@ -14,16 +14,48 @@ final class QAOutputDirectory {
     let url: URL
     private let fd: Int32
 
-    /// Creates the final path component if missing (never through a link), then opens it.
+    /// Walks from `/` one component at a time with openat(O_DIRECTORY|O_NOFOLLOW), creating
+    /// missing components with mkdirat. No ancestor is ever traversed by path, so swapping any
+    /// ancestor for a symlink after validation is refused rather than followed. Every directory
+    /// on the way must be owned by the user or root. `url` must already be symlink-resolved.
     init(_ url: URL) throws {
         self.url = url
-        if mkdir(url.path, 0o755) != 0 && errno != EEXIST {
-            throw Failure(description: "cannot create \(url.path): \(String(cString: strerror(errno)))")
+        // Split the raw path: standardizedFileURL would map /private/var back to the /var symlink.
+        let path = url.path
+        let names = path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard path.hasPrefix("/"), !names.contains(where: { $0 == ".." || $0 == "." }) else {
+            throw Failure(description: "\(path) is not an absolute, normalized path")
         }
-        fd = open(url.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
-        guard fd >= 0 else {
-            throw Failure(description: "\(url.path) is not a directory this runner can use (symlinks are refused): \(String(cString: strerror(errno)))")
+        var current = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard current >= 0 else { throw Failure(description: "cannot open /") }
+        for name in names {
+            var next = openat(current, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            if next < 0 && errno == ENOENT {
+                if mkdirat(current, name, 0o755) != 0 && errno != EEXIST {
+                    let reason = String(cString: strerror(errno)); close(current)
+                    throw Failure(description: "cannot create \(name) in \(url.path): \(reason)")
+                }
+                next = openat(current, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            }
+            let reason = String(cString: strerror(errno))
+            close(current)
+            guard next >= 0 else {
+                throw Failure(description: "\(url.path): component \(name) is not a directory this runner can use (symlinks are refused): \(reason)")
+            }
+            var info = stat()
+            guard fstat(next, &info) == 0, info.st_uid == getuid() || info.st_uid == 0 else {
+                close(next)
+                throw Failure(description: "\(url.path): component \(name) is not owned by the current user or root")
+            }
+            current = next
         }
+        fd = current
+    }
+
+    /// The directory's actual location, from the open descriptor (not the requested path).
+    var resolvedPath: String? {
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+        return fcntl(fd, F_GETPATH, &buffer) == 0 ? String(cString: buffer) : nil
     }
     deinit { close(fd) }
 

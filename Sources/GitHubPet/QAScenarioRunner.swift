@@ -102,13 +102,8 @@ enum QAScenarioRunner {
 
     /// Never overwrites anything the runner did not write. Refuses system/preference locations.
     static func checkOutput(_ path: String) throws -> URL {
-        let url = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
-        let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.resolvingSymlinksInPath().path
-        let forbidden = [home + "/Library", "/System", "/Library", "/Applications", "/usr", "/bin", "/sbin", "/etc", "/private/etc",
-                         Bundle.main.bundleURL.resolvingSymlinksInPath().path]
-        if url.path == "/" || url.path == home || forbidden.contains(where: { url.path == $0 || url.path.hasPrefix($0 + "/") }) {
-            throw HarnessError(description: "--qa-output \(url.path) is a protected location")
-        }
+        let url = resolvedOutputURL(URL(fileURLWithPath: path).standardizedFileURL)
+        if isProtected(url.path) { throw HarnessError(description: "--qa-output \(url.path) is a protected location") }
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return url }
         guard isDirectory.boolValue else { throw HarnessError(description: "--qa-output \(url.path) exists and is not a directory") }
@@ -119,6 +114,30 @@ enum QAScenarioRunner {
             return (name, regular ? .regular : .other)
         }, path: url.path)
         return url
+    }
+
+    /// realpath(3) of the deepest existing ancestor plus the components still to be created.
+    /// (Foundation's resolvingSymlinksInPath leaves missing paths alone and maps /private/var,
+    /// /private/tmp back to their symlinked forms, which the output walk refuses.)
+    static func resolvedOutputURL(_ url: URL) -> URL {
+        var existing = url, missing: [String] = []
+        var resolved: UnsafeMutablePointer<CChar>?
+        while true {
+            resolved = realpath(existing.path, nil)
+            if resolved != nil || existing.path == "/" { break }
+            missing.insert(existing.lastPathComponent, at: 0)
+            existing.deleteLastPathComponent()
+        }
+        defer { free(resolved) }
+        let base = resolved.map { URL(fileURLWithPath: String(cString: $0)) } ?? existing
+        return missing.reduce(base) { $0.appendingPathComponent($1) }
+    }
+
+    static func isProtected(_ path: String) -> Bool {
+        let home = resolvedOutputURL(FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL).path
+        let forbidden = [home + "/Library", "/System", "/Library", "/Applications", "/usr", "/bin", "/sbin", "/etc", "/private/etc",
+                         "/private/var/root", resolvedOutputURL(Bundle.main.bundleURL).path]
+        return path == "/" || path == home || forbidden.contains { path == $0 || path.hasPrefix($0 + "/") }
     }
 
     /// Empty, or the marker plus runner files only, each a single-link regular file.
@@ -156,10 +175,14 @@ enum QAScenarioRunner {
 
     /// Runs every step and writes the records; returns the runner.json summary. Never terminates.
     static func execute(_ plan: Plan, model: AppModel) async throws -> [String: Any] {
-        try FileManager.default.createDirectory(at: plan.output.deletingLastPathComponent(), withIntermediateDirectories: true)
         // From here on, all output goes through one O_NOFOLLOW directory descriptor; entries are
         // validated again through it, since the path may have changed since preflight.
-        let out = try QAOutputDirectory(plan.output)
+        let out: QAOutputDirectory
+        do { out = try QAOutputDirectory(plan.output) } catch { throw HarnessError(description: "--qa-output: \(error)") }
+        // Belt and braces: the descriptor's real location must still be outside protected paths.
+        guard let real = out.resolvedPath, !isProtected(real) else {
+            throw HarnessError(description: "--qa-output resolved to a protected or unknown location")
+        }
         let existing = try out.entries()
         try validate(existing, path: plan.output.path)
         for entry in existing where isRunnerFile(entry.name) { try out.removeRegularFile(entry.name) }

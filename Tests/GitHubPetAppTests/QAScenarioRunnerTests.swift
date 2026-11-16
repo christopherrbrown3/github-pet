@@ -13,7 +13,8 @@ private final class FrozenBudgetClock: @unchecked Sendable {
 // never depends on runner speed.
 @Suite(.serialized, .timeLimit(.minutes(2))) @MainActor struct QAScenarioRunnerTests {
     private func temporaryDirectory() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("qa-runner-tests-\(UUID().uuidString)")
+        // Resolved (/var -> /private/var): the output walk refuses every symlinked component.
+        QAScenarioRunner.resolvedOutputURL(FileManager.default.temporaryDirectory).appendingPathComponent("qa-runner-tests-\(UUID().uuidString)")
     }
     private func options(_ extra: [String]) -> LaunchOptions {
         LaunchOptions.parse(arguments: ["GitHubPet"] + extra, environment: [:])
@@ -218,6 +219,46 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(try Data(contentsOf: sentinel) == Data("outside".utf8))
         #expect(throws: QAOutputDirectory.Failure.self) { try out.write(Data(), name: "runner.json\0ignored") }
         #expect(try out.entries().allSatisfy { !$0.name.hasPrefix(".github-pet-qa-write-") })
+    }
+
+    @Test func ancestorSwappedForASymlinkAfterValidationIsNeverTraversed() async throws {
+        // Everything lives in a private temp tree; "protected" only stands in for a protected location.
+        let fm = FileManager.default
+        let root = temporaryDirectory()
+        let protected = root.appendingPathComponent("protected"), base = root.appendingPathComponent("base")
+        try fm.createDirectory(at: protected, withIntermediateDirectories: true)
+        try fm.createDirectory(at: base.appendingPathComponent("a"), withIntermediateDirectories: true)
+        func swapAncestor() throws {
+            try fm.moveItem(at: base.appendingPathComponent("a"), to: base.appendingPathComponent("a-moved"))
+            try fm.createSymbolicLink(at: base.appendingPathComponent("a"), withDestinationURL: protected)
+        }
+        // Existing and missing final directories, swapped between preflight and execute.
+        for leaf in ["out", "missing/out"] {
+            let output = base.appendingPathComponent("a/\(leaf)")
+            if leaf == "out" { try fm.createDirectory(at: output, withIntermediateDirectories: true) }
+            let plan = try QAScenarioRunner.makePlan(options(["--simulate-monitoring-scope", "--qa-scenario", "account-a-b-a", "--qa-output", output.path]))
+            try swapAncestor()
+            await #expect(throws: (any Error).self, "\(leaf)") { _ = try await execute(plan) }
+            #expect(try fm.contentsOfDirectory(atPath: protected.path).isEmpty, "nothing reaches the link target (\(leaf))")
+            try fm.removeItem(at: base.appendingPathComponent("a"))
+            try fm.moveItem(at: base.appendingPathComponent("a-moved"), to: base.appendingPathComponent("a"))
+        }
+        // A not-yet-existing output under a symlinked system directory (/tmp -> /private/tmp) resolves.
+        let viaTmp = "/tmp/qa-runner-tests-\(UUID().uuidString)/out"
+        #expect(try QAScenarioRunner.checkOutput(viaTmp).path == "/private" + viaTmp)
+        // An existing directory under /private/var opens as-is (no remapping to the /var symlink).
+        let existing = temporaryDirectory()
+        try fm.createDirectory(at: existing, withIntermediateDirectories: true)
+        #expect(existing.path.hasPrefix("/private/"))
+        let opened = try QAOutputDirectory(QAScenarioRunner.checkOutput(existing.path))
+        #expect(opened.resolvedPath == existing.path)
+        // Direct: any symlinked ancestor is refused; missing components are created without following links.
+        try swapAncestor()
+        #expect(throws: QAOutputDirectory.Failure.self) { _ = try QAOutputDirectory(base.appendingPathComponent("a/new")) }
+        #expect(try fm.contentsOfDirectory(atPath: protected.path).isEmpty)
+        let created = try QAOutputDirectory(base.appendingPathComponent("a-moved/x/y"))
+        try created.write(Data("ok".utf8), name: "runner.json")
+        #expect(try String(contentsOf: base.appendingPathComponent("a-moved/x/y/runner.json"), encoding: .utf8) == "ok")
     }
 
     @Test func onlyDecodablePNGsAreAccepted() throws {
