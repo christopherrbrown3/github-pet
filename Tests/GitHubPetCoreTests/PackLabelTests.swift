@@ -116,6 +116,30 @@ struct PackLabelTests {
         #expect(PackLabel.sanitizePath("\u{200B}") == "(unknown path)")
     }
 
+    @Test func fileErrorPathsKeepDistinctTailsWithoutChangingLabelPolicy() {
+        func errors(_ path: String) -> [MascotPackError] {
+            [.unsafePath(path), .missingFile(path), .notPNG(path), .wrongSize(path, 128, 128),
+             .checksumMismatch(path), .tooLarge(path), .undecodable(path), .notRegularFile(path)]
+        }
+        let prefix = "frames/" + String(repeating: "shared-diagnostic-prefix-", count: 12)
+        let alpha = errors(prefix + "missing-alpha.png"), beta = errors(prefix + "missing-beta.png")
+        for (a, b) in zip(alpha, beta) {
+            #expect(a.description != b.description)
+            #expect(a.description.contains("missing-alpha.png") && b.description.contains("missing-beta.png"))
+            #expect(a.description.count <= PackLabel.maxPathGraphemes + 50)
+        }
+        for error in errors(prefix + "\n\u{1B}[2J\u{202E}missing-alpha.png") {
+            let text = error.description
+            #expect(!text.unicodeScalars.contains { [.control, .format, .lineSeparator, .paragraphSeparator].contains($0.properties.generalCategory) })
+            #expect(text.contains("missing-alpha.png") && text.count <= PackLabel.maxPathGraphemes + 50)
+        }
+        #expect(MascotPackError.missingFile("frames/idle.png").description == "file not found 'frames/idle.png'")
+        #expect(MascotPackError.notPNG("\n").description == "not a PNG '(invalid)'")
+        let state = String(repeating: "s", count: 60)
+        #expect(MascotPackError.missingState(state).description == "required state '\(PackLabel.sanitize(state))' missing")
+        #expect(PackLabel.sanitize(state).count == PackLabel.maxGraphemes + 1)
+    }
+
     @Test func longPathKeepsTheIdentifyingTail() {
         let tail = "/work/custom-packs/hostile-pack-B"
         let path = "/Users/someone" + String(repeating: "/very-long-directory-name", count: 20) + tail

@@ -115,6 +115,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         func q(_ value: String) -> String { PackLabel.sanitize(value, fallback: "(invalid)") }
+        func path(_ value: String) -> String { PackLabel.sanitizePath(value, fallback: "(invalid)") }
         switch self {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
@@ -124,14 +125,14 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .frameCount(let s): return "state '\(q(s))' needs 1–\(MascotPack.maxFrames) frames"
         case .durationMismatch(let s): return "state '\(q(s))' durationMs count differs from frames"
         case .durationOutOfRange(let s, let d): return "state '\(q(s))' duration \(d)ms outside 125–2000"
-        case .unsafePath(let p): return "unsafe path '\(q(p))'"
-        case .missingFile(let p): return "file not found '\(q(p))'"
-        case .notPNG(let p): return "not a PNG '\(q(p))'"
-        case .wrongSize(let p, let w, let h): return "'\(q(p))' is \(w)×\(h), expected canvas size"
-        case .checksumMismatch(let p): return "SHA-256 mismatch for '\(q(p))'"
-        case .tooLarge(let p): return "'\(q(p))' exceeds the size limit"
-        case .undecodable(let p): return "'\(q(p))' is not a decodable RGBA PNG"
-        case .notRegularFile(let p): return "'\(q(p))' is not a regular file"
+        case .unsafePath(let p): return "unsafe path '\(path(p))'"
+        case .missingFile(let p): return "file not found '\(path(p))'"
+        case .notPNG(let p): return "not a PNG '\(path(p))'"
+        case .wrongSize(let p, let w, let h): return "'\(path(p))' is \(w)×\(h), expected canvas size"
+        case .checksumMismatch(let p): return "SHA-256 mismatch for '\(path(p))'"
+        case .tooLarge(let p): return "'\(path(p))' exceeds the size limit"
+        case .undecodable(let p): return "'\(path(p))' is not a decodable RGBA PNG"
+        case .notRegularFile(let p): return "'\(path(p))' is not a regular file"
         case .clipTooLong(let s, let total, let limit):
             return "state '\(q(s))' plays \(total)ms once, longer than its \(limit)ms event clip"
         }
