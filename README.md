@@ -34,8 +34,9 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
   keeps updating.
 - **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
-- **Custom mascot packs.** Replace the artwork with your own validated pack; an invalid pack falls back to
-  the built-in placeholder without affecting monitoring.
+- **Custom mascot packs.** Replace the artwork with your own pack, loaded from the directory in the
+  `GITHUB_PET_PACK_DIR` environment variable ([pack format](docs/design/README.md)). Every pack is
+  validated; an invalid one falls back to the built-in placeholder without affecting monitoring.
 
 | Idle | New item | Urgent |
 |:---:|:---:|:---:|
