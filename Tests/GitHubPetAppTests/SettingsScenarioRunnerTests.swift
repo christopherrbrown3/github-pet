@@ -72,7 +72,7 @@ private final class FrozenClock: @unchecked Sendable {
         #expect((try step(records, "cancel-restores-active")["monitoringScope"] as? [String: Any])?["active"] as? String == "Selected")
         let applied = try step(records, "apply-validated")
         #expect(settings(applied)["status"] as? String == "Monitoring scope applied: Selected · 2 organizations, 1 repository.")
-        #expect((applied["inbox"] as? [String: Any])?["scopeHeader"] as? String == "Monitoring scope · Selected · 2 organizations, 1 repositories")
+        #expect((applied["inbox"] as? [String: Any])?["scopeHeader"] as? String == "Monitoring scope · Selected · 2 organizations, 1 repository")
         let everything = try step(records, "apply-everything")
         #expect((everything["monitoringScope"] as? [String: Any])?["active"] as? String == "Everything")
         #expect(settings(everything)["applyEnabled"] as? Bool == false)
@@ -125,7 +125,7 @@ private final class FrozenClock: @unchecked Sendable {
         for label in ["apply-rejected", "apply-renamed-rejected", "apply-network-failure", "back-to-a-unchanged"] {
             let record = try step(records, label)
             let requests = (record["scopeSimulation"] as? [String: Any])?["requests"] as? [[String: Any]] ?? []
-            #expect((record["inbox"] as? [String: Any])?["scopeHeader"] as? String == "Monitoring scope · Selected · 1 organizations, 0 repositories", "\(label)")
+            #expect((record["inbox"] as? [String: Any])?["scopeHeader"] as? String == "Monitoring scope · Selected · 1 organization, 0 repositories", "\(label)")
             #expect(requests.last?["targets"] as? [String] == ["demo-a"], "\(label): no request for an unapplied scope")
         }
         let rejected = settings(try step(records, "apply-rejected"))
