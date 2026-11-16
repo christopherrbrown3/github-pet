@@ -187,7 +187,7 @@ final class ScopeEditor: ObservableObject {
         report("Checking access to \(Self.counts(scope))…")
         launchedChecks += 1
         validationTask = Task { [weak self] in
-            let outcome = await Self.offPool { access.validate(scope: scope, expectedAccount: account, budget: budget) }
+            let outcome = await Self.offPool(budget) { access.validate(scope: scope, expectedAccount: account, budget: budget) }
             self?.receiveValidation(outcome, scope: scope, identity: identity, generation: generation, revision: expectedRevision)
         }
     }
@@ -248,7 +248,7 @@ final class ScopeEditor: ObservableObject {
         report("Loading suggestions…")
         launchedChecks += 1
         discoveryTask = Task { [weak self] in
-            let result = await Self.offPool { access.discover(expectedAccount: account, budget: budget) }
+            let result = await Self.offPool(budget) { access.discover(expectedAccount: account, budget: budget) }
             self?.receiveDiscovery(result, identity: expectedIdentity, epoch: expectedEpoch)
         }
     }
@@ -287,12 +287,17 @@ final class ScopeEditor: ObservableObject {
     }
 
     /// gh calls (and held simulated replies) block their thread for up to the 20 s budget. Run
-    /// them on a Dispatch queue so they can never saturate Swift's cooperative pool; a reply
-    /// that outlives Cancel or an account/source change is rejected by the guards above.
-    nonisolated private static func offPool<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async { continuation.resume(returning: work()) }
-        }
+    /// them on a Dispatch queue so they can never saturate Swift's cooperative pool. That thread
+    /// cannot see Task cancellation, so cancelling the Task latches the run's own budget: the
+    /// runner tears down its child and no later page starts. A reply that outlives Cancel or an
+    /// account/source change is still rejected by the guards above.
+    nonisolated private static func offPool<T: Sendable>(_ budget: CommandBudget,
+                                                         _ work: @escaping @Sendable () -> T) async -> T {
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async { continuation.resume(returning: work()) }
+            }
+        } onCancel: { budget.cancel() }
     }
 
     // MARK: Announcements

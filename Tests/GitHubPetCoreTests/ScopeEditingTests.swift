@@ -346,6 +346,28 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(earlierComplete.repositories.completion == .exhausted)
     }
 
+    @Test func cancelledBudgetStopsBeforeTheNextPageAndCertifiesNothing() {
+        let budget = CommandBudget(timeout: 20)
+        let runner = ScriptedRunner([
+            page(organizations: ["first-org"], organizationsMore: true, repositories: ["demo/first"], repositoriesMore: true),
+            page(organizations: ["second-org"], repositories: ["demo/second"]),
+        ])
+        let result = ScopeDiscovery.run(expectedAccount: accountA, budget: budget) { plan in
+            let reply = try runner.run(executable: URL(fileURLWithPath: "/fixture/gh"), arguments: plan.arguments, timeout: 1)
+            budget.cancel() // as ScopeEditor's cancellation handler does while a page is in flight
+            return reply
+        }
+        #expect(runner.calls.count == 1, "no later page after cancellation")
+        #expect(result.failure == .cancelled)
+        #expect(result.organizations.completion == .failed && result.repositories.completion == .failed,
+                "the in-flight page lands after cancellation and is not trusted")
+        #expect(result.organizations.suggestions.isEmpty && result.repositories.suggestions.isEmpty)
+        let precancelled = CommandBudget(timeout: 20)
+        precancelled.cancel()
+        let (none, idle) = discover([page(organizations: ["x"], repositories: [])], budget: precancelled)
+        #expect(idle.calls.isEmpty && none.failure == .cancelled && none.organizations.completion == .failed)
+    }
+
     @Test func sharedDeadlineAndByteBudgetSpanAllPages() {
         let clock = FixedClock()
         let budget = CommandBudget(timeout: 20, now: { clock.now() })
