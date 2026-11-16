@@ -1,3 +1,7 @@
+# Current authority — Claude PM t61, 2026-11-16
+
+HANDOFF_GRANTED from t1r: sole PM is **t61** (claude-pm-handoff, Opus5.5). All reports route `hc send t61`; t1r, t49 and the product-manager alias are retired for dispatch. Old Claude t4w/t4x/t4y/t4z and Codex t1s/t1t/t5p/t5q are NOT to resume or take tasks; they follow t61 only and receive no new work unless t61 dispatches it. Fresh specialists, both verified by launch argv + TUI Opus 5.5: **developer t62** (sole writer developer-scope-settings, PR51 three fixes) and **qa-engineer t63** (sole writer qa-engineer, finish e57 report from existing evidence, then independent PR51 source/diff review). No Copilot reviews; PR template Copilot field replaced by QA review. Merge/release constraints unchanged.
+
 # Current authority — fresh Claude PM t61, 2026-11-16
 
 Chris explicitly requests Claude PM takeover and new Claude specialists because Codex usage is low. Fresh PM **t61 / claude-pm-handoff**, Claude Opus5.5, verified actual argv/runtime and PM_READY at commit3839182. Sole authority transfers from t1r on explicit HANDOFF_GRANTED; after grant reports go `hc send t61` and t1r freezes PM writes/dispatch. Read handoffs/claude-pm-2026-11-16.md and live state. The old product-manager alias reaches retiredt49; use actualt61.
