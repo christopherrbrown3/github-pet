@@ -66,10 +66,10 @@ before you choose the GitHub CLI source. Dark-mode versions sit beside each imag
 
 ## Install
 
-1. Download the **GitHubPet** ZIP and its `.sha256` checksum. Until GitHub Releases exist, they come from
-   the **GitHubPet-app** artifact of the latest successful `main` build in GitHub Actions, which needs a
-   GitHub account ([where to download](docs/install.md#1-download)). Check the checksum
-   ([how](docs/install.md#2-check-the-download)).
+1. Download `GitHubPet-<version>-<commit>-universal.zip` and its `.sha256` checksum from the newest
+   release on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases) (currently
+   the pre-release [v0.1.0-beta.1](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.1)),
+   then check the checksum ([how](docs/install.md#2-check-the-download)).
 2. Unzip it and move **GitHubPet.app** to Applications.
 3. Open it once. Because the build is **ad-hoc signed and not notarized** (there is no paid Apple
    Developer account), macOS blocks the first launch. Approve it in **System Settings → Privacy &
@@ -104,7 +104,7 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
   focusable, and a full live VoiceOver pass hasn't been done.
 - Workflow failures, deployment approvals and your own pull requests are not monitored yet.
 
-After the beta: a Homebrew cask and GitHub Releases, then more sources. Progress is tracked in
+After the beta: a Homebrew cask, then more sources. Progress is tracked in
 [issues](https://github.com/christopherrbrown3/github-pet/issues).
 
 ## Build from source
