@@ -192,10 +192,11 @@ public struct ActionsGhClient: ActionsPolling {
 public extension ScopedPollResult {
     /// Adds a watched-repositories Actions result to the inbox poll. Any Actions problem makes the
     /// whole snapshot Partial (never a clean "no failures"); a different viewer is an account change.
+    /// The inbox's own waiting-on-others count (#9) is informational and always carried through.
     func mergingActions(_ actions: ScopedPollResult) -> ScopedPollResult {
         if let mine = viewer, let theirs = actions.viewer, mine.account != theirs.account {
             return ScopedPollResult(viewer: viewer, items: items, issues: issues + [.identityMismatch],
-                                    successfulSources: successfulSources, hidden: hidden)
+                                    successfulSources: successfulSources, hidden: hidden, waitingOnOthers: waitingOnOthers)
         }
         // Problems that are fatal for a whole poll only mean "Actions unverified" here.
         let actionsIssues = actions.issues.map { issue -> ScopedFetchIssue in
@@ -207,6 +208,6 @@ public extension ScopedPollResult {
         let ids = Set(items.map(\.id))
         return ScopedPollResult(viewer: viewer, items: items + actions.items.filter { !ids.contains($0.id) },
                                 issues: issues + actionsIssues, successfulSources: successfulSources + actions.successfulSources,
-                                hidden: actionsIssues.isEmpty ? hidden : 0)
+                                hidden: actionsIssues.isEmpty ? hidden : 0, waitingOnOthers: waitingOnOthers)
     }
 }

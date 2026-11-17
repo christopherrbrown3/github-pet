@@ -186,6 +186,24 @@ private func client(_ runner: Runner) -> ActionsGhClient {
         #expect(empty == inbox)
     }
 
+    /// PR71 (#9): the inbox poll's "waiting on others" count is informational and independent of
+    /// Actions, so every merge outcome keeps it.
+    @Test func mergingCarriesTheInboxWaitingOnOthersCount() {
+        let viewer = ScopeViewer(account: viewerA, login: "a")
+        let inbox = ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2, hidden: 1, waitingOnOthers: 2)
+        let failure = InboxItem(id: "actions:CS_1", kind: .workflowFailure, repository: "example/pet", title: "CI failed on main",
+                                url: URL(string: "https://github.com/example/pet/actions/runs/1"), updatedAt: Date(timeIntervalSince1970: 0))
+        let clean = inbox.mergingActions(ScopedPollResult(viewer: viewer, items: [failure], issues: [], successfulSources: 1))
+        let failed = inbox.mergingActions(.failure(.transport))
+        let switched = inbox.mergingActions(ScopedPollResult(viewer: ScopeViewer(account: viewerB, login: "b"), items: [],
+                                                             issues: [], successfulSources: 1))
+        let none = inbox.mergingActions(ScopedPollResult(viewer: nil, items: [], issues: [], successfulSources: 0))
+        for (name, merged) in [("clean", clean), ("failed", failed), ("switched", switched), ("none", none)] {
+            #expect(merged.waitingOnOthers == 2, "\(name)")
+        }
+        #expect(none == inbox)
+    }
+
     @Test func settingIsOptInAndOldSettingsDecodeOff() throws {
         #expect(!PetSettings().watchWorkflowFailures)
         let old = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"schemaVersion":1}"#.utf8))
