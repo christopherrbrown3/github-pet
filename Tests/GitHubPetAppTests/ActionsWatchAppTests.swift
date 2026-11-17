@@ -40,8 +40,8 @@ private final class FakeActions: ActionsPolling, @unchecked Sendable {
         let job = AppModel.ActionsJob(client: actions, repositories: [pet], makeBudget: { CommandBudget(timeout: 20) })
         let reply = AppModel.poll(FakeScoped(inboxResult), try request(), CommandBudget(timeout: 20), actions: job)
         #expect(reply.inbox == inboxResult, "the inbox result is untouched: completeness, hidden and waiting counts are its own")
-        guard case .result(let result, let repositories, let account) = reply.actions else { Issue.record("Actions result expected"); return }
-        #expect(result.items == [failure] && repositories == [pet])
+        guard case .result(let result, let repositories, let account, let sources) = reply.actions else { Issue.record("Actions result expected"); return }
+        #expect(result.items == [failure] && repositories == [pet] && sources == "failures")
         #expect(actions.requests.count == 1 && actions.requests[0].account == account && account == accountA)
     }
 
