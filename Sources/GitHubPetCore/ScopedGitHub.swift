@@ -210,6 +210,7 @@ public enum ScopedResponseParser {
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
         var waiting = Set<String>()
+        var authoredStates: [String: AuthoredAttention] = [:]
         var hiddenByAlias: [String: Int] = [:]
         for search in plan.searches {
             if let index = search.targetIndex, !verified.contains(index) { continue }
@@ -240,22 +241,24 @@ public enum ScopedResponseParser {
                       search.targetIndex.map({ plan.scope.targets[$0].includes(row.repository.nameWithOwner) }) ?? true else {
                     issues.append(.malformedRow(search.alias)); continue
                 }
-                var key = "\(search.kind.rawValue):\(row.id)"
+                let key = "\(search.kind.rawValue):\(row.id)"
                 guard sourceIDs.insert(key).inserted else { issues.append(.malformedRow(search.alias)); continue }
-                var attention: String?
+                var attention: String?, attentionKeys: [String] = []
                 if search.kind == .authoredPullRequest {
-                    switch AuthoredAttention(node) {
-                    case nil: issues.append(.malformedRow(search.alias)); continue
-                    case .waiting?: waiting.insert(row.id); continue
-                    case .needsAction(let reasons)?:
-                        // Stable per attention state: comment churn changes nothing; a new reason,
-                        // or checks failing on a new head commit, is a new ID (announced once).
-                        key += ":" + reasons.map(\.idComponent).joined(separator: ",")
-                        attention = reasons.map(\.text).joined(separator: ", ")
+                    guard let state = AuthoredAttention(node) else { issues.append(.malformedRow(search.alias)); continue }
+                    // One PR seen through overlapping inclusions must agree, or the poll is Partial.
+                    if let seen = authoredStates.updateValue(state, forKey: row.id), seen != state {
+                        issues.append(.inconsistentDuplicate)
                     }
+                    guard case .needsAction(let reasons) = state else { waiting.insert(row.id); continue }
+                    // One row per PR (stable ID). Each reason is its own event key, so only a gained
+                    // reason, or checks failing on a new head commit, announces (#9 MED-1).
+                    attention = reasons.map(\.text).joined(separator: ", ")
+                    attentionKeys = reasons.map { key + "#" + $0.idComponent }
                 }
                 let item = InboxItem(id: key, kind: search.kind, repository: row.repository.nameWithOwner,
-                                     title: row.title, url: url, updatedAt: row.updatedAt, attention: attention)
+                                     title: row.title, url: url, updatedAt: row.updatedAt, attention: attention,
+                                     attentionKeys: attentionKeys)
                 if let old = items[key], old != item { issues.append(.inconsistentDuplicate) }
                 if items[key].map({ $0.updatedAt > item.updatedAt }) != true { items[key] = item }
             }

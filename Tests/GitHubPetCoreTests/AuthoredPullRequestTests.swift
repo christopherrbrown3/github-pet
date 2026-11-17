@@ -106,8 +106,10 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         ])
         #expect(result.complete && result.issues.isEmpty, "UNKNOWN mergeability never makes the poll Partial")
         #expect(result.waitingOnOthers == 3)
-        #expect(Set(result.items.map(\.id)) == ["authoredPullRequest:PR_changes:changes",
-                                                "authoredPullRequest:PR_checks:checks@\(oidB)"])
+        #expect(Set(result.items.map(\.id)) == ["authoredPullRequest:PR_changes", "authoredPullRequest:PR_checks"],
+                "one stable row ID per PR")
+        #expect(Set(result.items.flatMap(\.attentionKeys)) == ["authoredPullRequest:PR_changes#changes",
+                                                              "authoredPullRequest:PR_checks#checks@\(oidB)"])
         #expect(result.items.allSatisfy { $0.kind == .authoredPullRequest && $0.kind.severity == .actionable })
         #expect(result.items.first { $0.id.contains("PR_changes") }?.attention == "Changes requested")
         #expect(result.items.first { $0.id.contains("PR_checks") }?.attention == "Checks failing")
@@ -125,7 +127,7 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         let plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
         let result = try parse(plan, authored: [authored("PR_wait", number: 1), authored("PR_act", number: 2, mergeable: "CONFLICTING")])
         #expect(result.complete && result.waitingOnOthers == 1)
-        #expect(result.items.map(\.id) == ["authoredPullRequest:PR_act:conflict"])
+        #expect(result.items.map(\.id) == ["authoredPullRequest:PR_act"])
     }
 
     @Test func authoredRowOutsideItsTargetIsMalformed() throws {

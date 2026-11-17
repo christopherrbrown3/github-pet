@@ -9,6 +9,11 @@ import CoreFoundation
 /// (the combined rollup: GraphQL can't ask a search row which checks are required).
 /// Everything else, drafts, and conflict status GitHub is still computing (`UNKNOWN`) are
 /// waiting: counted, never alerting. `UNKNOWN` is re-evaluated on the next poll.
+///
+/// Events (via `InboxItem.attentionKeys`): a PR announces when a reason is gained that was never
+/// seen for it, or when checks fail on a new head commit. Losing a reason, or regaining one already
+/// seen for the PR (changes requested or a conflict again, failing checks again on the same head),
+/// never announces.
 public enum AuthoredAttention: Equatable, Sendable {
     case waiting
     case needsAction([Reason])

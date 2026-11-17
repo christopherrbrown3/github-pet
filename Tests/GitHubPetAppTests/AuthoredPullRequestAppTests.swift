@@ -39,9 +39,13 @@ import Testing
 
         app.simulateScopeAuthored(.checksFailing); try await settled(app)
         #expect(authoredRows(app).map(\.attention) == ["Changes requested, Checks failing"])
-        #expect(authoredRows(app).first?.id != firstID && app.unseenCount == 1)
+        #expect(authoredRows(app).first?.id == firstID && app.unseenCount == 1, "same row; the gained reason announces")
         app.refresh(); try await settled(app)
         #expect(app.unseenCount == 1, "unchanged poll: no replay")
+        app.markAllSeen()
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        #expect(authoredRows(app).map(\.attention) == ["Changes requested"] && app.unseenCount == 0,
+                "losing a reason (checks fixed) never announces")
 
         app.simulateScopeAuthored(.off); try await settled(app)
         #expect(authoredRows(app).isEmpty && app.authoredWaitingCount == 0 && app.authoredWaitingNote == nil)

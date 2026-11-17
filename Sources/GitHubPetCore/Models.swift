@@ -50,9 +50,13 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
     /// Why it needs you, e.g. "Changes requested, checks failing" (#9). Fixed wording, no names,
     /// so it stays visible in privacy mode.
     public var attention: String?
+    /// Extra event keys besides `id` (#9): one per attention reason. The item is new when its ID
+    /// is new or when it gains a key never seen before; losing keys never announces.
+    public var attentionKeys: [String]
 
     public init(id: String, kind: ItemKind, repository: String, title: String,
-                url: URL?, updatedAt: Date, isDemo: Bool = false, attention: String? = nil) {
+                url: URL?, updatedAt: Date, isDemo: Bool = false, attention: String? = nil,
+                attentionKeys: [String] = []) {
         self.id = id
         self.kind = kind
         self.repository = repository
@@ -61,6 +65,7 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
         self.updatedAt = updatedAt
         self.isDemo = isDemo
         self.attention = attention
+        self.attentionKeys = attentionKeys
     }
 }
 
