@@ -274,16 +274,27 @@ public enum ScopedResponseParser {
             organizationHidden[search.kind, default: [:]][owner] = max(organizationHidden[search.kind]?[owner] ?? 0,
                                                                       hiddenByAlias[search.alias] ?? 0)
         }
-        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
+        /// The verified owner of a repository search whose org is also searched for the same kind.
+        func coveringOwner(_ search: ScopeQueryPlan.Search) -> String? {
             guard let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
-                  let owner = verifiedOwners[index] else { return nil }
-            return organizationHidden[search.kind]?[owner]
+                  let owner = verifiedOwners[index], organizationHidden[search.kind]?[owner] != nil else { return nil }
+            return owner
         }
-        // A covered repository with more hidden matches than its org contradicts that coverage
-        // (#35 MED-1): never drop it into All clear; treat the response as capped (Partial).
+        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
+            coveringOwner(search).flatMap { organizationHidden[search.kind]?[$0] }
+        }
+        // Covered repositories' hidden matches are a subset of their org's, so their per-owner sum
+        // above the org's count contradicts that coverage (#35 MED-1, #60 LOW-A): never drop it into
+        // All clear; treat the response as capped (Partial).
         if issues.isEmpty {
+            var coveredHidden: [ItemKind: [String: Int]] = [:]
+            for search in plan.searches {
+                guard let owner = coveringOwner(search) else { continue }
+                coveredHidden[search.kind, default: [:]][owner, default: 0] += hiddenByAlias[search.alias] ?? 0
+            }
             issues += plan.searches.filter { search in
-                coveringHidden(search).map { (hiddenByAlias[search.alias] ?? 0) > $0 } ?? false
+                guard let owner = coveringOwner(search), let org = organizationHidden[search.kind]?[owner] else { return false }
+                return (coveredHidden[search.kind]?[owner] ?? 0) > org
             }.map { ScopedFetchIssue.capped($0.alias) }
         }
         var hidden = 0

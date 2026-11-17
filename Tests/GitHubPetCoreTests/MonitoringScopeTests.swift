@@ -304,6 +304,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
 
         // Multiple covered repositories add no duplicate count; unrelated owners and the
         // disjoint issue/review categories still contribute independently. Visible IDs dedupe.
+        // Covered repositories' hidden matches sum to at most their org's (#60 LOW-A).
         let targets = try [org, repo, MonitoringTarget(repository: "example/tools"),
                            MonitoringTarget(repository: "other/pet")]
         let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
@@ -315,12 +316,16 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
             } else if target.owner == "other" {
                 body[search.alias] = page([], total: search.kind == .reviewRequest ? 2 : 0)
             } else if search.kind == .reviewRequest {
-                body[search.alias] = page([row(repo: "example/pet")], total: 4)
+                // org: 4 hidden; pet 3 + tools 1 = 4 covered.
+                body[search.alias] = page([row(repo: "example/pet")], total: target.kind == .organization ? 5 : 4)
                 if target.name == "tools" { body[search.alias] = page([], total: 1) }
-            } else { body[search.alias] = page([], total: 5) }
+            } else {
+                // org: 5 hidden; pet 2 + tools 2 = 4 covered.
+                body[search.alias] = page([], total: target.kind == .organization ? 5 : 2)
+            }
         }
         let result = ScopedResponseParser.parse(try response(body), plan: plan)
-        #expect(result.complete && result.items.count == 1 && result.hidden == 10)
+        #expect(result.complete && result.items.count == 1 && result.hidden == 11, "org reviews 4 + other reviews 2 + org issues 5")
     }
 
     /// #35 MED-1: a covered repository reporting more hidden matches than its organization in the
@@ -349,6 +354,41 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
                         #expect(result.complete && result.hidden == orgHidden, "\(prefix) org \(orgHidden) covers repo \(repoHidden)")
                         #expect(engine.state == .hiddenOnly(orgHidden))
                     }
+                }
+            }
+        }
+    }
+
+    /// #60 (PR59 LOW-A): covered repositories' hidden matches are a subset of their org's, so their
+    /// per-owner SUM above the org's count is a contradiction too, even when no single repository is.
+    /// FAIL before: each repository was compared alone, so the org's undercount read complete.
+    @Test func coveredRepositoriesSummingAboveTheirOrganizationArePartial() throws {
+        let org = try MonitoringTarget(organization: "example")
+        let pet = try MonitoringTarget(repository: "example/pet"), tools = try MonitoringTarget(repository: "example/tools")
+        let other = try MonitoringTarget(repository: "other/pet")
+        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: [org, pet, tools, other]), expectedAccount: accountA)
+        func index(_ target: MonitoringTarget) -> Int { plan.scope.targets.firstIndex(of: target)! }
+        for kind in [ItemKind.reviewRequest, .assignedIssue] {
+            let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+            // (org, pet, tools, other): other/pet is not covered by example and never counts toward its sum.
+            for (orgHidden, petHidden, toolsHidden, otherHidden, contradiction) in
+                    [(3, 2, 2, 0, true), (4, 2, 2, 0, false), (5, 2, 2, 9, false), (1, 1, 1, 0, true), (0, 0, 0, 4, false)] {
+                var body = envelope(plan)
+                for search in plan.searches { body[search.alias] = page([], total: 0) }
+                body[prefix + String(index(org))] = page([], total: orgHidden)
+                body[prefix + String(index(pet))] = page([], total: petHidden)
+                body[prefix + String(index(tools))] = page([], total: toolsHidden)
+                body[prefix + String(index(other))] = page([], total: otherHidden)
+                let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                let label = "\(prefix) org \(orgHidden) vs repos \(petHidden)+\(toolsHidden)"
+                if contradiction {
+                    #expect(!result.complete && result.hidden == 0, "\(label)")
+                    #expect(result.issues.contains(.capped(prefix + String(index(pet))))
+                            && result.issues.contains(.capped(prefix + String(index(tools)))), "\(label)")
+                    let engine = InboxEngine(); _ = engine.apply(result.outcome, now: Date())
+                    #expect(engine.state == .partial, "\(label): never All clear or a trusted hidden count")
+                } else {
+                    #expect(result.complete && result.hidden == orgHidden + otherHidden, "\(label)")
                 }
             }
         }
