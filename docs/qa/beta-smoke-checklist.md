@@ -169,8 +169,48 @@ PR62. **Chris flips it himself; QA never does.**
    - **Expected:** nothing of GitHub Pet is left in Login Items, and gh and its sign-in are untouched.
 - **Capture:** the Login Items list afterwards.
 
+## 15. Your own pull requests (#9, LIVE-CONFIRM)
+
+The simulated QA run covered this (PR71 711571e). The real GitHub states, and especially changes requested and merge conflicts, are LIVE-ONLY.
+
+1. With the GitHub CLI source, have one of your open PRs in each state, if possible:
+   - a reviewer requested changes
+   - a merge conflict with its base branch
+   - a failing check on its latest commit
+   - one that is approved, a draft, or still waiting for review
+   - **Expected:** each PR that needs your action is **one** row, "Your pull request · <reasons>" (for example "Changes requested, Checks failing"). It announces once and opens the PR on github.com. Approved, draft and still-checking PRs are **not** rows. They appear only in the hourglass line "N of your pull requests are waiting on others or being checked by GitHub", which never changes the badge or mood.
+2. Mark everything seen (open and close the Inbox). Then **improve** one PR: fix its failing check, or resolve its conflict, while keeping changes requested.
+   - **Expected:** the row's reason text updates with **no** new dot and **no** animation.
+3. Push a **new** commit that fails checks.
+   - **Expected:** one new alert for that PR (new failing commit).
+   - Re-running the failing workflow on the same commit doesn't alert again.
+4. With Privacy mode on, the row shows "Your pull request · <reasons>" without the title or repository.
+- **Capture:** the rows and the waiting line before and after each step, and the times.
+
+## 16. Workflow failures, opt-in (#10 slice 1, LIVE-ONLY)
+
+This is the PR72 build, with PM's fixes (a silent first seed, stale rows kept, unknown values Partial). It has **no simulated coverage**, and the renderer doesn't show its Settings section.
+
+1. In **Settings → Monitoring scope**, pick **Selected** with at least one repository whose default branch already has a failing GitHub Actions run, and Apply.
+2. Check **Settings → Workflow failures**.
+   - **Expected:** it is **off** by default, and the Inbox has no workflow rows.
+3. Turn it **on**.
+   - **Expected:** the note says "Watching N repositories." (plus a note if organizations are also selected).
+   - The existing failures appear as rows, "Workflow failure · <workflow> failed on <branch>", **without** a burst: no new dots and no attention animation for failures that were already there.
+   - If one of them is a run **you** triggered, the mascot shows the **urgent** state while it exists. Other people's failures are rows only.
+4. With it on, push a commit to the default branch whose workflow fails. If it's your own commit, it counts as yours.
+   - **Expected:** **one** alert for the new failure, and urgent if you triggered it.
+   - Re-running that workflow and having it fail again doesn't alert again. A fixed run removes the row on the next refresh.
+5. Optional: a selected repository you can't read, or a SAML-protected one.
+   - **Expected:** Partial, with the fixed access message, and the earlier failure rows kept as stale. Never "no failures".
+6. With Organizations or Everything selected and no repositories:
+   - **Expected:** the note says "Workflow failures: select repositories in Monitoring scope to watch them…", and no Actions query runs.
+7. Turn it **off**.
+   - **Expected:** the workflow rows disappear on the next refresh, and nothing else changes.
+- **Capture:** Settings notes, rows, mood and badge before and after each step. Note whether turning it on caused any animation; it shouldn't.
+
 ---
 
 ## Results to report back
 
-For each section: **PASS / FAIL / NOT RUN**, with the captures, the RC SHA, the macOS version and the time. Give any FAIL to QA with steps to reproduce; QA turns it into a Developer issue. Live-only items with no other coverage are sections 1, 2, 4, 6, 9, 10, 12, 13 and 14, plus the real-account parts of 3, 5, 7, 8 and 11.
+For each section: **PASS / FAIL / NOT RUN**, with the captures, the RC SHA, the macOS version and the time. Give any FAIL to QA with steps to reproduce; QA turns it into a Developer issue. Live-only items with no other coverage are sections 1, 2, 4, 6, 9, 10, 12, 13, 14 and 16, plus the real-account parts of 3, 5, 7, 8, 11 and 15. Sections 15 and 16 need builds that include PR71 and PR72 (with PM's slice-1 fixes); skip them on the v0.1.0-beta.1 build.
