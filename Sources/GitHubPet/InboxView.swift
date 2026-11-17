@@ -98,6 +98,11 @@ struct InboxView: View {
                     .font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("inbox.authoredWaiting")
             }
+            if let note = model.deploymentsWaitingNote {
+                Label(note, systemImage: "hourglass")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("inbox.deploymentsWaiting")
+            }
             if let hint = model.dataState.hint {
                 Text(hint).font(.caption.monospaced()).textSelection(.enabled)
             }
@@ -245,6 +250,7 @@ struct InboxRow: View {
         case .assignedIssue: return "smallcircle.filled.circle"
         case .authoredPullRequest: return "arrow.triangle.pull"
         case .ciFailure, .workflowFailure: return "xmark.octagon"
+        case .deploymentApproval: return "checkmark.shield"
         case .entitlement: return "key"
         case .serviceIncident: return "exclamationmark.icloud"
         }

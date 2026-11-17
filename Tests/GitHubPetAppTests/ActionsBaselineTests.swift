@@ -112,7 +112,7 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
         let rows = actionRows(app)
         #expect(rows.map(\.id) == ["actions:CS_known"], "the previous failure stays")
         #expect(rows.first?.title.hasSuffix(ActionsLastKnown.staleSuffix) == true, "marked last known")
-        #expect(app.actionsQuality?.hasPrefix("Workflow failures") == true, "Actions problems have their own line")
+        #expect(app.actionsQuality?.hasPrefix("GitHub Actions") == true, "Actions problems have their own line")
         #expect(app.dataState == .ready, "the inbox's own state is unaffected by Actions")
         app.requestRefresh(); try await settled(app)
         #expect(actionRows(app).first?.title == "CI failed on main" && app.actionsQuality == nil, "fresh again next cycle")
@@ -132,7 +132,7 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
         app.settings.watchWorkflowFailures = true
         try await settled(app)
         app.requestRefresh(); try await settled(app)
-        #expect(app.actionsQuality == "Workflow failures: 1 repository unavailable; showing last known.")
+        #expect(app.actionsQuality == "GitHub Actions: 1 repository unavailable; showing last known.")
         #expect(app.dataState == .ready, "the inbox stays complete")
         let before = app.unseenCount
         app.simulateScopeInject(); try await settled(app)
@@ -176,7 +176,7 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
         app.settings.watchWorkflowFailures = true
         try await settled(app)
         #expect(app.dataState != .empty && app.dataState.statusText != "All clear")
-        #expect(app.actionsQuality == "Workflow failures couldn't be fully checked; showing last known.")
+        #expect(app.actionsQuality == "GitHub Actions couldn't be fully checked; showing last known.")
         actions.failEveryCycle(false)
         app.requestRefresh(); try await settled(app)
         #expect(app.dataState == .empty && app.actionsQuality == nil, "verified empty again once Actions are readable")
