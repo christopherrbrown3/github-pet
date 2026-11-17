@@ -295,6 +295,10 @@ enum QAScenarioRunner {
         },
         "resolve-incidents": Action { c in c.model.resolveServiceIncidents() },
         "partial": Action(keys: ["on"], validate: { _ = try $0.bool("on") }) { c in c.model.simulateScopePartial(try c.bool("on")) },
+        "authored": Action(keys: ["mode"], validate: { _ = try $0.string("mode", ScopeSimulation.Authored.allCases.map(\.rawValue)) }) { c in
+            let mode = try c.string("mode", ScopeSimulation.Authored.allCases.map(\.rawValue))
+            c.model.simulateScopeAuthored(ScopeSimulation.Authored(rawValue: mode)!)
+        },
         "visibility": Action(keys: ["mode"], validate: { _ = try $0.string("mode", ScopeSimulation.Visibility.allCases.map(\.rawValue)) }) { c in
             let mode = try c.string("mode", ScopeSimulation.Visibility.allCases.map(\.rawValue))
             c.model.simulateScopeVisibility(ScopeSimulation.Visibility(rawValue: mode)!)
@@ -427,7 +431,9 @@ enum QAScenarioRunner {
                       "showingLastKnown": !model.items.isEmpty && (!model.dataState.hasUsableItems || model.dataState == .stale),
                       "rows": rows,
                       // #35: informational note beside rows; zero visible uses the hiddenOnly status text.
-                      "hiddenResults": ["count": model.hiddenResultCount, "note": optional(model.hiddenResultsNote)] as [String: Any]],
+                      "hiddenResults": ["count": model.hiddenResultCount, "note": optional(model.hiddenResultsNote)] as [String: Any],
+                      // #9: informational, never rows or attention.
+                      "authoredWaiting": ["count": model.authoredWaitingCount, "note": optional(model.authoredWaitingNote)] as [String: Any]],
             "attention": ["unseenCount": model.unseenCount, "showsAlertIcon": model.showsAlertIcon,
                           "mascotState": model.mascotState.rawValue,
                           "activeClip": model.activeClip.map { ["origin": $0.origin == .repository ? "repository" : "serviceIncident",

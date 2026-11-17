@@ -90,6 +90,11 @@ struct InboxView: View {
                     .font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("inbox.hiddenResults")
             }
+            if let note = model.authoredWaitingNote {
+                Label(note, systemImage: "hourglass")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("inbox.authoredWaiting")
+            }
             if let hint = model.dataState.hint {
                 Text(hint).font(.caption.monospaced()).textSelection(.enabled)
             }

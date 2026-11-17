@@ -12,6 +12,18 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     private var currentAccount = accountA
     private var sequence: [ScopeAccount: Int] = [:]
     private var partial = false
+    /// #9 authored PR fixtures. `off` returns empty authored pages (the default).
+    enum Authored: String, CaseIterable {
+        case off
+        /// Changes requested (needs action), plus one approved, one draft with a conflict and one
+        /// still being checked (UNKNOWN): three waiting.
+        case changesRequested = "changes-requested"
+        /// The changes-requested PR now also fails checks on a new head commit: a new event.
+        case checksFailing = "checks-failing"
+        /// Only comment churn (updatedAt) changed since changes-requested: no new event.
+        case churn
+    }
+    private var authored = Authored.off
     /// #35 fixtures, per review search: `hidden` adds 3 matches the viewer can't see, `hiddenOnly`
     /// returns no nodes with 3 hidden matches, `capped` reports more matches plus hasNextPage.
     enum Visibility: String, CaseIterable { case complete, hidden, hiddenOnly = "hidden-only", capped }
@@ -37,6 +49,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     func switchAccount(_ account: ScopeAccount) { lock.lock(); currentAccount = account; lock.unlock() }
     func inject() { lock.lock(); sequence[currentAccount] = min(31, sequence[currentAccount, default: 0] + 1); lock.unlock() }
     func setPartial(_ on: Bool) { lock.lock(); partial = on; lock.unlock() }
+    func setAuthored(_ mode: Authored) { lock.lock(); authored = mode; lock.unlock() }
     func setVisibility(_ mode: Visibility) { lock.lock(); visibility = mode; lock.unlock() }
     var currentVisibility: Visibility { lock.lock(); defer { lock.unlock() }; return visibility }
     func holdNextReply(_ count: Int = 1) { lock.lock(); holdNext += max(0, count); lock.unlock() }
@@ -99,7 +112,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
         catch { return .failure(.cancelled) }
         lock.lock()
-        let account = currentAccount, count = sequence[account, default: 0], partial = self.partial, visibility = self.visibility
+        let account = currentAccount, count = sequence[account, default: 0], partial = self.partial, visibility = self.visibility, authored = self.authored
         let gate = holdNext > 0 ? DispatchSemaphore(value: 0) : nil
         var ready: [CheckedContinuation<Void, Never>] = []
         if let gate {
@@ -134,6 +147,28 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                     nodes.append(["__typename": "PullRequest", "id": "PR_\(account.viewerID)_\(index)", "number": index + 1,
                                   "title": "Simulated review \(index)", "url": "https://github.com/\(repo)/pull/\(index + 1)",
                                   "updatedAt": "2026-11-15T12:00:00Z", "repository": ["nameWithOwner": repo]])
+                }
+            }
+            if search.kind == .authoredPullRequest && authored != .off {
+                let repo = "\(owner)/pet"
+                if search.targetIndex.map({ scope.targets[$0].includes(repo) }) ?? true {
+                    let failing = authored == .checksFailing
+                    let rows: [(String, Any, String, Bool, String, String)] = [
+                        ("needs", "CHANGES_REQUESTED", "MERGEABLE", false, failing ? "FAILURE" : "SUCCESS", failing ? "b" : "a"),
+                        ("approved", "APPROVED", "MERGEABLE", false, "SUCCESS", "c"),
+                        ("draft", NSNull(), "CONFLICTING", true, "FAILURE", "d"),
+                        ("checking", "REVIEW_REQUIRED", "UNKNOWN", false, "PENDING", "e"),
+                    ]
+                    for (offset, row) in rows.enumerated() {
+                        let number = 200 + offset
+                        nodes.append(["__typename": "PullRequest", "id": "PR_\(account.viewerID)_authored_\(row.0)", "number": number,
+                                      "title": "Simulated authored \(row.0)", "url": "https://github.com/\(repo)/pull/\(number)",
+                                      "updatedAt": authored == .churn && offset == 0 ? "2026-11-15T13:00:00Z" : "2026-11-15T12:00:00Z",
+                                      "repository": ["nameWithOwner": repo],
+                                      "isDraft": row.3, "reviewDecision": row.1, "mergeable": row.2,
+                                      "commits": ["nodes": [["commit": ["oid": String(repeating: row.5, count: 40),
+                                                                         "statusCheckRollup": ["state": row.4]]]]]])
+                    }
                 }
             }
             var total = nodes.count, more = false
@@ -171,6 +206,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         let parsed = ScopedResponseParser.parse(bytes, plan: plan)
         return ScopedPollResult(viewer: parsed.viewer, items: parsed.items.map {
             var item = $0; item.isDemo = true; return item
-        }, issues: parsed.issues, successfulSources: parsed.successfulSources, hidden: parsed.hidden)
+        }, issues: parsed.issues, successfulSources: parsed.successfulSources, hidden: parsed.hidden,
+           waitingOnOthers: parsed.waitingOnOthers)
     }
 }

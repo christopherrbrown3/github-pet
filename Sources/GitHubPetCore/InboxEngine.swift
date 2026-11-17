@@ -67,14 +67,20 @@ public final class InboxEngine {
             let comparable = complete && previousWasComparable && fresh && tracker.baselineEstablished
             var events: [InboxEvent] = []
             let digests = deduped.map { EventBaseline.digest($0.id) }
+            let keyDigests = deduped.map { $0.attentionKeys.map(EventBaseline.digest) }
             if !tracker.baselineEstablished && complete {
-                tracker.seed(digests)
+                tracker.seed(digests + keyDigests.joined())
             } else {
                 // Decide newness before recording anything, so eviction while recording this
                 // snapshot can never make an existing or previously shown ID look new.
-                let previousIDs = Set(items.map(\.id))
-                let newItems = zip(deduped, digests).filter { !tracker.contains($1) && !previousIDs.contains($0.id) }.map(\.0)
-                for digest in digests { _ = tracker.observe(digest, comparableSnapshot: false) }
+                let previousIDs = Set(items.map(\.id)), previousKeys = Set(items.flatMap(\.attentionKeys))
+                let newItems = deduped.indices.filter { index in
+                    let item = deduped[index]
+                    let newID = !tracker.contains(digests[index]) && !previousIDs.contains(item.id)
+                    let gained = zip(item.attentionKeys, keyDigests[index]).contains { !tracker.contains($1) && !previousKeys.contains($0) }
+                    return newID || gained
+                }.map { deduped[$0] }
+                for digest in digests + keyDigests.joined() { _ = tracker.observe(digest, comparableSnapshot: false) }
                 if comparable { events = newItems.map(InboxEvent.init(item:)) }
             }
             items = deduped

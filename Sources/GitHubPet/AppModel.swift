@@ -250,6 +250,11 @@ final class AppModel: ObservableObject {
         dataState == .ready && hiddenResultCount > 0 ? HiddenResults.notVisible(hiddenResultCount) : nil
     }
 
+    /// Your open PRs that need nothing from you (#9): one informational line, never rows,
+    /// counts, badges, mood or attention.
+    @Published private(set) var authoredWaitingCount = 0
+    var authoredWaitingNote: String? { AuthoredWaiting.note(authoredWaitingCount, dataState: dataState) }
+
     var isDemo: Bool { usingFixtures }
 
     var summaryLines: [String] {
@@ -648,6 +653,7 @@ final class AppModel: ObservableObject {
         if dataState != engine.state { dataState = engine.state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
         if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
+        if authoredWaitingCount != scopeSession.waitingOnOthers { authoredWaitingCount = scopeSession.waitingOnOthers }
         if serviceState != serviceMonitor.state { serviceState = serviceMonitor.state }
         if serviceIncidents != serviceMonitor.incidents { serviceIncidents = serviceMonitor.incidents }
         if serviceLastSuccess != serviceMonitor.lastSuccess { serviceLastSuccess = serviceMonitor.lastSuccess }
@@ -794,6 +800,11 @@ final class AppModel: ObservableObject {
     func simulateScopePartial(_ on: Bool) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.setPartial(on); refreshRepositoriesOnly()
+    }
+    /// #9 fixtures: authored PRs (one per mode needing action, plus waiting/draft/still-checking ones).
+    func simulateScopeAuthored(_ mode: ScopeSimulation.Authored) {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.setAuthored(mode); refreshRepositoriesOnly()
     }
     /// #35 fixtures: matches hidden from the viewer, hidden-only, or capped review searches.
     func simulateScopeVisibility(_ mode: ScopeSimulation.Visibility) {

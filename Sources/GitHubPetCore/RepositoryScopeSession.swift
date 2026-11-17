@@ -32,6 +32,9 @@ public final class RepositoryScopeSession {
     public private(set) var scope: MonitoringScope?
     public private(set) var configurationError = false
     public private(set) var issues: [ScopedFetchIssue] = []
+    /// Your open PRs waiting on others or still being checked by GitHub, from the last applied
+    /// snapshot of this session (#9). Informational only.
+    public private(set) var waitingOnOthers = 0
     public private(set) var generation = 0
     private var serial = 0
     private var pending: ScopePollRequest?
@@ -45,7 +48,7 @@ public final class RepositoryScopeSession {
 
     public func startLive() {
         invalidate()
-        viewer = nil; identity = nil; scope = nil; issues = []; configurationError = false
+        viewer = nil; identity = nil; scope = nil; issues = []; configurationError = false; waitingOnOthers = 0
         if let account = store.lastKnownAccount() {
             identity = .github(account)
             restore(.github(account))
@@ -54,7 +57,7 @@ public final class RepositoryScopeSession {
 
     public func startDemo() {
         invalidate()
-        viewer = nil; identity = .demo; issues = []
+        viewer = nil; identity = .demo; issues = []; waitingOnOthers = 0
         restore(.demo)
     }
 
@@ -93,6 +96,7 @@ public final class RepositoryScopeSession {
         let changed = identity != responseIdentity
         if changed {
             invalidate()
+            waitingOnOthers = 0
             identity = responseIdentity
             restore(responseIdentity)
         }
@@ -114,6 +118,7 @@ public final class RepositoryScopeSession {
             issues = []
             return .init(resetRepositories: true, action: .refetch)
         }
+        if case .snapshot = result.outcome { waitingOnOthers = result.waitingOnOthers }
         return .init(resetRepositories: changed, action: .apply(result.outcome))
     }
 
@@ -124,7 +129,7 @@ public final class RepositoryScopeSession {
         guard generation == expected, identity == expectedIdentity else { return false }
         try store.save(scope, for: expectedIdentity)
         invalidate()
-        self.scope = scope; configurationError = false; issues = []
+        self.scope = scope; configurationError = false; issues = []; waitingOnOthers = 0
         return true
     }
 

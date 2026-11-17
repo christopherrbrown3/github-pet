@@ -202,7 +202,7 @@ import Testing
 
 private final class CycleRunner: CommandRunner, @unchecked Sendable {
     var calls = 0
-    let json = Data(#"{"data":{"viewer":{"id":"U_demo_A","login":"demo-a"},"reviews0":{"issueCount":0,"nodes":[],"pageInfo":{"hasNextPage":false}},"assigned0":{"issueCount":0,"nodes":[],"pageInfo":{"hasNextPage":false}}}}"#.utf8)
+    let json = Data(#"{"data":{"viewer":{"id":"U_demo_A","login":"demo-a"},"reviews0":{"issueCount":0,"nodes":[],"pageInfo":{"hasNextPage":false}},"assigned0":{"issueCount":0,"nodes":[],"pageInfo":{"hasNextPage":false}},"authored0":{"issueCount":0,"nodes":[],"pageInfo":{"hasNextPage":false}}}}"#.utf8)
     func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult {
         calls += 1
         return CommandResult(exitCode: 0, stdout: arguments.first == "api" ? json : Data())
