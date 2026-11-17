@@ -99,6 +99,8 @@ final class ScopeEditor: ObservableObject {
         if identityChanged {
             // Suggestions/validation belong to one account and source; a draft never moves across.
             cancelDiscovery(); discovery = .idle
+            // The previous account's status (e.g. "N found") never carries over (#60 C1).
+            status = nil
             resetDraft()
             if wasDirty || interruptedValidation { report("Account or data source changed. The draft was discarded; nothing was applied.") }
         } else if !wasDirty {
