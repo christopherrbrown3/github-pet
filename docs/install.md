@@ -32,7 +32,7 @@ Releases page itself (or the command below) rather than `/releases/latest`.
 With the GitHub CLI:
 
 ```sh
-tag=$(gh release list --repo christopherrbrown3/github-pet --limit 1 --json tagName --jq '.[0].tagName')
+tag=$(gh release list --repo christopherrbrown3/github-pet --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName')
 test -n "$tag" && test "$tag" != null || { echo "No release is available yet" >&2; exit 1; }
 gh release download "$tag" --repo christopherrbrown3/github-pet \
   --pattern 'GitHubPet-*-universal.zip' --pattern 'GitHubPet-*-universal.zip.sha256' --dir GitHubPet-download
