@@ -306,6 +306,25 @@ private func readChildPID(_ fd: Int32) -> Int32? {
         #expect(editor.discovery == .idle && editor.suggestions.organizations.isEmpty, "hints belong to one account")
     }
 
+    // FAIL before (#60 C1): with a clean draft, the old account's "N found" line stayed under
+    // "Suggestions not loaded".
+    @Test func accountChangeClearsTheOldAccountsStatusLine() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
+        let editor = app.scopeEditor
+        editor.loadSuggestions(); try await settled(app)
+        #expect(editor.status?.contains("found") == true && !editor.hasChanges)
+        app.simulateScopeAccount(true); try await settled(app)
+        #expect(editor.discovery == .idle)
+        #expect(editor.status == nil, "a clean draft carries no status across accounts")
+
+        // A dirty draft still reports the discard, for the new account only.
+        editor.loadSuggestions(); try await settled(app)
+        editor.repositoryInput = "demo-b/extra"; editor.addRepository()
+        #expect(editor.hasChanges)
+        app.simulateScopeAccount(false); try await settled(app)
+        #expect(editor.status == "Account or data source changed. The draft was discarded; nothing was applied.")
+    }
+
     @Test func cancelledDiscoveryCannotMutateReplacementAfterIdentityOrSourceRoundTrip() async throws {
         for accountRoundTrip in [true, false] {
             for oldCompletesFirst in [true, false] {

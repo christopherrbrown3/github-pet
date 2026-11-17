@@ -85,8 +85,11 @@ public struct BaselineKey: Equatable, Sendable {
 public final class EventBaselineStore {
     public static let key = "GitHubPet.event-baseline.v1"
     public static let maximumRecordBytes = 64 * 1024
+    /// A record whose only change is `lastSuccess` is rewritten at most this often (#60). The saved
+    /// time can lag by up to this much, which only shortens the 24 h relaunch window (fail-safe).
+    public static let lastSuccessRefreshInterval: TimeInterval = 10 * 60
     private let defaults: UserDefaults
-    private var lastSaved: Data?
+    private var lastSaved: EventBaseline?
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -108,14 +111,26 @@ public final class EventBaselineStore {
     public func save(_ baseline: EventBaseline) {
         guard baseline.isValid, let data = try? JSONEncoder().encode(baseline),
               data.count <= Self.maximumRecordBytes else { return }
-        // Polls repeat every 30–120 s; skip identical writes.
-        guard data != lastSaved else { return }
+        // Polls repeat every 30–120 s and each moves lastSuccess: write only when the content changes,
+        // or when the saved success time is getting old.
+        if let lastSaved, Self.sameContent(lastSaved, baseline) { return }
         defaults.set(data, forKey: Self.key)
-        lastSaved = data
+        lastSaved = baseline
     }
 
     public func reset() {
         defaults.removeObject(forKey: Self.key)
         lastSaved = nil
+    }
+
+    static func sameContent(_ saved: EventBaseline, _ new: EventBaseline) -> Bool {
+        var ignoringTime = new
+        ignoringTime.lastSuccess = saved.lastSuccess
+        guard ignoringTime == saved else { return false }
+        switch (saved.lastSuccess, new.lastSuccess) {
+        case (nil, nil): return true
+        case (let old?, let current?): return current >= old && current.timeIntervalSince(old) < lastSuccessRefreshInterval
+        default: return false
+        }
     }
 }
