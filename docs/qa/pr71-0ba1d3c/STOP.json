@@ -1,0 +1,6 @@
+{
+  "reason": "functional driver stopped/failed; no retry, inspect preserved evidence",
+  "sha": "0ba1d3c8ec94c252bed131f762dc708ba84bd6fc",
+  "run": "44132501861",
+  "policy": "no retries/forcequit/signals; any timed-out app remains intact"
+}

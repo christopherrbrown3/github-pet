@@ -1,0 +1,38 @@
+{
+  "name": "authored-attention",
+  "steps": [
+    {
+      "action": "authored",
+      "mode": "changes-requested",
+      "label": "needs-action-and-waiting"
+    },
+    {
+      "action": "authored",
+      "mode": "churn",
+      "label": "comment-churn-no-event"
+    },
+    {
+      "action": "authored",
+      "mode": "checks-failing",
+      "label": "new-failing-head-one-event"
+    },
+    {
+      "action": "authored",
+      "mode": "changes-requested",
+      "label": "checks-fixed-reason-removed"
+    },
+    {
+      "action": "privacy",
+      "on": false,
+      "label": "privacy-off-titles"
+    },
+    {
+      "action": "authored",
+      "mode": "off",
+      "label": "authored-off"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}

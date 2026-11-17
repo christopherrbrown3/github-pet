@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/chris/github-pet-worktrees/qa-engineer/scripts/qa/scope-artifact-functional.py", line 68, in <module>
+    if __name__=='__main__': sys.exit(main() or 0)
+                                      ~~~~^^
+  File "/Users/chris/github-pet-worktrees/qa-engineer/scripts/qa/scope-artifact-functional.py", line 40, in main
+    assert not any('GitHubPet' in line and '31897' not in line for line in command(['ps','-axo','pid,comm']).stdout.decode().splitlines()), 'another QA app exists'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: another QA app exists
