@@ -151,10 +151,30 @@ private func client(_ runner: Runner) -> DeploymentGhClient {
 
     @Test func waitingNoteAndQualityLineCountRepositoriesOnce() {
         #expect(DeploymentApprovals.waitingNote(0, complete: true) == nil)
-        #expect(DeploymentApprovals.waitingNote(1, complete: true) == "1 deployment is waiting on other reviewers")
-        #expect(DeploymentApprovals.waitingNote(2, complete: false) == "At least 2 deployments are waiting on other reviewers")
+        #expect(DeploymentApprovals.waitingNote(1, complete: true) == "1 deployment is waiting for other reviewers or a wait timer")
+        #expect(DeploymentApprovals.waitingNote(2, complete: false) == "At least 2 deployments are waiting for other reviewers or a wait timer")
         #expect(ActionsWatch.qualityLine(for: [.malformedSource("actions0"), .malformedSource("deploy0")], watched: 1)
-                == "Workflow failures: 1 repository unavailable; showing last known.")
+                == "GitHub Actions: 1 repository unavailable; showing last known.")
+    }
+
+    /// QA LOW-1 on PR75: a deployments-only problem isn't reported as a workflow-failure problem.
+    @Test func qualityLinesNameGitHubActionsNotOnePart() {
+        for issues: [ScopedFetchIssue] in [[.malformedSource("deploy0")], [.targetUnavailable(0)], [.capped("deploy0")],
+                                          [.rateLimited], [.accessDenied], [.transport], [.identityMismatch]] {
+            let line = ActionsWatch.qualityLine(for: issues, watched: 1)
+            #expect(line.hasPrefix("GitHub Actions") && !line.contains("Workflow failures"), "\(issues): \(line)")
+        }
+        #expect(ActionsWatch.notCheckedLine.hasPrefix("GitHub Actions"))
+    }
+
+    /// QA LOW-2 on PR75: a run waiting only on a wait timer (no request anyone can approve yet) is
+    /// counted, and the line doesn't claim it waits on reviewers.
+    @Test func waitTimerRunsAreCountedWithNeutralWording() {
+        let plan = PendingRequestsPlan(runs: [waiting("WFR_timer"), waiting("WFR_reviewers")], expectedAccount: viewerA)
+        let result = PendingRequestsParser.parse(pending([[], [request(false)]]), plan: plan)
+        #expect(result.items.isEmpty && result.waitingOnOthers == 2)
+        #expect(DeploymentApprovals.waitingNote(result.waitingOnOthers, complete: true)
+                == "2 deployments are waiting for other reviewers or a wait timer")
     }
 
     @Test func settingIsOptInAndOldSettingsDecodeOff() throws {

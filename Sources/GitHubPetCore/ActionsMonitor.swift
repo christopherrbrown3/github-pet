@@ -27,12 +27,13 @@ public enum ActionsWatch {
     }
 
     /// The inbox reply wasn't usable, so workflow failures weren't checked this time.
-    public static let notCheckedLine = "Workflow failures weren't checked this time; showing last known."
+    public static let notCheckedLine = "GitHub Actions weren't checked this time; showing last known."
 
-    /// Workflow failures' own quality line: fixed text, counts only, never gh or GitHub wording.
+    /// The Actions quality line (workflow failures and deployment approvals): fixed text, counts
+    /// only, never gh or GitHub wording. Neutral prefix: one line covers both parts.
     public static func qualityLine(for issues: [ScopedFetchIssue], watched: Int) -> String {
-        if issues.contains(.identityMismatch) { return "Workflow failures: account changed; checking again." }
-        if issues.contains(.rateLimited) { return "Workflow failures: GitHub rate limit; showing last known." }
+        if issues.contains(.identityMismatch) { return "GitHub Actions: account changed; checking again." }
+        if issues.contains(.rateLimited) { return "GitHub Actions: GitHub rate limit; showing last known." }
         // One repository counts once, whether failures ("actions<i>") or deployments ("deploy<i>") failed.
         var unavailable = Set<Int>()
         for issue in issues {
@@ -44,16 +45,16 @@ public enum ActionsWatch {
             }
         }
         if issues.contains(.accessDenied) {
-            return "Workflow failures: access denied for some repositories (token scope or SAML single sign-on); showing last known."
+            return "GitHub Actions: access denied for some repositories (token scope or SAML single sign-on); showing last known."
         }
         if !unavailable.isEmpty {
             let count = unavailable.count
-            return "Workflow failures: \(count) \(count == 1 ? "repository" : "repositories") unavailable; showing last known."
+            return "GitHub Actions: \(count) \(count == 1 ? "repository" : "repositories") unavailable; showing last known."
         }
         if issues.contains(where: { if case .capped = $0 { return true }; return false }) {
-            return "Workflow failures: result limit reached; more may exist."
+            return "GitHub Actions: result limit reached; more may exist."
         }
-        return "Workflow failures couldn't be fully checked; showing last known."
+        return "GitHub Actions couldn't be fully checked; showing last known."
     }
 
     public static let needsRepositoriesNote = "GitHub Actions: select repositories in Monitoring scope to watch them. Organizations and Everything aren't watched yet."

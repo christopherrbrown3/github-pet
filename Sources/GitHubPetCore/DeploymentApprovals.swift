@@ -5,7 +5,7 @@ import CoreFoundation
 /// one REST `actions/runs?status=waiting` call per watched repository, then (only if any run is
 /// waiting) one batched GraphQL request for each run's `pendingDeploymentRequests`, where GitHub
 /// itself says whether the viewer can approve. Approvable runs are rows that open the run page;
-/// runs waiting on other reviewers are only a count.
+/// runs waiting for other reviewers or a wait timer are only a count.
 public enum DeploymentApprovals {
     /// Waiting runs read per repository; more marks it capped (Partial).
     public static let waitingRunsPerRepository = 10
@@ -21,7 +21,8 @@ public enum DeploymentApprovals {
         let prefix = complete ? "" : "At least "
         let noun = count == 1 ? "deployment" : "deployments"
         let verb = count == 1 && complete ? "is" : "are"
-        return "\(prefix)\(count) \(noun) \(verb) waiting on other reviewers"
+        // Neutral: a run with no approvable request may wait on other reviewers or only a wait timer.
+        return "\(prefix)\(count) \(noun) \(verb) waiting for other reviewers or a wait timer"
     }
 }
 

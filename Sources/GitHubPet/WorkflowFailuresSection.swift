@@ -18,7 +18,7 @@ struct WorkflowFailuresSection: View {
             }
             Text("Workflow failures: GitHub Actions failures on each selected repository's default branch (its latest commit). Failures you triggered are urgent; others need attention.")
                 .font(.caption).foregroundStyle(.secondary)
-            Text("Deployment approvals: runs waiting for a deployment you can approve, as GitHub reports for your account. Deployments waiting on other reviewers are only counted.")
+            Text("Deployment approvals: runs waiting for a deployment you can approve, as GitHub reports for your account. Deployments waiting for other reviewers or a wait timer are only counted.")
                 .font(.caption).foregroundStyle(.secondary)
             Text("A row opens the run on GitHub. GitHub Pet never approves, re-runs or changes anything.")
                 .font(.caption).foregroundStyle(.secondary)

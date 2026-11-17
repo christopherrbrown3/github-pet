@@ -43,7 +43,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var hiddenResultCount = 0
     /// #10: why workflow failures aren't fully known right now (their own line; never the inbox's).
     @Published private(set) var actionsQuality: String?
-    /// #10: deployments in watched repositories waiting on other reviewers. A count, never rows.
+    /// #10: deployments in watched repositories waiting for other reviewers or a wait timer. A count, never rows.
     @Published private(set) var deploymentsWaitingCount = 0
     var deploymentsWaitingNote: String? {
         DeploymentApprovals.waitingNote(deploymentsWaitingCount, complete: actionsQuality == nil)
@@ -559,7 +559,7 @@ final class AppModel: ObservableObject {
         deploymentsWaitingCount = 0
     }
 
-    /// Settings › Workflow failures: what is (and isn't) watched right now.
+    /// Settings › GitHub Actions: what is (and isn't) watched right now.
     var workflowWatchNote: String? {
         guard settings.watchWorkflowFailures || settings.watchDeploymentApprovals else { return nil }
         guard settings.dataSource == .githubCLI else {

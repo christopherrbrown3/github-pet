@@ -40,7 +40,7 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
   select. Failures you triggered are urgent; others need attention. A row opens the run on GitHub.
 - **Deployment approvals (opt-in).** Runs in the repositories you select that wait for a deployment you can
   approve, as GitHub reports for your account. The row opens the run; GitHub Pet never approves. Deployments
-  waiting on other reviewers are only counted, in one line.
+  waiting for other reviewers or a wait timer are only counted, in one line.
 - **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
 - **Custom mascot packs (advanced).** Replace the artwork with your own pack by launching the app from
