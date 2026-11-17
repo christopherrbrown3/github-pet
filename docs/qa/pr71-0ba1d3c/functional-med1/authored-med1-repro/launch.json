@@ -1,0 +1,11 @@
+{
+  "pid": 77470,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr71-0ba1d3c/app-artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--simulate-monitoring-scope",
+    "--qa-scenario",
+    "docs/qa/pr71-0ba1d3c/authored-med1-repro.json",
+    "--qa-output",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr71-0ba1d3c/functional-med1/authored-med1-repro/records"
+  ]
+}

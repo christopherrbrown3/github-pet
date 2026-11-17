@@ -31,13 +31,22 @@ def save(path, value): path.write_text(json.dumps(value,indent=2)+'\n')
 def main():
     p=argparse.ArgumentParser(); p.add_argument('--app',required=True); p.add_argument('--sha',required=True)
     p.add_argument('--output',required=True); p.add_argument('--scenario',action='append',default=[])
-    p.add_argument('--snapshot-only',action='store_true'); a=p.parse_args()
+    p.add_argument('--snapshot-only',action='store_true')
+    # Chris's own running build: never signalled or touched; must keep its PID, path and start time.
+    p.add_argument('--protected-pid',default='15015')
+    p.add_argument('--protected-path',default='/Users/chris/github-pet-builds/main-0f73723-beta-preview/GitHubPet.app/Contents/MacOS/GitHubPet')
+    a=p.parse_args()
     out=pathlib.Path(a.output).resolve(); out.mkdir(parents=True,exist_ok=False)
     if a.snapshot_only: save(out/'preferences.json',snapshot()); return
     app=pathlib.Path(a.app).resolve(); binary=app/'Contents/MacOS/GitHubPet'
     info=plistlib.loads((app/'Contents/Info.plist').read_bytes())
     assert info['GitHubPetSourceRevision']==a.sha, 'artifact revision mismatch'
-    assert not any('GitHubPet' in line and '31897' not in line for line in command(['ps','-axo','pid,comm']).stdout.decode().splitlines()), 'another QA app exists'
+    def protected():
+        line=command(['ps','-p',a.protected_pid,'-o','pid=,lstart=,comm=']).stdout.decode().strip()
+        assert line.endswith(a.protected_path), 'protected app not running at its path'
+        return line
+    protected_before=protected()
+    assert not any('GitHubPet' in line and line.split()[0]!=a.protected_pid for line in command(['ps','-axo','pid,comm']).stdout.decode().splitlines()), 'another QA app exists'
     save(out/'provenance.json',{'sha':a.sha,'app':str(app),'binarySHA256':digest(binary.read_bytes())})
     trap=out/'tripwire'; trap.mkdir(); gh=trap/'gh'
     gh.write_text('#!/bin/sh\nprintf "invoked\\n" >> "'+str(trap/'invocations')+'"\nexit 1\n'); gh.chmod(0o700)
@@ -61,7 +70,8 @@ def main():
         if code: break
     after=snapshot(); save(out/'preferences-after.json',after)
     save(out/'completion.json',{'results':results,'preferencesEqual':before==after,
-        'ghInvoked':(trap/'invocations').exists(),'saved31897Present':command(['ps','-p','31897','-o','comm=']).stdout.decode().strip()=='/Users/chris/github-pet-builds/b0127f0/GitHubPet.app/Contents/MacOS/GitHubPet',
+        'ghInvoked':(trap/'invocations').exists(),'protectedApp':protected_before,
+        'protectedAppUnchanged':command(['ps','-p',a.protected_pid,'-o','pid=,lstart=,comm=']).stdout.decode().strip()==protected_before,
         'productVerdict':'none: independent judgement required'})
     print('QA_ARTIFACT_COMPLETE',out,flush=True)
     return int(any(r['exit'] for r in results))

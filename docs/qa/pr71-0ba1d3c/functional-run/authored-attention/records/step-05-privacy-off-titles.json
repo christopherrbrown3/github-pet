@@ -1,0 +1,210 @@
+{
+  "action" : "privacy",
+  "attention" : {
+    "activeClip" : {
+      "endsAt" : "2026-11-15T12:00:01Z",
+      "origin" : "repository",
+      "startedAt" : "2026-11-15T12:00:00Z",
+      "state" : "attention"
+    },
+    "incidentMarker" : "minor",
+    "markerBurst" : null,
+    "mascotState" : "idle",
+    "showsAlertIcon" : false,
+    "unseenCount" : 0
+  },
+  "defaultsDomain" : "dev.github-pet.scope-simulation.75307.0E23EDA7-61D5-4C48-B25C-3B603A0F3F2D",
+  "inbox" : {
+    "authoredWaiting" : {
+      "count" : 3,
+      "note" : "3 of your pull requests are waiting on others or being checked by GitHub"
+    },
+    "badge" : "2",
+    "demoLabel" : true,
+    "demoNotice" : "Simulated scope (demo): invented accounts and items, offline, temporary settings. Not from GitHub.",
+    "hiddenResults" : {
+      "count" : 0,
+      "note" : null
+    },
+    "hint" : null,
+    "hoverLines" : [
+      "Demo GitHub incident: Demo: Delayed GitHub Actions job starts",
+      "Demo data (simulated scope)",
+      "2 items",
+      "Demo · Your pull request: demo-a\/pet — Simulated authored needs",
+      "Demo · Review request: demo-a\/pet — Simulated review 0"
+    ],
+    "lastSuccess" : "2026-11-15T12:00:00Z",
+    "rows" : [
+      {
+        "id" : "authoredPullRequest:PR_U_scope_demo_A_authored_needs:changes",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Your pull request · Changes requested · demo-a\/pet",
+        "visibleTitle" : "Simulated authored needs"
+      },
+      {
+        "id" : "reviewRequest:PR_U_scope_demo_A_0",
+        "isDemo" : true,
+        "repository" : "demo-a\/pet",
+        "unseen" : false,
+        "visibleSubtitle" : "Demo · Review request · demo-a\/pet",
+        "visibleTitle" : "Simulated review 0"
+      }
+    ],
+    "scopeHeader" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "scopeQuality" : null,
+    "showingLastKnown" : false,
+    "simulatedLabel" : true,
+    "status" : "Up to date"
+  },
+  "label" : "privacy-off-titles",
+  "mascotRenderedAt" : "2026-11-15T12:00:00Z",
+  "monitoringScope" : {
+    "active" : "Selected",
+    "generation" : 1,
+    "identity" : "github:A"
+  },
+  "params" : {
+    "on" : false
+  },
+  "pngs" : [
+    "step-05-privacy-off-titles-inbox.png",
+    "step-05-privacy-off-titles-mascot.png"
+  ],
+  "renders" : [
+    "step-05-privacy-off-titles-inbox: 360x323 pt",
+    "step-05-privacy-off-titles-mascot: 128x150 pt"
+  ],
+  "scenarioClock" : "2026-11-15T12:00:00Z",
+  "scopeSimulation" : {
+    "discarded" : 0,
+    "held" : 0,
+    "received" : 5,
+    "requests" : [
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "authored0"
+        ],
+        "serial" : 1,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "authored0"
+        ],
+        "serial" : 2,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "authored0"
+        ],
+        "serial" : 3,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "authored0"
+        ],
+        "serial" : 4,
+        "targets" : [
+          "demo-a"
+        ]
+      },
+      {
+        "expectedAccount" : "A",
+        "generation" : 1,
+        "identityOnly" : false,
+        "scope" : "Selected",
+        "searchAliases" : [
+          "reviews0",
+          "assigned0",
+          "authored0"
+        ],
+        "serial" : 5,
+        "targets" : [
+          "demo-a"
+        ]
+      }
+    ],
+    "status" : "Simulated account A · 5 requests · 0 held · complete replies · requested Selected · expected A"
+  },
+  "service" : {
+    "incidents" : 1,
+    "status" : "1 active GitHub incident",
+    "unseenIncidents" : 0
+  },
+  "settings" : {
+    "alertsAllowed" : true,
+    "dataSource" : "gh",
+    "detailsRevealed" : false,
+    "effectiveReducedMotion" : false,
+    "privacyMode" : false,
+    "reducedMotion" : false
+  },
+  "settingsScope" : {
+    "account" : "demo-a_sim (Simulated)",
+    "activeSummary" : "Monitoring scope · Selected · 1 organization, 0 repositories",
+    "applyEnabled" : false,
+    "cancelEnabled" : false,
+    "checksLaunched" : 0,
+    "checksReceived" : 0,
+    "discardedReplies" : 0,
+    "discovery" : "Suggestions not loaded.",
+    "findSuggestionsEnabled" : true,
+    "mode" : "selected",
+    "organizationInput" : "",
+    "organizations" : [
+      {
+        "text" : "demo-a"
+      }
+    ],
+    "organizationSuggestions" : [
+
+    ],
+    "repositories" : [
+
+    ],
+    "repositoryInput" : "",
+    "repositorySuggestions" : [
+
+    ],
+    "simulatedChecks" : "Simulated Settings checks · 0 validations · 0 discovery pages · 0 held · discovery complete · validation normal",
+    "validating" : false
+  },
+  "simulatedAccount" : "A",
+  "simulatedVisibility" : "complete",
+  "step" : 5
+}

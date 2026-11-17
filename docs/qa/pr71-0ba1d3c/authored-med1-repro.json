@@ -1,0 +1,18 @@
+{
+  "name": "authored-med1-repro",
+  "steps": [
+    {
+      "action": "authored",
+      "mode": "checks-failing",
+      "label": "first-seen-changes-and-failing"
+    },
+    {
+      "action": "authored",
+      "mode": "changes-requested",
+      "label": "checks-fixed-changes-only"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}

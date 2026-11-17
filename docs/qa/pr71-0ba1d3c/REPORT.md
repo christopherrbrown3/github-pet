@@ -1,6 +1,6 @@
 # PR71 0ba1d3c QA: authored-PR attention (#9)
 
-**Source review PASS with one MED design point.** The functional run is **pending a PM decision**. The driver guard refused before launching because the protected saved app PID 31897 is no longer running, and a different GitHubPet process is (see below).
+**Source review PASS. Functional PASS on the exact-head artifact. MED-1 is reproduced in the app.**
 
 QA: Claude Opus 5.5 (`claude-opus-5-5`), task W from PM t61, 2026-11-17.
 
@@ -31,17 +31,34 @@ QA: Claude Opus 5.5 (`claude-opus-5-5`), task W from PM t61, 2026-11-17.
 - **LOW:** if two inclusions return different reason sets for the same PR (a race between searches), two rows with different IDs can appear. This is rare.
 - **INFO:** the authored kind has `actionable` severity, the same as review requests, and the generic label "Your pull request".
 
-## Functional: pending
+## Functional (exact-head artifact)
 
-The QA runner's existing `authored` action (modes `changes-requested`, `checks-failing`, `churn` and `off`) can show:
+PM confirmed that PID 15015 (`/Users/chris/github-pet-builds/main-0f73723-beta-preview/GitHubPet.app`, Chris's own launch, started Nov 16 14:41:47; embedded revision `c47d8b4`) replaces 31897 as the protected app.
 
-- a needs-action row
-- the waiting line
-- churn producing no event
-- a new failing head producing one event
-- **the MED-1 re-announce**, by going back to `changes-requested`
-- privacy turned off
+- **Driver guard update:** `scripts/qa/scope-artifact-functional.py` now takes `--protected-pid`/`--protected-path` (default 15015 and its path). Before launching it requires the protected app to be running at that path, refuses if any other GitHubPet process exists, and records whether PID, start time and path are **unchanged** afterwards.
+- **Launches:** two artifact-only launches, each with `--simulate-monitoring-scope` first, existing runner `authored` and `privacy` actions only, and in-memory throwaway suites. gh tripwire 0, protected app **unchanged** both times.
 
-All of it uses existing actions only. The scenario and helper are ready (`authored-attention.json`, `scripts/qa/pr71-0ba1d3c-authored.py`).
+**Run 1** (`functional-run/`, `authored-attention.json`, 7 steps):
 
-**Not run:** the driver guard ("only the protected PID 31897 may be running") refused before launching. **PID 31897 is no longer running.** Instead, PID 15015, `/Users/chris/github-pet-builds/main-0f73723-beta-preview/GitHubPet.app` (no arguments, parent launchd, started Nov 16 14:41), is running. That looks like a normal launch by Chris, and QA did not cause it: QA's last app launch (the PR65 render) recorded 31897 still present afterwards, and every task since has been read-only. QA needs PM to confirm the new protected process before running anything.
+| Step | Observed | Verdict |
+|---|---|---|
+| changes-requested | Needs-action row "Demo · Your pull request · Changes requested", unseen, mood attention, one clip. Waiting line: "3 of your pull requests are waiting on others or being checked by GitHub" (approved, draft with conflict, still-checking UNKNOWN). Badge 2, so the waiting PRs are not counted | PASS |
+| churn (updatedAt only) | Same ID and state, no new event | PASS |
+| checks-failing (new head OID) | New ID `…:changes,checks@bb…`, row unseen: **one** new event. Reason text "Changes requested, Checks failing" | PASS |
+| back to changes-requested | ID `…:changes` was **already seen** in step 1, so there is no event (unseen 0, mood idle) | PASS (this is not MED-1; see run 2) |
+| privacy off | Titles and `demo-a/pet` appear; with privacy on, only "Your pull request · <reason>" showed | PASS |
+| authored off | Row and waiting line gone | PASS |
+
+**Run 2, the MED-1 reproduction** (`functional-med1/`, `authored-med1-repro.json`):
+
+1. The first sighting of the PR is checks-failing, giving `…:changes,checks@bb…`: unseen, mood attention.
+2. Then changes-requested: the checks are fixed and changes are still requested. The new ID `…:changes` has **never been seen**, so the row is **unseen again, mood attention**. An improvement re-announces the PR.
+
+**Repro for the Developer:** a PR seen first with more reasons, then with a subset it has never had, alerts again.
+
+**Preferences observation (not a QA write):**
+
+- In run 1, the hash-only check showed the **real** `dev.github-pet.GitHubPet` domain contents changed; its frame keys did not.
+- QA launches use in-memory suites. Watching only the plist's mtime with **no QA app running** showed it being rewritten about every 2 minutes (12:13:56, 12:15:57, 12:17:50). Chris's running preview build `c47d8b4` contains PR63, so it persists its seen-items baseline to its own domain after each live poll.
+- Run 2 was hash-equal.
+- While 15015 runs, the driver's whole-domain hash check for `dev.github-pet.GitHubPet` can report a change that isn't QA's. Read it together with the protected-app timeline. No preference values were read, and nothing was restored.

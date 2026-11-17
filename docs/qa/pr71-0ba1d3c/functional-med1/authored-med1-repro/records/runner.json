@@ -1,0 +1,14 @@
+{
+  "completed" : true,
+  "defaultsDomain" : "dev.github-pet.scope-simulation.77470.D5DC915D-76F7-430C-B744-A8C3A75E3444",
+  "quit" : {
+    "discardedTotal" : 0,
+    "domainKeysAfterCleanup" : 0,
+    "heldAtQuit" : 0,
+    "lateRepliesReceivedAfterCleanup" : 0,
+    "plistOnDisk" : false
+  },
+  "scenario" : "authored-med1-repro",
+  "steps" : 3,
+  "verdict" : "none: QA judges the step records"
+}

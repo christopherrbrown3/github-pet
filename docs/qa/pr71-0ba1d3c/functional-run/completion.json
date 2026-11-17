@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "scenario": "authored-attention",
+      "exit": 0,
+      "steps": 7,
+      "completed": true
+    }
+  ],
+  "preferencesEqual": false,
+  "ghInvoked": false,
+  "protectedApp": "15015 Mon Nov 16 14:41:47 2026     /Users/chris/github-pet-builds/main-0f73723-beta-preview/GitHubPet.app/Contents/MacOS/GitHubPet",
+  "protectedAppUnchanged": true,
+  "productVerdict": "none: independent judgement required"
+}
