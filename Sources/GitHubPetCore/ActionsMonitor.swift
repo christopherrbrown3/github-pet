@@ -11,6 +11,12 @@ public enum ActionsWatch {
     public static let suitesPerCommit = 20
     /// Conclusions that count as a genuine failure. Cancelled, skipped, neutral and stale don't.
     public static let failingConclusions: Set<String> = ["FAILURE", "TIMED_OUT", "STARTUP_FAILURE"]
+    /// Every value GitHub documents today. Anything else fails closed (Partial), so a future
+    /// failure conclusion can't be silently skipped.
+    public static let knownConclusions: Set<String> = failingConclusions.union(["SUCCESS", "CANCELLED", "SKIPPED", "NEUTRAL", "STALE", "ACTION_REQUIRED"])
+    public static let knownStatuses: Set<String> = ["REQUESTED", "QUEUED", "IN_PROGRESS", "COMPLETED", "WAITING", "PENDING"]
+    /// Bumped when what counts as a watched failure changes; part of the baseline key.
+    public static let coverageVersion = 1
 
     public enum Coverage: Equatable, Sendable {
         case off
@@ -130,6 +136,12 @@ public enum ActionsResponseParser {
                     issues.append(.malformedRow(alias)); continue
                 }
                 let conclusion = suite["conclusion"] as? String
+                // Unknown values, or a completed suite without a conclusion, are not readable.
+                guard ActionsWatch.knownStatuses.contains(status),
+                      conclusion.map(ActionsWatch.knownConclusions.contains) ?? (status != "COMPLETED"),
+                      suite["conclusion"] is String || suite["conclusion"] is NSNull else {
+                    issues.append(.malformedRow(alias)); continue
+                }
                 guard status == "COMPLETED", let conclusion, ActionsWatch.failingConclusions.contains(conclusion) else { continue }
                 guard let run = suite["workflowRun"] as? [String: Any], let rawURL = run["url"] as? String,
                       let url = SafeLink.validated(URL(string: rawURL)),
@@ -186,6 +198,56 @@ public struct ActionsGhClient: ActionsPolling {
         catch CommandError.timedOut { return .failure(.deadline) }
         catch CommandError.cancelled { return .failure(.cancelled) }
         catch { return .failure(.transport) }
+    }
+}
+
+/// The last readable failures per watched repository (#10). When a cycle can't read a repository,
+/// its previous rows stay, marked "last known", and the snapshot is Partial: never a clean
+/// "no failures". It starts over whenever the account or the watched repositories change.
+public final class ActionsLastKnown: @unchecked Sendable {
+    public static let staleSuffix = " · last known"
+    private let lock = NSLock()
+    private var key: String?
+    private var byRepository: [String: [InboxItem]] = [:]
+
+    public init() {}
+
+    public func apply(_ result: ScopedPollResult, repositories: [MonitoringTarget], account: ScopeAccount?) -> ScopedPollResult {
+        let names = repositories.map { "\($0.owner)/\($0.name!)" }
+        let key = (account?.viewerID ?? "") + "\n" + names.sorted().joined(separator: ",")
+        lock.lock(); defer { lock.unlock() }
+        if key != self.key { self.key = key; byRepository = [:] }
+        // An account change is handled by the inbox (refetch); nothing carries over.
+        if result.issues.contains(.identityMismatch) { byRepository = [:]; return result }
+        var failed = Set<Int>()
+        if result.viewer == nil || result.successfulSources == 0 {
+            failed = Set(names.indices)
+        } else {
+            for issue in result.issues {
+                switch issue {
+                case .targetUnavailable(let index), .malformedTarget(let index): failed.insert(index)
+                case .malformedSource(let alias):
+                    if let index = names.indices.first(where: { ActionsResponseParser.alias($0) == alias }) { failed.insert(index) }
+                default: break
+                }
+            }
+        }
+        var carried: [InboxItem] = []
+        for (index, name) in names.enumerated() {
+            if failed.contains(index) {
+                carried += (byRepository[name] ?? []).map { item in
+                    var stale = item
+                    if !stale.title.hasSuffix(Self.staleSuffix) { stale.title += Self.staleSuffix }
+                    return stale
+                }
+            } else {
+                byRepository[name] = result.items.filter { $0.repository.lowercased() == name }
+            }
+        }
+        guard !carried.isEmpty else { return result }
+        return ScopedPollResult(viewer: result.viewer, items: result.items + carried, issues: result.issues,
+                                successfulSources: result.successfulSources, hidden: result.hidden,
+                                waitingOnOthers: result.waitingOnOthers)
     }
 }
 

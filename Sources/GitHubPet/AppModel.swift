@@ -21,8 +21,9 @@ final class AppModel: ObservableObject {
         /// Open at login (#15). nil: the system's SMAppService for a normal launch only, none for
         /// simulated, snapshot, QA or custom-defaults launches. Tests inject a fake.
         var loginItemBackend: (any LoginItemBackend)?
-        /// #10 Actions failures (live GitHub CLI launches only). Tests inject a fake client.
-        var actionsClient: any ActionsPolling = ActionsGhClient()
+        /// #10 Actions failures. nil: the real gh client for live launches and none for simulated
+        /// ones; tests inject a fake (which a simulated launch then uses too).
+        var actionsClient: (any ActionsPolling)?
         /// Its own 20 s / 2 MiB budget, separate from the inbox searches; it starts when the
         /// Actions query starts, so slow searches never shorten it.
         var actionsBudget: @Sendable () -> CommandBudget = { CommandBudget(timeout: 20) }
@@ -414,7 +415,7 @@ final class AppModel: ObservableObject {
             if simulatedPollLog.count > 64 { simulatedPollLog.removeFirst(simulatedPollLog.count - 64) }
         }
         let simulated = scopeSimulation != nil
-        let actions = simulated ? nil : actionsJob(for: request)
+        let actions = actionsJob(for: request)
         repositoryTask = Task.detached { [weak self] in
             let result: ScopedPollResult
             if simulated {
@@ -423,7 +424,7 @@ final class AppModel: ObservableObject {
                 // starved every other task (CI 43776871945 hung with all pool threads blocked).
                 result = await withCheckedContinuation { done in
                     DispatchQueue.global(qos: .userInitiated).async {
-                        done.resume(returning: Self.poll(client, request, budget))
+                        done.resume(returning: Self.poll(client, request, budget, actions: actions))
                     }
                 }
             } else {
@@ -444,14 +445,29 @@ final class AppModel: ObservableObject {
         let client: any ActionsPolling
         let repositories: [MonitoringTarget]
         let makeBudget: @Sendable () -> CommandBudget
+        /// Keeps the previous rows (marked last known) for repositories a cycle can't read.
+        var lastKnown = ActionsLastKnown()
+    }
+
+    private let actionsLastKnown = ActionsLastKnown()
+    private var actionsClient: (any ActionsPolling)? {
+        runtime.actionsClient ?? (scopeSimulation == nil ? ActionsGhClient() : nil)
+    }
+    /// What the Actions watch covers right now; part of the baseline key (#10), so turning it on
+    /// or changing the watched repositories seeds their existing failures silently.
+    private var watchedActionsRepositories: [MonitoringTarget] {
+        guard settings.dataSource == .githubCLI, actionsClient != nil,
+              case .repositories(let repositories, _) = ActionsWatch.coverage(enabled: settings.watchWorkflowFailures,
+                                                                              scope: scopeSession.scope) else { return [] }
+        return repositories
     }
 
     /// Only for a live GitHub CLI poll of a real selection with the opt-in on.
     private func actionsJob(for request: ScopePollRequest) -> ActionsJob? {
-        guard settings.dataSource == .githubCLI, !request.identityOnly,
+        guard settings.dataSource == .githubCLI, !request.identityOnly, let client = actionsClient,
               case .repositories(let repositories, _) = ActionsWatch.coverage(enabled: settings.watchWorkflowFailures,
                                                                               scope: request.scope) else { return nil }
-        return ActionsJob(client: runtime.actionsClient, repositories: repositories, makeBudget: runtime.actionsBudget)
+        return ActionsJob(client: client, repositories: repositories, makeBudget: runtime.actionsBudget, lastKnown: actionsLastKnown)
     }
 
     /// The inbox poll, plus Actions failures when watched. Actions run only after a usable inbox
@@ -461,8 +477,8 @@ final class AppModel: ObservableObject {
         let result = poll(client, request, budget)
         guard let actions, result.viewer != nil, result.successfulSources > 0 else { return result }
         let expected = request.expectedAccount ?? result.viewer?.account
-        return result.mergingActions(actions.client.fetch(repositories: actions.repositories, expectedAccount: expected,
-                                                          budget: actions.makeBudget()))
+        let fetched = actions.client.fetch(repositories: actions.repositories, expectedAccount: expected, budget: actions.makeBudget())
+        return result.mergingActions(actions.lastKnown.apply(fetched, repositories: actions.repositories, account: expected))
     }
 
     /// Settings › Workflow failures: what is (and isn't) watched right now.
@@ -564,7 +580,8 @@ final class AppModel: ObservableObject {
 
     private var currentBaselineKey: BaselineKey? {
         guard let identity = scopeSession.identity, let scope = scopeSession.scope else { return nil }
-        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope)
+        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope,
+                           actionsRepositories: watchedActionsRepositories)
     }
 
     private func persistBaseline() {

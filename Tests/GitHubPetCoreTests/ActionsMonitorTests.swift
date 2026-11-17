@@ -79,7 +79,7 @@ private func client(_ runner: Runner) -> ActionsGhClient {
         let failing = ["FAILURE", "TIMED_OUT", "STARTUP_FAILURE"]
         let ignored: [(String, Any?)] = [("COMPLETED", "CANCELLED"), ("COMPLETED", "SKIPPED"), ("COMPLETED", "NEUTRAL"),
                                          ("COMPLETED", "STALE"), ("COMPLETED", "SUCCESS"), ("COMPLETED", "ACTION_REQUIRED"),
-                                         ("COMPLETED", nil), ("IN_PROGRESS", "FAILURE"), ("QUEUED", nil), ("WAITING", nil)]
+                                         ("IN_PROGRESS", "FAILURE"), ("QUEUED", nil), ("WAITING", nil)]
         let suites = failing.enumerated().map { suite("CS_f\($0.offset)", conclusion: $0.element) }
             + ignored.enumerated().map { suite("CS_i\($0.offset)", status: $0.element.0, conclusion: $0.element.1) }
         let result = parse([repository(suites: suites)])
@@ -202,6 +202,55 @@ private func client(_ runner: Runner) -> ActionsGhClient {
             #expect(merged.waitingOnOthers == 2, "\(name)")
         }
         #expect(none == inbox)
+    }
+
+    /// QA LOW-2 on PR72: a value outside GitHub's known enums fails closed instead of being skipped.
+    @Test func unknownStatusOrConclusionMarksTheRowMalformed() {
+        for (status, conclusion) in [("COMPLETED", "FAILED_NEW_KIND"), ("FINISHED", "FAILURE"), ("COMPLETED", nil)] as [(String, String?)] {
+            let result = parse([repository(suites: [suite(status: status, conclusion: conclusion)])])
+            #expect(!result.complete && result.issues == [.malformedRow("actions0")] && result.items.isEmpty, "\(status) \(conclusion ?? "nil")")
+        }
+        var numeric = suite(); numeric["conclusion"] = 1
+        #expect(parse([repository(suites: [numeric])]).issues == [.malformedRow("actions0")])
+        #expect(parse([repository(suites: [suite(status: "PENDING", conclusion: nil)])]).complete, "known in-progress states stay quiet")
+    }
+
+    /// QA MED-1 on PR72: the watched repositories are part of the baseline key, so turning the
+    /// watch on (or changing what it covers) re-baselines silently; without it the key is unchanged.
+    @Test func baselineKeyFollowsTheActionsCoverage() throws {
+        let scope = try MonitoringScope(selected: [pet, tools])
+        let identity = ScopeIdentity.github(viewerA)
+        let off = BaselineKey(source: .githubCLI, identity: identity, scope: scope)
+        #expect(BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: []) == off)
+        let one = BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: [pet])
+        let both = BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: [tools, pet])
+        #expect(one != off && both != one)
+        #expect(both == BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: [pet, tools]), "order-free")
+    }
+
+    /// QA LOW-1 on PR72: a cycle that can't read a repository keeps its previous rows, marked.
+    @Test func lastKnownRowsSurviveAnErrorCycleOnlyForTheSameAccountAndRepositories() {
+        let cache = ActionsLastKnown()
+        let viewer = ScopeViewer(account: viewerA, login: "a")
+        func failure(_ id: String, _ repo: String) -> InboxItem {
+            InboxItem(id: "actions:\(id)", kind: .workflowFailure, repository: repo, title: "CI failed on main",
+                      url: URL(string: "https://github.com/\(repo)/actions/runs/1"), updatedAt: Date(timeIntervalSince1970: 0))
+        }
+        let fresh = ScopedPollResult(viewer: viewer, items: [failure("A", "example/pet"), failure("B", "example/tools")],
+                                     issues: [], successfulSources: 2)
+        #expect(cache.apply(fresh, repositories: [pet, tools], account: viewerA) == fresh)
+        let down = cache.apply(.failure(.transport), repositories: [pet, tools], account: viewerA)
+        #expect(down.issues == [.transport] && down.items.map(\.id) == ["actions:A", "actions:B"])
+        #expect(down.items.allSatisfy { $0.title == "CI failed on main" + ActionsLastKnown.staleSuffix })
+        // One repository unreadable: only its rows carry over; the readable one is fresh.
+        let half = ScopedPollResult(viewer: viewer, items: [], issues: [.targetUnavailable(1)], successfulSources: 1)
+        #expect(cache.apply(half, repositories: [pet, tools], account: viewerA).items.map(\.id) == ["actions:B"])
+        // A different account or watched set never inherits rows.
+        #expect(cache.apply(.failure(.transport), repositories: [pet, tools], account: viewerB).items.isEmpty)
+        let again = ActionsLastKnown()
+        _ = again.apply(fresh, repositories: [pet, tools], account: viewerA)
+        #expect(again.apply(.failure(.transport), repositories: [pet], account: viewerA).items.isEmpty)
+        #expect(again.apply(.failure(.identityMismatch, viewer: viewer), repositories: [pet], account: viewerA).items.isEmpty)
     }
 
     @Test func settingIsOptInAndOldSettingsDecodeOff() throws {
