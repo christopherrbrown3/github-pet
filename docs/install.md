@@ -1,12 +1,14 @@
-# Installing GitHub Pet (development builds)
+# Installing GitHub Pet
 
 GitHub Pet is a free project without a paid Apple Developer account. Its builds are **ad-hoc
 signed and not notarized**, so macOS asks you to approve the app once before its first launch.
 This page shows how to do that with macOS's own settings. You never need to remove quarantine
 attributes or turn off Gatekeeper, and you shouldn't.
 
-There is no tagged release or Homebrew cask yet ([#15](https://github.com/christopherrbrown3/github-pet/issues/15)).
-Every build of `main` produces a downloadable ZIP as a GitHub Actions artifact.
+Builds are published on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases);
+the current one is the pre-release
+[v0.1.0-beta.1](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.1). A Homebrew
+cask is planned but not available yet ([#15](https://github.com/christopherrbrown3/github-pet/issues/15)).
 
 ## Requirements
 
@@ -18,26 +20,28 @@ Every build of `main` produces a downloadable ZIP as a GitHub Actions artifact.
 
 ## 1. Download
 
-The ZIP is attached to each successful **push** run of the **Swift** workflow on `main` as the artifact
-**GitHubPet-app** (kept for 90 days). Downloading artifacts requires a GitHub account.
-
-In a browser: open the repository's **Actions** tab, choose the **Swift** workflow, open the latest
-successful **push** run on this repository's `main` (not a pull request), and download
-**GitHubPet-app** under **Artifacts**. GitHub delivers it
-as a ZIP that contains:
+Open the [Releases page](https://github.com/christopherrbrown3/github-pet/releases) and, under the newest
+release, download both assets into the same folder (no GitHub account needed):
 
 - `GitHubPet-<version>-<commit>-universal.zip`: the app.
 - `GitHubPet-<version>-<commit>-universal.zip.sha256`: its checksum.
 
+Beta builds are marked **Pre-release**. GitHub's "latest release" link skips pre-releases, so use the
+Releases page itself (or the command below) rather than `/releases/latest`.
+
 With the GitHub CLI:
 
 ```sh
-run=$(gh run list --repo christopherrbrown3/github-pet --workflow Swift --branch main \
-  --event push --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-test -n "$run" && test "$run" != null || { echo "No successful main push build is available yet" >&2; exit 1; }
-gh run download "$run" --repo christopherrbrown3/github-pet --name GitHubPet-app --dir GitHubPet-download
+tag=$(gh release list --repo christopherrbrown3/github-pet --limit 1 --json tagName --jq '.[0].tagName')
+test -n "$tag" && test "$tag" != null || { echo "No release is available yet" >&2; exit 1; }
+gh release download "$tag" --repo christopherrbrown3/github-pet \
+  --pattern 'GitHubPet-*-universal.zip' --pattern 'GitHubPet-*-universal.zip.sha256' --dir GitHubPet-download
 cd GitHubPet-download
 ```
+
+Developers who want an unreleased build of `main` can still take the **GitHubPet-app** artifact of a
+successful `main` push run of the **Swift** workflow in GitHub Actions (needs a GitHub account); see the
+[development guide](development.md).
 
 ## 2. Check the download
 
