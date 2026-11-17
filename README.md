@@ -115,6 +115,11 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
 - Workflow failures are opt-in and cover only selected repositories (not organizations or Everything),
   and only their default branch's latest commit: a workflow that didn't run on that commit isn't seen.
   Deployment approvals are not monitored yet.
+- Changing workflow-failure coverage (turning the watch on, or changing the watched repositories)
+  re-baselines workflow failures silently: failures first seen in that refresh aren't announced, and
+  their unread dots clear. Changing the monitoring scope itself re-baselines the whole inbox the same way.
+  Workflow failures aren't remembered across a relaunch, so ones that appeared while GitHub Pet was quit
+  aren't announced.
 
 After the beta: a Homebrew cask, then more sources. Progress is tracked in
 [issues](https://github.com/christopherrbrown3/github-pet/issues).

@@ -67,6 +67,9 @@ struct InboxView: View {
             if let quality = model.scopeQuality {
                 Text(quality).font(.caption).accessibilityIdentifier("inbox.scopeQuality")
             }
+            if let actions = model.actionsQuality {
+                Text(actions).font(.caption).accessibilityIdentifier("inbox.actionsQuality")
+            }
             HStack(spacing: 4) {
                 // Meaning is carried by primary-label words plus a symbol, never by colour
                 // alone (coloured caption text failed 4.5:1 contrast in light mode).

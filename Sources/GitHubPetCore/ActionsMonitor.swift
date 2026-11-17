@@ -26,6 +26,34 @@ public enum ActionsWatch {
         case needsRepositories(String)
     }
 
+    /// The inbox reply wasn't usable, so workflow failures weren't checked this time.
+    public static let notCheckedLine = "Workflow failures weren't checked this time; showing last known."
+
+    /// Workflow failures' own quality line: fixed text, counts only, never gh or GitHub wording.
+    public static func qualityLine(for issues: [ScopedFetchIssue], watched: Int) -> String {
+        if issues.contains(.identityMismatch) { return "Workflow failures: account changed; checking again." }
+        if issues.contains(.rateLimited) { return "Workflow failures: GitHub rate limit; showing last known." }
+        var unavailable = Set<String>()
+        for issue in issues {
+            switch issue {
+            case .targetUnavailable(let index), .malformedTarget(let index): unavailable.insert(ActionsResponseParser.alias(index))
+            case .malformedSource(let alias): unavailable.insert(alias)
+            default: break
+            }
+        }
+        if issues.contains(.accessDenied) {
+            return "Workflow failures: access denied for some repositories (token scope or SAML single sign-on); showing last known."
+        }
+        if !unavailable.isEmpty {
+            let count = unavailable.count
+            return "Workflow failures: \(count) \(count == 1 ? "repository" : "repositories") unavailable; showing last known."
+        }
+        if issues.contains(where: { if case .capped = $0 { return true }; return false }) {
+            return "Workflow failures: result limit reached; more may exist."
+        }
+        return "Workflow failures couldn't be fully checked; showing last known."
+    }
+
     public static let needsRepositoriesNote = "Workflow failures: select repositories in Monitoring scope to watch them. Organizations and Everything aren't watched yet."
     public static let organizationsNotWatchedNote = "Workflow failures are watched for the selected repositories only, not for selected organizations."
 
@@ -248,28 +276,5 @@ public final class ActionsLastKnown: @unchecked Sendable {
         return ScopedPollResult(viewer: result.viewer, items: result.items + carried, issues: result.issues,
                                 successfulSources: result.successfulSources, hidden: result.hidden,
                                 waitingOnOthers: result.waitingOnOthers)
-    }
-}
-
-public extension ScopedPollResult {
-    /// Adds a watched-repositories Actions result to the inbox poll. Any Actions problem makes the
-    /// whole snapshot Partial (never a clean "no failures"); a different viewer is an account change.
-    /// The inbox's own waiting-on-others count (#9) is informational and always carried through.
-    func mergingActions(_ actions: ScopedPollResult) -> ScopedPollResult {
-        if let mine = viewer, let theirs = actions.viewer, mine.account != theirs.account {
-            return ScopedPollResult(viewer: viewer, items: items, issues: issues + [.identityMismatch],
-                                    successfulSources: successfulSources, hidden: hidden, waitingOnOthers: waitingOnOthers)
-        }
-        // Problems that are fatal for a whole poll only mean "Actions unverified" here.
-        let actionsIssues = actions.issues.map { issue -> ScopedFetchIssue in
-            switch issue {
-            case .signedOut, .ghMissing, .identityRequired, .viewerUnavailable: return .transport
-            default: return issue
-            }
-        }
-        let ids = Set(items.map(\.id))
-        return ScopedPollResult(viewer: viewer, items: items + actions.items.filter { !ids.contains($0.id) },
-                                issues: issues + actionsIssues, successfulSources: successfulSources + actions.successfulSources,
-                                hidden: actionsIssues.isEmpty ? hidden : 0, waitingOnOthers: waitingOnOthers)
     }
 }

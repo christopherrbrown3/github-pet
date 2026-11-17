@@ -39,6 +39,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var lastSuccess: Date?
     /// Matches GitHub counted but the viewer can't see, from the last complete snapshot (#35).
     @Published private(set) var hiddenResultCount = 0
+    /// #10: why workflow failures aren't fully known right now (their own line; never the inbox's).
+    @Published private(set) var actionsQuality: String?
     @Published private(set) var unseen = UnseenItems()
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
     /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
@@ -80,6 +82,10 @@ final class AppModel: ObservableObject {
     private let snapshotMode: Bool
     private var snapshotCLIFailure: FetchFailure = .ghMissing
     private let engine = InboxEngine()
+    /// #10: workflow failures have their own engine and baseline, so an unreadable watched
+    /// repository never stops the inbox from announcing, and a coverage change seeds silently.
+    private let actionsEngine = InboxEngine()
+    private var actionsCoverageKey: String?
     /// Seen-item digests and source quality across relaunches (#12), in the launch's own domain.
     private let baselineStore: EventBaselineStore
     /// The source/account/scope session the engine's baseline belongs to; nil until the first apply.
@@ -399,6 +405,7 @@ final class AppModel: ObservableObject {
 
     private func resetRepositories() {
         engine.reset()
+        resetActions()
         baselineKey = nil
         unseen.removeAll()
         clips.clear(origin: .repository)
@@ -417,7 +424,7 @@ final class AppModel: ObservableObject {
         let simulated = scopeSimulation != nil
         let actions = actionsJob(for: request)
         repositoryTask = Task.detached { [weak self] in
-            let result: ScopedPollResult
+            let result: RepositoryReply
             if simulated {
                 // Simulated replies can be held indefinitely by design. Keep that blocking wait on
                 // GCD, which adds threads, not on the small cooperative pool: held replies there
@@ -449,17 +456,22 @@ final class AppModel: ObservableObject {
         var lastKnown = ActionsLastKnown()
     }
 
+    /// The Actions side of one poll, kept apart from the inbox result.
+    enum ActionsReply: Sendable {
+        /// Not watched (off, no selected repository, not the live CLI source).
+        case off
+        /// Watched, but the inbox reply wasn't usable, so Actions weren't queried this time.
+        case notChecked
+        case result(ScopedPollResult, repositories: [MonitoringTarget], account: ScopeAccount?)
+    }
+    struct RepositoryReply: Sendable {
+        let inbox: ScopedPollResult
+        let actions: ActionsReply
+    }
+
     private let actionsLastKnown = ActionsLastKnown()
     private var actionsClient: (any ActionsPolling)? {
         runtime.actionsClient ?? (scopeSimulation == nil ? ActionsGhClient() : nil)
-    }
-    /// What the Actions watch covers right now; part of the baseline key (#10), so turning it on
-    /// or changing the watched repositories seeds their existing failures silently.
-    private var watchedActionsRepositories: [MonitoringTarget] {
-        guard settings.dataSource == .githubCLI, actionsClient != nil,
-              case .repositories(let repositories, _) = ActionsWatch.coverage(enabled: settings.watchWorkflowFailures,
-                                                                              scope: scopeSession.scope) else { return [] }
-        return repositories
     }
 
     /// Only for a live GitHub CLI poll of a real selection with the opt-in on.
@@ -471,14 +483,48 @@ final class AppModel: ObservableObject {
     }
 
     /// The inbox poll, plus Actions failures when watched. Actions run only after a usable inbox
-    /// reply, bound to the same expected account; their problems make the snapshot Partial.
+    /// reply, bound to the same expected account, and come back separately: they never change
+    /// the inbox's completeness or announcements.
     nonisolated static func poll(_ client: any ScopedPolling, _ request: ScopePollRequest, _ budget: CommandBudget,
-                                 actions: ActionsJob?) -> ScopedPollResult {
-        let result = poll(client, request, budget)
-        guard let actions, result.viewer != nil, result.successfulSources > 0 else { return result }
-        let expected = request.expectedAccount ?? result.viewer?.account
+                                 actions: ActionsJob?) -> RepositoryReply {
+        let inbox = poll(client, request, budget)
+        guard let actions else { return RepositoryReply(inbox: inbox, actions: .off) }
+        guard inbox.viewer != nil, inbox.successfulSources > 0 else { return RepositoryReply(inbox: inbox, actions: .notChecked) }
+        let expected = request.expectedAccount ?? inbox.viewer?.account
         let fetched = actions.client.fetch(repositories: actions.repositories, expectedAccount: expected, budget: actions.makeBudget())
-        return result.mergingActions(actions.lastKnown.apply(fetched, repositories: actions.repositories, account: expected))
+        let result = actions.lastKnown.apply(fetched, repositories: actions.repositories, account: expected)
+        return RepositoryReply(inbox: inbox, actions: .result(result, repositories: actions.repositories, account: expected))
+    }
+
+    /// Applies the Actions side after the inbox snapshot: its own baseline (a new account or
+    /// watched set seeds silently), its own announcements, and its own quality line.
+    private func applyActions(_ reply: ActionsReply) {
+        switch reply {
+        case .off:
+            if actionsCoverageKey != nil || !actionsEngine.items.isEmpty { resetActions() }
+        case .notChecked:
+            if actionsCoverageKey != nil { actionsQuality = ActionsWatch.notCheckedLine }
+        case .result(let result, let repositories, let account):
+            let key = (account?.viewerID ?? "") + "\n" + repositories.map(\.qualifier).sorted().joined(separator: ",")
+            if key != actionsCoverageKey { resetActions(); actionsCoverageKey = key }
+            let date = clock()
+            let outcome = FetchOutcome.snapshot(items: result.items, complete: result.complete, hidden: 0)
+            let events = actionsEngine.apply(outcome, now: date)
+            unseen.record(events)
+            unseen.reconcile(after: outcome, items: actionsEngine.items + engine.items)
+            let shown = events.map { event in
+                var event = event; event.item = classified(event.item); return event
+            }
+            clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
+            actionsQuality = result.complete ? nil : ActionsWatch.qualityLine(for: result.issues, watched: repositories.count)
+        }
+    }
+
+    private func resetActions() {
+        for item in actionsEngine.items { unseen.remove(item.id) }
+        actionsEngine.reset()
+        actionsCoverageKey = nil
+        actionsQuality = nil
     }
 
     /// Settings › Workflow failures: what is (and isn't) watched right now.
@@ -494,8 +540,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
+    private func receiveRepositoryPoll(_ reply: RepositoryReply, request: ScopePollRequest,
                                        budget: CommandBudget, refetches: Int) {
+        let result = reply.inbox
         if scopeSimulation != nil {
             receivedScopeReplies += 1
             let ready = replyWaiters.filter { $0.count <= receivedScopeReplies }
@@ -512,7 +559,7 @@ final class AppModel: ObservableObject {
         if reception.resetRepositories { resetRepositories() }
         switch reception.action {
         case .discard: break
-        case .apply(let outcome): apply(outcome)
+        case .apply(let outcome): apply(outcome); applyActions(reply.actions)
         case .refetch:
             guard refetches > 0 else {
                 apply(scopeSession.failCycle(.identityMismatch)); return
@@ -570,7 +617,7 @@ final class AppModel: ObservableObject {
         let events = engine.apply(outcome, now: date)
         persistBaseline()
         unseen.record(events)
-        unseen.reconcile(after: outcome, items: engine.items)
+        unseen.reconcile(after: outcome, items: engine.items + actionsEngine.items)
         let shown = events.map { event in
             var event = event; event.item = classified(event.item); return event
         }
@@ -580,8 +627,7 @@ final class AppModel: ObservableObject {
 
     private var currentBaselineKey: BaselineKey? {
         guard let identity = scopeSession.identity, let scope = scopeSession.scope else { return nil }
-        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope,
-                           actionsRepositories: watchedActionsRepositories)
+        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope)
     }
 
     private func persistBaseline() {
@@ -660,14 +706,23 @@ final class AppModel: ObservableObject {
         settings.entitlementRepositories.removeAll { $0 == repository }
     }
 
+    /// The inbox's own state, except that an empty inbox is never "All clear" while watched
+    /// workflow failures are incomplete (#10), and isn't empty while failure rows are shown.
+    private var displayedState: DataState {
+        guard engine.state == .empty else { return engine.state }
+        if actionsQuality != nil { return .partial }
+        return actionsEngine.items.isEmpty ? .empty : .ready
+    }
+
     private func sync(now date: Date) {
         now = date
         scopeSummary = scopeSession.summary
         scopeQuality = scopeSession.qualitySummary
         scopeSimulationStatus = scopeSimulation?.status ?? ""
-        let shown = engine.items.map(classified)
+        let shown = InboxEngine.dedupe(engine.items + actionsEngine.items).map(classified)
         if items != shown { items = shown }
-        if dataState != engine.state { dataState = engine.state }
+        let state = displayedState
+        if dataState != state { dataState = state }
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
         if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
         if authoredWaitingCount != scopeSession.waitingOnOthers { authoredWaitingCount = scopeSession.waitingOnOthers }

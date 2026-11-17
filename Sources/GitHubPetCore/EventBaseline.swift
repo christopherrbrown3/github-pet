@@ -72,17 +72,11 @@ public struct EventBaseline: Codable, Equatable, Sendable {
 public struct BaselineKey: Equatable, Sendable {
     public let value: String
 
-    /// `actionsRepositories` (#10): the repositories whose workflow failures are watched. Turning
-    /// the watch on, or changing what it covers, starts a new baseline, so existing failures seed
-    /// silently like an initial sync. Empty leaves the key exactly as before.
-    public init(source: DataSourceMode, identity: ScopeIdentity, scope: MonitoringScope,
-                actionsRepositories: [MonitoringTarget] = []) {
+    public init(source: DataSourceMode, identity: ScopeIdentity, scope: MonitoringScope) {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let scopeText = (try? encoder.encode(scope)).map { String(decoding: $0, as: UTF8.self) } ?? ""
-        let actions = actionsRepositories.isEmpty ? ""
-            : "\na\(ActionsWatch.coverageVersion):" + actionsRepositories.map(\.qualifier).sorted().joined(separator: ",")
-        value = EventBaseline.digest("v\(EventBaseline.version)\nc\(ScopeQueryPlan.categoriesVersion)\n\(source.rawValue)\n\(identity.storageSuffix)\n\(scopeText)\(actions)")
+        value = EventBaseline.digest("v\(EventBaseline.version)\nc\(ScopeQueryPlan.categoriesVersion)\n\(source.rawValue)\n\(identity.storageSuffix)\n\(scopeText)")
     }
 }
 

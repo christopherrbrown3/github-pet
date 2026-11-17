@@ -171,39 +171,6 @@ private func client(_ runner: Runner) -> ActionsGhClient {
         #expect(nothing.calls.isEmpty && none.items.isEmpty && none.issues.isEmpty, "no watched repository: no request")
     }
 
-    @Test func mergingKeepsTheInboxAndMarksActionsProblemsPartial() {
-        let inbox = ScopedPollResult(viewer: ScopeViewer(account: viewerA, login: "a"), items: [], issues: [], successfulSources: 2, hidden: 3)
-        let failure = InboxItem(id: "actions:CS_1", kind: .workflowFailure, repository: "example/pet", title: "CI failed on main",
-                                url: URL(string: "https://github.com/example/pet/actions/runs/1"), updatedAt: Date(timeIntervalSince1970: 0))
-        let actions = ScopedPollResult(viewer: ScopeViewer(account: viewerA, login: "a"), items: [failure], issues: [], successfulSources: 1)
-        let merged = inbox.mergingActions(actions)
-        #expect(merged.complete && merged.items == [failure] && merged.hidden == 3 && merged.successfulSources == 3)
-        let failed = inbox.mergingActions(.failure(.signedOut))
-        #expect(!failed.complete && failed.issues == [.transport] && failed.hidden == 0, "Actions unverified: Partial, never all clear")
-        let other = inbox.mergingActions(ScopedPollResult(viewer: ScopeViewer(account: viewerB, login: "b"), items: [failure], issues: [], successfulSources: 1))
-        #expect(other.issues == [.identityMismatch] && other.items.isEmpty)
-        let empty = inbox.mergingActions(ScopedPollResult(viewer: nil, items: [], issues: [], successfulSources: 0))
-        #expect(empty == inbox)
-    }
-
-    /// PR71 (#9): the inbox poll's "waiting on others" count is informational and independent of
-    /// Actions, so every merge outcome keeps it.
-    @Test func mergingCarriesTheInboxWaitingOnOthersCount() {
-        let viewer = ScopeViewer(account: viewerA, login: "a")
-        let inbox = ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2, hidden: 1, waitingOnOthers: 2)
-        let failure = InboxItem(id: "actions:CS_1", kind: .workflowFailure, repository: "example/pet", title: "CI failed on main",
-                                url: URL(string: "https://github.com/example/pet/actions/runs/1"), updatedAt: Date(timeIntervalSince1970: 0))
-        let clean = inbox.mergingActions(ScopedPollResult(viewer: viewer, items: [failure], issues: [], successfulSources: 1))
-        let failed = inbox.mergingActions(.failure(.transport))
-        let switched = inbox.mergingActions(ScopedPollResult(viewer: ScopeViewer(account: viewerB, login: "b"), items: [],
-                                                             issues: [], successfulSources: 1))
-        let none = inbox.mergingActions(ScopedPollResult(viewer: nil, items: [], issues: [], successfulSources: 0))
-        for (name, merged) in [("clean", clean), ("failed", failed), ("switched", switched), ("none", none)] {
-            #expect(merged.waitingOnOthers == 2, "\(name)")
-        }
-        #expect(none == inbox)
-    }
-
     /// QA LOW-2 on PR72: a value outside GitHub's known enums fails closed instead of being skipped.
     @Test func unknownStatusOrConclusionMarksTheRowMalformed() {
         for (status, conclusion) in [("COMPLETED", "FAILED_NEW_KIND"), ("FINISHED", "FAILURE"), ("COMPLETED", nil)] as [(String, String?)] {
@@ -215,17 +182,16 @@ private func client(_ runner: Runner) -> ActionsGhClient {
         #expect(parse([repository(suites: [suite(status: "PENDING", conclusion: nil)])]).complete, "known in-progress states stay quiet")
     }
 
-    /// QA MED-1 on PR72: the watched repositories are part of the baseline key, so turning the
-    /// watch on (or changing what it covers) re-baselines silently; without it the key is unchanged.
-    @Test func baselineKeyFollowsTheActionsCoverage() throws {
-        let scope = try MonitoringScope(selected: [pet, tools])
-        let identity = ScopeIdentity.github(viewerA)
-        let off = BaselineKey(source: .githubCLI, identity: identity, scope: scope)
-        #expect(BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: []) == off)
-        let one = BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: [pet])
-        let both = BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: [tools, pet])
-        #expect(one != off && both != one)
-        #expect(both == BaselineKey(source: .githubCLI, identity: identity, scope: scope, actionsRepositories: [pet, tools]), "order-free")
+    /// QA MED-2 on PR72: workflow failures have their own fixed quality line (counts only).
+    @Test func actionsQualityLinesAreFixedAndCountOnly() {
+        #expect(ActionsWatch.qualityLine(for: [.targetUnavailable(1)], watched: 2) == "Workflow failures: 1 repository unavailable; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.targetUnavailable(0), .malformedSource("actions1")], watched: 2)
+                == "Workflow failures: 2 repositories unavailable; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.accessDenied, .targetUnavailable(0)], watched: 2).contains("SAML single sign-on"))
+        #expect(ActionsWatch.qualityLine(for: [.rateLimited], watched: 1) == "Workflow failures: GitHub rate limit; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.capped("actions0")], watched: 1) == "Workflow failures: result limit reached; more may exist.")
+        #expect(ActionsWatch.qualityLine(for: [.transport], watched: 1) == "Workflow failures couldn't be fully checked; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.identityMismatch], watched: 1).contains("account changed"))
     }
 
     /// QA LOW-1 on PR72: a cycle that can't read a repository keeps its previous rows, marked.

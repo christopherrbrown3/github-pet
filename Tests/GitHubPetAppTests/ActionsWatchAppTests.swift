@@ -3,7 +3,7 @@ import Testing
 @testable import GitHubPetCore
 @testable import GitHubPet
 
-private let account = try! ScopeAccount(viewerID: "U_app_A")
+private let accountA = try! ScopeAccount(viewerID: "U_app_A")
 private let pet = try! MonitoringTarget(repository: "example/pet")
 
 /// Scripted inbox poll: no gh, no network.
@@ -24,9 +24,9 @@ private final class FakeActions: ActionsPolling, @unchecked Sendable {
 }
 
 @Suite @MainActor struct ActionsWatchAppTests {
-    private let viewer = ScopeViewer(account: account, login: "app-user")
+    private let viewer = ScopeViewer(account: accountA, login: "app-user")
     private func request(identityOnly: Bool = false) throws -> ScopePollRequest {
-        ScopePollRequest(generation: 1, serial: 1, scope: try MonitoringScope(selected: [pet]), expectedAccount: account,
+        ScopePollRequest(generation: 1, serial: 1, scope: try MonitoringScope(selected: [pet]), expectedAccount: accountA,
                          identityOnly: identityOnly)
     }
     private var failure: InboxItem {
@@ -34,23 +34,28 @@ private final class FakeActions: ActionsPolling, @unchecked Sendable {
                   url: URL(string: "https://github.com/example/pet/actions/runs/1"), updatedAt: Date(timeIntervalSince1970: 0))
     }
 
-    @Test func actionsRunAfterAUsableInboxReplyForTheSameAccount() throws {
-        let inbox = FakeScoped(ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2))
-        let actions = FakeActions(ScopedPollResult(viewer: viewer, items: [failure], issues: [], successfulSources: 1))
+    @Test func actionsRunAfterAUsableInboxReplyAndComeBackSeparately() throws {
+        let inboxResult = ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2, hidden: 1, waitingOnOthers: 3)
+        let actions = FakeActions(ScopedPollResult(viewer: viewer, items: [failure], issues: [.targetUnavailable(0)], successfulSources: 0))
         let job = AppModel.ActionsJob(client: actions, repositories: [pet], makeBudget: { CommandBudget(timeout: 20) })
-        let result = AppModel.poll(inbox, try request(), CommandBudget(timeout: 20), actions: job)
-        #expect(result.complete && result.items == [failure])
-        #expect(actions.requests.count == 1 && actions.requests[0].repositories == [pet] && actions.requests[0].account == account)
+        let reply = AppModel.poll(FakeScoped(inboxResult), try request(), CommandBudget(timeout: 20), actions: job)
+        #expect(reply.inbox == inboxResult, "the inbox result is untouched: completeness, hidden and waiting counts are its own")
+        guard case .result(let result, let repositories, let account) = reply.actions else { Issue.record("Actions result expected"); return }
+        #expect(result.items == [failure] && repositories == [pet])
+        #expect(actions.requests.count == 1 && actions.requests[0].account == account && account == accountA)
     }
 
     @Test func noActionsRequestWithoutAUsableInboxReplyOrAJob() throws {
         let actions = FakeActions(ScopedPollResult(viewer: viewer, items: [failure], issues: [], successfulSources: 1))
         let job = AppModel.ActionsJob(client: actions, repositories: [pet], makeBudget: { CommandBudget(timeout: 20) })
         let failed = AppModel.poll(FakeScoped(.failure(.transport)), try request(), CommandBudget(timeout: 20), actions: job)
-        #expect(failed.items.isEmpty && actions.requests.isEmpty, "a failed inbox poll never adds Actions rows")
+        guard case .notChecked = failed.actions else { Issue.record("not checked expected"); return }
+        #expect(actions.requests.isEmpty, "a failed inbox poll never queries Actions")
         let inbox = FakeScoped(ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2))
-        let off = AppModel.poll(inbox, try request(), CommandBudget(timeout: 20), actions: nil)
-        #expect(off.complete && off.items.isEmpty && actions.requests.isEmpty)
+        guard case .off = AppModel.poll(inbox, try request(), CommandBudget(timeout: 20), actions: nil).actions else {
+            Issue.record("off expected"); return
+        }
+        #expect(actions.requests.isEmpty)
     }
 
     @Test func settingsNoteIsHonestAboutWhatIsWatched() {
