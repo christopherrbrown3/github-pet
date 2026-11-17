@@ -125,6 +125,33 @@ private func relaunched(_ saved: EventBaseline) -> InboxEngine {
         return (EventBaselineStore(defaults: defaults), defaults)
     }
 
+    // FAIL before (#60): every poll moved lastSuccess, so every poll rewrote the preference.
+    @Test func unchangedContentIsNotRewrittenEveryPoll() throws {
+        let (store, defaults) = store()
+        let sentinel = Data("not rewritten".utf8)
+        var record = savedSession(["a", "b"])
+        store.save(record)
+        defaults.set(sentinel, forKey: EventBaselineStore.key)
+        func saved(_ change: (inout EventBaseline) -> Void) -> Bool {
+            change(&record)
+            store.save(record)
+            defer { defaults.set(sentinel, forKey: EventBaselineStore.key) }
+            return defaults.data(forKey: EventBaselineStore.key) != sentinel
+        }
+        #expect(!saved { _ in }, "identical record")
+        #expect(!saved { $0.lastSuccess = $0.lastSuccess!.addingTimeInterval(120) }, "a routine poll only moves lastSuccess")
+        #expect(!saved { $0.lastSuccess = $0.lastSuccess!.addingTimeInterval(120) })
+        #expect(saved { $0.lastSuccess = $0.lastSuccess!.addingTimeInterval(10 * 60) },
+                "the success time is refreshed at least every 10 minutes")
+        #expect(saved { $0.digests.append(EventBaseline.digest("c")) }, "a newly seen ID is saved at once")
+        #expect(saved { $0.quality = .partial }, "a quality change is saved at once")
+        #expect(saved { $0.baselineEstablished = false })
+        #expect(saved { $0.lastSuccess = $0.lastSuccess!.addingTimeInterval(-60) }, "a clock moved back is saved")
+        #expect(saved { $0.lastSuccess = nil })
+        store.reset()
+        #expect(saved { _ in }, "after a reset the next save always writes")
+    }
+
     @Test func roundTripsForTheSameSession() {
         let (store, _) = store()
         let saved = savedSession(["a", "b"])
