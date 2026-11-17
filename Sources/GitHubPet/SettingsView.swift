@@ -14,6 +14,7 @@ struct SettingsView: View {
             DataSourceSection(model: model)
             MonitoringScopeSection(model: model, editor: model.scopeEditor)
             EntitlementRepositoriesSection(model: model)
+            WorkflowFailuresSection(model: model)
         }
         .formStyle(.grouped)
         // A grouped Form scrolls, so it reports almost no height of its own and the hosting

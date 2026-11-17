@@ -36,6 +36,8 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 - **Privacy, quiet hours and snooze.** Privacy mode (on by default) hides repository names and titles until
   you choose to show them. Quiet hours and snooze stop new-item animations and alerts; Reduce Motion
   keeps the mascot still. The inbox keeps updating either way.
+- **Workflow failures (opt-in).** Failing GitHub Actions runs on the default branch of the repositories you
+  select. Failures you triggered are urgent; others need attention. A row opens the run on GitHub.
 - **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
 - **Custom mascot packs (advanced).** Replace the artwork with your own pack by launching the app from
@@ -110,7 +112,14 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
 - For your pull requests, changes requested and merge conflicts are announced at most once per pull
   request; a later round of requested changes isn't announced again. Failing checks are announced once
   per new failing commit.
-- Workflow failures and deployment approvals are not monitored yet.
+- Workflow failures are opt-in and cover only selected repositories (not organizations or Everything),
+  and only their default branch's latest commit: a workflow that didn't run on that commit isn't seen.
+  Deployment approvals are not monitored yet.
+- Changing workflow-failure coverage (turning the watch on, or changing the watched repositories)
+  re-baselines workflow failures silently: failures first seen in that refresh aren't announced, and
+  their unread dots clear. Changing the monitoring scope itself re-baselines the whole inbox the same way.
+  Workflow failures aren't remembered across a relaunch, so ones that appeared while GitHub Pet was quit
+  aren't announced.
 
 After the beta: a Homebrew cask, then more sources. Progress is tracked in
 [issues](https://github.com/christopherrbrown3/github-pet/issues).

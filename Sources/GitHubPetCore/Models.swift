@@ -6,6 +6,9 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
     case assignedIssue
     case authoredPullRequest
     case ciFailure
+    /// #10: a failing workflow on a watched repository's default branch that someone else
+    /// triggered: actionable. One the viewer triggered is `ciFailure` (critical).
+    case workflowFailure
     case entitlement
     /// A confirmed GitHub service incident from githubstatus.com (see `ServiceIncident`).
     case serviceIncident
@@ -16,7 +19,7 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
         case .reviewRequest: return "Review request"
         case .assignedIssue: return "Assigned issue"
         case .authoredPullRequest: return "Your pull request"
-        case .ciFailure: return "Workflow failure"
+        case .ciFailure, .workflowFailure: return "Workflow failure"
         case .entitlement: return "Entitlement update"
         case .serviceIncident: return "GitHub service incident"
         }
