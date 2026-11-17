@@ -187,14 +187,14 @@ The simulated QA run covered this (PR71 711571e). The real GitHub states, and es
 4. With Privacy mode on, the row shows "Your pull request · <reasons>" without the title or repository.
 - **Capture:** the rows and the waiting line before and after each step, and the times.
 
-## 16. Workflow failures, opt-in (#10 slice 1, LIVE-ONLY)
+## 16. GitHub Actions: workflow failures and deployment approvals, opt-in (#10 slices 1–2, LIVE-ONLY)
 
-This is the PR72 build, with PM's fixes (a silent first seed, stale rows kept, unknown values Partial). It has **no simulated coverage**, and the renderer doesn't show its Settings section.
+This needs builds with PR72/PR73 (workflow failures, independent of the inbox) and PR75 (deployment approvals). It has **no simulated coverage**, and the renderer doesn't show this Settings section.
 
 1. In **Settings → Monitoring scope**, pick **Selected** with at least one repository whose default branch already has a failing GitHub Actions run, and Apply.
-2. Check **Settings → Workflow failures**.
-   - **Expected:** it is **off** by default, and the Inbox has no workflow rows.
-3. Turn it **on**.
+2. Check **Settings → GitHub Actions**.
+   - **Expected:** both toggles, "Watch workflow failures…" and "Watch deployment approvals…", are **off** by default, and the Inbox has no workflow or deployment rows.
+3. Turn **Watch workflow failures** on.
    - **Expected:** the note says "Watching N repositories." (plus a note if organizations are also selected).
    - The existing failures appear as rows, "Workflow failure · <workflow> failed on <branch>", **without** a burst: no new dots and no attention animation for failures that were already there.
    - If one of them is a run **you** triggered, the mascot shows the **urgent** state while it exists. Other people's failures are rows only.
@@ -202,15 +202,28 @@ This is the PR72 build, with PM's fixes (a silent first seed, stale rows kept, u
    - **Expected:** **one** alert for the new failure, and urgent if you triggered it.
    - Re-running that workflow and having it fail again doesn't alert again. A fixed run removes the row on the next refresh.
 5. Optional: a selected repository you can't read, or a SAML-protected one.
-   - **Expected:** Partial, with the fixed access message, and the earlier failure rows kept as stale. Never "no failures".
+   - **Expected:** a separate line, "Workflow failures: … showing last known", with earlier failure rows kept and marked "· last known". Never "no failures".
+   - The **inbox itself stays complete**: a new review request still alerts. If the inbox is otherwise empty, it shows Partial, never All clear.
 6. With Organizations or Everything selected and no repositories:
-   - **Expected:** the note says "Workflow failures: select repositories in Monitoring scope to watch them…", and no Actions query runs.
-7. Turn it **off**.
+   - **Expected:** the note says "GitHub Actions: select repositories in Monitoring scope to watch them…", and no Actions query runs.
+7. Turn **Watch workflow failures** off.
    - **Expected:** the workflow rows disappear on the next refresh, and nothing else changes.
-- **Capture:** Settings notes, rows, mood and badge before and after each step. Note whether turning it on caused any animation; it shouldn't.
+8. **Deployment approvals (slice 2).** Use a selected repository with an environment that requires reviewers.
+   1. Start a workflow run that waits for that environment, and make sure **you** are an allowed reviewer.
+   2. Turn **Watch deployment approvals** on.
+      - **Expected:** if a run was already waiting, it appears **without** a burst. Turning on this second part re-seeds the GitHub Actions rows silently.
+   3. Start a **new** waiting run.
+      - **Expected:** **one** alert. The row is "Deployment approval · <workflow> is waiting for your approval to <environment>", with a shield icon.
+      - Clicking it opens the **run page** on github.com. **Approve or reject there, in the browser, not in GitHub Pet.**
+      - GitHub Pet has **no** approve action. Confirm that nothing in the app approves, and that the run is still waiting until you act on GitHub.
+   4. A waiting run where you are **not** an allowed reviewer (another environment or another reviewer).
+      - **Expected:** **no** row. It only appears in the hourglass line "N deployment(s) waiting on other reviewers", which doesn't change the badge or mood.
+   5. After you approve on GitHub, the row disappears on the next refresh with no further alert. Turning the toggle off clears the rows and the waiting line.
+   - **Note (LOW):** a run held only by a **wait timer**, with no required reviewers, may also be counted as "waiting on other reviewers".
+- **Capture:** Settings notes, rows, mood, badge and the waiting lines before and after each step. Note whether turning anything on caused an animation (it shouldn't), and confirm by GitHub's own UI that the run was never approved by the app.
 
 ---
 
 ## Results to report back
 
-For each section: **PASS / FAIL / NOT RUN**, with the captures, the RC SHA, the macOS version and the time. Give any FAIL to QA with steps to reproduce; QA turns it into a Developer issue. Live-only items with no other coverage are sections 1, 2, 4, 6, 9, 10, 12, 13, 14 and 16, plus the real-account parts of 3, 5, 7, 8, 11 and 15. Sections 15 and 16 need builds that include PR71 and PR72 (with PM's slice-1 fixes); skip them on the v0.1.0-beta.1 build.
+For each section: **PASS / FAIL / NOT RUN**, with the captures, the RC SHA, the macOS version and the time. Give any FAIL to QA with steps to reproduce; QA turns it into a Developer issue. Live-only items with no other coverage are sections 1, 2, 4, 6, 9, 10, 12, 13, 14 and 16, plus the real-account parts of 3, 5, 7, 8, 11 and 15. Sections 15 and 16 need builds that include PR71 and PR72/PR73 (and PR75 for §16 step 8); skip them on the v0.1.0-beta.1 build.
