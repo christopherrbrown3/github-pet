@@ -236,7 +236,7 @@ struct InboxRow: View {
         case .reviewRequest: return "eye"
         case .assignedIssue: return "smallcircle.filled.circle"
         case .authoredPullRequest: return "arrow.triangle.pull"
-        case .ciFailure: return "xmark.octagon"
+        case .ciFailure, .workflowFailure: return "xmark.octagon"
         case .entitlement: return "key"
         case .serviceIncident: return "exclamationmark.icloud"
         }

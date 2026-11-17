@@ -33,6 +33,8 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 - **Privacy, quiet hours and snooze.** Privacy mode (on by default) hides repository names and titles until
   you choose to show them. Quiet hours and snooze stop new-item animations and alerts; Reduce Motion
   keeps the mascot still. The inbox keeps updating either way.
+- **Workflow failures (opt-in).** Failing GitHub Actions runs on the default branch of the repositories you
+  select. Failures you triggered are urgent; others need attention. A row opens the run on GitHub.
 - **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
 - **Custom mascot packs (advanced).** Replace the artwork with your own pack by launching the app from
@@ -102,7 +104,9 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
   and waking.
 - Keyboard access goes through the menu-bar icon and Settings. The floating mascot isn't keyboard
   focusable, and a full live VoiceOver pass hasn't been done.
-- Workflow failures, deployment approvals and your own pull requests are not monitored yet.
+- Workflow failures are opt-in and cover only selected repositories (not organizations or Everything),
+  and only their default branch's latest commit: a workflow that didn't run on that commit isn't seen.
+  Deployment approvals and your own pull requests are not monitored yet.
 
 After the beta: a Homebrew cask and GitHub Releases, then more sources. Progress is tracked in
 [issues](https://github.com/christopherrbrown3/github-pet/issues).

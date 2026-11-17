@@ -21,6 +21,11 @@ final class AppModel: ObservableObject {
         /// Open at login (#15). nil: the system's SMAppService for a normal launch only, none for
         /// simulated, snapshot, QA or custom-defaults launches. Tests inject a fake.
         var loginItemBackend: (any LoginItemBackend)?
+        /// #10 Actions failures (live GitHub CLI launches only). Tests inject a fake client.
+        var actionsClient: any ActionsPolling = ActionsGhClient()
+        /// Its own 20 s / 2 MiB budget, separate from the inbox searches; it starts when the
+        /// Actions query starts, so slow searches never shorten it.
+        var actionsBudget: @Sendable () -> CommandBudget = { CommandBudget(timeout: 20) }
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -57,6 +62,7 @@ final class AppModel: ObservableObject {
             if settings.privacyMode && !oldValue.privacyMode { detailsRevealed = false }
             // Reclassify rows now; IDs don't change, so nothing looks new (#8).
             if settings.entitlementRepositories != oldValue.entitlementRepositories { sync(now: clock()) }
+            if settings.watchWorkflowFailures != oldValue.watchWorkflowFailures { requestRefresh() }
             // Snooze, quiet hours or Reduce Motion turned on: stop a playing gesture now, not at
             // the next tick. Nothing is re-queued, so turning them off later replays nothing.
             if GestureCancellation.shouldCancel(from: oldValue, to: settings, at: clock()) { cancelGesture() }
@@ -403,6 +409,7 @@ final class AppModel: ObservableObject {
             if simulatedPollLog.count > 64 { simulatedPollLog.removeFirst(simulatedPollLog.count - 64) }
         }
         let simulated = scopeSimulation != nil
+        let actions = simulated ? nil : actionsJob(for: request)
         repositoryTask = Task.detached { [weak self] in
             let result: ScopedPollResult
             if simulated {
@@ -415,7 +422,7 @@ final class AppModel: ObservableObject {
                     }
                 }
             } else {
-                result = Self.poll(client, request, budget)
+                result = Self.poll(client, request, budget, actions: actions)
             }
             await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
         }
@@ -425,6 +432,45 @@ final class AppModel: ObservableObject {
                                          _ budget: CommandBudget) -> ScopedPollResult {
         request.identityOnly ? client.fetchIdentity(expectedAccount: request.expectedAccount, budget: budget)
             : client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+    }
+
+    /// #10: the watched repositories' Actions query, run after the inbox searches with its own budget.
+    struct ActionsJob: Sendable {
+        let client: any ActionsPolling
+        let repositories: [MonitoringTarget]
+        let makeBudget: @Sendable () -> CommandBudget
+    }
+
+    /// Only for a live GitHub CLI poll of a real selection with the opt-in on.
+    private func actionsJob(for request: ScopePollRequest) -> ActionsJob? {
+        guard settings.dataSource == .githubCLI, !request.identityOnly,
+              case .repositories(let repositories, _) = ActionsWatch.coverage(enabled: settings.watchWorkflowFailures,
+                                                                              scope: request.scope) else { return nil }
+        return ActionsJob(client: runtime.actionsClient, repositories: repositories, makeBudget: runtime.actionsBudget)
+    }
+
+    /// The inbox poll, plus Actions failures when watched. Actions run only after a usable inbox
+    /// reply, bound to the same expected account; their problems make the snapshot Partial.
+    nonisolated static func poll(_ client: any ScopedPolling, _ request: ScopePollRequest, _ budget: CommandBudget,
+                                 actions: ActionsJob?) -> ScopedPollResult {
+        let result = poll(client, request, budget)
+        guard let actions, result.viewer != nil, result.successfulSources > 0 else { return result }
+        let expected = request.expectedAccount ?? result.viewer?.account
+        return result.mergingActions(actions.client.fetch(repositories: actions.repositories, expectedAccount: expected,
+                                                          budget: actions.makeBudget()))
+    }
+
+    /// Settings › Workflow failures: what is (and isn't) watched right now.
+    var workflowWatchNote: String? {
+        guard settings.watchWorkflowFailures else { return nil }
+        guard settings.dataSource == .githubCLI else { return "Workflow failures are watched with the GitHub CLI source." }
+        switch ActionsWatch.coverage(enabled: true, scope: activeMonitoringScope) {
+        case .off: return nil
+        case .repositories(let repositories, let note):
+            let count = repositories.count
+            return "Watching \(count) \(count == 1 ? "repository" : "repositories")." + (note.map { " " + $0 } ?? "")
+        case .needsRepositories(let note): return note
+        }
     }
 
     private func receiveRepositoryPoll(_ result: ScopedPollResult, request: ScopePollRequest,
