@@ -4,6 +4,29 @@ import CoreFoundation
 /// One operation, one request-bound viewer. Every search has exactly one safe inclusion qualifier.
 public struct ScopeQueryPlan: Sendable {
     public static let rowsPerCategory = 30
+    /// One search per category and inclusion. Additive: a new category is one more entry here
+    /// (and its row handling in `ScopedResponseParser`).
+    public struct Category: Sendable {
+        public let kind: ItemKind
+        public let aliasPrefix: String
+        public let query: String
+        public let type: String
+        /// Extra PullRequest/Issue fields after the shared row fields.
+        public let fields: String
+    }
+    public static let categories: [Category] = [
+        Category(kind: .reviewRequest, aliasPrefix: "reviews", query: "is:pr is:open review-requested:@me",
+                 type: "PullRequest", fields: ""),
+        Category(kind: .assignedIssue, aliasPrefix: "assigned", query: "is:issue is:open assignee:@me",
+                 type: "Issue", fields: ""),
+        // #9: your open PRs; only those needing your action become rows (see AuthoredAttention).
+        Category(kind: .authoredPullRequest, aliasPrefix: "authored", query: "is:pr is:open author:@me archived:false",
+                 type: "PullRequest",
+                 fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"),
+    ]
+    /// Changes whenever the category set changes, so a persisted baseline from an older set
+    /// re-baselines silently instead of announcing a new category's existing items (#12).
+    public static let categoriesVersion = 2
     public struct Search: Sendable {
         public let alias: String
         public let kind: ItemKind
@@ -41,18 +64,16 @@ public struct ScopeQueryPlan: Sendable {
         }
         let inclusions: [MonitoringTarget?] = scope.mode == .everything ? [nil] : scope.targets.map(Optional.some)
         for (index, target) in inclusions.enumerated() {
-            for kind in [ItemKind.reviewRequest, .assignedIssue] {
-                let alias = (kind == .reviewRequest ? "reviews" : "assigned") + String(index)
-                let base = kind == .reviewRequest ? "is:pr is:open review-requested:@me" : "is:issue is:open assignee:@me"
-                variable(alias, base + (target.map { " " + $0.qualifier } ?? ""))
-                let type = kind == .reviewRequest ? "PullRequest" : "Issue"
+            for category in Self.categories {
+                let alias = category.aliasPrefix + String(index)
+                variable(alias, category.query + (target.map { " " + $0.qualifier } ?? ""))
                 fields.append("""
                     \(alias): search(query: $\(alias), type: ISSUE, first: \(Self.rowsPerCategory)) {
                       issueCount pageInfo { hasNextPage }
-                      nodes { __typename ... on \(type) { id number title url updatedAt repository { nameWithOwner } } }
+                      nodes { __typename ... on \(category.type) { id number title url updatedAt repository { nameWithOwner }\(category.fields) } }
                     }
                     """)
-                searches.append(Search(alias: alias, kind: kind, targetIndex: target == nil ? nil : index))
+                searches.append(Search(alias: alias, kind: category.kind, targetIndex: target == nil ? nil : index))
             }
         }
         self.searches = searches
@@ -79,9 +100,13 @@ public struct ScopedPollResult: Equatable, Sendable {
     public let successfulSources: Int
     /// Matches GitHub counted but the viewer can't see (#35): only for a fully clean response.
     public let hidden: Int
-    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int, hidden: Int = 0) {
+    /// Your open PRs that need nothing from you right now, or whose conflict status GitHub is
+    /// still computing (#9). Informational only: never rows, counts, badges or alerts.
+    public let waitingOnOthers: Int
+    public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int, hidden: Int = 0,
+                waitingOnOthers: Int = 0) {
         self.viewer = viewer; self.items = items; self.issues = issues; self.successfulSources = successfulSources
-        self.hidden = hidden
+        self.hidden = hidden; self.waitingOnOthers = waitingOnOthers
     }
     public var complete: Bool { viewer != nil && successfulSources > 0 && issues.isEmpty }
     /// Fixed texts (#7): never gh's stderr or GitHub's message, which can name organizations.
@@ -184,6 +209,7 @@ public enum ScopedResponseParser {
         }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
+        var waiting = Set<String>()
         var hiddenByAlias: [String: Int] = [:]
         for search in plan.searches {
             if let index = search.targetIndex, !verified.contains(index) { continue }
@@ -207,17 +233,29 @@ public enum ScopedResponseParser {
                 guard let data = try? JSONSerialization.data(withJSONObject: node, options: [.fragmentsAllowed]),
                       let row = try? decoder.decode(Row.self, from: data), row.number > 0,
                       ScopeASCII.nodeID(row.id),
-                      row.__typename == (search.kind == .reviewRequest ? "PullRequest" : "Issue"),
+                      row.__typename == (search.kind == .assignedIssue ? "Issue" : "PullRequest"),
                       let repository = try? MonitoringTarget(repository: row.repository.nameWithOwner),
                       let url = SafeLink.validated(row.url),
-                      url.path.lowercased() == "/\(repository.owner)/\(repository.name!)/\(search.kind == .reviewRequest ? "pull" : "issues")/\(row.number)",
+                      url.path.lowercased() == "/\(repository.owner)/\(repository.name!)/\(search.kind == .assignedIssue ? "issues" : "pull")/\(row.number)",
                       search.targetIndex.map({ plan.scope.targets[$0].includes(row.repository.nameWithOwner) }) ?? true else {
                     issues.append(.malformedRow(search.alias)); continue
                 }
-                let key = "\(search.kind.rawValue):\(row.id)"
+                var key = "\(search.kind.rawValue):\(row.id)"
                 guard sourceIDs.insert(key).inserted else { issues.append(.malformedRow(search.alias)); continue }
+                var attention: String?
+                if search.kind == .authoredPullRequest {
+                    switch AuthoredAttention(node) {
+                    case nil: issues.append(.malformedRow(search.alias)); continue
+                    case .waiting?: waiting.insert(row.id); continue
+                    case .needsAction(let reasons)?:
+                        // Stable per attention state: comment churn changes nothing; a new reason,
+                        // or checks failing on a new head commit, is a new ID (announced once).
+                        key += ":" + reasons.map(\.idComponent).joined(separator: ",")
+                        attention = reasons.map(\.text).joined(separator: ", ")
+                    }
+                }
                 let item = InboxItem(id: key, kind: search.kind, repository: row.repository.nameWithOwner,
-                                     title: row.title, url: url, updatedAt: row.updatedAt)
+                                     title: row.title, url: url, updatedAt: row.updatedAt, attention: attention)
                 if let old = items[key], old != item { issues.append(.inconsistentDuplicate) }
                 if items[key].map({ $0.updatedAt > item.updatedAt }) != true { items[key] = item }
             }
@@ -254,8 +292,11 @@ public enum ScopedResponseParser {
             let capped = Set(issues.compactMap { issue -> String? in if case .capped(let alias) = issue { return alias }; return nil })
             issues += hiddenByAlias.keys.sorted().filter { !capped.contains($0) }.map { ScopedFetchIssue.capped($0) }
         }
+        // A PR needing action in one inclusion is never also counted as waiting.
+        let actionable = Set(items.values.filter { $0.kind == .authoredPullRequest }.map { $0.id.split(separator: ":")[1] }.map(String.init))
         return ScopedPollResult(viewer: viewer, items: InboxEngine.dedupe(Array(items.values)), issues: issues,
-                                successfulSources: successes, hidden: hidden)
+                                successfulSources: successes, hidden: hidden,
+                                waitingOnOthers: waiting.subtracting(actionable).count)
     }
 }
 

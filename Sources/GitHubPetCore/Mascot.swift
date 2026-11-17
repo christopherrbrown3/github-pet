@@ -74,6 +74,7 @@ public enum PrivacyText {
         var parts: [String] = []
         if item.isDemo { parts.append(demoLabel) }
         parts.append(item.kind.genericLabel)
+        if let attention = item.attention { parts.append(attention) }
         if let repo = repository(item, privacy: privacy) { parts.append(repo) }
         return parts.joined(separator: " · ")
     }

@@ -47,9 +47,12 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
     public var updatedAt: Date
     /// Invented fixture data. Always labelled "Demo", including in privacy mode.
     public var isDemo: Bool
+    /// Why it needs you, e.g. "Changes requested, checks failing" (#9). Fixed wording, no names,
+    /// so it stays visible in privacy mode.
+    public var attention: String?
 
     public init(id: String, kind: ItemKind, repository: String, title: String,
-                url: URL?, updatedAt: Date, isDemo: Bool = false) {
+                url: URL?, updatedAt: Date, isDemo: Bool = false, attention: String? = nil) {
         self.id = id
         self.kind = kind
         self.repository = repository
@@ -57,6 +60,7 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
         self.url = url
         self.updatedAt = updatedAt
         self.isDemo = isDemo
+        self.attention = attention
     }
 }
 
@@ -128,6 +132,17 @@ public enum HiddenResults {
     }
     public static func notVisible(_ count: Int) -> String {
         count == 1 ? "1 matching item isn't visible to your account" : "\(count) matching items aren't visible to your account"
+    }
+}
+
+/// Wording for your open PRs that need nothing from you (#9). Counts only, no names.
+public enum AuthoredWaiting {
+    /// Shown beside usable data only; a lower bound ("at least") while data is partial.
+    public static func note(_ count: Int, dataState: DataState) -> String? {
+        guard count > 0, dataState.hasUsableItems else { return nil }
+        let prefix = dataState == .partial ? "At least " : ""
+        let verb = count == 1 && prefix.isEmpty ? "is" : "are"
+        return "\(prefix)\(count) of your pull requests \(verb) waiting on others or being checked by GitHub"
     }
 }
 

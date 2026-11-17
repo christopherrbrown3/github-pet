@@ -76,7 +76,7 @@ public struct BaselineKey: Equatable, Sendable {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let scopeText = (try? encoder.encode(scope)).map { String(decoding: $0, as: UTF8.self) } ?? ""
-        value = EventBaseline.digest("v\(EventBaseline.version)\n\(source.rawValue)\n\(identity.storageSuffix)\n\(scopeText)")
+        value = EventBaseline.digest("v\(EventBaseline.version)\nc\(ScopeQueryPlan.categoriesVersion)\n\(source.rawValue)\n\(identity.storageSuffix)\n\(scopeText)")
     }
 }
 
