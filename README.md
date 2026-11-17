@@ -107,6 +107,9 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
   focusable, and a full live VoiceOver pass hasn't been done.
 - "Checks failing" means any failing check on the pull request's latest commit: GitHub's search can't
   say which checks are required.
+- For your pull requests, changes requested and merge conflicts are announced at most once per pull
+  request; a later round of requested changes isn't announced again. Failing checks are announced once
+  per new failing commit.
 - Workflow failures and deployment approvals are not monitored yet.
 
 After the beta: a Homebrew cask and GitHub Releases, then more sources. Progress is tracked in
