@@ -1,0 +1,8 @@
+[
+  {
+    "scenario": "settings-discovery-identity-mismatch",
+    "exit": 0,
+    "steps": 8,
+    "completed": true
+  }
+]

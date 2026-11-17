@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "scenario": "settings-discovery-identity-mismatch",
+      "exit": 0,
+      "steps": 8,
+      "completed": true
+    }
+  ],
+  "preferencesEqual": true,
+  "ghInvoked": false,
+  "protectedApp": "15015 Mon Nov 16 14:41:47 2026     /Users/chris/github-pet-builds/main-0f73723-beta-preview/GitHubPet.app/Contents/MacOS/GitHubPet",
+  "protectedAppUnchanged": true,
+  "productVerdict": "none: independent judgement required"
+}

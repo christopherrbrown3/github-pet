@@ -1,0 +1,11 @@
+{
+  "pid": 24803,
+  "argv": [
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr74-85cd40e/artifact/extracted/GitHubPet.app/Contents/MacOS/GitHubPet",
+    "--simulate-monitoring-scope",
+    "--qa-scenario",
+    "settings-discovery-identity-mismatch",
+    "--qa-output",
+    "/Users/chris/github-pet-worktrees/qa-engineer/docs/qa/pr74-85cd40e/functional/settings-discovery-identity-mismatch/records"
+  ]
+}
