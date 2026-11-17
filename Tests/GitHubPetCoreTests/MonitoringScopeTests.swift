@@ -199,7 +199,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
     }
     @Test func oneOperationBindsViewerMetadataAndPerInclusionSearches() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
-        #expect(plan.searches.count == 4)
+        #expect(plan.searches.count == 6)
         let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
         #expect(query.contains("viewer { id login }"))
         #expect(query.contains("organization(login: $owner0)"))
@@ -208,9 +208,9 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(plan.arguments.contains("reviews0=is:pr is:open review-requested:@me org:example"))
         #expect(plan.arguments.contains("reviews1=is:pr is:open review-requested:@me repo:example/pet"))
         #expect(plan.arguments.prefix(4) == ["api", "graphql", "--hostname", "github.com"])
-        #expect(try ScopeQueryPlan().searches.count == 2)
+        #expect(try ScopeQueryPlan().searches.count == 3)
         let ten = try MonitoringScope(selected: (0..<10).map { try MonitoringTarget(organization: "fixture\($0)") })
-        #expect(try ScopeQueryPlan(scope: ten, expectedAccount: accountA).searches.count == 20)
+        #expect(try ScopeQueryPlan(scope: ten, expectedAccount: accountA).searches.count == 30)
         #expect(throws: ScopeValidationError.invalidIdentity) { try ScopeQueryPlan(scope: mixedScope()) }
     }
 
@@ -310,7 +310,9 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         var body = envelope(plan)
         for search in plan.searches {
             let target = plan.scope.targets[search.targetIndex!]
-            if target.owner == "other" {
+            if search.kind == .authoredPullRequest {
+                body[search.alias] = page()
+            } else if target.owner == "other" {
                 body[search.alias] = page([], total: search.kind == .reviewRequest ? 2 : 0)
             } else if search.kind == .reviewRequest {
                 body[search.alias] = page([row(repo: "example/pet")], total: 4)

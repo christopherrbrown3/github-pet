@@ -14,6 +14,9 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 
 - **Review requests and assigned issues.** Pull requests waiting for your review and open issues assigned
   to you, from your GitHub CLI account on github.com. Click a row to open it on GitHub.
+- **Your pull requests that need you.** Your open pull requests with changes requested, a merge conflict
+  or failing checks. The rest, including drafts and pull requests GitHub is still checking for conflicts,
+  are shown as one count marked as waiting on others, and never alert.
 - **Choose what to watch.** Everything you can access, or up to 10 selected organizations and
   repositories. Access is checked before a selection is applied, and suggestions come from your account.
 - **Entitlement approvals.** List the repositories where access requests arrive as pull requests; their
@@ -102,7 +105,12 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
   and waking.
 - Keyboard access goes through the menu-bar icon and Settings. The floating mascot isn't keyboard
   focusable, and a full live VoiceOver pass hasn't been done.
-- Workflow failures, deployment approvals and your own pull requests are not monitored yet.
+- "Checks failing" means any failing check on the pull request's latest commit: GitHub's search can't
+  say which checks are required.
+- For your pull requests, changes requested and merge conflicts are announced at most once per pull
+  request; a later round of requested changes isn't announced again. Failing checks are announced once
+  per new failing commit.
+- Workflow failures and deployment approvals are not monitored yet.
 
 After the beta: a Homebrew cask, then more sources. Progress is tracked in
 [issues](https://github.com/christopherrbrown3/github-pet/issues).

@@ -111,6 +111,18 @@ the app, proving shallow histories fail before reaching Swift.
 - Unread markers are pruned only after a complete snapshot. A partial snapshot (a failed source)
   keeps them, since recovery does not re-announce those items.
 - Items are keyed by stable IDs such as `reviewRequest:owner/repo#12`.
+- Your open PRs (#9) come from one more search per inclusion (`authored<i>`: `is:pr is:open
+  author:@me archived:false`) with `isDraft reviewDecision mergeable` and the head commit's `oid` and
+  `statusCheckRollup { state }`. Only PRs needing action become rows: changes requested, CONFLICTING,
+  or rollup FAILURE/ERROR ("Checks failing": any check, not only required ones). Drafts, other states and
+  `UNKNOWN` mergeability are counted as waiting on others, shown as one informational Inbox line that is never a
+  row, count, badge, mood or alert. Each PR is one row with the stable ID `authoredPullRequest:<nodeID>`, and
+  each reason is a separate event key (`#changes`, `#conflict`, `#checks@<head OID>`) persisted as a digest
+  with the baseline. A PR announces only when it gains a key never seen before: a new reason, or checks
+  failing on a new head commit. Losing a reason, regaining one on the same head, and comment churn never
+  announce. Overlapping inclusions that disagree about one PR make the poll Partial. Missing or unknown values make the row malformed (Partial).
+  `ScopeQueryPlan.categories` is the table to extend, and `categoriesVersion` is part of the baseline key.
+  Bumping it makes a relaunch re-baseline silently.
 - The first complete snapshot sets the baseline and fires no events. Unchanged polls never fire
   again. An ID fires at most once, even if it disappears and comes back.
 - A snapshot only counts as comparable if the previous one was complete and is still fresh at
