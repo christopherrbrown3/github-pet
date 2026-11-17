@@ -13,6 +13,7 @@ import Testing
         "oauth_token", "hosts.yml", "find-generic-password", "find-internet-password",
         // Security framework reads of stored secrets (#60): legacy keychain lookups and item data.
         "SecKeychainFind", "SecKeychainItemCopyContent", "kSecReturnData",
+        "SecKeychainItemCopyAttributesAndData", "dump-keychain",
     ]
     /// `gh auth` subcommands: after a first element that can't be read statically, they fail closed.
     static let authSubcommands: Set<String> = ["login", "logout", "refresh", "setup-git", "status", "switch", "token"]
@@ -310,6 +311,11 @@ import Testing
         #expect(Self.violations(in: "let query: [CFString: Any] = [kSecClass: kSecClassGenericPassword, kSecReturnData: true]\nSecItemCopyMatching(query as CFDictionary, &result)")
                 == ["SecItemCopyMatching", "kSecReturnData"])
         #expect(Self.violations(in: "query[kSecReturnData] = kCFBooleanTrue") == ["kSecReturnData"])
+        // #60 batch 2: attribute-and-data reads, and dumping the keychain through the security CLI.
+        #expect(Self.violations(in: "SecKeychainItemCopyAttributesAndData(item, &info, &itemClass, &attributes, &length, &data)")
+                == ["SecKeychainItemCopyAttributesAndData"])
+        #expect(Self.violations(in: #"run(executable: security, arguments: ["dump-keychain", "-d"])"#) == ["dump-keychain"])
+        #expect(Self.violations(in: #"run(["security", "dump\u{2D}keychain"])"#) == ["dump-keychain"], "decoded literal")
     }
 
     @Test func anAuthPositionThatCannotBeReadStaticallyFailsClosed() {
