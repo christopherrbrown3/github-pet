@@ -171,7 +171,9 @@ public final class RepositoryScopeSession {
         if issues.contains(where: { if case .targetUnavailable = $0 { return true }; if case .malformedTarget = $0 { return true }; return false }) {
             return "A selected target could not be verified; results are incomplete."
         }
-        if issues.contains(where: { if case .capped = $0 { return true }; return false }) { return "Scope result limit reached; counts are incomplete." }
+        // Errors take precedence over caps (#60 LOW-B): with an error member, hidden results are capped
+        // too, and the line must name the failure, not a limit.
+        if issues.allSatisfy({ if case .capped = $0 { return true }; return false }) { return "Scope result limit reached; counts are incomplete." }
         return "Monitoring scope could not be fully verified; retained rows may be incomplete."
     }
 }

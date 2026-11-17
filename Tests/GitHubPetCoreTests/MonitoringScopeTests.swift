@@ -713,6 +713,26 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(!RepositoryScopeSession.accessDeniedQuality.contains("SAML enforcement."), "fixed text, not GitHub's message")
     }
 
+    /// #60 (PR59 LOW-B): an error member with hidden results makes the hidden aliases capped too;
+    /// the quality line must name the failure, not a result limit. FAIL before: "result limit reached".
+    @Test func errorsTakePrecedenceOverCapsInTheQualityLine() throws {
+        let plan = try ScopeQueryPlan()
+        var body = envelope(plan)
+        body["reviews0"] = page([row()], total: 4)
+        let result = ScopedResponseParser.parse(try response(body, errors: [["message": "fixture failure"]]), plan: plan)
+        #expect(result.issues.contains(.graphQLError) && result.issues.contains(.capped("reviews0")))
+        let generic = "Monitoring scope could not be fully verified; retained rows may be incomplete."
+        #expect(RepositoryScopeSession.qualitySummary(for: result.issues) == generic)
+        for error in [ScopedFetchIssue.graphQLError, .missingSource("assigned0"), .malformedSource("assigned0"),
+                      .malformedRow("reviews0"), .inconsistentDuplicate, .transport, .incompleteOutput] {
+            #expect(RepositoryScopeSession.qualitySummary(for: [.capped("reviews0"), error]) == generic, "\(error)")
+        }
+        #expect(RepositoryScopeSession.qualitySummary(for: [.capped("reviews0"), .capped("assigned0")])
+                == "Scope result limit reached; counts are incomplete.", "caps alone keep the limit wording")
+        #expect(RepositoryScopeSession.qualitySummary(for: [.capped("reviews0"), .targetUnavailable(0)])
+                == "A selected target could not be verified; results are incomplete.")
+    }
+
     @Test func combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() throws {
         let bytes = try response(envelope(ScopeQueryPlan()))
         let overflow = ScopeRunner([CommandResult(exitCode: 0, stderr: Data(count: CommandBudget.maximumBytes)),
