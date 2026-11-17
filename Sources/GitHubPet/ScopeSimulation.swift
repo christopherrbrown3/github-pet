@@ -22,6 +22,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         case checksFailing = "checks-failing"
         /// Only comment churn (updatedAt) changed since changes-requested: no new event.
         case churn
+        /// A later changes-requested round (a new latest changes-requesting review): one new event.
+        case newRound = "new-round"
     }
     private var authored = Authored.off
     /// #35 fixtures, per review search: `hidden` adds 3 matches the viewer can't see, `hiddenOnly`
@@ -166,6 +168,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                                       "updatedAt": authored == .churn && offset == 0 ? "2026-11-15T13:00:00Z" : "2026-11-15T12:00:00Z",
                                       "repository": ["nameWithOwner": repo],
                                       "isDraft": row.3, "reviewDecision": row.1, "mergeable": row.2,
+                                      "reviews": ["nodes": (row.1 as? String) == "CHANGES_REQUESTED"
+                                                  ? [["id": "PRR_\(account.viewerID)_\(row.0)_\(authored == .newRound ? 2 : 1)"]] : []],
                                       "commits": ["nodes": [["commit": ["oid": String(repeating: row.5, count: 40),
                                                                          "statusCheckRollup": ["state": row.4]]]]]])
                     }

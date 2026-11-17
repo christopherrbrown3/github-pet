@@ -22,11 +22,13 @@ public struct ScopeQueryPlan: Sendable {
         // #9: your open PRs; only those needing your action become rows (see AuthoredAttention).
         Category(kind: .authoredPullRequest, aliasPrefix: "authored", query: "is:pr is:open author:@me archived:false",
                  type: "PullRequest",
-                 fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"),
+                 fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"
+                    + " reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id } }"),
     ]
     /// Changes whenever the category set changes, so a persisted baseline from an older set
     /// re-baselines silently instead of announcing a new category's existing items (#12).
-    public static let categoriesVersion = 2
+    /// 3: authored changes-requested keys carry the latest changes-requesting review (#60).
+    public static let categoriesVersion = 3
     public struct Search: Sendable {
         public let alias: String
         public let kind: ItemKind

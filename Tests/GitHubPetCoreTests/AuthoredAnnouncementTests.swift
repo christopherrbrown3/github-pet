@@ -11,8 +11,9 @@ private let headB = String(repeating: "b", count: 40)
 private let viewerA = try! ScopeAccount(viewerID: "U_fixture_A")
 
 private func pr(changes: Bool = false, conflict: Bool = false, checks: String = "SUCCESS", head: String = headA,
-                id: String = "PR_med1") -> [String: Any] {
+                id: String = "PR_med1", review: String? = "PRR_round1") -> [String: Any] {
     ["__typename": "PullRequest", "id": id, "number": 9, "title": "Fixture authored",
+     "reviews": ["nodes": changes && review != nil ? [["id": review!]] : []],
      "url": "https://github.com/example/pet/pull/9", "updatedAt": "2026-11-14T10:00:00Z",
      "repository": ["nameWithOwner": "example/pet"], "isDraft": false,
      "reviewDecision": changes ? "CHANGES_REQUESTED" : "REVIEW_REQUIRED",
@@ -71,6 +72,17 @@ private func result(_ plan: ScopeQueryPlan, _ authoredByAlias: (ScopeQueryPlan.S
     @Test func checksFailingOnANewHeadAnnouncesOnce() throws {
         #expect(try events([pr(checks: "FAILURE"), pr(checks: "PENDING", head: headB),
                             pr(checks: "FAILURE", head: headB), pr(checks: "FAILURE", head: headB)]) == [1, 0, 1, 0])
+    }
+
+    /// #60 follow-up to #9: a later changes-requested round (a new latest changes-requesting review)
+    /// announces once. The same review lost and regained, or a push, stays silent.
+    /// FAIL before: changes requested announced at most once per PR.
+    @Test func aLaterChangesRequestedRoundAnnouncesOnce() throws {
+        #expect(try events([pr(changes: true), pr(), pr(changes: true, review: "PRR_round2"),
+                            pr(changes: true, head: headB, review: "PRR_round2")]) == [1, 0, 1, 0])
+        #expect(try events([pr(changes: true), pr(), pr(changes: true)]) == [1, 0, 0], "the same review regained")
+        #expect(try events([pr(changes: true, review: nil), pr(changes: true, review: nil)]) == [1, 0],
+                "no visible review: one changes-requested event, as before")
     }
 
     @Test func overlappingInclusionsGiveOneRowAndDisagreementIsPartial() throws {

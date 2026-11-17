@@ -9,12 +9,13 @@ private let oidB = String(repeating: "b", count: 40)
 private func authored(_ id: String = "PR_authored_1", repo: String = "example/pet", number: Int = 7,
                       title: String = "Secret authored title", updatedAt: String = "2026-11-14T10:00:00Z",
                       draft: Any = false, decision: Any = NSNull(), mergeable: Any = "MERGEABLE",
-                      rollup: Any? = ["state": "SUCCESS"], oid: Any = oidA, commits: Any? = nil) -> [String: Any] {
+                      rollup: Any? = ["state": "SUCCESS"], oid: Any = oidA, commits: Any? = nil,
+                      reviews: Any = ["nodes": []]) -> [String: Any] {
     var commit: [String: Any] = ["oid": oid]
     if let rollup { commit["statusCheckRollup"] = rollup }
     return ["__typename": "PullRequest", "id": id, "number": number, "title": title,
             "url": "https://github.com/\(repo)/pull/\(number)", "updatedAt": updatedAt, "repository": ["nameWithOwner": repo],
-            "isDraft": draft, "reviewDecision": decision, "mergeable": mergeable,
+            "isDraft": draft, "reviewDecision": decision, "mergeable": mergeable, "reviews": reviews,
             "commits": commits ?? ["nodes": [["commit": commit]]]]
 }
 private func page(_ rows: [Any] = [], total: Int? = nil) -> [String: Any] {
@@ -51,12 +52,12 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
 
 @Suite struct AuthoredAttentionTests {
     @Test func needsActionReasons() {
-        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED")) == .needsAction([.changesRequested]))
+        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED")) == .needsAction([.changesRequested(review: nil)]))
         #expect(AuthoredAttention(authored(mergeable: "CONFLICTING")) == .needsAction([.conflict]))
         #expect(AuthoredAttention(authored(rollup: ["state": "FAILURE"])) == .needsAction([.checksFailing(oidA)]))
         #expect(AuthoredAttention(authored(rollup: ["state": "ERROR"])) == .needsAction([.checksFailing(oidA)]))
         #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", mergeable: "CONFLICTING", rollup: ["state": "FAILURE"]))
-                == .needsAction([.changesRequested, .conflict, .checksFailing(oidA)]))
+                == .needsAction([.changesRequested(review: nil), .conflict, .checksFailing(oidA)]))
         #expect(AuthoredAttention.Reason.checksFailing(oidA).text == "Checks failing", "never claims 'required' checks")
     }
 
@@ -71,8 +72,26 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         #expect(AuthoredAttention(authored(draft: true, decision: "CHANGES_REQUESTED", mergeable: "CONFLICTING",
                                            rollup: ["state": "FAILURE"])) == .waiting, "drafts never alert")
         #expect(AuthoredAttention(authored(mergeable: "UNKNOWN")) == .waiting, "conflict status not known yet")
-        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", mergeable: "UNKNOWN")) == .needsAction([.changesRequested]),
+        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", mergeable: "UNKNOWN")) == .needsAction([.changesRequested(review: nil)]),
                 "UNKNOWN adds no conflict reason; other reasons still apply")
+    }
+
+    /// #60: the latest changes-requesting review keys a changes-requested round; strict like every field.
+    @Test func latestChangesRequestingReviewIsParsedStrictly() throws {
+        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", reviews: ["nodes": [["id": "PRR_round_2"]]]))
+                == .needsAction([.changesRequested(review: "PRR_round_2")]))
+        #expect(AuthoredAttention.Reason.changesRequested(review: "PRR_round_2").idComponent == "changes@PRR_round_2")
+        #expect(AuthoredAttention.Reason.changesRequested(review: nil).idComponent == "changes")
+        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: ["nodes": [["id": "PRR_old"]]])) == .waiting,
+                "an old changes-requesting review alone never needs action")
+        for bad in [NSNull(), "none", ["nodes": [["id": "PRR_1"], ["id": "PRR_2"]]], ["nodes": [["id": "bad id"]]],
+                    ["nodes": [["state": "CHANGES_REQUESTED"]]], [:]] as [Any] {
+            #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", reviews: bad)) == nil, "\(bad)")
+        }
+        var missing = authored(decision: "CHANGES_REQUESTED"); missing.removeValue(forKey: "reviews")
+        #expect(AuthoredAttention(missing) == nil)
+        let query = try #require(try ScopeQueryPlan().arguments.first { $0.hasPrefix("query=") })
+        #expect(query.contains("reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id } }"), "same request, one nested node")
     }
 
     @Test func malformedRowsAreRejected() {
@@ -216,7 +235,7 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         let scopeText = String(decoding: try { let e = JSONEncoder(); e.outputFormatting = .sortedKeys; return try e.encode(MonitoringScope.everything) }(), as: UTF8.self)
         let legacy = EventBaseline.digest("v\(EventBaseline.version)\n\(DataSourceMode.githubCLI.rawValue)\n\(ScopeIdentity.github(accountA).storageSuffix)\n\(scopeText)")
         let current = BaselineKey(source: .githubCLI, identity: .github(accountA), scope: .everything)
-        #expect(ScopeQueryPlan.categoriesVersion == 2)
+        #expect(ScopeQueryPlan.categoriesVersion == 3)
         #expect(current.value != legacy, "a v1 (reviews+assigned) record no longer matches")
         let defaults = EphemeralDefaults(name: "authored.baseline.\(UUID().uuidString)")
         let store = EventBaselineStore(defaults: defaults)

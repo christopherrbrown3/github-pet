@@ -117,9 +117,11 @@ the app, proving shallow histories fail before reaching Swift.
   or rollup FAILURE/ERROR ("Checks failing": any check, not only required ones). Drafts, other states and
   `UNKNOWN` mergeability are counted as waiting on others, shown as one informational Inbox line that is never a
   row, count, badge, mood or alert. Each PR is one row with the stable ID `authoredPullRequest:<nodeID>`, and
-  each reason is a separate event key (`#changes`, `#conflict`, `#checks@<head OID>`) persisted as a digest
-  with the baseline. A PR announces only when it gains a key never seen before: a new reason, or checks
-  failing on a new head commit. Losing a reason, regaining one on the same head, and comment churn never
+  each reason is a separate event key (`#changes@<latest changes-requesting review ID>`, or `#changes` when
+  no such review is visible, `#conflict`, `#checks@<head OID>`) persisted as a digest
+  with the baseline. A PR announces only when it gains a key never seen before: a new reason, a later
+  changes-requested round (from `reviews(last: 1, states: [CHANGES_REQUESTED])` in the same request), or
+  checks failing on a new head commit. Losing a reason, regaining one on the same head, and comment churn never
   announce. Overlapping inclusions that disagree about one PR make the poll Partial. Missing or unknown values make the row malformed (Partial).
   `ScopeQueryPlan.categories` is the table to extend, and `categoriesVersion` is part of the baseline key.
   Bumping it makes a relaunch re-baseline silently.

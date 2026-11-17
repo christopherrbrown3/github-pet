@@ -47,6 +47,12 @@ import Testing
         #expect(authoredRows(app).map(\.attention) == ["Changes requested"] && app.unseenCount == 0,
                 "losing a reason (checks fixed) never announces")
 
+        app.markAllSeen()
+        app.simulateScopeAuthored(.newRound); try await settled(app)
+        #expect(authoredRows(app).map(\.id) == [firstID] && app.unseenCount == 1, "a later changes-requested round announces once (#60)")
+        app.refresh(); try await settled(app)
+        #expect(app.unseenCount == 1)
+
         app.simulateScopeAuthored(.off); try await settled(app)
         #expect(authoredRows(app).isEmpty && app.authoredWaitingCount == 0 && app.authoredWaitingNote == nil)
     }

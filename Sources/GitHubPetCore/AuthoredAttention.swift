@@ -11,15 +11,16 @@ import CoreFoundation
 /// waiting: counted, never alerting. `UNKNOWN` is re-evaluated on the next poll.
 ///
 /// Events (via `InboxItem.attentionKeys`): a PR announces when a reason is gained that was never
-/// seen for it, or when checks fail on a new head commit. Losing a reason, or regaining one already
-/// seen for the PR (changes requested or a conflict again, failing checks again on the same head),
-/// never announces.
+/// seen for it: checks failing on a new head commit, or a new latest changes-requesting review (a
+/// later round, #60). Losing a reason, or regaining one already seen for the PR (the same review,
+/// a conflict again, failing checks again on the same head), never announces.
 public enum AuthoredAttention: Equatable, Sendable {
     case waiting
     case needsAction([Reason])
 
     public enum Reason: Equatable, Sendable {
-        case changesRequested
+        /// The latest changes-requesting review's ID when visible: a later round is a new event.
+        case changesRequested(review: String?)
         case conflict
         /// Head commit OID: the same failure stays one event; a new failing commit is another.
         case checksFailing(String)
@@ -34,7 +35,7 @@ public enum AuthoredAttention: Equatable, Sendable {
 
         var idComponent: String {
             switch self {
-            case .changesRequested: return "changes"
+            case .changesRequested(let review): return review.map { "changes@" + $0 } ?? "changes"
             case .conflict: return "conflict"
             case .checksFailing(let oid): return "checks@" + oid
             }
@@ -50,7 +51,13 @@ public enum AuthoredAttention: Equatable, Sendable {
               let draftValue = row["isDraft"] as? NSNumber, CFGetTypeID(draftValue) == CFBooleanGetTypeID(),
               let decisionValue = row["reviewDecision"],
               let mergeable = row["mergeable"] as? String, Self.mergeables.contains(mergeable),
-              let commits = (row["commits"] as? [String: Any])?["nodes"] as? [Any], commits.count <= 1 else { return nil }
+              let commits = (row["commits"] as? [String: Any])?["nodes"] as? [Any], commits.count <= 1,
+              let reviews = (row["reviews"] as? [String: Any])?["nodes"] as? [Any], reviews.count <= 1 else { return nil }
+        var latestChangesReview: String?
+        if let first = reviews.first {
+            guard let id = (first as? [String: Any])?["id"] as? String, ScopeASCII.nodeID(id) else { return nil }
+            latestChangesReview = id
+        }
         let decision: String?
         if decisionValue is NSNull { decision = nil }
         else if let value = decisionValue as? String, Self.reviewDecisions.contains(value) { decision = value }
@@ -68,7 +75,7 @@ public enum AuthoredAttention: Equatable, Sendable {
         }
         if draftValue.boolValue { self = .waiting; return }
         var reasons: [Reason] = []
-        if decision == "CHANGES_REQUESTED" { reasons.append(.changesRequested) }
+        if decision == "CHANGES_REQUESTED" { reasons.append(.changesRequested(review: latestChangesReview)) }
         if mergeable == "CONFLICTING" { reasons.append(.conflict) }
         if let failingOID { reasons.append(.checksFailing(failingOID)) }
         self = reasons.isEmpty ? .waiting : .needsAction(reasons)

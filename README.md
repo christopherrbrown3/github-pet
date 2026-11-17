@@ -109,9 +109,8 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
   focusable, and a full live VoiceOver pass hasn't been done.
 - "Checks failing" means any failing check on the pull request's latest commit: GitHub's search can't
   say which checks are required.
-- For your pull requests, changes requested and merge conflicts are announced at most once per pull
-  request; a later round of requested changes isn't announced again. Failing checks are announced once
-  per new failing commit.
+- For your pull requests, a merge conflict is announced at most once per pull request. Requested changes
+  are announced once per new changes-requesting review, and failing checks once per new failing commit.
 - Workflow failures are opt-in and cover only selected repositories (not organizations or Everything),
   and only their default branch's latest commit: a workflow that didn't run on that commit isn't seen.
   Deployment approvals are not monitored yet.
