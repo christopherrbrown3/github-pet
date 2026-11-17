@@ -202,7 +202,7 @@ This needs builds with PR72/PR73 (workflow failures, independent of the inbox) a
    - **Expected:** **one** alert for the new failure, and urgent if you triggered it.
    - Re-running that workflow and having it fail again doesn't alert again. A fixed run removes the row on the next refresh.
 5. Optional: a selected repository you can't read, or a SAML-protected one.
-   - **Expected:** a separate line, "Workflow failures: … showing last known", with earlier failure rows kept and marked "· last known". Never "no failures".
+   - **Expected:** a separate line, "GitHub Actions: … showing last known", with earlier failure rows kept and marked "· last known". Never "no failures".
    - The **inbox itself stays complete**: a new review request still alerts. If the inbox is otherwise empty, it shows Partial, never All clear.
 6. With Organizations or Everything selected and no repositories:
    - **Expected:** the note says "GitHub Actions: select repositories in Monitoring scope to watch them…", and no Actions query runs.
@@ -217,9 +217,8 @@ This needs builds with PR72/PR73 (workflow failures, independent of the inbox) a
       - Clicking it opens the **run page** on github.com. **Approve or reject there, in the browser, not in GitHub Pet.**
       - GitHub Pet has **no** approve action. Confirm that nothing in the app approves, and that the run is still waiting until you act on GitHub.
    4. A waiting run where you are **not** an allowed reviewer (another environment or another reviewer).
-      - **Expected:** **no** row. It only appears in the hourglass line "N deployment(s) waiting on other reviewers", which doesn't change the badge or mood.
+      - **Expected:** **no** row. It only appears in the hourglass line "N deployment(s) waiting for other reviewers or a wait timer", which doesn't change the badge or mood.
    5. After you approve on GitHub, the row disappears on the next refresh with no further alert. Turning the toggle off clears the rows and the waiting line.
-   - **Note (LOW):** a run held only by a **wait timer**, with no required reviewers, may also be counted as "waiting on other reviewers".
 - **Capture:** Settings notes, rows, mood, badge and the waiting lines before and after each step. Note whether turning anything on caused an animation (it shouldn't), and confirm by GitHub's own UI that the run was never approved by the app.
 
 ---
