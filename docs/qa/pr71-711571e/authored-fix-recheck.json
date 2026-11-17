@@ -1,0 +1,37 @@
+{
+  "name": "authored-fix-recheck",
+  "steps": [
+    {
+      "action": "authored",
+      "mode": "checks-failing",
+      "label": "first-seen-changes-and-failing"
+    },
+    {
+      "action": "mark-seen",
+      "label": "seen"
+    },
+    {
+      "action": "authored",
+      "mode": "changes-requested",
+      "label": "checks-fixed-no-event"
+    },
+    {
+      "action": "authored",
+      "mode": "checks-failing",
+      "label": "regain-same-head-no-event"
+    },
+    {
+      "action": "settings-add",
+      "kind": "repository",
+      "text": "demo-a/pet",
+      "label": "draft-add-covered-repo"
+    },
+    {
+      "action": "settings-apply",
+      "label": "apply-org-plus-repo-one-row"
+    },
+    {
+      "action": "quit"
+    }
+  ]
+}
