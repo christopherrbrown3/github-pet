@@ -706,12 +706,22 @@ final class AppModel: ObservableObject {
         settings.entitlementRepositories.removeAll { $0 == repository }
     }
 
-    /// The inbox's own state, except that an empty inbox is never "All clear" while watched
-    /// workflow failures are incomplete (#10), and isn't empty while failure rows are shown.
+    /// The inbox's own state, except where workflow failures (#10) change what's visible: an
+    /// empty inbox is never "All clear" while they are incomplete, and neither an empty nor a
+    /// hidden-only inbox claims "nothing visible" while failure rows are shown.
     private var displayedState: DataState {
-        guard engine.state == .empty else { return engine.state }
-        if actionsQuality != nil { return .partial }
-        return actionsEngine.items.isEmpty ? .empty : .ready
+        switch engine.state {
+        case .empty:
+            if actionsQuality != nil { return .partial }
+            return actionsEngine.items.isEmpty ? .empty : .ready
+        case .hiddenOnly:
+            // "No visible items" can't sit beside failure rows: with rows, count them like any
+            // other visible items (the hidden-matches note still shows beside them).
+            guard !actionsEngine.items.isEmpty else { return engine.state }
+            return actionsQuality != nil ? .partial : .ready
+        default:
+            return engine.state
+        }
     }
 
     private func sync(now date: Date) {
