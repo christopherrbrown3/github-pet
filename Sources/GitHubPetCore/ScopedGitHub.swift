@@ -373,6 +373,9 @@ public struct ScopedGhClient: ScopedPolling {
             if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .failure(.rateLimited) }
             let parsed = ScopedResponseParser.parse(result.stdout, plan: plan)
             try budget.check()
+            // Another account answered: identity takes precedence over any denial or exit status, so
+            // the session restores that account's scope instead of reporting the wrong one (#60).
+            if parsed.issues.contains(.identityMismatch) { return parsed }
             // One SAML-enforced or forbidden target still leaves the others' rows on stdout:
             // Partial with those rows. Fail the whole poll only when nothing usable came back.
             if result.exitCode != 0 && Self.deniesAccess(result.stderrText) {

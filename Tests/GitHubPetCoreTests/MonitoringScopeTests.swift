@@ -647,6 +647,25 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(client(ScopeRunner([CommandResult(exitCode: 4)])).fetch().outcome == .failure(.unauthenticated))
     }
 
+    /// #60 (PR64 LOW): another account answered AND gh printed a denial. Identity takes precedence:
+    /// the result is identityMismatch with that viewer, so the session switches account instead of
+    /// showing a denial for the wrong one. FAIL before: .accessDenied with no viewer.
+    @Test func identityMismatchWinsOverDenialStderr() throws {
+        let scope = try mixedScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        var body = envelope(plan)
+        body["viewer"] = ["id": accountB.viewerID, "login": "other-user"]
+        let stderr = Data("GraphQL: Resource protected by organization SAML enforcement. (target0)".utf8)
+        for exitCode: Int32 in [1, 0] {
+            for errors in [[["type": "FORBIDDEN", "message": "Resource protected by organization SAML enforcement."]], nil] as [[[String: Any]]?] {
+                let result = client(ScopeRunner([CommandResult(exitCode: 0),
+                                                 CommandResult(exitCode: exitCode, stdout: try response(body, errors: errors), stderr: stderr)]))
+                    .fetch(scope: scope, expectedAccount: accountA)
+                #expect(result.issues == [.identityMismatch], "exit \(exitCode), errors \(errors != nil)")
+                #expect(result.viewer?.account == accountB && result.items.isEmpty && !result.complete)
+            }
+        }
+    }
+
     /// QA MED-1 on PR64: one SAML-enforced org in a Selected scope makes gh exit 1 with the SAML
     /// message on stderr AND the other targets' data on stdout. That is Partial with the readable
     /// rows and the denial quality line, not a whole-poll failure.
