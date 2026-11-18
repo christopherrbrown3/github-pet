@@ -117,10 +117,12 @@ the app, proving shallow histories fail before reaching Swift.
   or rollup FAILURE/ERROR ("Checks failing": any check, not only required ones). Drafts, other states and
   `UNKNOWN` mergeability are counted as waiting on others, shown as one informational Inbox line that is never a
   row, count, badge, mood or alert. Each PR is one row with the stable ID `authoredPullRequest:<nodeID>`, and
-  each reason is a separate event key (`#changes`, `#conflict`, `#checks@<head OID>`) persisted as a digest
-  with the baseline. A PR announces only when it gains a key never seen before: a new reason, or checks
-  failing on a new head commit. Losing a reason, regaining one on the same head, and comment churn never
-  announce. Overlapping inclusions that disagree about one PR make the poll Partial. Missing or unknown values make the row malformed (Partial).
+  each reason has a stable event key (`#changes`, `#conflict`, `#checks@<head OID>`) persisted as a digest.
+  The authored search asks for one changes-requesting review's ID and submission time. A distinct review
+  can announce once when its timestamp is strictly later than the last verified review in a comparable
+  snapshot. Losing or regaining review detail is silent. The baseline stores a bounded collection of
+  comparison records with digests and timestamps. Losing or regaining an existing reason and comment
+  churn are silent. Disagreeing overlapping inclusions or malformed review data make the poll Partial.
   `ScopeQueryPlan.categories` is the table to extend, and `categoriesVersion` is part of the baseline key.
   Bumping it makes a relaunch re-baseline silently.
 - The first complete snapshot sets the baseline and fires no events. Unchanged polls never fire

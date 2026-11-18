@@ -321,6 +321,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
 
         // Multiple covered repositories add no duplicate count; unrelated owners and the
         // disjoint issue/review categories still contribute independently. Visible IDs dedupe.
+        // Covered repositories' hidden matches sum to at most their org's (#60 LOW-A).
         let targets = try [org, repo, MonitoringTarget(repository: "example/tools"),
                            MonitoringTarget(repository: "other/pet")]
         let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
@@ -332,12 +333,16 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
             } else if target.owner == "other" {
                 body[search.alias] = page([], total: search.kind == .reviewRequest ? 2 : 0)
             } else if search.kind == .reviewRequest {
-                body[search.alias] = page([row(repo: "example/pet")], total: 4)
+                // org: 4 hidden; pet 3 + tools 1 = 4 covered.
+                body[search.alias] = page([row(repo: "example/pet")], total: target.kind == .organization ? 5 : 4)
                 if target.name == "tools" { body[search.alias] = page([], total: 1) }
-            } else { body[search.alias] = page([], total: 5) }
+            } else {
+                // org: 5 hidden; pet 2 + tools 2 = 4 covered.
+                body[search.alias] = page([], total: target.kind == .organization ? 5 : 2)
+            }
         }
         let result = ScopedResponseParser.parse(try response(body), plan: plan)
-        #expect(result.complete && result.items.count == 1 && result.hidden == 10)
+        #expect(result.complete && result.items.count == 1 && result.hidden == 11, "org reviews 4 + other reviews 2 + org issues 5")
     }
 
     /// #35 MED-1: a covered repository reporting more hidden matches than its organization in the
@@ -366,6 +371,41 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
                         #expect(result.complete && result.hidden == orgHidden, "\(prefix) org \(orgHidden) covers repo \(repoHidden)")
                         #expect(engine.state == .hiddenOnly(orgHidden))
                     }
+                }
+            }
+        }
+    }
+
+    /// #60 (PR59 LOW-A): covered repositories' hidden matches are a subset of their org's, so their
+    /// per-owner SUM above the org's count is a contradiction too, even when no single repository is.
+    /// FAIL before: each repository was compared alone, so the org's undercount read complete.
+    @Test func coveredRepositoriesSummingAboveTheirOrganizationArePartial() throws {
+        let org = try MonitoringTarget(organization: "example")
+        let pet = try MonitoringTarget(repository: "example/pet"), tools = try MonitoringTarget(repository: "example/tools")
+        let other = try MonitoringTarget(repository: "other/pet")
+        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: [org, pet, tools, other]), expectedAccount: accountA)
+        func index(_ target: MonitoringTarget) -> Int { plan.scope.targets.firstIndex(of: target)! }
+        for kind in [ItemKind.reviewRequest, .assignedIssue] {
+            let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+            // (org, pet, tools, other): other/pet is not covered by example and never counts toward its sum.
+            for (orgHidden, petHidden, toolsHidden, otherHidden, contradiction) in
+                    [(3, 2, 2, 0, true), (4, 2, 2, 0, false), (5, 2, 2, 9, false), (1, 1, 1, 0, true), (0, 0, 0, 4, false)] {
+                var body = envelope(plan)
+                for search in plan.searches { body[search.alias] = page([], total: 0) }
+                body[prefix + String(index(org))] = page([], total: orgHidden)
+                body[prefix + String(index(pet))] = page([], total: petHidden)
+                body[prefix + String(index(tools))] = page([], total: toolsHidden)
+                body[prefix + String(index(other))] = page([], total: otherHidden)
+                let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                let label = "\(prefix) org \(orgHidden) vs repos \(petHidden)+\(toolsHidden)"
+                if contradiction {
+                    #expect(!result.complete && result.hidden == 0, "\(label)")
+                    #expect(result.issues.contains(.capped(prefix + String(index(pet))))
+                            && result.issues.contains(.capped(prefix + String(index(tools)))), "\(label)")
+                    let engine = InboxEngine(); _ = engine.apply(result.outcome, now: Date())
+                    #expect(engine.state == .partial, "\(label): never All clear or a trusted hidden count")
+                } else {
+                    #expect(result.complete && result.hidden == orgHidden + otherHidden, "\(label)")
                 }
             }
         }
@@ -647,6 +687,25 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(client(ScopeRunner([CommandResult(exitCode: 4)])).fetch().outcome == .failure(.unauthenticated))
     }
 
+    /// #60 (PR64 LOW): another account answered AND gh printed a denial. Identity takes precedence:
+    /// the result is identityMismatch with that viewer, so the session switches account instead of
+    /// showing a denial for the wrong one. FAIL before: .accessDenied with no viewer.
+    @Test func identityMismatchWinsOverDenialStderr() throws {
+        let scope = try mixedScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        var body = envelope(plan)
+        body["viewer"] = ["id": accountB.viewerID, "login": "other-user"]
+        let stderr = Data("GraphQL: Resource protected by organization SAML enforcement. (target0)".utf8)
+        for exitCode: Int32 in [1, 0] {
+            for errors in [[["type": "FORBIDDEN", "message": "Resource protected by organization SAML enforcement."]], nil] as [[[String: Any]]?] {
+                let result = client(ScopeRunner([CommandResult(exitCode: 0),
+                                                 CommandResult(exitCode: exitCode, stdout: try response(body, errors: errors), stderr: stderr)]))
+                    .fetch(scope: scope, expectedAccount: accountA)
+                #expect(result.issues == [.identityMismatch], "exit \(exitCode), errors \(errors != nil)")
+                #expect(result.viewer?.account == accountB && result.items.isEmpty && !result.complete)
+            }
+        }
+    }
+
     /// QA MED-1 on PR64: one SAML-enforced org in a Selected scope makes gh exit 1 with the SAML
     /// message on stderr AND the other targets' data on stdout. That is Partial with the readable
     /// rows and the denial quality line, not a whole-poll failure.
@@ -711,6 +770,26 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(RepositoryScopeSession.qualitySummary(for: [.accessDenied, .graphQLError]) == RepositoryScopeSession.accessDeniedQuality)
         #expect(RepositoryScopeSession.qualitySummary(for: [.accessDenied, .rateLimited]) == "GitHub rate limit; scope results are incomplete.")
         #expect(!RepositoryScopeSession.accessDeniedQuality.contains("SAML enforcement."), "fixed text, not GitHub's message")
+    }
+
+    /// #60 (PR59 LOW-B): an error member with hidden results makes the hidden aliases capped too;
+    /// the quality line must name the failure, not a result limit. FAIL before: "result limit reached".
+    @Test func errorsTakePrecedenceOverCapsInTheQualityLine() throws {
+        let plan = try ScopeQueryPlan()
+        var body = envelope(plan)
+        body["reviews0"] = page([row()], total: 4)
+        let result = ScopedResponseParser.parse(try response(body, errors: [["message": "fixture failure"]]), plan: plan)
+        #expect(result.issues.contains(.graphQLError) && result.issues.contains(.capped("reviews0")))
+        let generic = "Monitoring scope could not be fully verified; retained rows may be incomplete."
+        #expect(RepositoryScopeSession.qualitySummary(for: result.issues) == generic)
+        for error in [ScopedFetchIssue.graphQLError, .missingSource("assigned0"), .malformedSource("assigned0"),
+                      .malformedRow("reviews0"), .inconsistentDuplicate, .transport, .incompleteOutput] {
+            #expect(RepositoryScopeSession.qualitySummary(for: [.capped("reviews0"), error]) == generic, "\(error)")
+        }
+        #expect(RepositoryScopeSession.qualitySummary(for: [.capped("reviews0"), .capped("assigned0")])
+                == "Scope result limit reached; counts are incomplete.", "caps alone keep the limit wording")
+        #expect(RepositoryScopeSession.qualitySummary(for: [.capped("reviews0"), .targetUnavailable(0)])
+                == "A selected target could not be verified; results are incomplete.")
     }
 
     @Test func combinedOutputAndIncompleteCollectionCannotParseAsEmptySuccess() throws {
