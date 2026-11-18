@@ -21,5 +21,9 @@ swiftc -I "$build/Modules" Tests/ExternalDismissalStoreClient/main.swift "${obje
 [[ "$mode" == --run ]] || exit 0
 
 suite="dev.github-pet.dismissal-durability-ci.$(/usr/bin/uuidgen)"
-"$client" write "$suite"
-"$client" verify "$suite"
+writer_status=0
+reader_status=0
+"$client" write "$suite" || writer_status=$?
+"$client" verify "$suite" || reader_status=$?
+echo "Dismissal durability exit codes - writer $writer_status, reader $reader_status"
+(( writer_status == 0 && reader_status == 0 ))
