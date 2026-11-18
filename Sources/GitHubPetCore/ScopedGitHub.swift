@@ -23,12 +23,12 @@ public struct ScopeQueryPlan: Sendable {
         Category(kind: .authoredPullRequest, aliasPrefix: "authored", query: "is:pr is:open author:@me archived:false",
                  type: "PullRequest",
                  fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"
-                    + " reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id } }"),
+                    + " reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id submittedAt } }"),
     ]
     /// Changes whenever the category set changes, so a persisted baseline from an older set
     /// re-baselines silently instead of announcing a new category's existing items (#12).
-    /// 3: authored changes-requested keys carry the latest changes-requesting review (#60).
-    public static let categoriesVersion = 3
+    /// 4: authored changes-requested reasons use a stable key with chronological review evidence.
+    public static let categoriesVersion = 4
     public struct Search: Sendable {
         public let alias: String
         public let kind: ItemKind
@@ -249,6 +249,7 @@ public enum ScopedResponseParser {
                 let key = "\(search.kind.rawValue):\(row.id)"
                 guard sourceIDs.insert(key).inserted else { issues.append(.malformedRow(search.alias)); continue }
                 var attention: String?, attentionKeys: [String] = []
+                var authoredReview: AuthoredAttention.Review?
                 if search.kind == .authoredPullRequest {
                     guard let state = AuthoredAttention(node) else { issues.append(.malformedRow(search.alias)); continue }
                     // One PR seen through overlapping inclusions must agree, or the poll is Partial.
@@ -260,10 +261,12 @@ public enum ScopedResponseParser {
                     // reason, or checks failing on a new head commit, announces (#9 MED-1).
                     attention = reasons.map(\.text).joined(separator: ", ")
                     attentionKeys = reasons.map { key + "#" + $0.idComponent }
+                    authoredReview = reasons.compactMap(\.review).first
                 }
-                let item = InboxItem(id: key, kind: search.kind, repository: row.repository.nameWithOwner,
+                var item = InboxItem(id: key, kind: search.kind, repository: row.repository.nameWithOwner,
                                      title: row.title, url: url, updatedAt: row.updatedAt, attention: attention,
                                      attentionKeys: attentionKeys)
+                item.authoredReview = authoredReview
                 if let old = items[key], old != item { issues.append(.inconsistentDuplicate) }
                 if items[key].map({ $0.updatedAt > item.updatedAt }) != true { items[key] = item }
             }

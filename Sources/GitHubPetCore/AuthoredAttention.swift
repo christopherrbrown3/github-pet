@@ -10,17 +10,19 @@ import CoreFoundation
 /// Everything else, drafts, and conflict status GitHub is still computing (`UNKNOWN`) are
 /// waiting: counted, never alerting. `UNKNOWN` is re-evaluated on the next poll.
 ///
-/// Events (via `InboxItem.attentionKeys`): a PR announces when a reason is gained that was never
-/// seen for it: checks failing on a new head commit, or a new latest changes-requesting review (a
-/// later round, #60). Losing a reason, or regaining one already seen for the PR (the same review,
-/// a conflict again, failing checks again on the same head), never announces.
+/// Stable reason keys record first gains. A changes-requested round also carries the visible
+/// review's identity and submission date for chronological comparison by the inbox engine.
 public enum AuthoredAttention: Equatable, Sendable {
     case waiting
     case needsAction([Reason])
 
+    public struct Review: Hashable, Codable, Sendable {
+        let digest: String
+        let submittedAt: Date?
+    }
+
     public enum Reason: Equatable, Sendable {
-        /// The latest changes-requesting review's ID when visible: a later round is a new event.
-        case changesRequested(review: String?)
+        case changesRequested(review: Review?)
         case conflict
         /// Head commit OID: the same failure stays one event; a new failing commit is another.
         case checksFailing(String)
@@ -35,16 +37,34 @@ public enum AuthoredAttention: Equatable, Sendable {
 
         var idComponent: String {
             switch self {
-            case .changesRequested(let review): return review.map { "changes@" + $0 } ?? "changes"
+            case .changesRequested: return "changes"
             case .conflict: return "conflict"
             case .checksFailing(let oid): return "checks@" + oid
             }
+        }
+
+        var review: Review? {
+            if case .changesRequested(let review) = self { return review }
+            return nil
         }
     }
 
     private static let reviewDecisions: Set<String> = ["APPROVED", "CHANGES_REQUESTED", "REVIEW_REQUIRED"]
     private static let mergeables: Set<String> = ["MERGEABLE", "CONFLICTING", "UNKNOWN"]
     private static let rollupStates: Set<String> = ["EXPECTED", "ERROR", "FAILURE", "PENDING", "SUCCESS"]
+    private static let reviewDatePattern = #"\A[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?(?:Z|\+00:00)\z"#
+    private static let wholeSeconds = Date.ISO8601FormatStyle()
+    private static let fractionalSeconds = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+
+    private static func reviewDate(_ text: String) -> Date? {
+        // DateTime is UTC. Foundation accepts a parsed prefix and normalizes invalid calendar
+        // components, so check both the full input and the calendar before comparing rounds.
+        guard text.utf8.count <= 35,
+              text.range(of: reviewDatePattern, options: .regularExpression) != nil,
+              let date = (try? fractionalSeconds.parse(text)) ?? (try? wholeSeconds.parse(text)),
+              wholeSeconds.format(date).prefix(19) == text.prefix(19) else { return nil }
+        return date
+    }
 
     public init?(_ node: Any) {
         guard let row = node as? [String: Any],
@@ -53,10 +73,18 @@ public enum AuthoredAttention: Equatable, Sendable {
               let mergeable = row["mergeable"] as? String, Self.mergeables.contains(mergeable),
               let commits = (row["commits"] as? [String: Any])?["nodes"] as? [Any], commits.count <= 1,
               let reviews = (row["reviews"] as? [String: Any])?["nodes"] as? [Any], reviews.count <= 1 else { return nil }
-        var latestChangesReview: String?
+        var latestChangesReview: Review?
         if let first = reviews.first {
-            guard let id = (first as? [String: Any])?["id"] as? String, ScopeASCII.nodeID(id) else { return nil }
-            latestChangesReview = id
+            guard let review = first as? [String: Any], let id = review["id"] as? String,
+                  ScopeASCII.nodeID(id), let submission = review["submittedAt"] else { return nil }
+            let submittedAt: Date?
+            if submission is NSNull {
+                submittedAt = nil
+            } else {
+                guard let text = submission as? String, let date = Self.reviewDate(text) else { return nil }
+                submittedAt = date
+            }
+            latestChangesReview = Review(digest: EventBaseline.digest(id), submittedAt: submittedAt)
         }
         let decision: String?
         if decisionValue is NSNull { decision = nil }

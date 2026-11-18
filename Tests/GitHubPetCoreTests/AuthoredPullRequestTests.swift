@@ -76,22 +76,34 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
                 "UNKNOWN adds no conflict reason; other reasons still apply")
     }
 
-    /// #60: the latest changes-requesting review keys a changes-requested round; strict like every field.
+    /// #60: the stable reason has separate evidence for a later changes-requested round.
     @Test func latestChangesRequestingReviewIsParsedStrictly() throws {
-        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", reviews: ["nodes": [["id": "PRR_round_2"]]]))
-                == .needsAction([.changesRequested(review: "PRR_round_2")]))
-        #expect(AuthoredAttention.Reason.changesRequested(review: "PRR_round_2").idComponent == "changes@PRR_round_2")
+        let stamp = "2026-11-14T10:00:00Z"
+        let date = try #require(ISO8601DateFormatter().date(from: stamp))
+        let review = AuthoredAttention.Review(digest: EventBaseline.digest("PRR_round_2"), submittedAt: date)
+        let visible = ["nodes": [["id": "PRR_round_2", "submittedAt": stamp]]]
+        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", reviews: visible))
+                == .needsAction([.changesRequested(review: review)]))
+        #expect(AuthoredAttention.Reason.changesRequested(review: review).idComponent == "changes")
         #expect(AuthoredAttention.Reason.changesRequested(review: nil).idComponent == "changes")
-        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: ["nodes": [["id": "PRR_old"]]])) == .waiting,
+        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: visible)) == .waiting,
                 "an old changes-requesting review alone never needs action")
+        let undated = AuthoredAttention.Review(digest: review.digest, submittedAt: nil)
+        #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED",
+                                           reviews: ["nodes": [["id": "PRR_round_2", "submittedAt": NSNull()]]]))
+                == .needsAction([.changesRequested(review: undated)]))
         for bad in [NSNull(), "none", ["nodes": [["id": "PRR_1"], ["id": "PRR_2"]]], ["nodes": [["id": "bad id"]]],
-                    ["nodes": [["state": "CHANGES_REQUESTED"]]], [:]] as [Any] {
+                    ["nodes": [["id": "PRR_round_2"]]], ["nodes": [["state": "CHANGES_REQUESTED"]]], [:]] as [Any] {
             #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", reviews: bad)) == nil, "\(bad)")
+        }
+        for badDate in [stamp + " trailing", stamp + "\n", "2026-02-31T10:00:00Z", "2026-11-14T10:00:00", 17] as [Any] {
+            #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED",
+                reviews: ["nodes": [["id": "PRR_round_2", "submittedAt": badDate]]])) == nil, "\(badDate)")
         }
         var missing = authored(decision: "CHANGES_REQUESTED"); missing.removeValue(forKey: "reviews")
         #expect(AuthoredAttention(missing) == nil)
         let query = try #require(try ScopeQueryPlan().arguments.first { $0.hasPrefix("query=") })
-        #expect(query.contains("reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id } }"), "same request, one nested node")
+        #expect(query.contains("reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id submittedAt } }"), "same request, one nested node")
     }
 
     @Test func malformedRowsAreRejected() {
@@ -235,7 +247,7 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         let scopeText = String(decoding: try { let e = JSONEncoder(); e.outputFormatting = .sortedKeys; return try e.encode(MonitoringScope.everything) }(), as: UTF8.self)
         let legacy = EventBaseline.digest("v\(EventBaseline.version)\n\(DataSourceMode.githubCLI.rawValue)\n\(ScopeIdentity.github(accountA).storageSuffix)\n\(scopeText)")
         let current = BaselineKey(source: .githubCLI, identity: .github(accountA), scope: .everything)
-        #expect(ScopeQueryPlan.categoriesVersion == 3)
+        #expect(ScopeQueryPlan.categoriesVersion == 4)
         #expect(current.value != legacy, "a v1 (reviews+assigned) record no longer matches")
         let defaults = EphemeralDefaults(name: "authored.baseline.\(UUID().uuidString)")
         let store = EventBaselineStore(defaults: defaults)

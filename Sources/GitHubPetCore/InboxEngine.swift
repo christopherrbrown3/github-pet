@@ -26,6 +26,7 @@ public final class InboxEngine {
     public let staleAfter: TimeInterval
 
     private var tracker: EventTracker
+    private var authoredReviewWatermarks: [String: AuthoredReviewWatermark] = [:]
     private var previousWasComparable = false
     /// From a restored baseline, until the first successful snapshot of this session.
     private var restoredLastSuccess: Date?
@@ -74,11 +75,16 @@ public final class InboxEngine {
                 fresh = false
             }
             let comparable = complete && previousWasComparable && fresh && tracker.baselineEstablished
+            if !comparable {
+                for key in authoredReviewWatermarks.keys { authoredReviewWatermarks[key]?.available = false }
+            }
+            let rounds = complete ? observeAuthoredReviews(deduped) : (newItems: [], digests: [])
             var events: [InboxEvent] = []
             let digests = deduped.map { EventBaseline.digest($0.id) }
             let keyDigests = deduped.map { $0.attentionKeys.map(EventBaseline.digest) }
+            let seenDigests = digests + keyDigests.flatMap { $0 } + rounds.digests
             if !tracker.baselineEstablished && complete {
-                tracker.seed(digests + keyDigests.joined())
+                tracker.seed(seenDigests)
             } else {
                 // Decide newness before recording anything, so eviction while recording this
                 // snapshot can never make an existing or previously shown ID look new.
@@ -88,9 +94,9 @@ public final class InboxEngine {
                     guard !reviewReachPending || item.kind != .reviewRequest else { return false }
                     let newID = !tracker.contains(digests[index]) && !previousIDs.contains(item.id)
                     let gained = zip(item.attentionKeys, keyDigests[index]).contains { !tracker.contains($1) && !previousKeys.contains($0) }
-                    return newID || gained
+                    return newID || gained || rounds.newItems.contains(item.id)
                 }.map { deduped[$0] }
-                for digest in digests + keyDigests.joined() { _ = tracker.observe(digest, comparableSnapshot: false) }
+                for digest in seenDigests { _ = tracker.observe(digest, comparableSnapshot: false) }
                 if comparable { events = newItems.map(InboxEvent.init(item:)) }
             }
             items = deduped
@@ -104,6 +110,37 @@ public final class InboxEngine {
             if complete { reviewReachPending = false }
             return events
         }
+    }
+
+    /// An absent review can change visibility, while an observed older review can be a fallback
+    /// result. Both end the comparison until a verified current review is observed again.
+    private func observeAuthoredReviews(_ items: [InboxItem]) -> (newItems: Set<String>, digests: [String]) {
+        var newItems = Set<String>(), digests: [String] = []
+        for item in items where item.kind == .authoredPullRequest && item.attentionKeys.contains(item.id + "#changes") {
+            let key = EventBaseline.digest(item.id)
+            guard let review = item.authoredReview, let date = review.submittedAt else {
+                authoredReviewWatermarks[key]?.available = false
+                continue
+            }
+            let digest = EventBaseline.digest(item.id + "#changes@" + review.digest)
+            digests.append(digest)
+            if let previous = authoredReviewWatermarks[key] {
+                let sameReview = review.digest == previous.reviewDigest
+                guard sameReview ? date == previous.submittedAt : date > previous.submittedAt else {
+                    authoredReviewWatermarks[key]?.available = false
+                    continue
+                }
+                if previous.available && !sameReview && !tracker.contains(digest) { newItems.insert(item.id) }
+            }
+            authoredReviewWatermarks[key] = AuthoredReviewWatermark(reviewDigest: review.digest, submittedAt: date, available: true)
+        }
+        if authoredReviewWatermarks.count > EventBaseline.maximumAuthoredReviewWatermarks {
+            let newest = authoredReviewWatermarks.sorted { lhs, rhs in
+                lhs.value.submittedAt == rhs.value.submittedAt ? lhs.key < rhs.key : lhs.value.submittedAt > rhs.value.submittedAt
+            }.prefix(EventBaseline.maximumAuthoredReviewWatermarks)
+            authoredReviewWatermarks = Dictionary(uniqueKeysWithValues: newest.map { ($0.key, $0.value) })
+        }
+        return (newItems, digests)
     }
 
     /// Downgrade to `.stale` once the last success is too old. Returns true if state changed.
@@ -136,6 +173,7 @@ public final class InboxEngine {
     /// Forget the baseline; the next complete snapshot re-seeds without events.
     public func resetBaseline() {
         tracker.reset()
+        authoredReviewWatermarks.removeAll()
         previousWasComparable = false
         restoredLastSuccess = nil
         restoredQuality = nil
@@ -144,9 +182,11 @@ public final class InboxEngine {
     /// The persistable baseline for `key`: digests and quality only, no item data.
     public func baseline(key: BaselineKey) -> EventBaseline {
         let quality = state == .loading ? (restoredQuality ?? .loading) : SourceQuality(state)
-        return EventBaseline(key: key.value, digests: tracker.orderedIDs, baselineEstablished: tracker.baselineEstablished,
-                             quality: quality, lastSuccess: lastSuccess ?? restoredLastSuccess,
-                             reviewReachPending: reviewReachPending ? true : nil)
+        var record = EventBaseline(key: key.value, digests: tracker.orderedIDs, baselineEstablished: tracker.baselineEstablished,
+                                   quality: quality, lastSuccess: lastSuccess ?? restoredLastSuccess,
+                                   reviewReachPending: reviewReachPending ? true : nil)
+        record.authoredReviewWatermarks = authoredReviewWatermarks.isEmpty ? nil : authoredReviewWatermarks
+        return record
     }
 
     /// Resume a persisted baseline at the start of a session (state still Loading, nothing
@@ -158,6 +198,7 @@ public final class InboxEngine {
               baseline.isValid else { return false }
         tracker = EventTracker(capacity: tracker.capacity, restoring: baseline.digests,
                                baselineEstablished: baseline.baselineEstablished)
+        authoredReviewWatermarks = baseline.authoredReviewWatermarks ?? [:]
         restoredQuality = baseline.quality
         restoredLastSuccess = baseline.lastSuccess
         previousWasComparable = baseline.quality.isComplete && baseline.baselineEstablished

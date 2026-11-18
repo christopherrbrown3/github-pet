@@ -60,6 +60,8 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
     /// Extra event keys besides `id` (#9): one per attention reason. The item is new when its ID
     /// is new or when it gains a key never seen before; losing keys never announces.
     public var attentionKeys: [String]
+    /// Evidence for an authored review round, independent of its stable Changes requested reason.
+    var authoredReview: AuthoredAttention.Review?
 
     public init(id: String, kind: ItemKind, repository: String, title: String,
                 url: URL?, updatedAt: Date, isDemo: Bool = false, attention: String? = nil,
