@@ -23,6 +23,9 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         case checksFailing = "checks-failing"
         /// Only comment churn (updatedAt) changed since changes-requested: no new event.
         case churn
+        /// A later changes-requested round (a new latest changes-requesting review): one new event.
+        case newRound = "new-round"
+        case reviewUnavailable = "review-unavailable"
     }
     private var authored = Authored.off
     /// #35 fixtures, per review search: `hidden` adds 3 matches the viewer can't see, `hiddenOnly`
@@ -184,11 +187,16 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                     ]
                     for (offset, row) in rows.enumerated() {
                         let number = 200 + offset
+                        let secondRound = authored == .newRound
+                        let review = ["id": "PRR_\(account.viewerID)_\(row.0)_\(secondRound ? 2 : 1)",
+                                      "submittedAt": secondRound ? "2026-11-15T12:05:00Z" : "2026-11-15T11:55:00Z"]
+                        let reviews = (row.1 as? String) == "CHANGES_REQUESTED" && authored != .reviewUnavailable ? [review] : []
                         nodes.append(["__typename": "PullRequest", "id": "PR_\(account.viewerID)_authored_\(row.0)", "number": number,
                                       "title": "Simulated authored \(row.0)", "url": "https://github.com/\(repo)/pull/\(number)",
                                       "updatedAt": authored == .churn && offset == 0 ? "2026-11-15T13:00:00Z" : "2026-11-15T12:00:00Z",
                                       "repository": ["nameWithOwner": repo],
                                       "isDraft": row.3, "reviewDecision": row.1, "mergeable": row.2,
+                                      "reviews": ["nodes": reviews],
                                       "commits": ["nodes": [["commit": ["oid": String(repeating: row.5, count: 40),
                                                                          "statusCheckRollup": ["state": row.4]]]]]])
                     }

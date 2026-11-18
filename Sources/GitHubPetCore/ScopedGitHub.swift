@@ -22,11 +22,13 @@ public struct ScopeQueryPlan: Sendable {
         // #9: your open PRs; only those needing your action become rows (see AuthoredAttention).
         Category(kind: .authoredPullRequest, aliasPrefix: "authored", query: "is:pr is:open author:@me archived:false",
                  type: "PullRequest",
-                 fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"),
+                 fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"
+                    + " reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id submittedAt } }"),
     ]
     /// Changes whenever the category set changes, so a persisted baseline from an older set
     /// re-baselines silently instead of announcing a new category's existing items (#12).
-    public static let categoriesVersion = 2
+    /// 4: authored changes-requested reasons use a stable key with chronological review evidence.
+    public static let categoriesVersion = 4
     public struct Search: Sendable {
         public let alias: String
         public let kind: ItemKind
@@ -247,6 +249,7 @@ public enum ScopedResponseParser {
                 let key = "\(search.kind.rawValue):\(row.id)"
                 guard sourceIDs.insert(key).inserted else { issues.append(.malformedRow(search.alias)); continue }
                 var attention: String?, attentionKeys: [String] = []
+                var authoredReview: AuthoredAttention.Review?
                 if search.kind == .authoredPullRequest {
                     guard let state = AuthoredAttention(node) else { issues.append(.malformedRow(search.alias)); continue }
                     // One PR seen through overlapping inclusions must agree, or the poll is Partial.
@@ -258,10 +261,12 @@ public enum ScopedResponseParser {
                     // reason, or checks failing on a new head commit, announces (#9 MED-1).
                     attention = reasons.map(\.text).joined(separator: ", ")
                     attentionKeys = reasons.map { key + "#" + $0.idComponent }
+                    authoredReview = reasons.compactMap(\.review).first
                 }
-                let item = InboxItem(id: key, kind: search.kind, repository: row.repository.nameWithOwner,
+                var item = InboxItem(id: key, kind: search.kind, repository: row.repository.nameWithOwner,
                                      title: row.title, url: url, updatedAt: row.updatedAt, attention: attention,
                                      attentionKeys: attentionKeys)
+                item.authoredReview = authoredReview
                 if let old = items[key], old != item { issues.append(.inconsistentDuplicate) }
                 if items[key].map({ $0.updatedAt > item.updatedAt }) != true { items[key] = item }
             }
@@ -277,16 +282,27 @@ public enum ScopedResponseParser {
             organizationHidden[search.kind, default: [:]][owner] = max(organizationHidden[search.kind]?[owner] ?? 0,
                                                                       hiddenByAlias[search.alias] ?? 0)
         }
-        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
+        /// The verified owner of a repository search whose org is also searched for the same kind.
+        func coveringOwner(_ search: ScopeQueryPlan.Search) -> String? {
             guard let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
-                  let owner = verifiedOwners[index] else { return nil }
-            return organizationHidden[search.kind]?[owner]
+                  let owner = verifiedOwners[index], organizationHidden[search.kind]?[owner] != nil else { return nil }
+            return owner
         }
-        // A covered repository with more hidden matches than its org contradicts that coverage
-        // (#35 MED-1): never drop it into All clear; treat the response as capped (Partial).
+        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
+            coveringOwner(search).flatMap { organizationHidden[search.kind]?[$0] }
+        }
+        // Covered repositories' hidden matches are a subset of their org's, so their per-owner sum
+        // above the org's count contradicts that coverage (#35 MED-1, #60 LOW-A): never drop it into
+        // All clear; treat the response as capped (Partial).
         if issues.isEmpty {
+            var coveredHidden: [ItemKind: [String: Int]] = [:]
+            for search in plan.searches {
+                guard let owner = coveringOwner(search) else { continue }
+                coveredHidden[search.kind, default: [:]][owner, default: 0] += hiddenByAlias[search.alias] ?? 0
+            }
             issues += plan.searches.filter { search in
-                coveringHidden(search).map { (hiddenByAlias[search.alias] ?? 0) > $0 } ?? false
+                guard let owner = coveringOwner(search), let org = organizationHidden[search.kind]?[owner] else { return false }
+                return (coveredHidden[search.kind]?[owner] ?? 0) > org
             }.map { ScopedFetchIssue.capped($0.alias) }
         }
         var hidden = 0
@@ -369,6 +385,9 @@ public struct ScopedGhClient: ScopedPolling {
             if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .failure(.rateLimited) }
             let parsed = ScopedResponseParser.parse(result.stdout, plan: plan)
             try budget.check()
+            // Another account answered: identity takes precedence over any denial or exit status, so
+            // the session restores that account's scope instead of reporting the wrong one (#60).
+            if parsed.issues.contains(.identityMismatch) { return parsed }
             // One SAML-enforced or forbidden target still leaves the others' rows on stdout:
             // Partial with those rows. Fail the whole poll only when nothing usable came back.
             if result.exitCode != 0 && Self.deniesAccess(result.stderrText) {

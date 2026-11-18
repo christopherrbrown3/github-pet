@@ -24,6 +24,13 @@ public enum SourceQuality: String, Codable, Sendable {
     public var isComplete: Bool { self == .ready || self == .empty || self == .hiddenOnly }
 }
 
+/// Last verified authored review. Only digests and a provider timestamp reach persistence.
+struct AuthoredReviewWatermark: Codable, Equatable, Sendable {
+    let reviewDigest: String
+    let submittedAt: Date
+    var available: Bool
+}
+
 /// What a source/account/scope session has already seen, as sanitized digests (#12).
 ///
 /// Never holds titles, repositories, URLs, bodies or tokens: item IDs are stored as truncated
@@ -31,6 +38,7 @@ public enum SourceQuality: String, Codable, Sendable {
 public struct EventBaseline: Codable, Equatable, Sendable {
     public static let version = 1
     public static let maximumDigests = 1024
+    static let maximumAuthoredReviewWatermarks = 128
 
     public var version = EventBaseline.version
     /// `BaselineKey.value` of the session that produced this record.
@@ -42,6 +50,7 @@ public struct EventBaseline: Codable, Equatable, Sendable {
     public var lastSuccess: Date?
     /// Present during a review-only reseed. Older records have no flag.
     public var reviewReachPending: Bool?
+    var authoredReviewWatermarks: [String: AuthoredReviewWatermark]?
 
     public init(key: String, digests: [String], baselineEstablished: Bool,
                 quality: SourceQuality, lastSuccess: Date?, reviewReachPending: Bool? = nil) {
@@ -67,6 +76,11 @@ public struct EventBaseline: Codable, Equatable, Sendable {
         version == Self.version && Self.isDigest(key) && digests.count <= Self.maximumDigests
             && digests.allSatisfy(Self.isDigest) && Set(digests).count == digests.count
             && (lastSuccess.map { $0.timeIntervalSince1970.isFinite } ?? true)
+            && (authoredReviewWatermarks.map { reviews in
+                reviews.count <= Self.maximumAuthoredReviewWatermarks && reviews.allSatisfy { id, mark in
+                    Self.isDigest(id) && Self.isDigest(mark.reviewDigest) && mark.submittedAt.timeIntervalSince1970.isFinite
+                }
+            } ?? true)
     }
 }
 
