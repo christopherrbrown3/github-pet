@@ -44,6 +44,30 @@ import Testing
         #expect(relaunched.unseenCount == 0)
     }
 
+    @Test func relaunchWithAPendingReviewReseedUsesOnlyFreshCompleteNonReviewEvidence() throws {
+        let direct = BaselineKey(source: .fixtures, identity: .demo, scope: .everything, assignmentMode: .direct)
+        for quality in [SourceQuality.ready, .partial, .stale, .error] {
+            let defaults = EphemeralDefaults(name: "assignment-relaunch.tests.\(UUID().uuidString)")
+            let store = EventBaselineStore(defaults: defaults)
+            var settings = PetSettings()
+            settings.assignmentMode = .direct
+            SettingsStore(defaults: defaults).save(settings)
+            // The comparison predates the new direct review and personal issue, with one old team review.
+            store.save(EventBaseline(key: direct.value, digests: [EventBaseline.digest("reviewRequest:team")],
+                                     baselineEstablished: true, quality: quality, lastSuccess: date - 60,
+                                     reviewReachPending: true))
+
+            let app = demo(defaults)
+            #expect(app.settings.assignmentMode == .direct && app.dataState == .ready)
+            let unseen = app.items.filter(app.isUnseen).map(\.kind)
+            #expect(unseen == (quality == .ready ? [.assignedIssue] : []))
+            #expect(store.load(for: direct)?.reviewReachPending == nil)
+            app.markAllSeen()
+            app.replaySnapshot()
+            #expect(app.unseenCount == 0)
+        }
+    }
+
     @Test func scopedModeKeepsDualAndPersonalReviewsAuthoredAttentionAndIncidents() async throws {
         let app = scoped(); defer { app.cleanupScopeSimulation() }
         await app.repositoryPollSettled()
@@ -71,7 +95,8 @@ import Testing
         #expect(app.items == all.filter { $0.repository != "demo-outside/pet" })
         #expect(app.items.contains { $0.kind == .authoredPullRequest })
         #expect(app.items.contains { $0.kind == .reviewRequest && $0.repository == "demo-a/new-pet" })
-        #expect(app.serviceIncidents == incidents && app.activeClip == incidentAttention && app.unseenCount == 0)
+        #expect(app.serviceIncidents == incidents && app.activeClip == incidentAttention)
+        #expect(app.items.filter(app.isUnseen).map(\.kind) == [.authoredPullRequest])
 
         app.simulateScopeApply(true)
         await app.repositoryPollSettled()
@@ -95,6 +120,66 @@ import Testing
         #expect(bootstrap.first?.identityOnly == true && bootstrap.first?.searchAliases.isEmpty == true)
         #expect(bootstrap.last?.assignmentMode == .direct && bootstrap.last?.expected == ScopeSimulation.accountB)
         #expect(app.unseenCount == 0)
+    }
+
+    @Test func heldModeChangeKeepsNonReviewAttentionAndFirstReplyCanAnnounceANewAssignment() async throws {
+        let app = scoped(); defer { app.cleanupScopeSimulation() }
+        await app.repositoryPollSettled()
+        app.simulateScopeApply(false)
+        await app.repositoryPollSettled()
+        app.simulateAssignedIssue()
+        await app.repositoryPollSettled()
+        app.simulateScopeAuthored(.changesRequested)
+        await app.repositoryPollSettled()
+        app.simulateScopeInject()
+        await app.repositoryPollSettled()
+        let originalClip = try #require(app.activeClip)
+        #expect(originalClip.event.item.kind == .assignedIssue && app.unseenCount == 3)
+        let kept = app.items.filter { $0.kind != .reviewRequest }
+        let identity = try #require(app.monitoringScopeIdentity)
+        let defaults = EphemeralDefaults.named(try #require(app.simulationDomain))
+        let store = EventBaselineStore(defaults: defaults)
+        let all = BaselineKey(source: .githubCLI, identity: identity, scope: .everything)
+        let oldBaseline = try #require(store.load(for: all))
+
+        app.simulateScopeHold()
+        await app.scopeRepliesHeld(1)
+        app.simulateAssignedIssue()
+        app.simulateScopeInject()
+        app.simulateScopeHold(refresh: false)
+        app.simulateAssignmentMode(.direct)
+        await app.scopeRepliesHeld(2)
+        #expect(app.dataState == .loading && app.items == kept && app.hiddenResultCount == 0)
+        #expect(app.unseenCount == 2 && app.activeClip == originalClip)
+        let direct = BaselineKey(source: .githubCLI, identity: identity, scope: .everything, assignmentMode: .direct)
+        let pending = try #require(store.load(for: direct))
+        #expect(pending.reviewReachPending == true && pending.digests == oldBaseline.digests)
+        #expect(pending.quality == oldBaseline.quality && pending.lastSuccess == oldBaseline.lastSuccess)
+        #expect(SettingsStore(defaults: defaults).load().assignmentMode == .direct)
+
+        app.simulateScopeDeliverOne(newest: true)
+        await app.repositoryPollSettled()
+        #expect(app.dataState == .ready && app.items.count == 6 && app.unseenCount == 3)
+        #expect(app.items.filter(app.isUnseen).filter { $0.kind == .assignedIssue }.count == 2)
+        #expect(!app.items.contains { $0.repository == "demo-outside/pet" || ($0.kind == .reviewRequest && app.isUnseen($0)) })
+        #expect(store.load(for: direct)?.reviewReachPending == nil)
+        let firstDirect = app.items
+        let received = app.receivedScopeReplies
+        app.simulateScopeDeliverOne(newest: false)
+        await app.scopeRepliesReceived(received + 1)
+        #expect(app.items == firstDirect && app.unseenCount == 3 && app.discardedScopeReplies == 1)
+
+        app.markAllSeen()
+        app.refresh()
+        await app.repositoryPollSettled()
+        #expect(app.unseenCount == 0)
+        app.simulateScopeInject()
+        await app.repositoryPollSettled()
+        #expect(app.items.filter(app.isUnseen).map(\.kind) == [.reviewRequest])
+        app.simulateAssignmentMode(.all)
+        await app.repositoryPollSettled()
+        #expect(app.items.contains { $0.repository == "demo-outside/pet" })
+        #expect(app.unseenCount == 0 && app.activeClip == originalClip)
     }
 
     @Test func switchingBackBeforeAHeldReplySettlesSeedsSilentlyAndRejectsTheOldReply() async throws {
@@ -148,9 +233,13 @@ import Testing
         app.simulateScopeInject()
         await app.repositoryPollSettled()
         #expect(app.unseenCount == 1)
+        #expect(app.activeClip?.event.item.kind == .reviewRequest)
         app.markAllSeen()
         app.replaySnapshot()
         await app.repositoryPollSettled()
         #expect(app.unseenCount == 0)
+        app.simulateAssignmentMode(.all)
+        await app.repositoryPollSettled()
+        #expect(app.unseenCount == 0 && app.activeClip == nil)
     }
 }

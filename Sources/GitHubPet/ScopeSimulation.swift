@@ -11,6 +11,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     private let lock = NSLock()
     private var currentAccount = accountA
     private var sequence: [ScopeAccount: Int] = [:]
+    private var assignedSequence: [ScopeAccount: Int] = [:]
     private var partial = false
     /// #9 authored PR fixtures. `off` returns empty authored pages (the default).
     enum Authored: String, CaseIterable {
@@ -49,6 +50,10 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
 
     func switchAccount(_ account: ScopeAccount) { lock.lock(); currentAccount = account; lock.unlock() }
     func inject() { lock.lock(); sequence[currentAccount] = min(31, sequence[currentAccount, default: 0] + 1); lock.unlock() }
+    func injectAssignedIssue() {
+        lock.lock(); defer { lock.unlock() }
+        assignedSequence[currentAccount] = min(ScopeQueryPlan.rowsPerCategory, assignedSequence[currentAccount, default: 0] + 1)
+    }
     func setPartial(_ on: Bool) { lock.lock(); partial = on; lock.unlock() }
     func setAuthored(_ mode: Authored) { lock.lock(); authored = mode; lock.unlock() }
     func setVisibility(_ mode: Visibility) { lock.lock(); visibility = mode; lock.unlock() }
@@ -117,6 +122,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         catch { return .failure(.cancelled) }
         lock.lock()
         let account = currentAccount, count = sequence[account, default: 0], partial = self.partial, visibility = self.visibility, authored = self.authored
+        let assignedCount = assignedSequence[account, default: 0]
         let gate = holdNext > 0 ? DispatchSemaphore(value: 0) : nil
         var ready: [CheckedContinuation<Void, Never>] = []
         if let gate {
@@ -153,6 +159,17 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                     nodes.append(["__typename": "PullRequest", "id": "PR_\(account.viewerID)_\(index)", "number": index + 1,
                                   "title": "Simulated review \(index)", "url": "https://github.com/\(repo)/pull/\(index + 1)",
                                   "updatedAt": "2026-11-15T12:00:00Z", "repository": ["nameWithOwner": repo]])
+                }
+            }
+            if search.kind == .assignedIssue && assignedCount > 0 {
+                let repo = "\(owner)/pet"
+                if search.targetIndex.map({ scope.targets[$0].includes(repo) }) ?? true {
+                    for offset in 0..<assignedCount {
+                        let number = 300 + offset
+                        nodes.append(["__typename": "Issue", "id": "I_\(account.viewerID)_\(number)", "number": number,
+                                      "title": "Simulated assigned issue \(number)", "url": "https://github.com/\(repo)/issues/\(number)",
+                                      "updatedAt": "2026-11-15T12:00:00Z", "repository": ["nameWithOwner": repo]])
+                    }
                 }
             }
             if search.kind == .authoredPullRequest && authored != .off {

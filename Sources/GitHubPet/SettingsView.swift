@@ -26,7 +26,7 @@ struct SettingsView: View {
     }
 }
 
-private struct AssignmentModeSection: View {
+struct AssignmentModeSection: View {
     @ObservedObject var model: AppModel
 
     var body: some View {

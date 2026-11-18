@@ -68,8 +68,9 @@ final class AppModel: ObservableObject {
         didSet {
             guard settings != oldValue else { return }
             let assignmentChanged = settings.assignmentMode != oldValue.assignmentMode
-            // Remove the previous baseline even if the user switches back before a poll completes.
-            if assignmentChanged { baselineStore.reset() }
+            if assignmentChanged && settings.dataSource == oldValue.dataSource {
+                prepareAssignmentModeChange(from: oldValue.assignmentMode)
+            }
             store.save(settings)
             if settings.dataSource != oldValue.dataSource { switchSource() }
             else if assignmentChanged { switchAssignmentMode() }
@@ -427,17 +428,32 @@ final class AppModel: ObservableObject {
         blockedLinkNote = nil
     }
 
+    private func prepareAssignmentModeChange(from previousMode: AssignmentMode) {
+        _ = engine.refreshFreshness(now: clock())
+        engine.beginReviewReachChange()
+        let reviewPrefix = "\(ItemKind.reviewRequest.rawValue):"
+        for id in unseen.ids where id.hasPrefix(reviewPrefix) { unseen.remove(id) }
+        // Entitlement reviews have the same review ID after display-time reclassification.
+        clips.clear(origin: .repository, matching: { $0.item.id.hasPrefix(reviewPrefix) })
+
+        guard let oldKey = makeBaselineKey(assignmentMode: previousMode), let newKey = currentBaselineKey else { return }
+        if baselineKey == oldKey {
+            baselineKey = newKey
+            persistBaseline()
+        } else if baselineKey == nil, var saved = baselineStore.load(for: oldKey) {
+            // Settings can be changed before the first reply has restored a saved baseline.
+            saved.key = newKey.value
+            saved.reviewReachPending = true
+            baselineStore.save(saved)
+        }
+    }
+
     private func switchAssignmentMode() {
         scopeSession.changeAssignmentMode()
         queuedRefreshGeneration = nil
         repositoryTask?.cancel()
         repositoryTask = nil
 
-        engine.reset()
-        baselineKey = nil
-        let actionsIDs = Set(actionsEngine.items.map(\.id))
-        for id in unseen.ids.subtracting(actionsIDs) { unseen.remove(id) }
-        clips.clear(origin: .repository, matching: { !actionsIDs.contains($0.item.id) })
         if settings.dataSource == .githubCLI { sync(now: clock()) }
         refreshRepositoriesOnly()
     }
@@ -686,9 +702,13 @@ final class AppModel: ObservableObject {
     }
 
     private var currentBaselineKey: BaselineKey? {
+        makeBaselineKey(assignmentMode: settings.assignmentMode)
+    }
+
+    private func makeBaselineKey(assignmentMode: AssignmentMode) -> BaselineKey? {
         guard let identity = scopeSession.identity, let scope = scopeSession.scope else { return nil }
         return BaselineKey(source: settings.dataSource, identity: identity, scope: scope,
-                           assignmentMode: settings.assignmentMode)
+                           assignmentMode: assignmentMode)
     }
 
     private func persistBaseline() {
@@ -771,6 +791,7 @@ final class AppModel: ObservableObject {
     /// empty inbox is never "All clear" while they are incomplete, and neither an empty nor a
     /// hidden-only inbox claims "nothing visible" while failure rows are shown.
     private var displayedState: DataState {
+        if engine.reviewReachPending && engine.state.countIsKnown { return .loading }
         switch engine.state {
         case .empty:
             if actionsQuality != nil { return .partial }
@@ -915,6 +936,17 @@ final class AppModel: ObservableObject {
     }
 
     // Explicit offline launch only; these controls never exist in a normal session.
+    func simulateAssignmentMode(_ mode: AssignmentMode) {
+        guard scopeSimulation != nil else { return }
+        settings.assignmentMode = mode
+    }
+
+    func simulateAssignedIssue() {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.injectAssignedIssue()
+        refreshRepositoriesOnly()
+    }
+
     func simulateScopeAccount(_ isB: Bool) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.switchAccount(isB ? ScopeSimulation.accountB : ScopeSimulation.accountA)

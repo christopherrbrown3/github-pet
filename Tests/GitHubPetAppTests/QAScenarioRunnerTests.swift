@@ -78,11 +78,12 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         for name in QAScenarioRunner.builtInScenarios.keys {
             #expect(refusal(sim + [name]) == nil, "built-in \(name) must validate")
         }
-        // PR A's set plus #35's hidden-results; PR B's Settings scenarios are pinned in SettingsScenarioRunnerTests.
+        // Settings draft scenarios are pinned in SettingsScenarioRunnerTests.
         #expect(Set(QAScenarioRunner.coreScenarios.keys) == ["restore-before-display", "account-a-b-a", "stale-reply-after-apply",
             "corrupt-saved-selected", "partial-recovery-new-once", "incidents-preserved", "privacy-summary", "demo-isolation",
-            "hidden-results"])
+            "hidden-results", "assignment-reach"])
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"visibility","mode":"secret"}]}"#)]) != nil)
+        #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"assignment","mode":"unknown"}]}"#)]) != nil)
     }
 
     @Test func outputNeverOverwritesFilesTheRunnerDidNotWrite() throws {

@@ -40,14 +40,17 @@ public struct EventBaseline: Codable, Equatable, Sendable {
     public var baselineEstablished: Bool
     public var quality: SourceQuality
     public var lastSuccess: Date?
+    /// Present during a review-only reseed. Older records have no flag.
+    public var reviewReachPending: Bool?
 
     public init(key: String, digests: [String], baselineEstablished: Bool,
-                quality: SourceQuality, lastSuccess: Date?) {
+                quality: SourceQuality, lastSuccess: Date?, reviewReachPending: Bool? = nil) {
         self.key = key
         self.digests = digests
         self.baselineEstablished = baselineEstablished
         self.quality = quality
         self.lastSuccess = lastSuccess
+        self.reviewReachPending = reviewReachPending
     }
 
     /// 128-bit SHA-256 prefix of a stable ID, lowercase hex.
@@ -67,8 +70,8 @@ public struct EventBaseline: Codable, Equatable, Sendable {
     }
 }
 
-/// Identifies one baseline session. Any change of source, account, scope or review reach changes the key, so
-/// the previous record is discarded and the next complete snapshot re-baselines silently.
+/// Identifies one baseline session. Only a review-reach change within the same source, account
+/// and repository scope can carry prior comparison evidence to a new key.
 public struct BaselineKey: Equatable, Sendable {
     public let value: String
 
