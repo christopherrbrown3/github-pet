@@ -6,7 +6,7 @@ mode=${1:---run}
 [[ "$mode" == --run || "$mode" == --build-only ]] || { echo 'expected --run or --build-only' >&2; exit 1; }
 if [[ "$mode" == --run ]]; then
   [[ "${GITHUB_ACTIONS:-}" == true && "${RUNNER_OS:-}" == macOS && "${RUNNER_ENVIRONMENT:-}" == github-hosted ]] || {
-    echo 'dismissal durability requires a disposable GitHub-hosted macOS runner' >&2
+    echo 'dismissal startup persistence requires a disposable GitHub-hosted macOS runner' >&2
     exit 1
   }
 fi
@@ -23,7 +23,9 @@ swiftc -I "$build/Modules" Tests/ExternalDismissalStoreClient/main.swift "${obje
 suite="dev.github-pet.dismissal-durability-ci.$(/usr/bin/uuidgen)"
 writer_status=0
 reader_status=0
-"$client" write "$suite" || writer_status=$?
-"$client" verify "$suite" || reader_status=$?
-echo "Dismissal durability exit codes - writer $writer_status, reader $reader_status"
+"$client" write "$suite" &
+writer_pid=$!
+wait "$writer_pid" || writer_status=$?
+"$client" verify "$suite" "$writer_pid" || reader_status=$?
+echo "Dismissal startup persistence exit codes - writer $writer_status, reader $reader_status"
 (( writer_status == 0 && reader_status == 0 ))

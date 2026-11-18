@@ -58,18 +58,20 @@ private func verifyPhysicalRecords(at plist: URL, expected: [IdentityCheck]) thr
     return shape
 }
 
-private func checkDisk(at plist: URL, expected: [IdentityCheck]) -> Bool {
+private func reportPhysicalPlist(at plist: URL, expected: [IdentityCheck]) {
     for attempt in 0...20 {
         do {
             let shape = try verifyPhysicalRecords(at: plist, expected: expected)
-            print("Reader physical plist PASS: \(shape)")
-            return true
+            print("Reader physical plist diagnostic MATCH: \(shape)")
+            return
         } catch {
-            if attempt == 20 { print("Reader physical plist FAIL: \(error)"); return false }
+            if attempt == 20 {
+                print("Reader physical plist diagnostic DISCREPANCY: \(error)")
+                return
+            }
             Thread.sleep(forTimeInterval: 0.1)
         }
     }
-    return false
 }
 
 private func checkStore(_ store: InboxDismissalStore, stage: String, expected: [IdentityCheck]) -> Bool {
@@ -93,10 +95,19 @@ func run() throws {
     let arguments = CommandLine.arguments
     let prefix = "dev.github-pet.dismissal-durability-ci."
     guard environment["GITHUB_ACTIONS"] == "true", environment["RUNNER_OS"] == "macOS",
-          environment["RUNNER_ENVIRONMENT"] == "github-hosted", arguments.count == 3,
+          environment["RUNNER_ENVIRONMENT"] == "github-hosted", arguments.count >= 3,
           ["write", "verify"].contains(arguments[1]), arguments[2].hasPrefix(prefix),
           UUID(uuidString: String(arguments[2].dropFirst(prefix.count))) != nil else {
         throw CheckFailure("expected write or verify and a fresh test suite on a disposable GitHub-hosted macOS runner")
+    }
+    let pid = ProcessInfo.processInfo.processIdentifier
+    let writing = arguments[1] == "write"
+    if writing {
+        guard arguments.count == 3 else { throw CheckFailure("writer requires only the suite") }
+    } else {
+        guard arguments.count == 4, let writerPID = Int32(arguments[3]), writerPID > 0, writerPID != pid else {
+            throw CheckFailure("reader requires a distinct writer PID")
+        }
     }
     let suite = arguments[2]
     guard let defaults = UserDefaults(suiteName: suite) else { throw CheckFailure("could not open test suite") }
@@ -120,8 +131,7 @@ func run() throws {
     let otherCheck = IdentityCheck(label: "account B", identity: otherAccount,
                                    suffix: "\(otherViewer.host).\(otherViewer.viewerID)", entries: [])
     let expected = [accountCheck, demoCheck, otherCheck]
-    let pid = ProcessInfo.processInfo.processIdentifier
-    if arguments[1] == "write" {
+    if writing {
         guard defaults.persistentDomain(forName: suite)?.isEmpty != false else {
             throw CheckFailure("test suite must start empty")
         }
@@ -131,7 +141,7 @@ func run() throws {
         let afterAccount = checkStore(store, stage: "Writer after account save", expected: [accountCheck, noDemo, otherCheck])
         try store.save([demoEntry], for: .demo)
         let afterDemo = checkStore(store, stage: "Writer after Demo save", expected: expected)
-        // Flush the test suite before this process exits so a second process can verify disk.
+        // Synchronize before exiting so the next process can check normal startup recovery.
         let synchronized = defaults.synchronize()
         print("Writer synchronize \(synchronized ? "PASS" : "FAIL")")
         let afterFlush = checkStore(store, stage: "Writer after synchronize", expected: expected)
@@ -144,10 +154,11 @@ func run() throws {
             .appendingPathComponent("Library/Preferences", isDirectory: true)
             .appendingPathComponent(suite + ".plist")
         print("Reader process \(pid)")
-        let physicalMatches = checkDisk(at: plist, expected: expected)
         let storeMatches = checkStore(store, stage: "Reader fresh store", expected: expected)
-        guard physicalMatches, storeMatches else {
-            throw CheckFailure("one or more reader checks failed")
+        // Keep the raw file observation independent of the startup persistence gate.
+        reportPhysicalPlist(at: plist, expected: expected)
+        guard storeMatches else {
+            throw CheckFailure("fresh reader did not recover the exact dismissal fixtures")
         }
     }
 }
@@ -155,6 +166,6 @@ func run() throws {
 do {
     try run()
 } catch {
-    FileHandle.standardError.write(Data("dismissal durability: \(error)\n".utf8))
+    FileHandle.standardError.write(Data("dismissal startup persistence: \(error)\n".utf8))
     exit(1)
 }

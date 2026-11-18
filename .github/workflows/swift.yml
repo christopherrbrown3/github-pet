@@ -52,7 +52,7 @@ jobs:
       - name: External public CommandRunner API
         timeout-minutes: 2
         run: scripts/test-public-budget.sh
-      - name: Dismissal durability across processes
+      - name: Dismissal startup persistence across processes
         timeout-minutes: 2
         run: scripts/test-dismissal-durability.sh
       - name: Check out PR head for packaging
