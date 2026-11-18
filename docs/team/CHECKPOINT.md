@@ -1,3 +1,17 @@
+# Current authority and dispatch — 2026-11-18
+
+Chris transferred sole PM authority to Codex **t1r**, GPT-6.2 Sol, after Claude reached its weekly limit. Route reports to `hc send t1r`. The prior Claude sessions t61–t64 are suspended with their worktrees and evidence preserved. This entry and live GitHub state supersede all earlier status snapshots below.
+
+- Developer **t68** uses GPT-6.2 Sol, high effort, in `developer-assignment-77`, branch `feat/77-direct-assignment`, for #77 team versus direct assignments.
+- Developer **t69** uses GPT-6.2 Sol, high effort, in `developer-dismiss-78`, branch `feat/78-dismiss-inbox-items`, for #78 persistent dismissal and restore.
+- QA **t6b** uses GPT-6.2 Sol, medium effort, in `qa-nov18`, branch `qa/nov18-takeover`. It is continuing the independent PR76 review and preparing acceptance for both features. Historical QA at `qa-engineer` remains available as evidence.
+
+Both feature briefs are approved. #77 changes review-request reach with a persisted Settings choice. All is the default. Direct-only uses GitHub’s documented `user-review-requested:@me` qualifier. Assigned issues already use `assignee:@me`. The change preserves independent monitoring sources and silently establishes a new repository baseline. #78 dismisses primary Inbox rows locally using stable item identity and per-account persistence, with a separate Demo namespace. The shared Inbox provides View dismissed and Restore. A dismissed row stays restorable when absent from the current results. Restore stays silent and coverage still determines source quality.
+
+The two feature worktrees start at main `7dfa0e264e353d0beca0cfe4bcb0d0a37c772a04`. Both issues are In Progress on Project 3. PR76 `bbc11fe0925c644320adbcf8c120b69b7cfdc86b` has green CI44155961676 against its original base but conflicts on README.md with current main. It needs a history-preserving integration and fresh CI before merge. Published beta.1 remains the current release.
+
+QA independently reviews PR diffs and verifies product behavior. Developer owns production code, unit and regression tests, and build CI. Use installed gh for authenticated GitHub operations. Chris has prohibited Copilot reviews. Merge only after current-head green CI, head ancestry includes current main, and independent acceptance. PM uses `--match-head-commit` and a merge commit. Releases, tags, Homebrew publication and auto-merge require separate user direction.
+
 # Current authority — fresh Claude PM t61, 2026-11-16
 
 Chris explicitly requests Claude PM takeover and new Claude specialists because Codex usage is low. Fresh PM **t61 / claude-pm-handoff**, Claude Opus5.5, verified actual argv/runtime and PM_READY at commit3839182. Sole authority transfers from t1r on explicit HANDOFF_GRANTED; after grant reports go `hc send t61` and t1r freezes PM writes/dispatch. Read handoffs/claude-pm-2026-11-16.md and live state. The old product-manager alias reaches retiredt49; use actualt61.

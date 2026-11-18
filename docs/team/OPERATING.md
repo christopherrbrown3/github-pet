@@ -1,3 +1,15 @@
+# Current authority and dispatch — 2026-11-18
+
+Chris transferred sole PM authority to Codex **t1r**, GPT-6.2 Sol, after Claude reached its weekly limit. Route reports to `hc send t1r`. The prior Claude sessions t61–t64 are suspended with their worktrees and evidence preserved. This entry and live GitHub state supersede all earlier status snapshots below.
+
+- Developer **t68** uses GPT-6.2 Sol, high effort, in `developer-assignment-77`, branch `feat/77-direct-assignment`, for #77 team versus direct assignments.
+- Developer **t69** uses GPT-6.2 Sol, high effort, in `developer-dismiss-78`, branch `feat/78-dismiss-inbox-items`, for #78 persistent dismissal and restore.
+- QA **t6b** uses GPT-6.2 Sol, medium effort, in `qa-nov18`, branch `qa/nov18-takeover`. It is continuing the independent PR76 review and preparing acceptance for both features. Historical QA at `qa-engineer` remains available as evidence.
+
+The two feature worktrees start at main `7dfa0e264e353d0beca0cfe4bcb0d0a37c772a04`. Both issues are In Progress on Project 3. PR76 `bbc11fe0925c644320adbcf8c120b69b7cfdc86b` has green CI44155961676 against its original base but conflicts on README.md with current main. It needs a history-preserving integration and fresh CI before merge. Published beta.1 remains the current release.
+
+QA independently reviews PR diffs and verifies product behavior. Developer owns production code, unit and regression tests, and build CI. Use installed gh for authenticated GitHub operations. Chris has prohibited Copilot reviews. Merge only after current-head green CI, head ancestry includes current main, and independent acceptance. PM uses `--match-head-commit` and a merge commit. Releases, tags, Homebrew publication and auto-merge require separate user direction.
+
 # Checkpoint — t61, 2026-11-16 evening (beta RC)
 
 All narrow-beta work is merged on main d1a05ac: PR51/59 scope, PR50/55 packs, PR54 popover, PR56 no-token scanner, PR57/62 login item + Settings toggle, PR58 install docs, PR63 restart baseline, PR64 access/SAML messages, PR65 entitlement repos, PR66 refresh queue/wake, PR67/68 test hygiene, PR69 beta README + screenshots. Each was merged with exact-head CI, independent QA source review (+ functional where safely possible), no Copilot. Beta RC build: /Users/chris/github-pet-builds/beta-rc-d1a05ac (from main CI). Remaining: Chris's live smoke with docs/qa/beta-smoke-checklist.md (QA branch 2b0770b), then Chris's explicit release approval. No tag/release/Homebrew before that. Follow-ups in #60. Agents idle: developer t62, developer-2 t64, QA t63.
@@ -96,7 +108,7 @@ Launch directories initially pointed at the coordinator checkout; scoped dispatc
 3. Send scoped task with issue, branch/worktree, allowed paths, acceptance criteria, report destination and no-merge rule via `hc send <agent> <task>`.
 4. Continue PM work; use `hc wait <pm> --children any --timeout 45` for events. `hc read <agent>` collects evidence. Do not infer completion from silence.
 5. Record exact SHA, deliverable/PR, checks and limitations in the issue. Advance to In Review only when deliverable exists.
-6. Request Copilot review if available. Route exact SHA to independent QA. Status In QA means verification is underway, not that it passed.
+6. Route the exact commit to QA for independent PR review and scoped functional verification. Use QA and CI evidence for acceptance. Copilot review requests are disabled by Chris’s instruction.
 7. QA posts pass/fail/blocked evidence and reproducible defects. Send defects to Developer; verify new SHA with QA again.
 8. Mark blocked with reason and recovery owner when external input is needed. Preserve ready work. Never bypass model usage limits.
 9. Done requires acceptance evidence and any required owner approval. Chris now authorizes merging ready PRs after review findings are handled; validate the current SHA and required acceptance first.
