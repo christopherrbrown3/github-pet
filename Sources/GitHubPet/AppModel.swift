@@ -32,6 +32,10 @@ final class AppModel: ObservableObject {
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
+    @Published private(set) var dismissedInboxRows: [DismissedInboxRow] = []
+    @Published private(set) var inboxDismissalContext: InboxDismissalContext?
+    @Published private(set) var inboxDismissalNotice: String?
+    @Published private(set) var allCurrentInboxItemsDismissed = false
     @Published private(set) var dataState: DataState = .loading
     @Published private(set) var scopeSummary = "Monitoring scope · resolving account"
     @Published private(set) var scopeQuality: String?
@@ -90,6 +94,7 @@ final class AppModel: ObservableObject {
     private let snapshotMode: Bool
     private var snapshotCLIFailure: FetchFailure = .ghMissing
     private let engine = InboxEngine()
+    private var dismissals: InboxDismissalState
     /// #10: workflow failures have their own engine and baseline, so an unreadable watched
     /// repository never stops the inbox from announcing, and a coverage change seeds silently.
     private let actionsEngine = InboxEngine()
@@ -151,6 +156,7 @@ final class AppModel: ObservableObject {
             && options.qaScenario == nil && options.defaultsSuite == nil
         loginItem = LoginItemSettings(backend: runtime.loginItemBackend ?? (normalLaunch ? SystemLoginItemBackend() : nil))
         store = SettingsStore(defaults: options.userDefaults)
+        dismissals = InboxDismissalState(defaults: options.userDefaults)
         baselineStore = EventBaselineStore(defaults: options.userDefaults)
         simulationDefaultsSuite = options.simulatesMonitoringScope ? options.defaultsSuite : nil
         scopeDefaults = options.userDefaults
@@ -255,14 +261,22 @@ final class AppModel: ObservableObject {
 
     var badge: String? { MascotPolicy.badge(dataState: dataState, count: items.count) }
 
+    var inboxCountDescription: String {
+        dismissedInboxMessage ?? MascotPolicy.countDescription(dataState: dataState, count: items.count)
+    }
+
+    var dismissedInboxMessage: String? {
+        allCurrentInboxItemsDismissed ? "All current Inbox items are dismissed." : nil
+    }
+
     /// What the mascot's badge shows (capped at "99+"); `badge` and accessibility keep the full count.
     var mascotBadge: String? { MascotPolicy.mascotBadge(dataState: dataState, count: items.count) }
 
     /// Fixture data is always identified as Demo, in every surface and in privacy mode.
     /// Informational note beside visible rows; never a Partial badge, warning or mood change.
-    /// (Zero visible rows use the `.hiddenOnly` state instead.)
+    /// A dismissal can hide the last local row while these GitHub-side matches still exist.
     var hiddenResultsNote: String? {
-        dataState == .ready && hiddenResultCount > 0 ? HiddenResults.notVisible(hiddenResultCount) : nil
+        displayedState == .ready && hiddenResultCount > 0 ? HiddenResults.notVisible(hiddenResultCount) : nil
     }
 
     /// Your open PRs that need nothing from you (#9): one informational line, never rows,
@@ -274,7 +288,8 @@ final class AppModel: ObservableObject {
 
     var summaryLines: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount,
-                            privacy: settings.privacyMode, demo: isDemo, demoSource: demoSource)
+                            privacy: settings.privacyMode, demo: isDemo, demoSource: demoSource,
+                            emptyInboxMessage: dismissedInboxMessage)
     }
 
     /// Where Demo data comes from: the --simulate-monitoring-scope launch is not fixtures.
@@ -309,7 +324,8 @@ final class AppModel: ObservableObject {
     func hoverLines(compact: Bool) -> [String] {
         compact
             ? IncidentMarker.compactHoverLines(dataState: dataState, items: items, unseenCount: unseenCount,
-                                               demo: isDemo, demoSource: demoSource, marker: incidentMarker)
+                                               demo: isDemo, demoSource: demoSource, marker: incidentMarker,
+                                               emptyInboxMessage: allCurrentInboxItemsDismissed ? "Current items dismissed" : nil)
             : IncidentMarker.hoverLines(fullHoverSummary, marker: incidentMarker)
     }
 
@@ -317,13 +333,15 @@ final class AppModel: ObservableObject {
     /// (the Inbox lists them all), so placement beside the character is unchanged (#27).
     private var fullHoverSummary: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount, privacy: settings.privacyMode,
-                            demo: isDemo, demoSource: demoSource, maxLines: incidentMarker == nil ? 3 : 2)
+                            demo: isDemo, demoSource: demoSource, maxLines: incidentMarker == nil ? 3 : 2,
+                            emptyInboxMessage: dismissedInboxMessage)
     }
 
     /// Count of actionable items plus, separately, active incidents (#37); the badge stays items only.
     var statusAccessibilityLabel: String {
         IncidentMarker.statusLabel(dataState: dataState, count: items.count, demo: isDemo,
-                                   needsAttention: showsAlertIcon, marker: incidentMarker)
+                                   needsAttention: showsAlertIcon, marker: incidentMarker,
+                                   countDescription: dismissedInboxMessage)
     }
 
     /// Shown only for a fresh, confirmed unresolved incident (#37).
@@ -649,8 +667,10 @@ final class AppModel: ObservableObject {
             if let key, let saved = baselineStore.load(for: key) { engine.restore(saved) }
             baselineKey = key
         }
-        let events = engine.apply(outcome, now: date)
+        let sourceEvents = engine.apply(outcome, now: date)
         persistBaseline()
+        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items)
+        let events = sourceEvents.filter { !dismissals.hiddenIDs.contains($0.item.id) }
         unseen.record(events)
         unseen.reconcile(after: outcome, items: engine.items + actionsEngine.items)
         let shown = events.map { event in
@@ -764,10 +784,17 @@ final class AppModel: ObservableObject {
         scopeSummary = scopeSession.summary
         scopeQuality = scopeSession.qualitySummary
         scopeSimulationStatus = scopeSimulation?.status ?? ""
-        let shown = InboxEngine.dedupe(engine.items + actionsEngine.items).map(classified)
+        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items)
+        let primary = engine.items.filter { !dismissals.hiddenIDs.contains($0.id) }
+        let shown = InboxEngine.dedupe(primary + actionsEngine.items).map(classified)
         if items != shown { items = shown }
-        let state = displayedState
+        let onlyDismissed = shown.isEmpty && !dismissals.hiddenIDs.isEmpty
+        let sourceState = displayedState
+        let state: DataState = onlyDismissed && sourceState == .ready && actionsQuality != nil ? .partial : sourceState
         if dataState != state { dataState = state }
+        let showsDismissedMessage = onlyDismissed && state == .ready
+        if allCurrentInboxItemsDismissed != showsDismissedMessage { allCurrentInboxItemsDismissed = showsDismissedMessage }
+        syncDismissedInbox()
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
         if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
         if authoredWaitingCount != scopeSession.waitingOnOthers { authoredWaitingCount = scopeSession.waitingOnOthers }
@@ -781,6 +808,51 @@ final class AppModel: ObservableObject {
     }
 
     // MARK: Actions
+
+    /// The last saved scope identity can exist before the CLI has returned a viewer.
+    private var verifiedDismissalIdentity: ScopeIdentity? {
+        switch scopeSession.identity {
+        case .demo: return .demo
+        case .github(let account) where scopeSession.viewer?.account == account: return .github(account)
+        default: return nil
+        }
+    }
+
+    private func syncDismissedInbox() {
+        // Keep filtering any retained rows during auth/setup failures. Management waits for
+        // an account we can edit, and failure states keep their ordinary quality message.
+        let identity = engine.state == .unauthenticated || engine.state == .ghMissing ? nil : verifiedDismissalIdentity
+        let context = identity.map { InboxDismissalContext(identity: $0, generation: scopeSession.generation) }
+        if inboxDismissalContext != context { inboxDismissalContext = context }
+        let rows = context == nil ? [] : dismissals.rows(showCurrentItems: engine.state == .ready || engine.state == .partial,
+                                                        classify: classified)
+        if dismissedInboxRows != rows { dismissedInboxRows = rows }
+        let notice = context == nil ? nil : dismissals.notice
+        if inboxDismissalNotice != notice { inboxDismissalNotice = notice }
+    }
+
+    func canDismissInboxItem(_ item: InboxItem) -> Bool {
+        inboxDismissalContext != nil && dismissals.canEdit && DismissedInboxItem.supports(item.kind)
+    }
+
+    func dismissInboxItem(_ id: String, in context: InboxDismissalContext) {
+        guard context == inboxDismissalContext, context.generation == scopeSession.generation,
+              let item = engine.items.first(where: { $0.id == id }), canDismissInboxItem(item) else { return }
+        let date = clock()
+        if dismissals.dismiss(classified(item), at: date) {
+            // Drop only this row's pending attention. The raw snapshot and event ledger
+            // still observe it, so a Restore cannot replay that attention.
+            unseen.remove(id)
+            clips.clearRepositoryClip(ledBy: id)
+        }
+        sync(now: date)
+    }
+
+    func restoreInboxItem(_ id: String, in context: InboxDismissalContext) {
+        guard context == inboxDismissalContext, context.generation == scopeSession.generation else { return }
+        dismissals.restore(id)
+        sync(now: clock())
+    }
 
     func markAllSeen() {
         unseen.removeAll()

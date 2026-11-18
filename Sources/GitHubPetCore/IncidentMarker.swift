@@ -155,9 +155,10 @@ public struct IncidentMarker: Equatable, Sendable {
     /// Compact hover stays at two lines (#27): the incident line, then the count's quality, with
     /// the Demo tag folded into it.
     public static func compactHoverLines(dataState: DataState, items: [InboxItem], unseenCount: Int, demo: Bool,
-                                         demoSource: String = "fixtures", marker: IncidentMarker?) -> [String] {
+                                         demoSource: String = "fixtures", marker: IncidentMarker?,
+                                         emptyInboxMessage: String? = nil) -> [String] {
         let lines = PrivacyText.compactSummary(dataState: dataState, items: items, unseenCount: unseenCount, demo: demo,
-                                               demoSource: demoSource)
+                                               demoSource: demoSource, emptyInboxMessage: emptyInboxMessage)
         guard let marker else { return lines }
         let quality = demo ? "\(PrivacyText.demoLabel) · \(lines.last ?? "")" : (lines.first ?? "")
         return [marker.hoverLine, quality]
@@ -165,8 +166,9 @@ public struct IncidentMarker: Equatable, Sendable {
 
     /// Menu-bar and mascot label: "GitHub Pet, 3 items, 1 active GitHub incident[, needs attention]".
     public static func statusLabel(dataState: DataState, count: Int, demo: Bool, needsAttention: Bool,
-                                   marker: IncidentMarker?) -> String {
-        var label = AccessibilityText.statusLabel(dataState: dataState, count: count, demo: demo, needsAttention: false)
+                                   marker: IncidentMarker?, countDescription: String? = nil) -> String {
+        var label = AccessibilityText.statusLabel(dataState: dataState, count: count, demo: demo, needsAttention: false,
+                                                  countDescription: countDescription)
         if let marker { label += ", " + marker.accessibilityClause }
         if needsAttention { label += ", needs attention" }
         return label

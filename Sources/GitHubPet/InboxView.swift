@@ -9,12 +9,13 @@ struct InboxView: View {
     var marksSeenOnClose = true
     /// README renders only: hide the fixture Simulator menu, a developer control.
     var showsSimulator = true
+    @State private var dismissedContext: InboxDismissalContext?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
             Divider()
-            content
+            inboxContent
             Divider()
             ServiceStatusSection(model: model)
             if let note = model.blockedLinkNote {
@@ -54,8 +55,7 @@ struct InboxView: View {
                         .font(.caption.bold())
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Capsule().fill(Color.accentColor.opacity(0.2)))
-                        .accessibilityLabel(MascotPolicy.countDescription(dataState: model.dataState,
-                                                                          count: model.items.count))
+                        .accessibilityLabel(model.inboxCountDescription)
                 }
             }
             if let notice = model.demoNotice {
@@ -127,6 +127,31 @@ struct InboxView: View {
         }
     }
 
+    @ViewBuilder
+    private var inboxContent: some View {
+        if let context = model.inboxDismissalContext {
+            let viewingDismissed = dismissedContext == context
+            Button(viewingDismissed ? "Back to Inbox" : "View dismissed") {
+                dismissedContext = viewingDismissed ? nil : context
+            }
+            .controlSize(.small)
+            .accessibilityIdentifier(viewingDismissed ? "inbox.backFromDismissed" : "inbox.viewDismissed")
+            if let notice = model.inboxDismissalNotice {
+                Text(notice).font(.caption)
+                    .accessibilityIdentifier("inbox.dismissalNotice")
+            }
+            if viewingDismissed {
+                DismissedInboxView(rows: model.dismissedInboxRows, privacy: model.inboxPrivacy) { id in
+                    model.restoreInboxItem(id, in: context)
+                }
+            } else {
+                content
+            }
+        } else {
+            content
+        }
+    }
+
     /// Unknown or failed data is never rendered as an empty inbox.
     @ViewBuilder
     private var content: some View {
@@ -146,8 +171,22 @@ struct InboxView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(model.items) { item in
-                        InboxRow(item: item, privacy: model.inboxPrivacy,
-                                 unseen: model.isUnseen(item)) { model.open(item) }
+                        HStack(spacing: 8) {
+                            InboxRow(item: item, privacy: model.inboxPrivacy,
+                                     unseen: model.isUnseen(item)) { model.open(item) }
+                            if let context = model.inboxDismissalContext, model.canDismissInboxItem(item) {
+                                Button {
+                                    model.dismissInboxItem(item.id, in: context)
+                                } label: {
+                                    Image(systemName: "xmark")
+                                }
+                                .buttonStyle(.borderless)
+                                .controlSize(.small)
+                                .help("Dismiss item")
+                                .accessibilityLabel("Dismiss \(PrivacyText.title(item, privacy: model.inboxPrivacy))")
+                                .accessibilityIdentifier("inbox.dismiss")
+                            }
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -167,6 +206,7 @@ struct InboxView: View {
     }
 
     private var emptyText: String {
+        if let message = model.dismissedInboxMessage { return message }
         switch model.dataState {
         case .empty: return "All clear — nothing needs you."
         case .hiddenOnly(let hidden): return "No visible items · " + HiddenResults.matchesHidden(hidden)
