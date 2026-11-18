@@ -65,6 +65,28 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
     }
     private func actionRows(_ app: AppModel) -> [InboxItem] { app.items.filter { $0.id.hasPrefix("actions:") } }
 
+    @Test func assignmentModeSwitchKeepsActionsRowsUnseenAndComparable() async throws {
+        let actions = ScriptedActions()
+        let app = model(actions); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        try await select(app, [pet])
+        app.settings.watchWorkflowFailures = true
+        try await settled(app)
+        actions.set("demo-a/pet", ["CS_before"])
+        app.requestRefresh()
+        try await settled(app)
+        #expect(app.unseen.contains("actions:CS_before"))
+
+        app.settings.assignmentMode = .direct
+        #expect(actionRows(app).map(\.id) == ["actions:CS_before"] && app.unseen.contains("actions:CS_before"))
+        try await settled(app)
+        #expect(app.unseenCount == 1)
+        actions.set("demo-a/pet", ["CS_before", "CS_after"])
+        app.requestRefresh()
+        try await settled(app)
+        #expect(app.unseen.contains("actions:CS_after") && app.unseenCount == 2)
+    }
+
     @Test func enablingTheWatchSeedsExistingFailuresSilentlyThenAnnouncesNewOnesOnce() async throws {
         let actions = ScriptedActions()
         let app = model(actions); defer { app.cleanupScopeSimulation() }
@@ -112,7 +134,7 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
         let rows = actionRows(app)
         #expect(rows.map(\.id) == ["actions:CS_known"], "the previous failure stays")
         #expect(rows.first?.title.hasSuffix(ActionsLastKnown.staleSuffix) == true, "marked last known")
-        #expect(app.actionsQuality?.hasPrefix("Workflow failures") == true, "Actions problems have their own line")
+        #expect(app.actionsQuality?.hasPrefix("GitHub Actions") == true, "Actions problems have their own line")
         #expect(app.dataState == .ready, "the inbox's own state is unaffected by Actions")
         app.requestRefresh(); try await settled(app)
         #expect(actionRows(app).first?.title == "CI failed on main" && app.actionsQuality == nil, "fresh again next cycle")
@@ -132,7 +154,7 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
         app.settings.watchWorkflowFailures = true
         try await settled(app)
         app.requestRefresh(); try await settled(app)
-        #expect(app.actionsQuality == "Workflow failures: 1 repository unavailable; showing last known.")
+        #expect(app.actionsQuality == "GitHub Actions: 1 repository unavailable; showing last known.")
         #expect(app.dataState == .ready, "the inbox stays complete")
         let before = app.unseenCount
         app.simulateScopeInject(); try await settled(app)
@@ -176,7 +198,7 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
         app.settings.watchWorkflowFailures = true
         try await settled(app)
         #expect(app.dataState != .empty && app.dataState.statusText != "All clear")
-        #expect(app.actionsQuality == "Workflow failures couldn't be fully checked; showing last known.")
+        #expect(app.actionsQuality == "GitHub Actions couldn't be fully checked; showing last known.")
         actions.failEveryCycle(false)
         app.requestRefresh(); try await settled(app)
         #expect(app.dataState == .empty && app.actionsQuality == nil, "verified empty again once Actions are readable")

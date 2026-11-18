@@ -5,6 +5,10 @@ public enum DataSourceMode: String, Codable, CaseIterable, Sendable {
     case githubCLI
 }
 
+public enum AssignmentMode: String, Codable, Sendable {
+    case all, direct
+}
+
 /// Daily quiet window in local minutes since midnight. Wraps past midnight when
 /// `startMinute > endMinute`; `startMinute == endMinute` means no quiet time.
 public struct QuietHours: Codable, Equatable, Sendable {
@@ -50,16 +54,20 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public var snoozeUntil: Date?
     public var quietHours = QuietHours()
     public var dataSource: DataSourceMode = .fixtures
+    public var assignmentMode: AssignmentMode = .all
     /// #8: local only, never committed. Normalized `owner/name` (see EntitlementRepositories).
     public var entitlementRepositories: [String] = []
     /// #10: watch GitHub Actions failures in the selected repositories. Opt-in.
     public var watchWorkflowFailures = false
+    /// #10: watch deployment approvals in the selected repositories. Opt-in.
+    public var watchDeploymentApprovals = false
 
     public init() {}
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion, mascotVisible, mascotSize, mascotOriginX, mascotOriginY
-        case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource, entitlementRepositories, watchWorkflowFailures
+        case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource, assignmentMode
+        case entitlementRepositories, watchWorkflowFailures, watchDeploymentApprovals
     }
 
     public init(from decoder: Decoder) throws {
@@ -74,8 +82,10 @@ public struct PetSettings: Codable, Equatable, Sendable {
         snoozeUntil = try? c.decodeIfPresent(Date.self, forKey: .snoozeUntil)
         quietHours = (try? c.decodeIfPresent(QuietHours.self, forKey: .quietHours)) ?? defaults.quietHours
         dataSource = (try? c.decodeIfPresent(DataSourceMode.self, forKey: .dataSource)) ?? defaults.dataSource
+        assignmentMode = (try? c.decodeIfPresent(AssignmentMode.self, forKey: .assignmentMode)) ?? defaults.assignmentMode
         entitlementRepositories = (try? c.decodeIfPresent([String].self, forKey: .entitlementRepositories)) ?? []
         watchWorkflowFailures = (try? c.decodeIfPresent(Bool.self, forKey: .watchWorkflowFailures)) ?? defaults.watchWorkflowFailures
+        watchDeploymentApprovals = (try? c.decodeIfPresent(Bool.self, forKey: .watchDeploymentApprovals)) ?? defaults.watchDeploymentApprovals
         self = sanitized()
     }
 
@@ -91,8 +101,10 @@ public struct PetSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(snoozeUntil, forKey: .snoozeUntil)
         try c.encode(quietHours, forKey: .quietHours)
         try c.encode(dataSource, forKey: .dataSource)
+        try c.encode(assignmentMode, forKey: .assignmentMode)
         try c.encode(entitlementRepositories, forKey: .entitlementRepositories)
         try c.encode(watchWorkflowFailures, forKey: .watchWorkflowFailures)
+        try c.encode(watchDeploymentApprovals, forKey: .watchDeploymentApprovals)
     }
 
     /// Clamp out-of-range values (size, non-finite coordinates, quiet-hour minutes).

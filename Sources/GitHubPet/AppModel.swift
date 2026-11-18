@@ -24,6 +24,8 @@ final class AppModel: ObservableObject {
         /// #10 Actions failures. nil: the real gh client for live launches and none for simulated
         /// ones; tests inject a fake (which a simulated launch then uses too).
         var actionsClient: (any ActionsPolling)?
+        /// #10 deployment approvals, the same way: real gh client for live launches only.
+        var deploymentsClient: (any DeploymentPolling)?
         /// Its own 20 s / 2 MiB budget, separate from the inbox searches; it starts when the
         /// Actions query starts, so slow searches never shorten it.
         var actionsBudget: @Sendable () -> CommandBudget = { CommandBudget(timeout: 20) }
@@ -41,6 +43,11 @@ final class AppModel: ObservableObject {
     @Published private(set) var hiddenResultCount = 0
     /// #10: why workflow failures aren't fully known right now (their own line; never the inbox's).
     @Published private(set) var actionsQuality: String?
+    /// #10: deployments in watched repositories waiting for other reviewers or a wait timer. A count, never rows.
+    @Published private(set) var deploymentsWaitingCount = 0
+    var deploymentsWaitingNote: String? {
+        DeploymentApprovals.waitingNote(deploymentsWaitingCount, complete: actionsQuality == nil)
+    }
     @Published private(set) var unseen = UnseenItems()
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
     /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
@@ -60,12 +67,19 @@ final class AppModel: ObservableObject {
     @Published var settings: PetSettings {
         didSet {
             guard settings != oldValue else { return }
+            let assignmentChanged = settings.assignmentMode != oldValue.assignmentMode
+            if assignmentChanged && settings.dataSource == oldValue.dataSource {
+                prepareAssignmentModeChange(from: oldValue.assignmentMode)
+            }
             store.save(settings)
             if settings.dataSource != oldValue.dataSource { switchSource() }
+            else if assignmentChanged { switchAssignmentMode() }
             if settings.privacyMode && !oldValue.privacyMode { detailsRevealed = false }
             // Reclassify rows now; IDs don't change, so nothing looks new (#8).
             if settings.entitlementRepositories != oldValue.entitlementRepositories { sync(now: clock()) }
-            if settings.watchWorkflowFailures != oldValue.watchWorkflowFailures { requestRefresh() }
+            if !assignmentChanged && settings.dataSource == oldValue.dataSource
+                && (settings.watchWorkflowFailures != oldValue.watchWorkflowFailures
+                    || settings.watchDeploymentApprovals != oldValue.watchDeploymentApprovals) { requestRefresh() }
             // Snooze, quiet hours or Reduce Motion turned on: stop a playing gesture now, not at
             // the next tick. Nothing is re-queued, so turning them off later replays nothing.
             if GestureCancellation.shouldCancel(from: oldValue, to: settings, at: clock()) { cancelGesture() }
@@ -414,6 +428,36 @@ final class AppModel: ObservableObject {
         blockedLinkNote = nil
     }
 
+    private func prepareAssignmentModeChange(from previousMode: AssignmentMode) {
+        _ = engine.refreshFreshness(now: clock())
+        engine.beginReviewReachChange()
+        let reviewPrefix = "\(ItemKind.reviewRequest.rawValue):"
+        for id in unseen.ids where id.hasPrefix(reviewPrefix) { unseen.remove(id) }
+        // Entitlement reviews have the same review ID after display-time reclassification.
+        clips.clear(origin: .repository, matching: { $0.item.id.hasPrefix(reviewPrefix) })
+
+        guard let oldKey = makeBaselineKey(assignmentMode: previousMode), let newKey = currentBaselineKey else { return }
+        if baselineKey == oldKey {
+            baselineKey = newKey
+            persistBaseline()
+        } else if baselineKey == nil, var saved = baselineStore.load(for: oldKey) {
+            // Settings can be changed before the first reply has restored a saved baseline.
+            saved.key = newKey.value
+            saved.reviewReachPending = true
+            baselineStore.save(saved)
+        }
+    }
+
+    private func switchAssignmentMode() {
+        scopeSession.changeAssignmentMode()
+        queuedRefreshGeneration = nil
+        repositoryTask?.cancel()
+        repositoryTask = nil
+
+        if settings.dataSource == .githubCLI { sync(now: clock()) }
+        refreshRepositoriesOnly()
+    }
+
     private func launchRepositoryPoll(_ request: ScopePollRequest, budget: CommandBudget, refetches: Int) {
         let client = scopedClient
         if scopeSimulation != nil {
@@ -424,18 +468,18 @@ final class AppModel: ObservableObject {
         let simulated = scopeSimulation != nil
         let actions = actionsJob(for: request)
         repositoryTask = Task.detached { [weak self] in
-            let result: RepositoryReply
-            if simulated {
+            let result = await withTaskCancellationHandler {
+                if !simulated { return Self.poll(client, request, budget, actions: actions) }
                 // Simulated replies can be held indefinitely by design. Keep that blocking wait on
                 // GCD, which adds threads, not on the small cooperative pool: held replies there
                 // starved every other task (CI 43776871945 hung with all pool threads blocked).
-                result = await withCheckedContinuation { done in
+                return await withCheckedContinuation { done in
                     DispatchQueue.global(qos: .userInitiated).async {
                         done.resume(returning: Self.poll(client, request, budget, actions: actions))
                     }
                 }
-            } else {
-                result = Self.poll(client, request, budget, actions: actions)
+            } onCancel: {
+                if !simulated { budget.cancel() }
             }
             await self?.receiveRepositoryPoll(result, request: request, budget: budget, refetches: refetches)
         }
@@ -444,16 +488,20 @@ final class AppModel: ObservableObject {
     nonisolated private static func poll(_ client: any ScopedPolling, _ request: ScopePollRequest,
                                          _ budget: CommandBudget) -> ScopedPollResult {
         request.identityOnly ? client.fetchIdentity(expectedAccount: request.expectedAccount, budget: budget)
-            : client.fetch(scope: request.scope, expectedAccount: request.expectedAccount, budget: budget)
+            : client.fetch(scope: request.scope, expectedAccount: request.expectedAccount,
+                           assignmentMode: request.assignmentMode, budget: budget)
     }
 
     /// #10: the watched repositories' Actions query, run after the inbox searches with its own budget.
     struct ActionsJob: Sendable {
-        let client: any ActionsPolling
+        /// Workflow failures; nil when only deployment approvals are watched.
+        let client: (any ActionsPolling)?
         let repositories: [MonitoringTarget]
         let makeBudget: @Sendable () -> CommandBudget
-        /// Keeps the previous rows (marked last known) for repositories a cycle can't read.
-        var lastKnown = ActionsLastKnown()
+        /// Deployment approvals; nil when not watched. Its own budget and last-known rows.
+        var deployments: (any DeploymentPolling)? = nil
+        /// Which parts are watched; part of the Actions baseline key.
+        var sources: String { (client == nil ? "" : "failures") + (deployments == nil ? "" : "+deployments") }
     }
 
     /// The Actions side of one poll, kept apart from the inbox result.
@@ -462,7 +510,8 @@ final class AppModel: ObservableObject {
         case off
         /// Watched, but the inbox reply wasn't usable, so Actions weren't queried this time.
         case notChecked
-        case result(ScopedPollResult, repositories: [MonitoringTarget], account: ScopeAccount?)
+        case result(failures: ScopedPollResult?, deployments: ScopedPollResult?, repositories: [MonitoringTarget],
+                    viewer: ScopeViewer, account: ScopeAccount, sources: String)
     }
     struct RepositoryReply: Sendable {
         let inbox: ScopedPollResult
@@ -470,16 +519,22 @@ final class AppModel: ObservableObject {
     }
 
     private let actionsLastKnown = ActionsLastKnown()
+    private let deploymentsLastKnown = ActionsLastKnown()
     private var actionsClient: (any ActionsPolling)? {
         runtime.actionsClient ?? (scopeSimulation == nil ? ActionsGhClient() : nil)
+    }
+    private var deploymentsClient: (any DeploymentPolling)? {
+        runtime.deploymentsClient ?? (scopeSimulation == nil ? DeploymentGhClient() : nil)
     }
 
     /// Only for a live GitHub CLI poll of a real selection with the opt-in on.
     private func actionsJob(for request: ScopePollRequest) -> ActionsJob? {
-        guard settings.dataSource == .githubCLI, !request.identityOnly, let client = actionsClient,
-              case .repositories(let repositories, _) = ActionsWatch.coverage(enabled: settings.watchWorkflowFailures,
-                                                                              scope: request.scope) else { return nil }
-        return ActionsJob(client: client, repositories: repositories, makeBudget: runtime.actionsBudget, lastKnown: actionsLastKnown)
+        let failures = settings.watchWorkflowFailures ? actionsClient : nil
+        let deployments = settings.watchDeploymentApprovals ? deploymentsClient : nil
+        guard settings.dataSource == .githubCLI, !request.identityOnly, failures != nil || deployments != nil,
+              case .repositories(let repositories, _) = ActionsWatch.coverage(enabled: true, scope: request.scope) else { return nil }
+        return ActionsJob(client: failures, repositories: repositories, makeBudget: runtime.actionsBudget,
+                          deployments: deployments)
     }
 
     /// The inbox poll, plus Actions failures when watched. Actions run only after a usable inbox
@@ -489,11 +544,21 @@ final class AppModel: ObservableObject {
                                  actions: ActionsJob?) -> RepositoryReply {
         let inbox = poll(client, request, budget)
         guard let actions else { return RepositoryReply(inbox: inbox, actions: .off) }
-        guard inbox.viewer != nil, inbox.successfulSources > 0 else { return RepositoryReply(inbox: inbox, actions: .notChecked) }
-        let expected = request.expectedAccount ?? inbox.viewer?.account
-        let fetched = actions.client.fetch(repositories: actions.repositories, expectedAccount: expected, budget: actions.makeBudget())
-        let result = actions.lastKnown.apply(fetched, repositories: actions.repositories, account: expected)
-        return RepositoryReply(inbox: inbox, actions: .result(result, repositories: actions.repositories, account: expected))
+        guard let viewer = inbox.viewer, inbox.successfulSources > 0, !Task.isCancelled else {
+            return RepositoryReply(inbox: inbox, actions: .notChecked)
+        }
+        let expected = request.expectedAccount ?? viewer.account
+        // Each part gets its own budget when it starts. Only an accepted reply can update last-known rows.
+        let failures = actions.client.map {
+            $0.fetch(repositories: actions.repositories, expectedAccount: expected, budget: actions.makeBudget())
+        }
+        guard !Task.isCancelled else { return RepositoryReply(inbox: inbox, actions: .notChecked) }
+        let deployments = actions.deployments.map {
+            $0.fetch(repositories: actions.repositories, expectedAccount: expected, budget: actions.makeBudget())
+        }
+        return RepositoryReply(inbox: inbox, actions: .result(failures: failures, deployments: deployments,
+                                                              repositories: actions.repositories, viewer: viewer,
+                                                              account: expected, sources: actions.sources))
     }
 
     /// Applies the Actions side after the inbox snapshot: its own baseline (a new account or
@@ -504,8 +569,14 @@ final class AppModel: ObservableObject {
             if actionsCoverageKey != nil || !actionsEngine.items.isEmpty { resetActions() }
         case .notChecked:
             if actionsCoverageKey != nil { actionsQuality = ActionsWatch.notCheckedLine }
-        case .result(let result, let repositories, let account):
-            let key = (account?.viewerID ?? "") + "\n" + repositories.map(\.qualifier).sorted().joined(separator: ",")
+        case .result(let failures, let deployments, let repositories, let viewer, let account, let sources):
+            let knownFailures = failures.map { actionsLastKnown.apply($0, repositories: repositories, account: account) }
+            let knownDeployments = deployments.map {
+                deploymentsLastKnown.apply($0, repositories: repositories, account: account, alias: DeploymentApprovals.alias)
+            }
+            let result = ScopedPollResult.combiningActions(failures: knownFailures, deployments: knownDeployments,
+                                                           fallbackViewer: viewer)
+            let key = account.viewerID + "\n" + sources + "\n" + repositories.map(\.qualifier).sorted().joined(separator: ",")
             if key != actionsCoverageKey { resetActions(); actionsCoverageKey = key }
             let date = clock()
             let outcome = FetchOutcome.snapshot(items: result.items, complete: result.complete, hidden: 0)
@@ -517,6 +588,7 @@ final class AppModel: ObservableObject {
             }
             clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
             actionsQuality = result.complete ? nil : ActionsWatch.qualityLine(for: result.issues, watched: repositories.count)
+            deploymentsWaitingCount = result.waitingOnOthers
         }
     }
 
@@ -525,12 +597,16 @@ final class AppModel: ObservableObject {
         actionsEngine.reset()
         actionsCoverageKey = nil
         actionsQuality = nil
+        deploymentsWaitingCount = 0
     }
 
-    /// Settings › Workflow failures: what is (and isn't) watched right now.
+    /// Settings › GitHub Actions: what is (and isn't) watched right now.
     var workflowWatchNote: String? {
-        guard settings.watchWorkflowFailures else { return nil }
-        guard settings.dataSource == .githubCLI else { return "Workflow failures are watched with the GitHub CLI source." }
+        guard settings.watchWorkflowFailures || settings.watchDeploymentApprovals else { return nil }
+        guard settings.dataSource == .githubCLI else {
+            return settings.watchWorkflowFailures ? "Workflow failures are watched with the GitHub CLI source."
+                : "Deployment approvals are watched with the GitHub CLI source."
+        }
         switch ActionsWatch.coverage(enabled: true, scope: activeMonitoringScope) {
         case .off: return nil
         case .repositories(let repositories, let note):
@@ -568,7 +644,7 @@ final class AppModel: ObservableObject {
                 apply(scopeSession.failCycle(.deadline)); return
             }
             sync(now: clock())
-            guard let next = scopeSession.beginPoll() else { return }
+            guard let next = scopeSession.beginPoll(assignmentMode: request.assignmentMode) else { return }
             launchRepositoryPoll(next, budget: budget, refetches: refetches - 1)
         }
         sync(now: clock())
@@ -596,11 +672,11 @@ final class AppModel: ObservableObject {
         }
         if settings.dataSource == .fixtures {
             guard let scope = scopeSession.scope else { apply(scopeSession.configurationFailure); return }
-            let outcome = simulator.poll()
+            let outcome = simulator.poll(assignmentMode: settings.assignmentMode)
             if case .snapshot(let items, let complete, let hidden) = outcome {
                 apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete, hidden: hidden))
             } else { apply(outcome) }
-        } else if let request = scopeSession.beginPoll() {
+        } else if let request = scopeSession.beginPoll(assignmentMode: settings.assignmentMode) {
             launchRepositoryPoll(request, budget: runtime.repositoryBudget(), refetches: 1)
         }
     }
@@ -626,8 +702,13 @@ final class AppModel: ObservableObject {
     }
 
     private var currentBaselineKey: BaselineKey? {
+        makeBaselineKey(assignmentMode: settings.assignmentMode)
+    }
+
+    private func makeBaselineKey(assignmentMode: AssignmentMode) -> BaselineKey? {
         guard let identity = scopeSession.identity, let scope = scopeSession.scope else { return nil }
-        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope)
+        return BaselineKey(source: settings.dataSource, identity: identity, scope: scope,
+                           assignmentMode: assignmentMode)
     }
 
     private func persistBaseline() {
@@ -710,6 +791,7 @@ final class AppModel: ObservableObject {
     /// empty inbox is never "All clear" while they are incomplete, and neither an empty nor a
     /// hidden-only inbox claims "nothing visible" while failure rows are shown.
     private var displayedState: DataState {
+        if engine.reviewReachPending && engine.state.countIsKnown { return .loading }
         switch engine.state {
         case .empty:
             if actionsQuality != nil { return .partial }
@@ -854,6 +936,17 @@ final class AppModel: ObservableObject {
     }
 
     // Explicit offline launch only; these controls never exist in a normal session.
+    func simulateAssignmentMode(_ mode: AssignmentMode) {
+        guard scopeSimulation != nil else { return }
+        settings.assignmentMode = mode
+    }
+
+    func simulateAssignedIssue() {
+        guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
+        simulation.injectAssignedIssue()
+        refreshRepositoriesOnly()
+    }
+
     func simulateScopeAccount(_ isB: Bool) {
         guard settings.dataSource == .githubCLI, let simulation = scopeSimulation else { return }
         simulation.switchAccount(isB ? ScopeSimulation.accountB : ScopeSimulation.accountA)

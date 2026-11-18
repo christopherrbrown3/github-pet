@@ -27,35 +27,38 @@ public enum ActionsWatch {
     }
 
     /// The inbox reply wasn't usable, so workflow failures weren't checked this time.
-    public static let notCheckedLine = "Workflow failures weren't checked this time; showing last known."
+    public static let notCheckedLine = "GitHub Actions weren't checked this time; showing last known."
 
-    /// Workflow failures' own quality line: fixed text, counts only, never gh or GitHub wording.
+    /// The Actions quality line (workflow failures and deployment approvals): fixed text, counts
+    /// only, never gh or GitHub wording. Neutral prefix: one line covers both parts.
     public static func qualityLine(for issues: [ScopedFetchIssue], watched: Int) -> String {
-        if issues.contains(.identityMismatch) { return "Workflow failures: account changed; checking again." }
-        if issues.contains(.rateLimited) { return "Workflow failures: GitHub rate limit; showing last known." }
-        var unavailable = Set<String>()
+        if issues.contains(.identityMismatch) { return "GitHub Actions: account changed; checking again." }
+        if issues.contains(.rateLimited) { return "GitHub Actions: GitHub rate limit; showing last known." }
+        // One repository counts once, whether failures ("actions<i>") or deployments ("deploy<i>") failed.
+        var unavailable = Set<Int>()
         for issue in issues {
             switch issue {
-            case .targetUnavailable(let index), .malformedTarget(let index): unavailable.insert(ActionsResponseParser.alias(index))
-            case .malformedSource(let alias): unavailable.insert(alias)
+            case .targetUnavailable(let index), .malformedTarget(let index): unavailable.insert(index)
+            case .malformedSource(let alias):
+                if let index = Int(alias.drop { !$0.isNumber }) { unavailable.insert(index) }
             default: break
             }
         }
         if issues.contains(.accessDenied) {
-            return "Workflow failures: access denied for some repositories (token scope or SAML single sign-on); showing last known."
+            return "GitHub Actions: access denied for some repositories (token scope or SAML single sign-on); showing last known."
         }
         if !unavailable.isEmpty {
             let count = unavailable.count
-            return "Workflow failures: \(count) \(count == 1 ? "repository" : "repositories") unavailable; showing last known."
+            return "GitHub Actions: \(count) \(count == 1 ? "repository" : "repositories") unavailable; showing last known."
         }
         if issues.contains(where: { if case .capped = $0 { return true }; return false }) {
-            return "Workflow failures: result limit reached; more may exist."
+            return "GitHub Actions: result limit reached; more may exist."
         }
-        return "Workflow failures couldn't be fully checked; showing last known."
+        return "GitHub Actions couldn't be fully checked; showing last known."
     }
 
-    public static let needsRepositoriesNote = "Workflow failures: select repositories in Monitoring scope to watch them. Organizations and Everything aren't watched yet."
-    public static let organizationsNotWatchedNote = "Workflow failures are watched for the selected repositories only, not for selected organizations."
+    public static let needsRepositoriesNote = "GitHub Actions: select repositories in Monitoring scope to watch them. Organizations and Everything aren't watched yet."
+    public static let organizationsNotWatchedNote = "GitHub Actions are watched for the selected repositories only, not for selected organizations."
 
     public static func coverage(enabled: Bool, scope: MonitoringScope?) -> Coverage {
         guard enabled else { return .off }
@@ -240,7 +243,9 @@ public final class ActionsLastKnown: @unchecked Sendable {
 
     public init() {}
 
-    public func apply(_ result: ScopedPollResult, repositories: [MonitoringTarget], account: ScopeAccount?) -> ScopedPollResult {
+    /// `alias` names a repository's issues in this source ("actions<i>" or "deploy<i>").
+    public func apply(_ result: ScopedPollResult, repositories: [MonitoringTarget], account: ScopeAccount?,
+                      alias: (Int) -> String = ActionsResponseParser.alias) -> ScopedPollResult {
         let names = repositories.map { "\($0.owner)/\($0.name!)" }
         let key = (account?.viewerID ?? "") + "\n" + names.sorted().joined(separator: ",")
         lock.lock(); defer { lock.unlock() }
@@ -254,8 +259,8 @@ public final class ActionsLastKnown: @unchecked Sendable {
             for issue in result.issues {
                 switch issue {
                 case .targetUnavailable(let index), .malformedTarget(let index): failed.insert(index)
-                case .malformedSource(let alias):
-                    if let index = names.indices.first(where: { ActionsResponseParser.alias($0) == alias }) { failed.insert(index) }
+                case .malformedSource(let source):
+                    if let index = names.indices.first(where: { alias($0) == source }) { failed.insert(index) }
                 default: break
                 }
             }
@@ -276,5 +281,23 @@ public final class ActionsLastKnown: @unchecked Sendable {
         return ScopedPollResult(viewer: result.viewer, items: result.items + carried, issues: result.issues,
                                 successfulSources: result.successfulSources, hidden: result.hidden,
                                 waitingOnOthers: result.waitingOnOthers)
+    }
+}
+
+public extension ScopedPollResult {
+    /// Joins the workflow-failure and deployment-approval results of one Actions cycle. Either may
+    /// be absent (not watched). A deployments result without a GraphQL reply has no viewer; it is
+    /// bound to `fallbackViewer` (the inbox's, from the same cycle). Different viewers are an
+    /// account change: no rows.
+    static func combiningActions(failures: ScopedPollResult?, deployments: ScopedPollResult?,
+                                 fallbackViewer: ScopeViewer?) -> ScopedPollResult {
+        let parts = [failures, deployments].compactMap { $0 }
+        let viewers = Set(parts.compactMap { $0.viewer?.account })
+        guard viewers.count <= 1 else { return .failure(.identityMismatch) }
+        let viewer = parts.lazy.compactMap(\.viewer).first
+            ?? (deployments.map { $0.successfulSources > 0 } == true ? fallbackViewer : nil)
+        return ScopedPollResult(viewer: viewer, items: parts.flatMap(\.items), issues: parts.flatMap(\.issues),
+                                successfulSources: parts.reduce(0) { $0 + $1.successfulSources },
+                                waitingOnOthers: deployments?.waitingOnOthers ?? 0)
     }
 }

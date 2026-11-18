@@ -47,7 +47,8 @@ public struct ScopeQueryPlan: Sendable {
         arguments = ["api", "graphql", "--hostname", "github.com", "-f", "query=query {\nviewer { id login }\n}"]
     }
 
-    public init(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil) throws {
+    public init(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil,
+                assignmentMode: AssignmentMode = .all) throws {
         guard scope.mode == .everything || expectedAccount != nil else { throw ScopeValidationError.invalidIdentity }
         self.scope = scope; self.expectedAccount = expectedAccount
         var definitions: [String] = [], variables: [(String, String)] = [], fields = ["viewer { id login }"]
@@ -68,7 +69,9 @@ public struct ScopeQueryPlan: Sendable {
         for (index, target) in inclusions.enumerated() {
             for category in Self.categories {
                 let alias = category.aliasPrefix + String(index)
-                variable(alias, category.query + (target.map { " " + $0.qualifier } ?? ""))
+                let searchQuery = category.kind == .reviewRequest && assignmentMode == .direct
+                    ? "is:pr is:open user-review-requested:@me" : category.query
+                variable(alias, searchQuery + (target.map { " " + $0.qualifier } ?? ""))
                 fields.append("""
                     \(alias): search(query: $\(alias), type: ISSUE, first: \(Self.rowsPerCategory)) {
                       issueCount pageInfo { hasNextPage }
@@ -318,7 +321,8 @@ public enum ScopedResponseParser {
 
 /// Account-bound repository polling. Callers can share one budget across bootstrap/refetch.
 public protocol ScopedPolling: Sendable {
-    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult
+    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode,
+               budget: CommandBudget) -> ScopedPollResult
     /// Viewer only (no search aliases): used while no valid saved selection is known.
     func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult
 }
@@ -343,11 +347,14 @@ public struct ScopedGhClient: ScopedPolling {
         let message = result.stderrText.lowercased()
         return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
     }
-    public func fetch(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil) -> ScopedPollResult {
-        fetch(scope: scope, expectedAccount: expectedAccount, budget: CommandBudget(timeout: timeout))
+    public func fetch(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil,
+                      assignmentMode: AssignmentMode = .all) -> ScopedPollResult {
+        fetch(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
+              budget: CommandBudget(timeout: timeout))
     }
-    public func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
-        guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount) else {
+    public func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode = .all,
+                      budget: CommandBudget) -> ScopedPollResult {
+        guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode) else {
             return .failure(.identityRequired)
         }
         return run(plan, budget: budget)

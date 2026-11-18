@@ -22,6 +22,7 @@ public final class InboxEngine {
     public private(set) var lastSuccess: Date?
     /// Matches hidden from the viewer in the last complete snapshot (0 otherwise). Informational.
     public private(set) var hiddenCount = 0
+    public private(set) var reviewReachPending = false
     public let staleAfter: TimeInterval
 
     private var tracker: EventTracker
@@ -36,6 +37,14 @@ public final class InboxEngine {
     }
 
     public var baselineEstablished: Bool { tracker.baselineEstablished }
+
+    /// The old review search cannot supply rows or aggregate hidden counts for the new one.
+    /// Retain the last poll's quality and age for the unaffected event categories.
+    public func beginReviewReachChange() {
+        items.removeAll { $0.kind == .reviewRequest }
+        hiddenCount = 0
+        reviewReachPending = true
+    }
 
     /// Apply one poll result; returns the new events, newest first.
     @discardableResult
@@ -76,6 +85,7 @@ public final class InboxEngine {
                 let previousIDs = Set(items.map(\.id)), previousKeys = Set(items.flatMap(\.attentionKeys))
                 let newItems = deduped.indices.filter { index in
                     let item = deduped[index]
+                    guard !reviewReachPending || item.kind != .reviewRequest else { return false }
                     let newID = !tracker.contains(digests[index]) && !previousIDs.contains(item.id)
                     let gained = zip(item.attentionKeys, keyDigests[index]).contains { !tracker.contains($1) && !previousKeys.contains($0) }
                     return newID || gained
@@ -91,6 +101,7 @@ public final class InboxEngine {
             hiddenCount = complete ? max(0, hidden) : 0
             state = complete ? (deduped.isEmpty ? (hiddenCount > 0 ? .hiddenOnly(hiddenCount) : .empty) : .ready) : .partial
             previousWasComparable = complete
+            if complete { reviewReachPending = false }
             return events
         }
     }
@@ -118,6 +129,7 @@ public final class InboxEngine {
         state = .loading
         lastSuccess = nil
         hiddenCount = 0
+        reviewReachPending = false
         resetBaseline()
     }
 
@@ -133,7 +145,8 @@ public final class InboxEngine {
     public func baseline(key: BaselineKey) -> EventBaseline {
         let quality = state == .loading ? (restoredQuality ?? .loading) : SourceQuality(state)
         return EventBaseline(key: key.value, digests: tracker.orderedIDs, baselineEstablished: tracker.baselineEstablished,
-                             quality: quality, lastSuccess: lastSuccess ?? restoredLastSuccess)
+                             quality: quality, lastSuccess: lastSuccess ?? restoredLastSuccess,
+                             reviewReachPending: reviewReachPending ? true : nil)
     }
 
     /// Resume a persisted baseline at the start of a session (state still Loading, nothing
@@ -148,6 +161,7 @@ public final class InboxEngine {
         restoredQuality = baseline.quality
         restoredLastSuccess = baseline.lastSuccess
         previousWasComparable = baseline.quality.isComplete && baseline.baselineEstablished
+        reviewReachPending = reviewReachPending || baseline.reviewReachPending == true
         return true
     }
 

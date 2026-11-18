@@ -184,13 +184,13 @@ private func client(_ runner: Runner) -> ActionsGhClient {
 
     /// QA MED-2 on PR72: workflow failures have their own fixed quality line (counts only).
     @Test func actionsQualityLinesAreFixedAndCountOnly() {
-        #expect(ActionsWatch.qualityLine(for: [.targetUnavailable(1)], watched: 2) == "Workflow failures: 1 repository unavailable; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.targetUnavailable(1)], watched: 2) == "GitHub Actions: 1 repository unavailable; showing last known.")
         #expect(ActionsWatch.qualityLine(for: [.targetUnavailable(0), .malformedSource("actions1")], watched: 2)
-                == "Workflow failures: 2 repositories unavailable; showing last known.")
+                == "GitHub Actions: 2 repositories unavailable; showing last known.")
         #expect(ActionsWatch.qualityLine(for: [.accessDenied, .targetUnavailable(0)], watched: 2).contains("SAML single sign-on"))
-        #expect(ActionsWatch.qualityLine(for: [.rateLimited], watched: 1) == "Workflow failures: GitHub rate limit; showing last known.")
-        #expect(ActionsWatch.qualityLine(for: [.capped("actions0")], watched: 1) == "Workflow failures: result limit reached; more may exist.")
-        #expect(ActionsWatch.qualityLine(for: [.transport], watched: 1) == "Workflow failures couldn't be fully checked; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.rateLimited], watched: 1) == "GitHub Actions: GitHub rate limit; showing last known.")
+        #expect(ActionsWatch.qualityLine(for: [.capped("actions0")], watched: 1) == "GitHub Actions: result limit reached; more may exist.")
+        #expect(ActionsWatch.qualityLine(for: [.transport], watched: 1) == "GitHub Actions couldn't be fully checked; showing last known.")
         #expect(ActionsWatch.qualityLine(for: [.identityMismatch], watched: 1).contains("account changed"))
     }
 
