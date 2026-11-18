@@ -10,7 +10,8 @@ private let pet = try! MonitoringTarget(repository: "example/pet")
 private final class FakeScoped: ScopedPolling, @unchecked Sendable {
     let result: ScopedPollResult
     init(_ result: ScopedPollResult) { self.result = result }
-    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult { result }
+    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode,
+               budget: CommandBudget) -> ScopedPollResult { result }
     func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult { result }
 }
 /// Records what the Actions side was asked for.
@@ -27,7 +28,7 @@ private final class FakeActions: ActionsPolling, @unchecked Sendable {
     private let viewer = ScopeViewer(account: accountA, login: "app-user")
     private func request(identityOnly: Bool = false) throws -> ScopePollRequest {
         ScopePollRequest(generation: 1, serial: 1, scope: try MonitoringScope(selected: [pet]), expectedAccount: accountA,
-                         identityOnly: identityOnly)
+                         assignmentMode: .all, identityOnly: identityOnly)
     }
     private var failure: InboxItem {
         InboxItem(id: "actions:CS_1", kind: .workflowFailure, repository: "example/pet", title: "CI failed on main",
@@ -40,8 +41,10 @@ private final class FakeActions: ActionsPolling, @unchecked Sendable {
         let job = AppModel.ActionsJob(client: actions, repositories: [pet], makeBudget: { CommandBudget(timeout: 20) })
         let reply = AppModel.poll(FakeScoped(inboxResult), try request(), CommandBudget(timeout: 20), actions: job)
         #expect(reply.inbox == inboxResult, "the inbox result is untouched: completeness, hidden and waiting counts are its own")
-        guard case .result(let result, let repositories, let account, let sources) = reply.actions else { Issue.record("Actions result expected"); return }
-        #expect(result.items == [failure] && repositories == [pet] && sources == "failures")
+        guard case .result(let failures, nil, let repositories, let resultViewer, let account, let sources) = reply.actions else {
+            Issue.record("Actions result expected"); return
+        }
+        #expect(failures?.items == [failure] && resultViewer == viewer && repositories == [pet] && sources == "failures")
         #expect(actions.requests.count == 1 && actions.requests[0].account == account && account == accountA)
     }
 

@@ -61,6 +61,34 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
 }
 
 @Suite struct InboxEngineTests {
+    @Test func reviewReseedAllowsFreshAuthoredAttentionButADegradedReplacementCannotCertifyIt() {
+        let allReview = item("review:team")
+        let directReview = item("review:personal")
+        var authored = item("authored:1", .authoredPullRequest)
+        authored.attentionKeys = ["authored:1#changes"]
+        var changed = authored
+        changed.attentionKeys.append("authored:1#checks")
+
+        for degradation in [nil, FetchOutcome.snapshot(items: [authored, directReview], complete: false),
+                            .failure(.failed("unavailable"))] {
+            let engine = InboxEngine()
+            engine.apply(.snapshot(items: [allReview, authored], complete: true, hidden: 3), now: t0)
+            engine.beginReviewReachChange()
+            #expect(engine.items == [authored] && engine.hiddenCount == 0 && engine.reviewReachPending)
+            if let degradation {
+                #expect(engine.apply(degradation, now: t0 + 1).isEmpty)
+                #expect(engine.reviewReachPending)
+            }
+            let first = engine.apply(.snapshot(items: [changed, directReview], complete: true), now: t0 + 2)
+            #expect(first.map(\.item) == (degradation == nil ? [changed] : []))
+            #expect(!engine.reviewReachPending)
+            #expect(engine.apply(.snapshot(items: [changed, directReview], complete: true), now: t0 + 3).isEmpty)
+            let newReview = item("review:new")
+            #expect(engine.apply(.snapshot(items: [changed, directReview, newReview], complete: true), now: t0 + 4)
+                .map(\.item) == [newReview])
+        }
+    }
+
     @Test func firstSnapshotEstablishesBaselineWithoutEvents() {
         let engine = InboxEngine()
         let events = engine.apply(.snapshot(items: [item("a"), item("b")], complete: true), now: t0)

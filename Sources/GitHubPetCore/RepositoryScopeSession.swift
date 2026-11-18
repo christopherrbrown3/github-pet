@@ -5,6 +5,7 @@ public struct ScopePollRequest: Equatable, Sendable {
     public let serial: Int
     public let scope: MonitoringScope
     public let expectedAccount: ScopeAccount?
+    public let assignmentMode: AssignmentMode
     /// Viewer only, no search aliases (`scope` is unused): sent while no valid saved selection
     /// is known, i.e. an unknown viewer's bootstrap or a corrupt record ("monitoring is paused").
     public let identityOnly: Bool
@@ -68,7 +69,14 @@ public final class RepositoryScopeSession {
         }
     }
 
-    public func beginPoll() -> ScopePollRequest? {
+    /// The review filter changed within the same source, account and repository selection.
+    /// A new serial rejects the old reply without invalidating a Settings scope draft.
+    public func changeAssignmentMode() {
+        pending = nil
+        issues = []
+    }
+
+    public func beginPoll(assignmentMode: AssignmentMode = .all) -> ScopePollRequest? {
         guard identity != .demo, pending == nil else { return nil }
         serial += 1
         let account: ScopeAccount?
@@ -76,7 +84,7 @@ public final class RepositoryScopeSession {
         // No valid selection known (unknown viewer, or corrupt record): ask only who the viewer
         // is. That still detects account switches, but fetches no rows and runs no searches.
         let request = ScopePollRequest(generation: generation, serial: serial, scope: scope ?? .everything,
-                                       expectedAccount: account, identityOnly: scope == nil)
+                                       expectedAccount: account, assignmentMode: assignmentMode, identityOnly: scope == nil)
         pending = request
         return request
     }

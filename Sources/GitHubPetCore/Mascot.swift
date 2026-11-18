@@ -223,9 +223,8 @@ public struct EventClipQueue: Sendable {
         if let origin { byOrigin.removeValue(forKey: origin) } else { byOrigin.removeAll() }
     }
 
-    public mutating func clearRepositoryClip(ledBy id: String) {
-        guard byOrigin[.repository]?.event.item.id == id else { return }
-        clear(origin: .repository)
+    public mutating func clear(origin: Origin, matching predicate: (InboxEvent) -> Bool) {
+        if let clip = byOrigin[origin], predicate(clip.event) { clear(origin: origin) }
     }
 }
 
