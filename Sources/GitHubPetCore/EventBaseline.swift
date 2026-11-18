@@ -67,16 +67,19 @@ public struct EventBaseline: Codable, Equatable, Sendable {
     }
 }
 
-/// Identifies one baseline session. Any change of source, account or scope is a new key, so
+/// Identifies one baseline session. Any change of source, account, scope or review reach changes the key, so
 /// the previous record is discarded and the next complete snapshot re-baselines silently.
 public struct BaselineKey: Equatable, Sendable {
     public let value: String
 
-    public init(source: DataSourceMode, identity: ScopeIdentity, scope: MonitoringScope) {
+    public init(source: DataSourceMode, identity: ScopeIdentity, scope: MonitoringScope,
+                assignmentMode: AssignmentMode = .all) {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let scopeText = (try? encoder.encode(scope)).map { String(decoding: $0, as: UTF8.self) } ?? ""
-        value = EventBaseline.digest("v\(EventBaseline.version)\nc\(ScopeQueryPlan.categoriesVersion)\n\(source.rawValue)\n\(identity.storageSuffix)\n\(scopeText)")
+        // Existing records were all-mode and used the same search and fixture coverage.
+        let reach = assignmentMode == .all ? "" : "\nassignment=\(assignmentMode.rawValue)"
+        value = EventBaseline.digest("v\(EventBaseline.version)\nc\(ScopeQueryPlan.categoriesVersion)\n\(source.rawValue)\n\(identity.storageSuffix)\n\(scopeText)\(reach)")
     }
 }
 

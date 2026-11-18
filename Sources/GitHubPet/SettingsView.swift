@@ -13,6 +13,7 @@ struct SettingsView: View {
             SnoozeQuietHoursSection(model: model)
             DataSourceSection(model: model)
             MonitoringScopeSection(model: model, editor: model.scopeEditor)
+            AssignmentModeSection(model: model)
             EntitlementRepositoriesSection(model: model)
             WorkflowFailuresSection(model: model)
         }
@@ -22,6 +23,24 @@ struct SettingsView: View {
         .frame(width: 520)
         .frame(minHeight: Self.minHeight)
         .padding(.vertical, 8)
+    }
+}
+
+private struct AssignmentModeSection: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Section("Notifications") {
+            Picker("Assignment filter", selection: $model.settings.assignmentMode) {
+                Text("Show all notifications").tag(AssignmentMode.all)
+                Text("Show only assigned to @me").tag(AssignmentMode.direct)
+            }
+            .pickerStyle(.radioGroup)
+            .accessibilityIdentifier("settings.assignmentMode")
+            Text("All includes pull request reviews requested from you or your teams. The @me option includes reviews requested directly from you. Both show issues assigned to you.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 }
 

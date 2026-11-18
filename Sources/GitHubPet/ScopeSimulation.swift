@@ -38,6 +38,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     init(holdLimit: Duration? = .seconds(20)) { self.holdLimit = holdLimit }
     struct Request: Equatable {
         let scope: MonitoringScope; let expected: ScopeAccount?
+        let assignmentMode: AssignmentMode
         var identityOnly = false
         /// The search aliases this request asked GitHub for (none for identity-only).
         var searchAliases: [String] = []
@@ -97,14 +98,17 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                      forKey: "GitHubPet.monitoring-scope.v1.github.com." + account.viewerID)
     }
 
-    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
-        respond(scope: scope, expectedAccount: expectedAccount, identityOnly: false, budget: budget)
+    func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode = .all,
+               budget: CommandBudget) -> ScopedPollResult {
+        respond(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
+                identityOnly: false, budget: budget)
     }
     func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
-        respond(scope: .everything, expectedAccount: expectedAccount, identityOnly: true, budget: budget)
+        respond(scope: .everything, expectedAccount: expectedAccount, assignmentMode: .all,
+                identityOnly: true, budget: budget)
     }
-    private func respond(scope: MonitoringScope, expectedAccount: ScopeAccount?, identityOnly: Bool,
-                         budget: CommandBudget) -> ScopedPollResult {
+    private func respond(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode,
+                         identityOnly: Bool, budget: CommandBudget) -> ScopedPollResult {
         lock.lock(); entered += 1; lock.unlock()
         defer { lock.lock(); finished += 1; lock.unlock() }
         do { try budget.check() }
@@ -122,8 +126,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         }
         holdNext = max(0, holdNext - 1); calls += 1
         let plan = identityOnly ? ScopeQueryPlan(identityFor: expectedAccount)
-            : try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount)
-        history.append(Request(scope: scope, expected: expectedAccount, identityOnly: identityOnly,
+            : try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode)
+        history.append(Request(scope: scope, expected: expectedAccount, assignmentMode: assignmentMode, identityOnly: identityOnly,
                                searchAliases: plan?.searches.map(\.alias) ?? []))
         if history.count > 32 { history.removeFirst(history.count - 32) }
         lock.unlock()
@@ -142,6 +146,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
             var nodes: [[String: Any]] = []
             if search.kind == .reviewRequest {
                 for index in Array(0...count) + [1000] {
+                    // #77: 0 is requested both ways, 1000 is team-only, and injected rows are personal.
+                    if index == 1000 && assignmentMode == .direct { continue }
                     let repo = index == 1000 ? "demo-outside/pet" : index == 0 ? "\(owner)/pet" : "\(owner)/new-pet"
                     if let target = search.targetIndex, !scope.targets[target].includes(repo) { continue }
                     nodes.append(["__typename": "PullRequest", "id": "PR_\(account.viewerID)_\(index)", "number": index + 1,

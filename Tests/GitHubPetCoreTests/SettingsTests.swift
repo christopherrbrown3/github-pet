@@ -2,6 +2,17 @@ import Foundation
 import Testing
 @testable import GitHubPetCore
 
+@Test func assignmentModeDefaultsToAllAndPersistsDirect() throws {
+    let decoder = JSONDecoder()
+    for payload in ["{}", #"{"assignmentMode":"unknown"}"#, #"{"assignmentMode":true}"#] {
+        #expect(try decoder.decode(PetSettings.self, from: Data(payload.utf8)).assignmentMode == .all)
+    }
+    var settings = PetSettings()
+    settings.assignmentMode = .direct
+    let bytes = try JSONEncoder().encode(settings)
+    #expect(try decoder.decode(PetSettings.self, from: bytes).assignmentMode == .direct)
+}
+
 private func utcCalendar() -> Calendar {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "UTC")!

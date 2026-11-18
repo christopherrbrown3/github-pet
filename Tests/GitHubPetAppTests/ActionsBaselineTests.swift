@@ -65,6 +65,28 @@ private final class ScriptedActions: ActionsPolling, @unchecked Sendable {
     }
     private func actionRows(_ app: AppModel) -> [InboxItem] { app.items.filter { $0.id.hasPrefix("actions:") } }
 
+    @Test func assignmentModeSwitchKeepsActionsRowsUnseenAndComparable() async throws {
+        let actions = ScriptedActions()
+        let app = model(actions); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        try await select(app, [pet])
+        app.settings.watchWorkflowFailures = true
+        try await settled(app)
+        actions.set("demo-a/pet", ["CS_before"])
+        app.requestRefresh()
+        try await settled(app)
+        #expect(app.unseen.contains("actions:CS_before"))
+
+        app.settings.assignmentMode = .direct
+        #expect(actionRows(app).map(\.id) == ["actions:CS_before"] && app.unseen.contains("actions:CS_before"))
+        try await settled(app)
+        #expect(app.unseenCount == 1)
+        actions.set("demo-a/pet", ["CS_before", "CS_after"])
+        app.requestRefresh()
+        try await settled(app)
+        #expect(app.unseen.contains("actions:CS_after") && app.unseenCount == 2)
+    }
+
     @Test func enablingTheWatchSeedsExistingFailuresSilentlyThenAnnouncesNewOnesOnce() async throws {
         let actions = ScriptedActions()
         let app = model(actions); defer { app.cleanupScopeSimulation() }

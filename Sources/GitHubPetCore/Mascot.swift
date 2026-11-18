@@ -219,6 +219,10 @@ public struct EventClipQueue: Sendable {
     public mutating func clear(origin: Origin? = nil) {
         if let origin { byOrigin.removeValue(forKey: origin) } else { byOrigin.removeAll() }
     }
+
+    public mutating func clear(origin: Origin, matching predicate: (InboxEvent) -> Bool) {
+        if let clip = byOrigin[origin], predicate(clip.event) { clear(origin: origin) }
+    }
 }
 
 /// The attention "friendly double wave" (design #29, docs/design/notifications/
