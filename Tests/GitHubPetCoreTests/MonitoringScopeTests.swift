@@ -176,6 +176,23 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
 }
 
 @Suite struct ScopedQueryTests {
+    @Test func directAssignmentChangesOnlyReviewSearchVariables() throws {
+        let ten = try MonitoringScope(selected: (0..<10).map { try MonitoringTarget(organization: "fixture\($0)") })
+        for scope in try [.everything, mixedScope(), ten] {
+            let all = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+            let direct = try ScopeQueryPlan(scope: scope, expectedAccount: accountA, assignmentMode: .direct)
+            let inclusions = max(1, scope.targets.count)
+            #expect(direct.searches.map(\.alias) == all.searches.map(\.alias))
+            #expect(direct.searches.count == inclusions * 3)
+            #expect(direct.arguments == all.arguments.map { argument in
+                argument.hasPrefix("reviews")
+                    ? argument.replacingOccurrences(of: "review-requested:@me", with: "user-review-requested:@me")
+                    : argument
+            })
+            #expect(direct.arguments.filter { $0.contains("user-review-requested:@me") }.count == inclusions)
+        }
+    }
+
     @Test func viewerDisplayLoginsAcceptManagedAccountsWithoutChangingIdentityOrTargets() throws {
         try checkViewerDisplayLogins { ScopedResponseParser.parse($0, plan: $1) }
     }
@@ -495,6 +512,29 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     private func client(_ runner: ScopeRunner, timeout: TimeInterval = 20) -> ScopedGhClient {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
+    }
+
+    @Test func directAssignmentBindsViewerAndNeverFallsBackOnSearchFailure() throws {
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA, assignmentMode: .direct)
+        var differentViewer = envelope(plan)
+        differentViewer["viewer"] = ["id": accountB.viewerID, "login": "other-viewer"]
+        let limited = try response(envelope(plan), errors: [["type": "RATE_LIMITED"]])
+        let runner = ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: try response(differentViewer)),
+                                 CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: limited),
+                                 CommandResult(exitCode: 0), CommandResult(exitCode: 0, stdout: limited, outputComplete: false)])
+        let client = client(runner)
+        let budget = CommandBudget()
+        let mismatch = client.fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct, budget: budget)
+        #expect(mismatch.issues == [.identityMismatch] && mismatch.items.isEmpty)
+        let partial = client.fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct, budget: budget)
+        #expect(partial.issues == [.rateLimited])
+        guard case .snapshot(let rows, false, 0) = partial.outcome else { Issue.record("rate limit must stay partial"); return }
+        #expect(rows.isEmpty)
+        let failure = client.fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct, budget: budget)
+        #expect(failure.issues == [.incompleteOutput])
+        guard case .failure = failure.outcome else { Issue.record("truncated output must stay unknown"); return }
+        #expect(runner.calls == Array(repeating: [GhClient.authStatusArguments, plan.arguments], count: 3).flatMap { $0 })
+        #expect(budget.consumedBytes > limited.count && budget.remaining <= CommandBudget.maximumSeconds)
     }
     @Test func identityOnlyRequestRunsNoSearchesAndDetectsTheViewer() throws {
         let plan = ScopeQueryPlan(identityFor: accountA)

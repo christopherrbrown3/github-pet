@@ -279,6 +279,9 @@ enum QAScenarioRunner {
         "apply": Action(keys: ["scope"], validate: { _ = try $0.string("scope", ["selected", "everything"]) }) { c in
             c.model.simulateScopeApply(try c.string("scope", ["selected", "everything"]) == "selected")
         },
+        "assignment": Action(keys: ["mode"], validate: { _ = try $0.string("mode", ["all", "direct"]) }) { c in
+            c.model.simulateAssignmentMode(try c.string("mode", ["all", "direct"]) == "direct" ? .direct : .all)
+        },
         "hold": Action(keys: ["count", "refresh"], validate: { c in
             _ = try c.number("count", 1...8, default: 1)
             if c.step.params["refresh"] != nil { _ = try c.bool("refresh") }
@@ -290,6 +293,7 @@ enum QAScenarioRunner {
         "deliver-newest": Action { c in c.model.simulateScopeDeliverOne(newest: true) },
         "deliver-all": Action { c in c.model.simulateScopeDeliver() },
         "inject-row": Action { c in c.model.simulateScopeInject() },
+        "inject-assigned-issue": Action { c in c.model.simulateAssignedIssue() },
         "inject-incident": Action(keys: ["tier"], validate: { _ = try $0.string("tier", ["minor", "major"]) }) { c in
             c.model.injectServiceIncident(try c.string("tier", ["minor", "major"]) == "major" ? .major : .minor)
         },
@@ -334,9 +338,17 @@ enum QAScenarioRunner {
         "wait-real": Action(keys: ["seconds"], validate: { _ = try $0.number("seconds", 0...60) }) { c in
             try await Task.sleep(nanoseconds: UInt64(try c.number("seconds", 0...60) * 1e9))
         },
-        "open-settings": Action { c in
+        "open-settings": Action(keys: ["section"], validate: { c in
+            if c.step.params["section"] != nil { _ = try c.string("section", ["assignment"]) }
+        }) { c in
             guard c.plan!.rendersPNGs, let out = c.output else { return }
-            try await renderPNG(SettingsView(model: c.model), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
+            if c.step.params["section"] != nil {
+                // The full form opens at the top. Capture this section with its real grouped controls.
+                try await renderPNG(Form { AssignmentModeSection(model: c.model) }.formStyle(.grouped)
+                    .frame(width: 520, height: 220), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
+            } else {
+                try await renderPNG(SettingsView(model: c.model), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
+            }
         },
         "quit": Action { c in
             // Normal-quit path with replies possibly still held; then prove no late callback revives the domain.
@@ -420,6 +432,7 @@ enum QAScenarioRunner {
             "simulatedAccount": optional(model.simulatedAccountName),
             "simulatedVisibility": optional(model.simulatedVisibility?.rawValue),
             "settings": ["dataSource": model.settings.dataSource == .githubCLI ? "gh" : "fixtures",
+                         "assignmentMode": model.settings.assignmentMode.rawValue,
                          "privacyMode": model.settings.privacyMode, "detailsRevealed": model.detailsRevealed,
                          "reducedMotion": model.settings.reducedMotion, "effectiveReducedMotion": model.effectiveReducedMotion,
                          "alertsAllowed": model.alertsAllowed],
@@ -437,6 +450,7 @@ enum QAScenarioRunner {
             "attention": ["unseenCount": model.unseenCount, "showsAlertIcon": model.showsAlertIcon,
                           "mascotState": model.mascotState.rawValue,
                           "activeClip": model.activeClip.map { ["origin": $0.origin == .repository ? "repository" : "serviceIncident",
+                                                                "itemID": $0.event.item.id,
                                                                 "state": $0.state.rawValue, "startedAt": iso($0.startedAt),
                                                                 "endsAt": iso($0.endsAt)] as [String: Any] } ?? NSNull(),
                           "markerBurst": model.markerBurst.map { ["start": iso($0.start), "fromTier": optional($0.fromTier?.rawValue)] as [String: Any] } ?? NSNull(),
@@ -450,10 +464,11 @@ enum QAScenarioRunner {
                                 "requests": model.simulatedPollLog.map { request -> [String: Any] in
                                     ["generation": request.generation, "serial": request.serial,
                                      "scope": request.identityOnly ? "IdentityOnly" : request.scope.mode == .everything ? "Everything" : "Selected",
+                                     "assignmentMode": request.assignmentMode.rawValue,
                                      "identityOnly": request.identityOnly,
                                      // What GitHub was asked for: identity-only requests run no searches.
                                      "searchAliases": request.identityOnly ? [] : ((try? ScopeQueryPlan(scope: request.scope,
-                                         expectedAccount: request.expectedAccount))?.searches.map(\.alias) ?? []),
+                                         expectedAccount: request.expectedAccount, assignmentMode: request.assignmentMode))?.searches.map(\.alias) ?? []),
                                      "targets": request.scope.targets.map { target in target.name.map { "\(target.owner)/\($0)" } ?? target.owner },
                                      "expectedAccount": account(request.expectedAccount)]
                                 }],
@@ -468,6 +483,28 @@ enum QAScenarioRunner {
 
     static let builtInScenarios: [String: String] = coreScenarios.merging(settingsScenarios) { core, _ in core }
     static let coreScenarios: [String: String] = [
+        "assignment-reach": #"""
+        {"name": "assignment-reach", "steps": [
+          {"action": "open-settings", "section": "assignment", "label": "default-all-settings"},
+          {"action": "apply", "scope": "everything", "label": "all-review-scope"},
+          {"action": "inject-assigned-issue", "label": "unread-issue"},
+          {"action": "authored", "mode": "changes-requested", "label": "unread-authored"},
+          {"action": "inject-row", "label": "unread-personal-review"},
+          {"action": "hold", "label": "hold-old-all"},
+          {"action": "inject-assigned-issue", "label": "new-issue-at-source"},
+          {"action": "inject-row", "label": "new-review-at-source"},
+          {"action": "hold", "refresh": false, "label": "queue-hold-direct"},
+          {"action": "assignment", "mode": "direct", "label": "switch-direct-held"},
+          {"action": "deliver-newest", "label": "first-direct-new-issue"},
+          {"action": "deliver-oldest", "label": "discard-old-all"},
+          {"action": "open-settings", "section": "assignment", "label": "direct-settings"},
+          {"action": "mark-seen", "label": "mark-seen"},
+          {"action": "refresh", "label": "no-replay"},
+          {"action": "clock-advance", "seconds": 3, "label": "previous-attention-finished"},
+          {"action": "inject-row", "label": "new-direct-review"},
+          {"action": "assignment", "mode": "all", "label": "return-to-all"},
+          {"action": "quit", "label": "clean-quit"}]}
+        """#,
         "restore-before-display": #"""
         {"name": "restore-before-display", "steps": [
           {"action": "reload", "viewer": "unknown", "label": "reload-unknown-viewer"},

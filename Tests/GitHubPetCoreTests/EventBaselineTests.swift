@@ -7,6 +7,21 @@ private let accountA = try! ScopeAccount(viewerID: "U_baseline_A")
 private let accountB = try! ScopeAccount(viewerID: "U_baseline_B")
 private let keyA = BaselineKey(source: .githubCLI, identity: .github(accountA), scope: .everything)
 
+@Test func assignmentModeIsPartOfTheBaselineKeyWithoutChangingLegacyAll() throws {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .sortedKeys
+    let scopeText = String(decoding: try encoder.encode(MonitoringScope.everything), as: UTF8.self)
+    let legacy = EventBaseline.digest("v\(EventBaseline.version)\nc\(ScopeQueryPlan.categoriesVersion)\ngithubCLI\n\(ScopeIdentity.github(accountA).storageSuffix)\n\(scopeText)")
+    #expect(keyA.value == legacy)
+    let direct = BaselineKey(source: .githubCLI, identity: .github(accountA), scope: .everything, assignmentMode: .direct)
+    let selected = try MonitoringScope(selected: [MonitoringTarget(repository: "example/pet")])
+    let otherKeys = [keyA,
+                     BaselineKey(source: .fixtures, identity: .demo, scope: .everything, assignmentMode: .direct),
+                     BaselineKey(source: .githubCLI, identity: .github(accountB), scope: .everything, assignmentMode: .direct),
+                     BaselineKey(source: .githubCLI, identity: .github(accountA), scope: selected, assignmentMode: .direct)]
+    #expect(!otherKeys.contains(direct))
+}
+
 private func item(_ id: String) -> InboxItem {
     InboxItem(id: id, kind: .reviewRequest, repository: "secret-org/secret-repo", title: "Secret title \(id)",
               url: URL(string: "https://github.com/secret-org/secret-repo/pull/1"), updatedAt: t0)
