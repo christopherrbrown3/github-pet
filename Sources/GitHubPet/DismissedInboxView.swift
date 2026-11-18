@@ -16,17 +16,12 @@ struct DismissedInboxView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(rows) { row in
-                        let title = title(for: row)
+                        let title = row.title(privacy: privacy)
                         HStack(spacing: 8) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(title).lineLimit(2)
-                                if let item = row.item {
-                                    Text(PrivacyText.subtitle(item, privacy: privacy)).lineLimit(1)
-                                        .font(.caption).foregroundStyle(.secondary)
-                                } else {
-                                    Text("Unavailable in this view")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
+                                Text(row.subtitle(privacy: privacy)).lineLimit(1)
+                                    .font(.caption).foregroundStyle(.secondary)
                                 Text("Dismissed \(row.record.dismissedAt.formatted(date: .abbreviated, time: .shortened))")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
@@ -44,12 +39,5 @@ struct DismissedInboxView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Dismissed items")
         }
-    }
-
-    private func title(for row: DismissedInboxRow) -> String {
-        if let item = row.item { return PrivacyText.title(item, privacy: privacy) }
-        let kind = row.record.kind.genericLabel
-        guard !privacy, let number = row.record.number else { return kind }
-        return "\(kind) #\(number)"
     }
 }

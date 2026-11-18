@@ -83,6 +83,8 @@ private final class FrozenBudgetClock: @unchecked Sendable {
             "corrupt-saved-selected", "partial-recovery-new-once", "incidents-preserved", "privacy-summary", "demo-isolation",
             "hidden-results"])
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"visibility","mode":"secret"}]}"#)]) != nil)
+        #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"dismiss","id":42}]}"#)])?.contains("synthetic row ID") == true)
+        #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"view-dismissed","on":1}]}"#)])?.contains("must be true or false") == true)
     }
 
     @Test func outputNeverOverwritesFilesTheRunnerDidNotWrite() throws {
@@ -327,6 +329,52 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(simulation.progress == (entered: 1, finished: 1, held: 0))
         #expect(!simulation.releaseReply(newest: false), "nothing is left to deliver")
     }
+
+    @Test func dismissalScenarioRecordsBothViewsAndQuietRestores() async throws {
+        let output = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: output) }
+        let arguments = ["--qa-scenario", "inbox-dismissal", "--qa-output", output.path]
+        #expect(refusal(arguments)?.contains("require --simulate-monitoring-scope") == true)
+        let plan = try QAScenarioRunner.makePlan(options(["--simulate-monitoring-scope"] + arguments))
+        let (_, summary) = try await execute(plan)
+        let allSteps = try records(output)
+        let labels = allSteps.compactMap { $0["label"] as? String }
+        try #require(Set(labels).count == allSteps.count)
+        let steps = Dictionary(uniqueKeysWithValues: zip(labels, allSteps))
+        func state(_ step: String, _ key: String) throws -> [String: Any] {
+            try #require(steps[step]?[key] as? [String: Any], "\(step) / \(key)")
+        }
+        func row(_ step: String) throws -> [String: Any] {
+            let state = try state(step, "dismissal")
+            #expect(state["view"] as? String == "dismissed")
+            return try #require((state["visibleRows"] as? [[String: Any]])?.first)
+        }
+        let dismissed = try state("dismiss-last-current", "dismissal")
+        #expect(dismissed["view"] as? String == "inbox" && dismissed["allCurrentDismissed"] as? Bool == true)
+        #expect(try state("dismiss-last-current", "inbox")["badge"] as? String == "0")
+        #expect(try state("dismissed-with-partial", "inbox")["badge"] as? String == "0+")
+        #expect(try state("dismissed-with-partial", "inbox")["status"] as? String == "Partial data")
+        #expect(try state("dismissed-with-partial", "dismissal")["allCurrentDismissed"] as? Bool == false)
+
+        let available = try row("available-private")
+        #expect(available["available"] as? Bool == true && available["visibleTitle"] as? String == "Review request")
+        #expect(available["visibleSubtitle"] as? String == "Demo · Review request")
+        #expect(try row("available-revealed")["visibleTitle"] as? String == "Simulated review 0")
+        let unavailable = try row("unavailable-private")
+        #expect(unavailable["available"] as? Bool == false && unavailable["visibleTitle"] as? String == "Review request")
+        #expect(unavailable["visibleSubtitle"] as? String == "Unavailable in this view")
+        #expect(try row("unavailable-revealed")["visibleTitle"] as? String == "Review request #1001")
+
+        for (step, badge) in [("current-restored-quietly", "1"), ("outside-restored-quietly", "2"), ("unchanged-after-restore", "2")] {
+            let attention = try state(step, "attention"), inbox = try state(step, "inbox")
+            #expect(attention["unseenCount"] as? Int == 0 && attention["activeClip"] is NSNull)
+            #expect(inbox["badge"] as? String == badge)
+            #expect(try state(step, "dismissal")["savedCount"] as? Int == 0)
+        }
+        let quit = try #require(summary["quit"] as? [String: Any])
+        #expect(quit["domainKeysAfterCleanup"] as? Int == 0 && quit["plistOnDisk"] as? Bool == false)
+    }
+
     @Test func quitWithHeldReplyCleansDomainAndRejectsTheLateCallback() async throws {
         let output = temporaryDirectory()
         let plan = try QAScenarioRunner.makePlan(options(["--simulate-monitoring-scope", "--qa-scenario", "demo-isolation", "--qa-output", output.path]))

@@ -4,12 +4,21 @@ import SwiftUI
 /// The shared inbox, used by the menu-bar popover and the Inbox window.
 struct InboxView: View {
     @ObservedObject var model: AppModel
-    var showsWindowButton = true
+    var showsWindowButton: Bool
     /// Closing a real inbox marks its items seen; offscreen render copies must not.
-    var marksSeenOnClose = true
+    var marksSeenOnClose: Bool
     /// README renders only: hide the fixture Simulator menu, a developer control.
-    var showsSimulator = true
-    @State private var dismissedContext: InboxDismissalContext?
+    var showsSimulator: Bool
+    @State private var selection: InboxViewSelection
+
+    init(model: AppModel, showsWindowButton: Bool = true, marksSeenOnClose: Bool = true,
+         showsSimulator: Bool = true, initialSelection: InboxViewSelection = InboxViewSelection()) {
+        self.model = model
+        self.showsWindowButton = showsWindowButton
+        self.marksSeenOnClose = marksSeenOnClose
+        self.showsSimulator = showsSimulator
+        _selection = State(initialValue: initialSelection)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -130,9 +139,9 @@ struct InboxView: View {
     @ViewBuilder
     private var inboxContent: some View {
         if let context = model.inboxDismissalContext {
-            let viewingDismissed = dismissedContext == context
+            let viewingDismissed = selection.showsDismissed(in: context)
             Button(viewingDismissed ? "Back to Inbox" : "View dismissed") {
-                dismissedContext = viewingDismissed ? nil : context
+                selection.showDismissed(!viewingDismissed, in: context)
             }
             .controlSize(.small)
             .accessibilityIdentifier(viewingDismissed ? "inbox.backFromDismissed" : "inbox.viewDismissed")

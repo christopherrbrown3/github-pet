@@ -7,10 +7,34 @@ struct InboxDismissalContext: Equatable {
     let generation: Int
 }
 
+/// Each Inbox surface owns its selection. A source/account/scope change returns it to the Inbox.
+struct InboxViewSelection {
+    private var dismissedContext: InboxDismissalContext?
+
+    func showsDismissed(in context: InboxDismissalContext?) -> Bool {
+        context != nil && dismissedContext == context
+    }
+
+    mutating func showDismissed(_ show: Bool, in context: InboxDismissalContext) {
+        dismissedContext = show ? context : nil
+    }
+}
+
 struct DismissedInboxRow: Equatable, Identifiable {
     let record: DismissedInboxItem
     let item: InboxItem?
     var id: String { record.id }
+
+    func title(privacy: Bool) -> String {
+        if let item { return PrivacyText.title(item, privacy: privacy) }
+        let kind = record.kind.genericLabel
+        guard !privacy, let number = record.number else { return kind }
+        return "\(kind) #\(number)"
+    }
+
+    func subtitle(privacy: Bool) -> String {
+        item.map { PrivacyText.subtitle($0, privacy: privacy) } ?? "Unavailable in this view"
+    }
 }
 
 /// App-owned projection of the local store onto the current primary Inbox snapshot.
