@@ -1,3 +1,12 @@
+# Current work after the #77 merge — 2026-11-18
+
+Codex t1r remains sole PM. Existing Sol 6.2 Developer t68 (high), Developer t69 (high) and QA t6b (medium) received continuation dispatch after the displayed 2:36 PM Eastern reset. No new sessions. Use their live reports for readiness and precise worktrees.
+
+- #77 is Done. PR79 accepted at 478ef4a227b50408dca42b3f85ffb6683994e7b4 after CI44331572138, independent source review and one packaged assignment-reach scenario, QA comment6982821624. Merged to main as 065068d34688445676a93e8d23459c42bcb9d821. Live account behavior and native input timing remain outside that offline check.
+- #78 returns to In Progress. PR80 head 111c658b3788c7064b2d0edff968667b92e941b4 has a second failed hosted persistence check (CI44332992777). After the synthetic writer exited, the physical plist contained one of two required records. The missing identity and cause are unknown. There was no package. Developer t69 is authorized to merge current main into PR80, instrument the disposable runner only, and run one new hosted CI cycle. The physical plist and the fresh reader each need to pass. Prior source review and packaged scenario design remain available.
+- PR76 head bbc11fe0925c644320adbcf8c120b69b7cfdc86b is held for current main ancestry and a review visibility replay defect. Developer t68 has the approved narrow chronological review comparison and bounded persisted baseline plan. Use a new isolated worktree to preserve the prior interrupted merge. QA will examine the exact signed artifact after green CI.
+- Main 065068d CI44334366012 failed at the Intel smoke timeout. The same step timed out on 7dfa0e2 CI44157571417 and d42da4a CI44154391764 before #77. Build, tests, packaging and native render ran successfully at 065068d. QA t6b is examining existing evidence for a smaller x86_64 smoke test. Release acceptance is pending working Intel smoke evidence and any separate Chris authorization.
+
 # Current authority and dispatch — 2026-11-18
 
 Chris transferred sole PM authority to Codex **t1r**, GPT-6.2 Sol, after Claude reached its weekly limit. Route reports to `hc send t1r`. The prior Claude sessions t61–t64 are suspended with their worktrees and evidence preserved. This entry and live GitHub state supersede all earlier status snapshots below.
