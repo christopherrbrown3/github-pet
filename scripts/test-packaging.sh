@@ -15,53 +15,117 @@ for number in 1 2 3; do
     -c commit.gpgsign=false commit -qm "fixture $number" --allow-empty
 done
 
-# Exercise the real smoke script with a fake architecture launcher and app. These fixtures
-# test exit/report handling only; they neither require nor claim actual Rosetta execution.
+# Exercise the real wrapper using a fake architecture launcher and app. These are evidence
+# and exit-handling controls. Hosted CI runs the actual signed app separately.
 mkdir -p "$scratch/intel/scripts" "$scratch/intel/Test.app/Contents/MacOS"
 cp scripts/intel-smoke.sh "$scratch/intel/scripts/"
+fixture_sha=0123456789abcdef0123456789abcdef01234567
+python3 - "$scratch/intel/Test.app/Contents/Info.plist" "$fixture_sha" <<'PLIST'
+import plistlib
+import sys
+with open(sys.argv[1], "wb") as out:
+    plistlib.dump({"GitHubPetSourceRevision": sys.argv[2]}, out)
+PLIST
 cat > "$scratch/bin/lipo" <<'SH'
 #!/bin/sh
-echo x86_64
+echo 'x86_64 arm64'
 SH
 cat > "$scratch/bin/arch" <<'SH'
 #!/bin/sh
 test "$1" = -x86_64 || exit 64
 shift
+if [ "$1" = /usr/sbin/sysctl ]; then
+  test "$2" = -n && test "$3" = sysctl.proc_translated || exit 64
+  case "$SMOKE_CASE" in
+    no-rosetta) echo 'arch: Bad CPU type in executable' >&2; exit 1 ;;
+    probe-error) echo 'arch: permission denied' >&2; exit 1 ;;
+    native) echo 0 ;;
+    *) echo 1 ;;
+  esac
+  exit 0
+fi
 exec "$@"
 SH
-cat > "$scratch/intel/Test.app/Contents/MacOS/GitHubPet" <<'SH'
-#!/bin/sh
-test "$1" = --render-snapshots || exit 64
-mkdir -p "$2"
-printf '%s\n' '## 01-baseline' 'state=Up to date badge=3 rows=3 demo=true' > "$2/report.txt"
-exit "$SMOKE_TEST_EXIT"
-SH
+cat > "$scratch/intel/Test.app/Contents/MacOS/GitHubPet" <<'APP'
+#!/usr/bin/env python3
+import json
+import os
+import struct
+import subprocess
+import sys
+import zlib
+from pathlib import Path
+
+case = os.environ["SMOKE_CASE"]
+Path(os.environ["SMOKE_SENTINEL"]).touch()
+assert sys.argv[1:3] == ["--simulate-monitoring-scope", "--qa-scenario"]
+assert sys.argv[4] == "--qa-output"
+scenario = json.loads(Path(sys.argv[3]).read_text())
+assert scenario == {"name": "intel-startup", "steps": [{"action": "quit"}]}
+out = Path(sys.argv[5])
+out.mkdir()
+if case == "missing":
+    sys.exit(0)
+domain = "dev.github-pet.scope-simulation.packaging-test"
+startup = {"step": 0, "action": "launch", "defaultsDomain": domain,
+           "monitoringScope": {"identity": "github:A", "active": "Selected"},
+           "inbox": {"status": "Up to date", "demoLabel": True, "simulatedLabel": True, "rows": [{"isDemo": True}]}}
+(out / "step-00-launch.json").write_text("{" if case == "bad-json" else json.dumps(startup))
+(out / "runner.json").write_text(json.dumps({"scenario": scenario["name"], "steps": 1,
+    "defaultsDomain": domain, "completed": True, "quit": {
+        "domainKeysAfterCleanup": int(case == "unclean"), "heldAtQuit": 0, "plistOnDisk": False}}))
+
+def chunk(kind, data):
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+signature = b"\x89PNG\r\n\x1a\n"
+header = chunk(b"IHDR", struct.pack(">IIBBBBB", 2, 2, 8, 2, 0, 0, 0))
+pixels = chunk(b"IDAT", zlib.compress((b"\x00" + b"\xff\x00\x00" * 2) * 2))
+png = signature + header + pixels + chunk(b"IEND", b"")
+(out / "step-00-launch-inbox.png").write_bytes(signature + header if case == "bad-png" else png)
+if case == "gh":
+    subprocess.run([os.environ["GITHUB_PET_GH_PATH"]], check=False)
+sys.exit(86 if case == "nonzero" else 0)
+APP
 chmod +x "$scratch/bin/"{lipo,arch} "$scratch/intel/Test.app/Contents/MacOS/GitHubPet"
-for child_code in 0 86; do
-  log=$scratch/intel-$child_code.log
-  if PATH="$scratch/bin:$PATH" SMOKE_TEST_EXIT=$child_code \
+for smoke_case in normal nonzero missing bad-json bad-png unclean gh no-rosetta probe-error native wrong-revision; do
+  log=$scratch/intel-$smoke_case.log
+  sentinel=$scratch/launched-$smoke_case
+  wanted_sha=$fixture_sha
+  [[ $smoke_case != wrong-revision ]] || wanted_sha=0000000000000000000000000000000000000000
+  case "$smoke_case" in
+    normal) expected_code=0; expected_text='PASS.*x86_64 slice started and quit' ;;
+    nonzero) expected_code=86; expected_text='exited unsuccessfully [(]86[)]' ;;
+    missing|bad-json|bad-png) expected_code=1; expected_text='unusable translated startup evidence' ;;
+    unclean) expected_code=1; expected_text='offline runner did not cleanly quit' ;;
+    gh) expected_code=1; expected_text='GitHub CLI tripwire fired' ;;
+    no-rosetta) expected_code=0; expected_text='SKIP.*Rosetta is unavailable' ;;
+    probe-error) expected_code=1; expected_text='translation probe exited 1' ;;
+    native) expected_code=1; expected_text='did not report translation' ;;
+    wrong-revision) expected_code=1; expected_text='bundle revision differs from expected source' ;;
+  esac
+  if PATH="$scratch/bin:$PATH" SMOKE_CASE=$smoke_case SMOKE_SENTINEL=$sentinel EXPECTED_SOURCE_SHA=$wanted_sha \
     "$scratch/intel/scripts/intel-smoke.sh" Test.app >"$log" 2>&1; then
     result=0
   else
     result=$?
   fi
-  test -f "$scratch/intel/.build/intel-smoke/report.txt"
-  if [[ $result != $child_code ]]; then
+  if [[ $result != $expected_code ]] || ! grep -Eq "$expected_text" "$log"; then
     cat "$log" >&2
-    echo "FAIL intel-smoke child=$child_code: expected exit $child_code, got $result" >&2
+    echo "FAIL intel-smoke $smoke_case: expected exit $expected_code and '$expected_text', got $result" >&2
     exit 1
   fi
-  if (( child_code == 0 )); then
-    grep -q 'x86_64 slice ran the snapshot scenario' "$log"
-  else
-    grep -q 'exited unsuccessfully (86)' "$log"
-    if grep -q 'x86_64 slice ran the snapshot scenario' "$log"; then
-      echo 'FAIL unsuccessful Intel child reported success' >&2
-      exit 1
-    fi
+  case "$smoke_case" in
+    no-rosetta|probe-error|native|wrong-revision) test ! -e "$sentinel" ;;
+    *) test -e "$sentinel" ;;
+  esac
+  if [[ $smoke_case != normal ]] && grep -Eq 'PASS.*x86_64 slice started and quit' "$log"; then
+    echo "FAIL intel-smoke $smoke_case reported runtime success" >&2
+    exit 1
   fi
-  echo "PASS intel-smoke child=$child_code with usable report (exit $result)"
+  echo "PASS intel-smoke $smoke_case (exit $result)"
 done
+test "$(find "$scratch/intel/.build/intel-smoke" -name steps.tsv | wc -l)" -eq 11
 
 # Reaching this sentinel proves the complete checkout passed the provenance guard. Never compile.
 cat > "$scratch/bin/swift" <<'SH'
