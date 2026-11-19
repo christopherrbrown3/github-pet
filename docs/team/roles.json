@@ -55,16 +55,16 @@
       "name": "qa-engineer",
       "terminal": "t6b",
       "runtime": "codex",
-      "assignment": "Independent source and functional review of #83 mascot choice and #60/#15 polish, qa-nov18",
-      "intendedModel": "gpt-6.2-sol",
-      "observedModel": "gpt-6.2-sol",
+      "assignment": "PR84 independent source and functional review, then #83 skin, same qa-nov18 worktree.",
+      "intendedModel": "gpt-6-luna",
+      "observedModel": "gpt-6-luna",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
       "sessionId": null,
       "previousClaudeTerminal": "t63",
       "previousClaudeModel": "claude-opus-5-5",
       "previousClaudeSessionId": "75c23127-a4b1-4819-bc22-3f78b1b19d9e",
       "reasoningEffort": "medium",
-      "verification": "Live foreground argv and READY from t6b.",
+      "verification": "Chris explicitly requested Luna on Nov 19. Existing t6b switched in-session via /model; TUI confirmed GPT-6-Luna medium. Launch argv records prior Sol only.",
       "previousCodexTerminal": "t5p",
       "previousCodexModel": "gpt-6.1-sol/medium"
     },
@@ -92,7 +92,7 @@
       "verification": "actual hc launch argv + t49 explicit model-choice/readiness confirmation"
     }
   ],
-  "observedDate": "2026-11-18",
+  "observedDate": "2026-11-19",
   "noMergeWithoutUserAuthorization": true,
   "note": "Post-beta.2 current dispatch. PM t1r sole coordinator, no new release direction. Developer owns code and tests, Designer owns mascot asset work, QA independent source and functional review. No Copilot."
 }

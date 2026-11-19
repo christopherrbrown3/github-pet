@@ -1,3 +1,9 @@
+# QA model update — 2026-11-19
+
+Chris requested Luna for QA. Existing QA t6b now uses GPT-6-Luna at medium effort, verified in the TUI after an explicit session-only model change. Reuse this model for future QA launches unless Chris changes it. Worktree qa-nov18 and its evidence are preserved. Developers remain GPT-6.2 Sol high.
+
+PR84 is in independent review at 9f0227fabaf63c66f75b728641b623c098e647de, based on main 00e1be4. It wraps the Partial Inbox quality explanation and exposes the existing Startup status to accessibility. Developer before/after fixture and nine focused checks passed. CI44497523577 is active. Independent exact artifact evidence and limitations remain pending.
+
 # Post-beta.2 dispatch — 2026-11-18
 
 Beta.2 is published and verified. The release tag points to main 00e1be4d0bb14f73782130ad15eb4a8f0cf19ca8, build 263 from main CI44440438255. PR79, PR76 and PR80/82 shipped. #77, #78 and #81 are Done. #30 was closed after QA confirmed PR48 and PR51 ancestry and existing accepted scope documentation. Historical PR46 remains a planning draft. Live account and native accessibility, clean install, upgrade, login-item and physical Intel evidence remain in #4 and #15.
