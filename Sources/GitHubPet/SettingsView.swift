@@ -212,6 +212,7 @@ struct LoginItemSection: View {
         Section("Startup") {
             Toggle("Open at login", isOn: Binding(get: { settings.isOn }, set: { settings.setEnabled($0) }))
                 .disabled(!settings.isAvailable || settings.status == nil)
+                .accessibilityValue(Text(verbatim: settings.summary))
                 .accessibilityIdentifier("settings.openAtLogin")
             Text(settings.summary)
                 .font(.caption).foregroundStyle(settings.failure == nil ? .secondary : Color.orange)

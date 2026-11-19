@@ -1,14 +1,21 @@
 import Foundation
 import Testing
 
-/// Static guard (the app target has no test target, and SwiftUI builds its accessibility tree
-/// only for a live assistive client): every Slider in the app's views carries an explicit
-/// accessibility label. Live VoiceOver behaviour still needs QA.
+/// Source checks for explicit accessibility metadata. Native focus and VoiceOver announcements
+/// still need a separate QA pass.
 @Suite struct AccessibilitySourceTests {
+    private let sources = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("Sources/GitHubPet")
+
+    @Test func loginToggleExposesTheExistingStatusSummary() throws {
+        let source = try String(contentsOf: sources.appendingPathComponent("SettingsView.swift"), encoding: .utf8)
+        let toggle = try #require(source.range(of: #"Toggle("Open at login""#))
+        let caption = try #require(source.range(of: "Text(settings.summary)", range: toggle.upperBound..<source.endIndex))
+        #expect(source[toggle.upperBound..<caption.lowerBound].contains(".accessibilityValue(Text(verbatim: settings.summary))"))
+    }
+
     @Test func everySliderHasAnAccessibilityLabel() throws {
-        let sources = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .appendingPathComponent("Sources/GitHubPet")
         let files = try FileManager.default.contentsOfDirectory(at: sources, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "swift" }
         var sliders = 0
