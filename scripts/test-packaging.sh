@@ -127,6 +127,20 @@ for smoke_case in normal nonzero missing bad-json bad-png unclean gh no-rosetta 
 done
 test "$(find "$scratch/intel/.build/intel-smoke" -name steps.tsv | wc -l)" -eq 11
 
+# The real built-ins stage only manifest-declared files. An unexpected asset fails verification.
+python3 scripts/mascot-resources.py stage assets/mascots "$scratch/packs"
+for pack in mona-pet-v1 little-chris-v1; do
+  cmp "assets/mascots/$pack/manifest.json" "$scratch/packs/$pack/manifest.json"
+  test ! -e "$scratch/packs/$pack/source"
+done
+touch "$scratch/packs/little-chris-v1/extra.png"
+if python3 scripts/mascot-resources.py verify "$scratch/packs" >"$scratch/extra-assets.log" 2>&1; then
+  echo 'FAIL mascot resources accepted an unexpected Little Chris asset' >&2
+  exit 1
+fi
+grep -q 'bundled files differ from manifest runtime files' "$scratch/extra-assets.log"
+echo 'PASS mascot resources stage the two manifests and runtime frames only'
+
 # Reaching this sentinel proves the complete checkout passed the provenance guard. Never compile.
 cat > "$scratch/bin/swift" <<'SH'
 #!/bin/sh

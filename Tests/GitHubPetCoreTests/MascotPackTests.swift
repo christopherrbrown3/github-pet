@@ -444,6 +444,20 @@ private struct PackFixture {
 }
 
 @Suite struct BundledPackTests {
+    @Test func littleChrisHasNineValidatedRuntimeFrames() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let id = MascotSkin.littleChris.rawValue
+        let directory = root.appendingPathComponent("assets/mascots/\(id)", isDirectory: true)
+        let pack = try MascotPack.load(from: directory, expectedID: id).get()
+        #expect(pack.manifest.name == "Little Chris")
+        #expect(pack.manifest.anchor == MascotPack.anchor && pack.imageData.count == 9)
+        #expect(pack.manifest.frameSha256?.count == 9)
+        for state in MascotState.allCases {
+            #expect(pack.frameData(for: state).count == 3 && pack.staticFallbackData(for: state) != nil)
+        }
+    }
+
     /// The repository's shipped pack must pass the same validation the app runs at launch.
     @Test func repositoryPackIsValid() throws {
         let root = URL(fileURLWithPath: #filePath)

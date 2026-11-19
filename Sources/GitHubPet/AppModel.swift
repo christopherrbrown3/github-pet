@@ -29,6 +29,7 @@ final class AppModel: ObservableObject {
         /// Its own 20 s / 2 MiB budget, separate from the inbox searches; it starts when the
         /// Actions query starts, so slow searches never shorten it.
         var actionsBudget: @Sendable () -> CommandBudget = { CommandBudget(timeout: 20) }
+        var mascotPackDirectory: (MascotSkin) -> URL? = { LaunchOptions.builtInPackDirectory(for: $0) }
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -76,6 +77,11 @@ final class AppModel: ObservableObject {
                 prepareAssignmentModeChange(from: oldValue.assignmentMode)
             }
             store.save(settings)
+            if settings.mascotSkin != oldValue.mascotSkin && !mascotArtwork.locksPicker {
+                let next = mascotArtworkLoader.resolve(settings.mascotSkin)
+                if next.source != mascotArtwork.source { layouts.removeAll() }
+                mascotArtwork = next
+            }
             if settings.dataSource != oldValue.dataSource { switchSource() }
             else if assignmentChanged { switchAssignmentMode() }
             if settings.privacyMode && !oldValue.privacyMode { detailsRevealed = false }
@@ -90,8 +96,9 @@ final class AppModel: ObservableObject {
         }
     }
 
-    let pack: MascotPack?
-    let packErrors: [MascotPackError]
+    @Published private(set) var mascotArtwork: MascotArtwork
+    var pack: MascotPack? { mascotArtwork.pack }
+    private var mascotArtworkLoader: MascotArtworkLoader
 
     private let store: SettingsStore
     let clockOffset: TimeInterval
@@ -200,20 +207,11 @@ final class AppModel: ObservableObject {
         serviceClient = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
             ? ServiceStatusClient() : ServiceStatusClient(transport: OfflineStatusTransport())
 
-        if let dir = options.resolvedPackDirectory() {
-            switch MascotPack.load(from: dir) {
-            case .success(let pack): self.pack = pack; packErrors = []
-            case .failure(let failure): pack = nil; packErrors = failure.errors
-            }
-        } else {
-            pack = nil
-            packErrors = []
-        }
+        var artworkLoader = MascotArtworkLoader(options: options, builtInDirectory: runtime.mascotPackDirectory)
+        mascotArtwork = artworkLoader.resolve(loaded.mascotSkin)
+        mascotArtworkLoader = artworkLoader
         // One launch line on stderr so QA can confirm which mascot is in use.
-        let packStatus = pack.map { "mascot pack \($0.manifest.displayID) loaded from \(PackLabel.sanitizePath($0.directory.path))" }
-            ?? (packErrors.isEmpty ? "mascot placeholder (no pack)"
-                : "mascot placeholder (pack rejected: \(packErrors.map(\.description).joined(separator: "; ")))")
-        FileHandle.standardError.write(Data("GitHubPet: \(packStatus)\n".utf8))
+        FileHandle.standardError.write(Data("GitHubPet: \(mascotArtwork.logDescription)\n".utf8))
 
         if runtime.schedulesTimers {
             tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in

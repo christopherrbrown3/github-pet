@@ -330,6 +330,23 @@ enum QAScenarioRunner {
             if c.model.settings.privacyMode { c.model.detailsRevealed = try c.bool("on") }
         },
         "reduce-motion": Action(keys: ["on"], validate: { _ = try $0.bool("on") }) { c in c.model.settings.reducedMotion = try c.bool("on") },
+        "mascot-skin": Action(keys: ["skin"], validate: {
+            _ = try $0.string("skin", MascotSkin.allCases.map(\.rawValue))
+        }) { c in
+            let skin = try c.string("skin", MascotSkin.allCases.map(\.rawValue))
+            if let skin = MascotSkin(rawValue: skin), !c.model.mascotArtwork.locksPicker {
+                c.model.settings.mascotSkin = skin
+            }
+        },
+        "mascot-position": Action(keys: ["x", "y"], validate: { c in
+            _ = try c.number("x", -10_000...10_000)
+            _ = try c.number("y", -10_000...10_000)
+        }) { c in
+            var settings = c.model.settings
+            settings.mascotOriginX = try c.number("x", -10_000...10_000)
+            settings.mascotOriginY = try c.number("y", -10_000...10_000)
+            c.model.settings = settings
+        },
         "refresh": Action { c in c.model.refresh() },
         "mark-seen": Action { c in c.model.markAllSeen() },
         "source": Action(keys: ["source"], validate: { _ = try $0.string("source", ["fixtures", "gh"]) }) { c in
@@ -347,10 +364,13 @@ enum QAScenarioRunner {
             try await Task.sleep(nanoseconds: UInt64(try c.number("seconds", 0...60) * 1e9))
         },
         "open-settings": Action(keys: ["section"], validate: { c in
-            if c.step.params["section"] != nil { _ = try c.string("section", ["assignment"]) }
+            if c.step.params["section"] != nil { _ = try c.string("section", ["assignment", "mascot"]) }
         }) { c in
             guard c.plan!.rendersPNGs, let out = c.output else { return }
-            if c.step.params["section"] != nil {
+            if c.step.params["section"] as? String == "mascot" {
+                try await renderPNG(Form { MascotSettingsSection(model: c.model) }.formStyle(.grouped)
+                    .frame(width: 520, height: 260), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
+            } else if c.step.params["section"] != nil {
                 // The full form opens at the top. Capture this section with its real grouped controls.
                 try await renderPNG(Form { AssignmentModeSection(model: c.model) }.formStyle(.grouped)
                     .frame(width: 520, height: 220), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
@@ -436,6 +456,9 @@ enum QAScenarioRunner {
             return "github:other"
         } ?? NSNull()
         let scope: Any = model.activeMonitoringScope.map { $0.mode == .everything ? "Everything" : "Selected" } ?? NSNull()
+        let layout = model.layout(model.settings.mascotSize)
+        let pose = MascotView(model: model).pose(at: model.clock(), reduced: model.effectiveReducedMotion)
+        let origin = model.settings.mascotOriginX.flatMap { x in model.settings.mascotOriginY.map { [x, $0] } }
         return [
             "scenarioClock": iso(clock.now()),
             "defaultsDomain": optional(model.simulationDomain),
@@ -446,6 +469,11 @@ enum QAScenarioRunner {
                          "privacyMode": model.settings.privacyMode, "detailsRevealed": model.detailsRevealed,
                          "reducedMotion": model.settings.reducedMotion, "effectiveReducedMotion": model.effectiveReducedMotion,
                          "alertsAllowed": model.alertsAllowed],
+            "mascot": ["selectedSkin": model.settings.mascotSkin.rawValue,
+                       "activePack": optional(model.pack?.manifest.displayID), "notice": optional(model.mascotArtwork.notice),
+                       "origin": optional(origin), "groundInPanel": [layout.ground.x, layout.ground.y],
+                       "panelSize": [layout.panelSize.width, layout.panelSize.height],
+                       "poseState": pose.state.rawValue, "poseFrame": optional(pose.frame)],
             "inbox": ["demoLabel": model.isDemo, "simulatedLabel": model.simulatesScope,
                       "demoNotice": optional(model.demoNotice), "hoverLines": model.hoverLines(compact: false),
                       "scopeHeader": model.scopeSummary, "scopeQuality": optional(model.scopeQuality),

@@ -83,15 +83,13 @@ struct LaunchOptions {
         return options
     }
 
-    /// Pack to load: explicit override, else the copy bundled in the .app, else (for
-    /// `swift run`) the repository's pack found above the `.build` directory.
-    func resolvedPackDirectory(bundle: Bundle = .main,
-                               executable: URL = URL(fileURLWithPath: CommandLine.arguments[0])) -> URL? {
-        if forcePlaceholder { return nil }
-        if let packDirectory { return packDirectory }
-        let id = MascotPack.defaultPackID
-        if let bundled = bundle.resourceURL?.appendingPathComponent("MascotPacks/\(id)", isDirectory: true),
-           FileManager.default.fileExists(atPath: bundled.appendingPathComponent("manifest.json").path) {
+    /// A packaged app reads its own resources. A raw SwiftPM executable can also use the checkout.
+    static func builtInPackDirectory(for skin: MascotSkin, bundle: Bundle = .main,
+                                     executable: URL = URL(fileURLWithPath: CommandLine.arguments[0])) -> URL? {
+        let id = skin.rawValue
+        let bundled = bundle.resourceURL?.appendingPathComponent("MascotPacks/\(id)", isDirectory: true)
+        if bundle.bundleURL.pathExtension == "app" { return bundled }
+        if let bundled, FileManager.default.fileExists(atPath: bundled.path) {
             return bundled
         }
         var dir = executable.resolvingSymlinksInPath().deletingLastPathComponent()

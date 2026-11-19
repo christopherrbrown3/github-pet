@@ -51,6 +51,13 @@ struct MascotSettingsSection: View {
         Section("Mascot") {
             Toggle("Show mascot", isOn: $model.settings.mascotVisible)
                 .accessibilityIdentifier("settings.mascotVisible")
+            Picker("Skin", selection: $model.settings.mascotSkin) {
+                ForEach(MascotSkin.allCases, id: \.self) { skin in
+                    Text(skin.name).tag(skin)
+                }
+            }
+            .disabled(model.mascotArtwork.locksPicker)
+            .accessibilityIdentifier("settings.mascotSkin")
             HStack {
                 Text("Size")
                 // Labelled for VoiceOver: the sibling "Size" text doesn't label the control.
@@ -66,10 +73,13 @@ struct MascotSettingsSection: View {
                 model.settings.mascotOriginX = nil
                 model.settings.mascotOriginY = nil
             }
-            if !model.packErrors.isEmpty {
-                Text("Mascot pack rejected, using placeholder: "
-                     + model.packErrors.map(\.description).joined(separator: "; "))
-                    .font(.caption).foregroundStyle(.orange)
+            if let notice = model.mascotArtwork.notice {
+                Text(notice)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if !model.mascotArtwork.errors.isEmpty {
+                Text(model.mascotArtwork.errors.map(\.description).joined(separator: "\n"))
+                    .font(.caption)
             }
         }
     }
