@@ -29,6 +29,8 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
   anything.
 - **A companion that stays calm.** An optional animated mascot sits on your desktop with a count badge and
   a hover summary. It plays a short animation once for a genuinely new item, not on every refresh.
+- **Choose your mascot.** Pick Mona or Little Chris under **Settings → Mascot → Skin**. Mona is the
+  default; your choice is saved for the next launch.
 - **Remembers across restarts.** Items you have already seen don't come back as new after a relaunch;
   items that arrived while it was quit are announced once (within 24 hours).
 - **Stays current.** With the GitHub CLI source it refreshes after your Mac wakes, and a Refresh clicked
@@ -49,9 +51,9 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 - **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
 - **Custom mascot packs (advanced).** Replace the artwork with your own pack by launching the app from
-  Terminal with `GITHUB_PET_PACK_DIR` set to the pack's directory; there is no Settings control for it
-  yet ([pack format](docs/design/README.md)). Every pack is validated; an invalid one falls back to the
-  built-in placeholder without affecting monitoring.
+  Terminal with `GITHUB_PET_PACK_DIR` set to the pack's directory ([pack format](docs/design/README.md)).
+  The launch override takes precedence over the saved Skin choice. Every pack is validated; an invalid
+  override falls back to the built-in placeholder without affecting monitoring.
 
 | Idle | New item |
 |:---:|:---:|
