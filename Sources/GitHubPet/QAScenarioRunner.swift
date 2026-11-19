@@ -175,6 +175,9 @@ enum QAScenarioRunner {
 
     /// Runs every step and writes the records; returns the runner.json summary. Never terminates.
     static func execute(_ plan: Plan, model: AppModel) async throws -> [String: Any] {
+        guard model.simulatesScope else {
+            throw HarnessError(description: "scenario execution requires an offline simulated model")
+        }
         // From here on, all output goes through one O_NOFOLLOW directory descriptor; entries are
         // validated again through it, since the path may have changed since preflight.
         let out: QAOutputDirectory
@@ -192,12 +195,15 @@ enum QAScenarioRunner {
         try await settle(model, plan)
         try await record(index: 0, step: Step(action: "launch", label: "launch", params: [:]), plan: plan, model: model,
                          out: out, context: Context(step: Step(action: "launch", label: "launch", params: [:]), model: model, plan: plan))
+        var inboxSelection = InboxViewSelection()
         for (offset, step) in plan.steps.enumerated() {
             let context = Context(step: step, model: model, plan: plan)
             context.output = out
             context.index = offset + 1
+            context.inboxSelection = inboxSelection
             let spec = actions[step.action]!
             try await spec.perform(context)
+            inboxSelection = context.inboxSelection
             if step.action == "quit" {
                 summary["quit"] = context.notes
                 break
@@ -232,6 +238,7 @@ enum QAScenarioRunner {
         var notes: [String: Any] = [:]
         var output: QAOutputDirectory?
         var index = 0
+        var inboxSelection = InboxViewSelection()
         init(step: Step, model: AppModel?, plan: Plan?) { self.step = step; self.model = model; self.plan = plan }
 
         func string(_ key: String, _ allowed: [String], default fallback: String? = nil) throws -> String {
@@ -271,6 +278,7 @@ enum QAScenarioRunner {
     /// Every action calls what the matching user control calls (Simulated scope menu, Inbox
     /// buttons, Settings toggles/picker). PR B adds its Settings draft/discovery actions here.
     static let actions: [String: Action] = coreActions.merging(settingsActions) { core, _ in core }
+        .merging(dismissalActions) { existing, _ in existing }
     static let coreActions: [String: Action] = [
         "capture": Action { _ in },
         "account": Action(keys: ["account"], validate: { _ = try $0.account() }) { c in
@@ -389,7 +397,8 @@ enum QAScenarioRunner {
     static func record(index: Int, step: Step, plan: Plan, model: AppModel, out: QAOutputDirectory, context: Context) async throws {
         let stem = String(format: "step-%02d-", index) + step.label
         if plan.rendersPNGs {
-            try await renderPNG(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+            try await renderPNG(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                          initialSelection: context.inboxSelection),
                                 name: stem + "-inbox", out: out, asWindow: true, into: context)
             let panel = model.layout(model.settings.mascotSize).panelSize
             // Rendered at the scenario clock, so the pose/clip/burst phase matches this record.
@@ -397,6 +406,7 @@ enum QAScenarioRunner {
                                 name: stem + "-mascot", out: out, into: context)
         }
         var state = snapshot(model, clock: plan.clock)
+        state["dismissal"] = dismissalSnapshot(context)
         state["step"] = index
         state["label"] = step.label
         state["action"] = step.action
@@ -482,6 +492,7 @@ enum QAScenarioRunner {
     // MARK: Built-in PR A scenarios (docs/monitoring-scope-application.md)
 
     static let builtInScenarios: [String: String] = coreScenarios.merging(settingsScenarios) { core, _ in core }
+        .merging(dismissalScenarios) { existing, _ in existing }
     static let coreScenarios: [String: String] = [
         "assignment-reach": #"""
         {"name": "assignment-reach", "steps": [

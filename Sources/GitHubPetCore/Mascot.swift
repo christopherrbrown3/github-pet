@@ -91,12 +91,13 @@ public enum PrivacyText {
     /// count, and the count's quality. Unknown, partial, stale and failed data stay explicit;
     /// item details are left to the Inbox.
     public static func compactSummary(dataState: DataState, items: [InboxItem], unseenCount: Int,
-                                      demo: Bool = false, demoSource: String = "fixtures") -> [String] {
+                                      demo: Bool = false, demoSource: String = "fixtures",
+                                      emptyInboxMessage: String? = nil) -> [String] {
         let quality: String
         switch dataState {
         case .ready:
             let noun = items.count == 1 ? "item" : "items"
-            quality = "\(items.count) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : "")
+            quality = emptyInboxMessage ?? ("\(items.count) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : ""))
         case .partial:
             let badge = MascotPolicy.badge(dataState: dataState, count: items.count) ?? "?"
             quality = "\(badge) items · \(dataState.statusText)"
@@ -107,14 +108,15 @@ public enum PrivacyText {
     }
 
     public static func summary(dataState: DataState, items: [InboxItem], unseenCount: Int,
-                               privacy: Bool, demo: Bool = false, demoSource: String = "fixtures", maxLines: Int = 3) -> [String] {
+                               privacy: Bool, demo: Bool = false, demoSource: String = "fixtures", maxLines: Int = 3,
+                               emptyInboxMessage: String? = nil) -> [String] {
         // `demoSource` names where invented data comes from: fixtures, or the simulated scope launch.
         var lines: [String] = demo ? ["\(demoLabel) data (\(demoSource))"] : []
         switch dataState {
         case .ready, .partial:
             let badge = MascotPolicy.badge(dataState: dataState, count: items.count) ?? ""
             let noun = items.count == 1 && dataState == .ready ? "item" : "items"
-            lines.append("\(badge) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : ""))
+            lines.append(emptyInboxMessage ?? ("\(badge) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : "")))
             if dataState == .partial { lines.append(dataState.statusText) }
         default:
             lines.append(dataState.statusText)
@@ -135,10 +137,11 @@ public enum PrivacyText {
 
 public enum AccessibilityText {
     /// e.g. "GitHub Pet, Demo data, at least 2 items, some sources unavailable".
-    public static func statusLabel(dataState: DataState, count: Int, demo: Bool, needsAttention: Bool) -> String {
+    public static func statusLabel(dataState: DataState, count: Int, demo: Bool, needsAttention: Bool,
+                                   countDescription: String? = nil) -> String {
         var parts = ["GitHub Pet"]
         if demo { parts.append("\(PrivacyText.demoLabel) data") }
-        parts.append(MascotPolicy.countDescription(dataState: dataState, count: count))
+        parts.append(countDescription ?? MascotPolicy.countDescription(dataState: dataState, count: count))
         if needsAttention { parts.append("needs attention") }
         return parts.joined(separator: ", ")
     }

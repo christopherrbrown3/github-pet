@@ -5,10 +5,8 @@ signed and not notarized**, so macOS asks you to approve the app once before its
 This page shows how to do that with macOS's own settings. You never need to remove quarantine
 attributes or turn off Gatekeeper, and you shouldn't.
 
-Builds are published on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases);
-the current one is the pre-release
-[v0.1.0-beta.1](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.1). A Homebrew
-cask is planned but not available yet ([#15](https://github.com/christopherrbrown3/github-pet/issues/15)).
+Find the newest beta on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases).
+A Homebrew cask is planned ([#15](https://github.com/christopherrbrown3/github-pet/issues/15)).
 
 ## Requirements
 
@@ -78,7 +76,8 @@ and confirm. You approve each downloaded version once. Apple's guidance:
 - It starts with **Demo data**: invented items, clearly labelled DEMO. To see your own review
   requests and assigned issues, install and sign in to `gh`, then choose **GitHub CLI (gh)** under
   **Settings → Data source**. GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
-- Privacy mode is on by default: names and titles stay hidden until you choose **Show details**.
+- Privacy mode is on by default. Names and titles stay hidden until you choose **Show details**.
+- [Using the Inbox](inbox.md) explains the review filter, how to dismiss an item, and how to restore it.
 
 ## Keyboard and VoiceOver access
 

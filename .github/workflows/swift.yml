@@ -52,6 +52,9 @@ jobs:
       - name: External public CommandRunner API
         timeout-minutes: 2
         run: scripts/test-public-budget.sh
+      - name: Dismissal startup persistence across processes
+        timeout-minutes: 2
+        run: scripts/test-dismissal-durability.sh
       - name: Check out PR head for packaging
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
@@ -83,10 +86,17 @@ jobs:
         timeout-minutes: 5
         run: scripts/render-check.sh
       - name: Intel slice smoke (Rosetta)
-        # Not on PRs, to keep them fast (pushes to main and manual runs); prints SKIP without Rosetta.
-        if: github.event_name != 'pull_request'
-        timeout-minutes: 6
-        run: scripts/intel-smoke.sh
+        timeout-minutes: 2
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]] &&
+             git diff --quiet "$PR_BASE_SHA...HEAD" -- .github/workflows/swift.yml scripts/intel-smoke.sh scripts/test-packaging.sh; then
+            echo "Intel smoke is not selected for this PR's changed paths."
+            exit 0
+          fi
+          scripts/intel-smoke.sh
       - name: Upload app ZIP
         uses: actions/upload-artifact@v4
         with:
@@ -104,4 +114,11 @@ jobs:
         with:
           name: render-check
           path: .build/render-check
+          if-no-files-found: ignore
+      - name: Upload Intel smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-smoke
+          path: .build/intel-smoke
           if-no-files-found: ignore
