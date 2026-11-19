@@ -74,7 +74,10 @@ struct InboxView: View {
             Text(model.scopeSummary).font(.caption).foregroundStyle(.secondary)
                 .accessibilityIdentifier("inbox.monitoringScope")
             if let quality = model.scopeQuality {
-                Text(quality).font(.caption).accessibilityIdentifier("inbox.scopeQuality")
+                Text(quality)
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("inbox.scopeQuality")
             }
             if let actions = model.actionsQuality {
                 Text(actions).font(.caption).accessibilityIdentifier("inbox.actionsQuality")
