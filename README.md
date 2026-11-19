@@ -8,12 +8,17 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 
 > **Beta.** GitHub Pet is a free, independent beta. Builds are ad-hoc signed and not notarized, and some
 > behaviour has not yet been checked on every macOS version; see [Limits](#limits-during-the-beta).
-> Images on this page are offscreen renders of invented Demo data ([provenance](docs/screenshots/beta/README.md)).
+> The images are from the first beta and show invented Demo data ([provenance](docs/screenshots/beta/README.md)).
 
 ## What it does
 
 - **Review requests and assigned issues.** Pull requests waiting for your review and open issues assigned
   to you, from your GitHub CLI account on github.com. Click a row to open it on GitHub.
+- **Choose which review requests you see.** In **Settings → Notifications**, show requests to you and
+  your teams, or only reviews requested directly from you. Both options keep issues assigned to you.
+- **Dismiss items you’re done with.** Use the **×** beside a dismissible Inbox item. Open **View
+  dismissed** to restore it. Choices survive a restart and stay with the account that made them.
+  [Using the Inbox](docs/inbox.md)
 - **Your pull requests that need you.** Your open pull requests with changes requested, a merge conflict
   or failing checks. The rest, including drafts and pull requests GitHub is still checking for conflicts,
   are shown as one count marked as waiting on others, and never alert.
@@ -75,9 +80,8 @@ before you choose the GitHub CLI source. Dark-mode versions sit beside each imag
 ## Install
 
 1. Download `GitHubPet-<version>-<commit>-universal.zip` and its `.sha256` checksum from the newest
-   release on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases) (currently
-   the pre-release [v0.1.0-beta.1](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.1)),
-   then check the checksum ([how](docs/install.md#2-check-the-download)).
+   beta on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases), then check
+   the checksum ([how](docs/install.md#2-check-the-download)).
 2. Unzip it and move **GitHubPet.app** to Applications.
 3. Open it once. Because the build is **ad-hoc signed and not notarized** (there is no paid Apple
    Developer account), macOS blocks the first launch. Approve it in **System Settings → Privacy &
@@ -96,8 +100,8 @@ at login first) and keyboard access. A Homebrew cask is planned but not availabl
 - **Read-only.** Nothing is approved, merged, commented on or changed from the app. Actions open the item
   in your browser, and only validated links are opened: github.com, and githubstatus.com for incidents.
 - **Local.** No backend and no analytics. Settings, the entitlement repository list and the seen-items
-  record stay on your Mac. Network use: only `gh` talking to github.com, and the public githubstatus.com
-  API for incidents.
+  record and dismissals stay on your Mac. Network use: only `gh` talking to github.com, and the public
+  githubstatus.com API for incidents.
 - **Fixed error messages.** Error text from `gh` or GitHub, which can name organizations, is classified
   rather than shown.
 
