@@ -86,6 +86,8 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"dismiss","id":42}]}"#)])?.contains("synthetic row ID") == true)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"view-dismissed","on":1}]}"#)])?.contains("must be true or false") == true)
         #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"assignment","mode":"unknown"}]}"#)]) != nil)
+        #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"mascot-skin","skin":"little-chris-v1"},{"action":"mascot-position","x":118,"y":141},{"action":"open-settings","section":"mascot"}]}"#)]) == nil)
+        #expect(refusal(sim + [try scenarioFile(#"{"name":"x","steps":[{"action":"mascot-skin","skin":"../custom"}]}"#)]) != nil)
     }
 
     @Test func outputNeverOverwritesFilesTheRunnerDidNotWrite() throws {

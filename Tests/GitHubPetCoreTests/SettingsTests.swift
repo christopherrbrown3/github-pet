@@ -2,6 +2,18 @@ import Foundation
 import Testing
 @testable import GitHubPetCore
 
+@Test func mascotSkinDefaultsToMonaAndPersistsLittleChris() throws {
+    let decoder = JSONDecoder()
+    for payload in [#"{"mascotSize":144}"#, #"{"mascotSkin":"unknown","mascotSize":144}"#,
+                    #"{"mascotSkin":false,"mascotSize":144}"#] {
+        let settings = try decoder.decode(PetSettings.self, from: Data(payload.utf8))
+        #expect(settings.mascotSkin == .mona && settings.mascotSize == 144)
+    }
+    var settings = PetSettings()
+    settings.mascotSkin = .littleChris
+    #expect(try decoder.decode(PetSettings.self, from: JSONEncoder().encode(settings)).mascotSkin == .littleChris)
+}
+
 @Test func assignmentModeDefaultsToAllAndPersistsDirect() throws {
     let decoder = JSONDecoder()
     for payload in ["{}", #"{"assignmentMode":"unknown"}"#, #"{"assignmentMode":true}"#] {

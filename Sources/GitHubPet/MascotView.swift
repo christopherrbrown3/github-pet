@@ -87,7 +87,7 @@ struct MascotView: View {
             .joined(separator: ". ")
     }
 
-    private func pose(at date: Date, reduced: Bool) -> MascotPose {
+    func pose(at date: Date, reduced: Bool) -> MascotPose {
         MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
                             idleEpoch: .distantPast, gesture: model.pack?.attentionGesture) { state in
             model.pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
@@ -246,7 +246,7 @@ struct PackFigure: View {
     }
 }
 
-/// Decoded frames for the single loaded pack (12 images, about 3 MB), decoded from the bytes
+/// Decoded frames keyed by pack directory and frame path, decoded from the bytes
 /// validated at load: no disk I/O at all after validation, and none per tick.
 @MainActor
 final class PackImageCache {

@@ -34,6 +34,16 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.repositionSummaryIfNeeded() }
             .store(in: &cancellables)
+        model.$mascotArtwork
+            .map(\.source)
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] source in
+                guard let self, source == self.model.mascotArtwork.source else { return }
+                self.updateAfterArtworkChange()
+            }
+            .store(in: &cancellables)
     }
 
     private func update(visible: Bool, size: Double, origin savedOrigin: CGPoint?) {
@@ -124,6 +134,20 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
         settings.mascotOriginX = Double(origin.x)
         settings.mascotOriginY = Double(origin.y)
         model.settings = settings
+    }
+
+    private func updateAfterArtworkChange() {
+        let settings = model.settings
+        guard settings.mascotVisible, let panel, panel.isVisible, let groundOnScreen else { return }
+        let size = settings.mascotSize
+        let ground = model.layout(size).ground
+        let origin = CGPoint(x: groundOnScreen.x - ground.x, y: groundOnScreen.y - ground.y)
+        update(visible: true, size: size, origin: origin)
+        if let x = settings.mascotOriginX, let y = settings.mascotOriginY,
+           panel.frame.origin != CGPoint(x: x, y: y) {
+            saveOrigin(panel.frame.origin)
+        }
+        repositionSummaryIfNeeded(force: true)
     }
 
     /// The mascot panel's frame, if it is shown (render-check probe).
@@ -275,11 +299,11 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
     }
 
     /// Each state's frames have their own outline: re-aim the open summary when the mood changes.
-    private func repositionSummaryIfNeeded() {
+    private func repositionSummaryIfNeeded(force: Bool = false) {
         // Re-place when the content's size, the panel, the mood or a gesture changed (e.g. Loading
         // replaced by results), re-choosing full or compact; never per animation frame.
         guard let popover, let placed = summaryInputs, let window = panel,
-              placed.needsReplacement(for: inputs(popover: popover, panelFrame: window.frame)) else { return }
+              force || placed.needsReplacement(for: inputs(popover: popover, panelFrame: window.frame)) else { return }
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
         let placement = Self.placeHover(popover, model: model, panelFrame: window.frame, screen: screen)
         Self.reportIfUnclear(placement)

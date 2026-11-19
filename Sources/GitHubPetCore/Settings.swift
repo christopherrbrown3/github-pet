@@ -9,6 +9,18 @@ public enum AssignmentMode: String, Codable, Sendable {
     case all, direct
 }
 
+public enum MascotSkin: String, Codable, CaseIterable, Sendable {
+    case mona = "mona-pet-v1"
+    case littleChris = "little-chris-v1"
+
+    public var name: String {
+        switch self {
+        case .mona: return "Mona"
+        case .littleChris: return "Little Chris"
+        }
+    }
+}
+
 /// Daily quiet window in local minutes since midnight. Wraps past midnight when
 /// `startMinute > endMinute`; `startMinute == endMinute` means no quiet time.
 public struct QuietHours: Codable, Equatable, Sendable {
@@ -44,6 +56,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public static let mascotSizeRange: ClosedRange<Double> = 64...256
 
     public var mascotVisible = true
+    public var mascotSkin: MascotSkin = .mona
     public var mascotSize: Double = 128
     /// Bottom-left window origin in screen coordinates; nil means the default spot.
     public var mascotOriginX: Double?
@@ -65,7 +78,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public init() {}
 
     enum CodingKeys: String, CodingKey {
-        case schemaVersion, mascotVisible, mascotSize, mascotOriginX, mascotOriginY
+        case schemaVersion, mascotVisible, mascotSkin, mascotSize, mascotOriginX, mascotOriginY
         case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource, assignmentMode
         case entitlementRepositories, watchWorkflowFailures, watchDeploymentApprovals
     }
@@ -74,6 +87,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = PetSettings()
         mascotVisible = (try? c.decodeIfPresent(Bool.self, forKey: .mascotVisible)) ?? defaults.mascotVisible
+        mascotSkin = (try? c.decodeIfPresent(MascotSkin.self, forKey: .mascotSkin)) ?? defaults.mascotSkin
         mascotSize = (try? c.decodeIfPresent(Double.self, forKey: .mascotSize)) ?? defaults.mascotSize
         mascotOriginX = try? c.decodeIfPresent(Double.self, forKey: .mascotOriginX)
         mascotOriginY = try? c.decodeIfPresent(Double.self, forKey: .mascotOriginY)
@@ -93,6 +107,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(Self.schemaVersion, forKey: .schemaVersion)
         try c.encode(mascotVisible, forKey: .mascotVisible)
+        try c.encode(mascotSkin, forKey: .mascotSkin)
         try c.encode(mascotSize, forKey: .mascotSize)
         try c.encodeIfPresent(mascotOriginX, forKey: .mascotOriginX)
         try c.encodeIfPresent(mascotOriginY, forKey: .mascotOriginY)

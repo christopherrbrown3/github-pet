@@ -96,6 +96,7 @@ extension MascotPackManifest {
 
 public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case unreadableManifest
+    case unexpectedID(String, expected: String)
     case unsupportedSchema(Int)
     case wrongLoopFlag(String, expected: Bool)
     case badCanvas
@@ -119,6 +120,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         func path(_ value: String) -> String { PackLabel.sanitizePath(value, fallback: "(invalid)") }
         switch self {
         case .unreadableManifest: return "manifest.json missing or not valid JSON"
+        case .unexpectedID(let id, let expected): return "pack ID '\(q(id))' must be '\(q(expected))'"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .wrongLoopFlag(let s, let expected):
             return "state '\(q(s))' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
@@ -144,13 +146,15 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
 
 public struct MascotPackErrors: Error, Equatable {
     public var errors: [MascotPackError]
+
+    public init(errors: [MascotPackError]) { self.errors = errors }
 }
 
 /// A validated pack: every referenced path resolved to a file inside the pack directory.
 public struct MascotPack: Equatable, Sendable {
     public static let schemaVersion = 1
     /// Pack bundled with the app (`assets/mascots/<id>` in the repository).
-    public static let defaultPackID = "mona-pet-v1"
+    public static let defaultPackID = MascotSkin.mona.rawValue
     public static let canvasSize = 256
     /// The only supported ground anchor (schema v1), in canvas pixels.
     public static let anchor = [128, 232]
@@ -244,8 +248,8 @@ public struct MascotPack: Equatable, Sendable {
         manifest.states[state.rawValue].map { directory.appendingPathComponent($0.staticFallback) }
     }
 
-    /// Load and validate; on any error the caller keeps the native placeholder.
-    public static func load(from directory: URL) -> Result<MascotPack, MascotPackErrors> {
+    /// Load and validate. A built-in pack must match its expected ID before any frames are read.
+    public static func load(from directory: URL, expectedID: String? = nil) -> Result<MascotPack, MascotPackErrors> {
         // Everything is read relative to one descriptor for the pack directory, never following a
         // symlink below it, so files can't be swapped for links out of the pack between a check
         // and the read: what is validated is what is read.
@@ -255,6 +259,9 @@ public struct MascotPack: Equatable, Sendable {
         guard let data = try? readInPack(root: root, path: "manifest.json", limit: maxManifestBytes),
               let manifest = try? JSONDecoder().decode(MascotPackManifest.self, from: data) else {
             return .failure(MascotPackErrors(errors: [.unreadableManifest]))
+        }
+        if let expectedID, manifest.id != expectedID {
+            return .failure(MascotPackErrors(errors: [.unexpectedID(manifest.id, expected: expectedID)]))
         }
         let (errors, validated) = validateReading(manifest, root: root)
         guard errors.isEmpty else { return .failure(MascotPackErrors(errors: errors)) }
