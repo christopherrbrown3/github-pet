@@ -24,7 +24,7 @@
       "name": "developer",
       "terminal": "t68",
       "runtime": "codex",
-      "assignment": "Issue #77, worktree developer-assignment-77, branch feat/77-direct-assignment.",
+      "assignment": "Issue #83 runtime and picker, feat/83-little-chris, developer-skin-83",
       "intendedModel": "gpt-6.2-sol",
       "observedModel": "gpt-6.2-sol",
       "sessionId": null,
@@ -38,23 +38,24 @@
     },
     {
       "name": "graphic-designer",
-      "terminal": null,
-      "runtime": null,
-      "assignment": "Idle; prior design review delivered. Launch only for a scoped need.",
-      "intendedModel": "gpt-6.1-sol",
-      "observedModel": null,
+      "terminal": "t6d",
+      "runtime": "codex",
+      "assignment": "Little Chris #83 asset pack and provenance, design/83-little-chris, designer-little-chris-83",
+      "intendedModel": "gpt-6.2-sol",
+      "observedModel": "gpt-6.2-sol",
       "previousCodexSessionId": "01a1d082-9e39-7740-99d9-f9df99831e41",
       "sessionId": null,
       "previousClaudeTerminal": "t1n",
       "previousClaudeModel": "claude-opus-5-5",
       "previousClaudeSessionId": null,
-      "reasoningEffort": "medium"
+      "reasoningEffort": "medium",
+      "verification": "Live foreground argv and DESIGNER_READY"
     },
     {
       "name": "qa-engineer",
       "terminal": "t6b",
       "runtime": "codex",
-      "assignment": "PR76 review and functional acceptance for #77 and #78, worktree qa-nov18.",
+      "assignment": "Independent source and functional review of #83 mascot choice and #60/#15 polish, qa-nov18",
       "intendedModel": "gpt-6.2-sol",
       "observedModel": "gpt-6.2-sol",
       "previousCodexSessionId": "01a1d082-9e30-72a3-aed0-4c4d09d1ec81",
@@ -74,7 +75,7 @@
       "intendedModel": "gpt-6.2-sol",
       "observedModel": "gpt-6.2-sol",
       "reasoningEffort": "high",
-      "assignment": "Issue #78, worktree developer-dismiss-78, branch feat/78-dismiss-inbox-items.",
+      "assignment": "Dedicated #60 Partial Inbox wrap and #15 Startup AX status polish",
       "verification": "Live foreground argv and READY from t69.",
       "previousClaudeTerminal": "t64",
       "previousClaudeModel": "claude-opus-5-5",
@@ -93,5 +94,5 @@
   ],
   "observedDate": "2026-11-18",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Chris explicitly transferred sole PM authority to t1r. GPT-6.2 Sol specialists verified and dispatched in separate worktrees. Prior Claude sessions and their worktrees are preserved. QA independently reviews PRs and functional behavior. Developer owns tests and CI. Copilot reviews are prohibited."
+  "note": "Post-beta.2 current dispatch. PM t1r sole coordinator, no new release direction. Developer owns code and tests, Designer owns mascot asset work, QA independent source and functional review. No Copilot."
 }

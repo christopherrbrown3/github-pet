@@ -1,3 +1,11 @@
+# Post-beta.2 dispatch — 2026-11-18
+
+Beta.2 is published and verified. The release tag points to main 00e1be4d0bb14f73782130ad15eb4a8f0cf19ca8, build 263 from main CI44440438255. PR79, PR76 and PR80/82 shipped. #77, #78 and #81 are Done. #30 was closed after QA confirmed PR48 and PR51 ancestry and existing accepted scope documentation. Historical PR46 remains a planning draft. Live account and native accessibility, clean install, upgrade, login-item and physical Intel evidence remain in #4 and #15.
+
+Chris asked to continue the project and shared Little Chris references in #83. Designer t6d uses GPT-6.2 Sol medium in designer-little-chris-83, branch design/83-little-chris. The preserved ImageGen source has nine poses and SHA-256 a87cd707e04e8f06ee110dab68d6d176e46ba459163ed317ccab33c32d1128b1. Designer owns the transparent v1 frame pack and provenance. Developer t68 uses Sol high in developer-skin-83, branch feat/83-little-chris, for the Settings picker, safe persisted skin choice, live artwork swap and both bundled resource checks. Mona stays the default. QA t6b prepared independent artifact and product checks for both skins, fallback, no replay and reduced motion.
+
+Developer t69 uses Sol high for a separate narrow polish slice on #60 and #15. Preserve Inbox width while showing long Partial explanations and expose the existing Startup login status as the toggle’s accessibility value. The system login-item behavior is unchanged. QA t6b will review the exact signed artifact when available. No new release requested. Continue no Copilot and one writer per worktree.
+
 # Current work after the #77 merge — 2026-11-18
 
 Codex t1r remains sole PM. Existing Sol 6.2 Developer t68 (high), Developer t69 (high) and QA t6b (medium) received continuation dispatch after the displayed 2:36 PM Eastern reset. No new sessions. Use their live reports for readiness and precise worktrees.
