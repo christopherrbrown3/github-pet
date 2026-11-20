@@ -74,7 +74,7 @@ public final class FixtureSimulator {
         return [
             item(.reviewRequest, "example/pet-demo", 42, "Add hover summary to mascot", 1),
             item(.reviewRequest, "example/pet-tools", 7, "Tighten link validation", 5),
-            item(.assignedIssue, "example/pet-demo", 18, "Quiet hours should wrap midnight", 26),
+            item(.assignedIssue, "example/pet-demo", 18, "Mascot position resets after a display change", 26),
         ]
     }
 }
