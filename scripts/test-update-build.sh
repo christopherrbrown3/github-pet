@@ -66,7 +66,11 @@ check_bundle
 expect CFBundleIdentifier dev.github-pet.GitHubPet
 expect SUFeedURL "$committed_feed"
 committed_key=$(grep -v '^[[:space:]]*#' updates/sparkle-public-ed-key.txt | tr -d '[:space:]' || true)
-if [[ -n $committed_key ]]; then expect SUPublicEDKey "$committed_key"; else absent SUPublicEDKey; fi
+# The release key is committed: a default build must carry exactly it, and it must be a valid
+# 32-byte Sparkle public key, or the app would ship with its updater disabled.
+[[ -n $committed_key ]] || fail "updates/sparkle-public-ed-key.txt has no key"
+[[ $(print -rn -- "$committed_key" | base64 -D 2>/dev/null | wc -c | tr -d ' ') == 32 ]] || fail "committed key is not 32 bytes"
+expect SUPublicEDKey "$committed_key"
 [[ $(get SUPublicEDKey) != "$test_key" ]] || fail "default build contains the test key"
 absent NSAppTransportSecurity
 absent GitHubPetReleaseVersion
