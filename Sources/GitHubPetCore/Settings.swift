@@ -158,7 +158,7 @@ public final class SettingsStore {
     public static let key = "GitHubPet.settings.v1"
     private let defaults: UserDefaults
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults) {
         self.defaults = defaults
     }
 
