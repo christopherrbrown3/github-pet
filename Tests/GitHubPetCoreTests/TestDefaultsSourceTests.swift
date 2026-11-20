@@ -55,4 +55,25 @@ import Testing
             #expect(!Self.matches(sample), "\(sample)")
         }
     }
+
+    /// No-argument `SettingsStore()` and friends would silently use the real domain, so the
+    /// compiler must force every caller to choose: no `UserDefaults` default argument in Sources.
+    @Test func noStoreDefaultsToTheStandardDomain() throws {
+        let sources = tests.deletingLastPathComponent().appendingPathComponent("Sources")
+        let pattern = try NSRegularExpression(pattern: #"UserDefaults\s*=\s*(?:UserDefaults\s*)?\.standard"#)
+        let enumerator = try #require(FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil))
+        var scanned = 0, offenders: [String] = []
+        for case let file as URL in enumerator where file.pathExtension == "swift" {
+            scanned += 1
+            let text = try String(contentsOf: file, encoding: .utf8)
+            if pattern.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil {
+                offenders.append(file.lastPathComponent)
+            }
+        }
+        #expect(scanned > 20, "the scan found the sources")
+        #expect(offenders.isEmpty, "make the defaults parameter required: \(offenders)")
+        for sample in ["init(defaults: UserDefaults = .standard)", "defaults: UserDefaults=.standard"] {
+            #expect(pattern.firstMatch(in: sample, range: NSRange(sample.startIndex..., in: sample)) != nil)
+        }
+    }
 }
