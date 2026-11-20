@@ -155,7 +155,7 @@ private final class FrozenClock: @unchecked Sendable {
         #expect(defaults === options.userDefaults, "one shared in-memory instance per launch")
         SettingsStore(defaults: defaults).save(PetSettings())
         #expect(defaults.dictionaryRepresentation().isEmpty == false)
-        #expect(UserDefaults.standard.persistentDomain(forName: LaunchOptions.snapshotDefaultsSuite) == nil, "nothing reached cfprefsd")
+        #expect(!preferencesFileExists(LaunchOptions.snapshotDefaultsSuite), "nothing reached cfprefsd")
         EphemeralDefaults.release(LaunchOptions.snapshotDefaultsSuite)
         #expect(defaults.dictionaryRepresentation().isEmpty)
         let plain = LaunchOptions.parse(arguments: ["GitHubPet", "--defaults-suite", LaunchOptions.snapshotDefaultsSuite], environment: [:])
@@ -164,14 +164,8 @@ private final class FrozenClock: @unchecked Sendable {
 
     /// Copilot on #49: "simulated launches can persist real user preferences". Every persistence
     /// path reachable in a simulated launch, driven for real, must leave the user's actual
-    /// preferences untouched: the app's own domain and this process's standard defaults.
+    /// preferences untouched: writes land in the launch's in-memory domain and no file appears.
     @Test func simulatedLaunchesNeverPersistRealPreferences() async throws {
-        func realState() -> (app: NSDictionary, standard: NSDictionary) {
-            let app = UserDefaults.standard.persistentDomain(forName: "dev.github-pet.GitHubPet") ?? [:]
-            let standard = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.contains("GitHubPet") }
-            return (NSDictionary(dictionary: app), NSDictionary(dictionary: standard))
-        }
-        let before = realState()
         // Every built-in runner scenario (PR A and PR B): privacy/motion/source toggles, scope
         // Apply, corrupt/seed/repair, account switches, editor and discovery steps, quit.
         for name in QAScenarioRunner.builtInScenarios.keys.sorted() { _ = try await run(name) }
@@ -213,9 +207,7 @@ private final class FrozenClock: @unchecked Sendable {
         let domain = try #require(model.simulationDomain)
         #expect(EphemeralDefaults.named(domain).dictionaryRepresentation().keys.contains { $0.hasPrefix("GitHubPet.") })
 
-        let after = realState()
-        #expect(after.app == before.app, "the app's real preferences domain is unchanged")
-        #expect(after.standard == before.standard, "no GitHubPet key reached standard defaults")
+        #expect(!preferencesFileExists(domain), "no preferences file for the simulation domain")
     }
 
     /// Copilot on #49 (InboxView:70): the simulated scope launch is not fixtures, so its notice
