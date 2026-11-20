@@ -46,13 +46,14 @@ private final class FrozenClock: @unchecked Sendable {
     @Test func everySettingsScenarioIsBuiltInAndParses() throws {
         for name in ["settings-draft-apply-cancel", "settings-invalid-input", "settings-max-10", "settings-discovery-capped",
                      "settings-discovery-partial", "settings-discovery-denied", "settings-discovery-identity-mismatch",
-                     "settings-validation-failure-keeps-active", "settings-min-size-long-lists"] {
+                     "settings-validation-failure-keeps-active", "settings-min-size-long-lists",
+                     "hidden-features-upgrade"] {
             #expect(QAScenarioRunner.settingsScenarios[name] != nil)
             #expect(QAScenarioRunner.builtInScenarios[name] != nil, "\(name) is built in")
             _ = try QAScenarioRunner.loadScenario(name)
         }
         #expect(QAScenarioRunner.builtInScenarios["account-a-b-a"] != nil, "PR A scenarios remain")
-        #expect(QAScenarioRunner.settingsScenarios.count == 10 && Set(QAScenarioRunner.settingsScenarios.keys).isDisjoint(with: QAScenarioRunner.coreScenarios.keys))
+        #expect(QAScenarioRunner.settingsScenarios.count == 11 && Set(QAScenarioRunner.settingsScenarios.keys).isDisjoint(with: QAScenarioRunner.coreScenarios.keys))
         #expect(throws: QAScenarioRunner.HarnessError.self) {
             try QAScenarioRunner.loadScenario(Self.file(#"{"name":"x","steps":[{"action":"settings-add","kind":"team","text":"a"}]}"#))
         }

@@ -91,7 +91,7 @@ if grep -q '^features: privacyMode=false snooze=false quietHours=false panes=mas
   echo "ok   privacy, snooze and quiet hours hidden; no Alerts tab"
   check_in 'settings states (#87)' "upgrade: stored privacy, snooze and quiet hours are effectively off" \
     '^stored privacy=true snoozed=true quiet-hours=true → effective privacy=false snoozed=false quiet-now=false alerts-allowed=true$'
-  for png in settings-mascot settings-github settings-github-dark; do
+  for png in settings-mascot settings-github settings-github-dark settings-github-full settings-github-full-dark; do
     [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
   done
   [[ ! -e $out/settings-alerts.png ]] && echo "ok   no Alerts pane rendered" || { echo "FAIL Alerts pane rendered while hidden"; failures=$((failures + 1)); }

@@ -179,6 +179,10 @@ enum SnapshotRenderer {
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
+            // The whole GitHub pane unscrolled, so the review filter it holds while the Alerts
+            // tab is hidden (#107) is visible in one image.
+            report += await render(GitHubPane(model: model).frame(width: 520, height: Self.githubPaneFullHeight),
+                                   name: "settings-github-full\(suffix)", directory: directory, appearance: appearance)
             for pane in model.features.settingsPanes {
                 report += await render(SettingsView(model: model, pane: pane), name: "settings-\(pane.rawValue)\(suffix)",
                                        directory: directory, appearance: appearance, asWindow: true)
@@ -283,6 +287,7 @@ enum SnapshotRenderer {
         model.settings = saved
         return report
     }
+    static let githubPaneFullHeight: CGFloat = 1500
     static let readmeScopeHeight: CGFloat = 540
     static let readmeGeneralHeight: CGFloat = 690
 
