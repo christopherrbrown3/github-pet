@@ -1223,6 +1223,13 @@ final class AppModel: ObservableObject {
         refresh()
     }
 
+    /// Render hook only: show exactly these Demo fixture rows (#87 Inbox renders), then poll.
+    func showFixtureItemsForSnapshot(_ items: [InboxItem]) {
+        guard snapshotMode, usingFixtures else { return }
+        simulator.replaceItems(items)
+        refresh()
+    }
+
     /// Render hook only: show the Loading state of a fresh source without polling.
     func showLoadingForSnapshot() {
         resetSession()
