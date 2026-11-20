@@ -65,9 +65,19 @@
       "reasoningEffort": null,
       "assignment": "#88 icon packaging, feat/88-app-icon-packaging (stacked on PR91 4892eda), developer-icon-88",
       "verification": "hc launch argv on 2026-11-20"
+    },
+    {
+      "name": "developer-5",
+      "terminal": "t6p",
+      "runtime": "claude",
+      "intendedModel": "claude-sonnet-5-5",
+      "observedModel": "claude-sonnet-5-5",
+      "reasoningEffort": null,
+      "assignment": "#96 default data source gh, feat/96-gh-default-source, developer-gh-default-96",
+      "verification": "hc launch argv on 2026-11-20"
     }
   ],
   "observedDate": "2026-11-20",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Claude takeover Nov 20. All Codex (t1r, t68, t69, t6b, t6d, t1s, t1t, t8) and old Claude (t4w-t4z, t61-t64) terminals ended and removed from Herdr; worktrees and evidence preserved. #89 Blocked on Chris's distribution decision. No Copilot. Nov 20: PR91 (#88 icon assets) merged fbae373; designer t6k ended. Chris approved Sparkle auto-updates during beta on ad-hoc builds; #89 signing deferred post-beta (Backlog)."
+  "note": "Claude takeover Nov 20. All Codex (t1r, t68, t69, t6b, t6d, t1s, t1t, t8) and old Claude (t4w-t4z, t61-t64) terminals ended and removed from Herdr; worktrees and evidence preserved. #89 Blocked on Chris's distribution decision. No Copilot. Nov 20: PR91 (#88 icon assets) merged fbae373; designer t6k ended. Chris approved Sparkle auto-updates during beta on ad-hoc builds; #89 signing deferred post-beta (Backlog). Backlog #94 hide privacy mode, #95 hide snooze (Chris, UI simplification; #87 gates them behind flags). #96 gh default source in progress."
 }
