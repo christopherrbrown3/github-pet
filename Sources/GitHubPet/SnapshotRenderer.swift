@@ -169,12 +169,31 @@ enum SnapshotRenderer {
         report.append("## resize (real mascot window controller, as the Settings slider does)")
         report += await resizeProbe(model: model, directory: directory)
 
-        // Settings goes through the same window sizing as the real Settings window.
+        // Settings goes through the same window sizing as the real Settings window: every pane,
+        // light and dark, with the plain window ("settings") kept for the render check.
         report.append("## settings")
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
+            for pane in SettingsPane.allCases {
+                report += await render(SettingsView(model: model, pane: pane), name: "settings-\(pane.rawValue)\(suffix)",
+                                       directory: directory, appearance: appearance, asWindow: true)
+            }
         }
+        // States QA reviews: privacy off/on, snoozed, quiet hours, and the gh error panes below.
+        report.append("## settings states (#87)")
+        let savedSettings = model.settings
+        model.settings.mascotSkin = .littleChris
+        model.settings.privacyMode = true
+        model.snooze(.fourHours)
+        model.settings.quietHours.enabled = true
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(SettingsView(model: model, pane: .alerts), name: "settings-alerts-snoozed-privacy\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+            report += await render(SettingsView(model: model, pane: .mascot), name: "settings-mascot-chris\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+        }
+        model.settings = savedSettings
         // Monitoring scope editor with a full 10-entry Demo draft and inline errors; nothing is
         // applied. The Form keeps its 520 pt width and scrolls rather than growing the window.
         report.append("## settings monitoring scope (long draft)")
@@ -206,7 +225,7 @@ enum SnapshotRenderer {
                 report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
                                        name: "gh-setup-\(name)-inbox\(suffix)", directory: directory,
                                        appearance: appearance, asWindow: true)
-                report += await render(SettingsView(model: model).frame(height: 1000),
+                report += await render(SettingsView(model: model, pane: .github).frame(height: 1000),
                                        name: "gh-setup-\(name)-settings\(suffix)",
                                        directory: directory, appearance: appearance, asWindow: true)
             }
@@ -246,12 +265,8 @@ enum SnapshotRenderer {
                 MonitoringScopeSection(model: model, editor: model.scopeEditor)
                 EntitlementRepositoriesSection(model: model)
             }.frame(height: Self.readmeScopeHeight), name: "readme-settings-scope\(suffix)", directory: directory, appearance: appearance)
-            report += await render(form {
-                MascotSettingsSection(model: model)
-                LoginItemSection(settings: startup)
-                PrivacyMotionSection(model: model)
-                SnoozeQuietHoursSection(model: model)
-            }.frame(height: Self.readmeGeneralHeight), name: "readme-settings-general\(suffix)", directory: directory, appearance: appearance)
+            report += await render(SettingsView(model: model, pane: .mascot, loginItem: startup), name: "readme-settings-general\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
         }
         model.settings = saved
         return report
