@@ -131,7 +131,24 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         #expect(settings.mascotVisible)
         #expect(!settings.reducedMotion)
         #expect(settings.privacyMode, "privacy is on until the user opts out")
-        #expect(settings.dataSource == .fixtures)
+        #expect(settings.dataSource == .githubCLI, "a fresh install reads the user's own gh data (#96)")
+    }
+
+    @Test func missingDataSourceKeyDecodesAsGitHubCLI() throws {
+        let missing = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"schemaVersion":2,"mascotSize":96}"#.utf8))
+        #expect(missing.dataSource == .githubCLI)
+    }
+
+    @Test func storedDataSourceChoicesAreRespected() throws {
+        for mode in DataSourceMode.allCases {
+            let defaults = freshDefaults()
+            var settings = PetSettings()
+            settings.dataSource = mode
+            SettingsStore(defaults: defaults).save(settings)
+            #expect(SettingsStore(defaults: defaults).load().dataSource == mode)
+        }
+        let stored = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"schemaVersion":1,"dataSource":"fixtures"}"#.utf8))
+        #expect(stored.dataSource == .fixtures, "beta users who saved Demo stay on Demo")
     }
 
     @Test func privacyDefaultsOnButAnExplicitChoiceIsKept() throws {
@@ -168,7 +185,7 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         let settings = try JSONDecoder().decode(PetSettings.self, from: Data(json.utf8))
         #expect(settings.privacyMode)
         #expect(settings.mascotSize == PetSettings().mascotSize)
-        #expect(settings.dataSource == .fixtures)
+        #expect(settings.dataSource == PetSettings().dataSource, "an unknown value falls back to the default")
     }
 
     @Test func outOfRangeValuesAreClamped() throws {

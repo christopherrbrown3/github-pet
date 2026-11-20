@@ -54,7 +54,7 @@ struct GitHubConnectionSection: View {
                 Text("\(model.dataState.statusText). \(hint)").font(.caption.monospaced()).textSelection(.enabled)
                 GhSetupView(state: model.dataState)
             }
-            Text("GitHub data comes only from your installed gh CLI.")
+            Text("New installs use the GitHub CLI source; Fixtures show invented, DEMO-labelled data and never contact GitHub. GitHub data comes only from your installed gh CLI.")
                 .font(.caption).foregroundStyle(.secondary)
             DisclosureGroup("About GitHub access") {
                 VStack(alignment: .leading, spacing: 6) {
