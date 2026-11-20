@@ -80,18 +80,27 @@ Agents never generate, read, export or commit the production private key.
 
 ## Cutting a release
 
-1. Make the release build with the committed key and the full version:
-   `RELEASE_VERSION=0.1.0-beta.4 scripts/package-zip.sh` (use `0.1.0` for a stable release). It writes
-   `.build/dist/GitHubPet-<version>-<sha>-universal.zip`.
-2. Create the GitHub Release `v0.1.0-beta.4` (mark betas as pre-release) and upload the ZIP and its `.sha256`.
-3. `scripts/release-appcast.sh v0.1.0-beta.4 .build/dist/GitHubPet-0.1.0-<sha>-universal.zip`. It refuses a ZIP whose
-   app disagrees with the tag or the committed key, signs the ZIP with `sign_update` from your login Keychain
-   (the private key is never read by the script), and adds or replaces the item in `updates/appcast.xml`:
-   enclosure = the GitHub Release asset URL, `sparkle:version` = `CFBundleVersion`, `sparkle:shortVersionString` =
-   the release version (`0.1.0-beta.4`, so betas are distinguishable), `sparkle:channel` = `beta` for prereleases,
-   release-notes link = the GitHub release page. `sparkle:version` must keep increasing: the script refuses a build
-   number that isn't newer.
-4. Review the diff and commit/push `updates/appcast.xml` to `main`. Users see the update once the feed is live.
+The ZIP that users receive is **the exact artifact one CI run built and tested**, never a local rebuild and never
+a second build from the tag. A tag push does not build or upload anything.
+
+1. **CI artifact.** Run the Swift workflow manually (Actions › Swift › Run workflow) **on `main`** with
+   `release_version` = `0.1.0-beta.4` (or `0.1.0` for stable); `VERSION` must hold the core version. It runs the full
+   suite and packages the universal app with that `RELEASE_VERSION`, the committed key and the committed feed. It
+   checks the app's `GitHubPetReleaseVersion`, `CFBundleShortVersionString`, `SUPublicEDKey` and `SUFeedURL`, runs
+   the render check and the Intel smoke on that very app, and uploads `GitHubPet-release-<version>` (ZIP +
+   `.sha256`). The job summary records the commit, build number and SHA-256. A run from any other branch is marked
+   TEST ONLY in the summary and must not be published.
+2. **QA verifies** that artifact (its SHA-256 matches the summary).
+3. **GitHub pre-release.** Create the release `v0.1.0-beta.4` targeting **the commit in the summary** (mark betas as
+   pre-release), which creates the tag there, and upload that artifact's ZIP and `.sha256` unchanged.
+4. **Sign and publish the feed.** Chris downloads the same ZIP from the release and runs
+   `scripts/release-appcast.sh v0.1.0-beta.4 <that zip>`. It refuses a ZIP whose app disagrees with the tag or the
+   committed key, signs the ZIP with `sign_update` from the login Keychain (the script never reads the private key),
+   and adds or replaces the item in `updates/appcast.xml`: enclosure = the GitHub Release asset URL,
+   `sparkle:version` = `CFBundleVersion`, `sparkle:shortVersionString` = the release version, `sparkle:channel` =
+   `beta` for prereleases, release-notes link = the GitHub release page. `sparkle:version` must keep increasing:
+   the script refuses a build number that isn't newer.
+5. **Appcast PR.** Open a PR with only the `updates/appcast.xml` change. Users see the update once it is on `main`.
 
 `updates/appcast.xml` is committed empty but valid. `scripts/test-release-appcast.sh` tests the script with a fake
 signer.
