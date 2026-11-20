@@ -29,6 +29,8 @@ final class AppModel: ObservableObject {
         /// Its own 20 s / 2 MiB budget, separate from the inbox searches; it starts when the
         /// Actions query starts, so slow searches never shorten it.
         var actionsBudget: @Sendable () -> CommandBudget = { CommandBudget(timeout: 20) }
+        /// #90: tests inject a fake updater. nil: Sparkle for a normal launch of a configured app bundle only.
+        var updaterBackend: (any UpdaterBackend)?
         var mascotPackDirectory: (MascotSkin) -> URL? = { LaunchOptions.builtInPackDirectory(for: $0) }
     }
     private let runtime: Runtime
@@ -103,6 +105,8 @@ final class AppModel: ObservableObject {
     private let store: SettingsStore
     let clockOffset: TimeInterval
     private let pollsPeriodically: Bool
+    /// Software updates (#90): its own state, never part of the inbox, its badge or the mascot.
+    let updates: UpdateController
     // Snapshot-only CLI transport (#52): selecting the real CLI UI must never launch gh.
     private let snapshotMode: Bool
     private var snapshotCLIFailure: FetchFailure = .ghMissing
@@ -190,6 +194,9 @@ final class AppModel: ObservableObject {
             scopeAccess = ScopeGhAccess()
         }
         clockOffset = options.clockOffset
+        updates = UpdateController.make(infoDictionary: Bundle.main.infoDictionary, bundleURL: Bundle.main.bundleURL,
+                                        normalLaunch: normalLaunch, defaults: options.userDefaults,
+                                        backend: runtime.updaterBackend)
         // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
         // would refresh a step it just made stale (flaky render-check).
         pollsPeriodically = options.snapshotDirectory == nil && !options.simulatesMonitoringScope
@@ -933,6 +940,9 @@ final class AppModel: ObservableObject {
         blockedLinkNote = nil
         NSWorkspace.shared.open(url)
     }
+
+    /// Settings skin cards: the real bundled frames for `skin`, through the same loader as the pet.
+    func artwork(for skin: MascotSkin) -> MascotArtwork { mascotArtworkLoader.resolve(skin) }
 
     func snooze(_ option: SnoozeOption) {
         settings.snoozeUntil = option.until(from: clock())

@@ -72,6 +72,9 @@ jobs:
       - name: Packaging provenance regression
         timeout-minutes: 2
         run: scripts/test-packaging.sh
+      - name: Release appcast regression
+        timeout-minutes: 2
+        run: scripts/test-release-appcast.sh
       - name: Package app (universal ZIP)
         # Builds the arm64 + x86_64 app the checks below use, zips it and self-verifies the archive.
         run: scripts/package-zip.sh
@@ -80,6 +83,8 @@ jobs:
           plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
           codesign --verify --strict .build/app/GitHubPet.app
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true
+          codesign --verify --deep --strict .build/app/GitHubPet.app
+          scripts/verify-app-icon.sh .build/app/GitHubPet.app
           python3 scripts/mascot-resources.py verify .build/app/GitHubPet.app/Contents/Resources/MascotPacks
       - name: GUI render check
         timeout-minutes: 5
@@ -96,6 +101,10 @@ jobs:
             exit 0
           fi
           scripts/intel-smoke.sh
+      - name: Sparkle packaging regression
+        timeout-minutes: 10
+        # Builds debug apps (QA overrides, then defaults), so run it after every step that uses the packaged app in .build/app.
+        run: scripts/test-update-build.sh
       - name: Upload app ZIP
         uses: actions/upload-artifact@v4
         with:

@@ -27,6 +27,31 @@ extension QAScenarioRunner {
         return rows[position - 1]
     }
 
+    private static let snoozeDurations: [String: SnoozeOption?] = [
+        "1h": .oneHour, "4h": .fourHours, "tomorrow": .untilTomorrowMorning, "off": nil,
+    ]
+    private static func minute(_ c: Context, _ key: String) throws -> Int {
+        guard let text = c.step.params[key] as? String, text.count == 5, text[text.index(text.startIndex, offsetBy: 2)] == ":",
+              let hour = Int(text.prefix(2)), let minute = Int(text.suffix(2)), (0..<24).contains(hour), (0..<60).contains(minute) else {
+            throw HarnessError(description: "\(c.step.action): \"\(key)\" must be a time like \"22:30\"")
+        }
+        return hour * 60 + minute
+    }
+
+    /// INV-02 evidence on every step record: interruptions may be suppressed while polling, the
+    /// inbox rows, badge and unseen count keep following the source. Compare across steps.
+    static func suppressionSnapshot(_ model: AppModel) -> [String: Any] {
+        let state = AlertSuppression(model.settings, at: model.now)
+        return ["snoozed": state.isSnoozed,
+                "snoozeUntil": model.settings.snoozeUntil.map { ISO8601DateFormatter().string(from: $0) } ?? NSNull(),
+                "quietHoursEnabled": state.quietHoursOn, "quietHoursActive": state.quietHoursActive,
+                "interruptionsSuppressed": state.interruptionsSuppressed, "alertsAllowed": model.alertsAllowed,
+                "showsAlertIcon": model.showsAlertIcon,
+                "pollsRequested": model.simulatedPollLog.count, "pollsReceived": model.receivedScopeReplies,
+                "inboxRowCount": model.items.count, "unseenCount": model.unseenCount,
+                "inboxBadge": model.badge ?? NSNull(), "status": model.dataState.statusText]
+    }
+
     static let settingsActions: [String: Action] = [
         "settings-mode": Action(keys: ["mode"], validate: { _ = try $0.string("mode", ["everything", "selected"]) }) { c in
             c.model.scopeEditor.setMode(try c.string("mode", ["everything", "selected"]) == "selected" ? .selected : .everything)
@@ -64,12 +89,35 @@ extension QAScenarioRunner {
             c.model.simulateScopeValidation(ScopeAccessSimulation.ValidationMode(rawValue: try c.string("mode", ScopeAccessSimulation.ValidationMode.allCases.map(\.rawValue)))!)
         },
         "hold-validation": Action { c in c.model.simulateScopeHoldValidation() },
+        /// Alerts pane (#87): the Snooze buttons and Turn off, through the same model calls.
+        "snooze": Action(keys: ["duration"], validate: { _ = try $0.string("duration", snoozeDurations.keys.sorted()) }) { c in
+            let name = try c.string("duration", snoozeDurations.keys.sorted())
+            if let option = snoozeDurations[name] ?? nil { c.model.snooze(option) } else { c.model.cancelSnooze() }
+        },
+        /// Alerts pane quiet hours: toggle and window. `coverNow` sets a window from an hour before
+        /// to an hour after the scenario clock; otherwise `start`/`end` are "HH:MM".
+        "quiet-hours": Action(keys: ["on", "start", "end", "coverNow"], validate: { c in
+            if c.step.params["on"] != nil { _ = try c.bool("on") }
+            if c.step.params["coverNow"] != nil { _ = try c.bool("coverNow") }
+            for key in ["start", "end"] where c.step.params[key] != nil { _ = try minute(c, key) }
+        }) { c in
+            let model = c.model!
+            if c.step.params["on"] != nil { model.settings.quietHours.enabled = try c.bool("on") }
+            if c.step.params["coverNow"] != nil, try c.bool("coverNow") {
+                let now = Calendar.current.dateComponents([.hour, .minute], from: model.clock())
+                let minute = (now.hour ?? 0) * 60 + (now.minute ?? 0)
+                model.settings.quietHours.startMinute = (minute + 24 * 60 - 60) % (24 * 60)
+                model.settings.quietHours.endMinute = (minute + 60) % (24 * 60)
+            }
+            if c.step.params["start"] != nil { model.settings.quietHours.startMinute = try minute(c, "start") }
+            if c.step.params["end"] != nil { model.settings.quietHours.endMinute = try minute(c, "end") }
+        },
         /// The Monitoring scope section scrolled into view inside the same grouped Form, plus the
         /// whole Settings window at its minimum size (whose Form scrolls rather than growing).
         "open-scope-settings": Action { c in
             guard c.plan!.rendersPNGs, let out = c.output else { return }
             let model = c.model!
-            try await renderPNG(SettingsView(model: model), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
+            try await renderPNG(SettingsView(model: model, pane: .github), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
             try await renderPNG(Form { MonitoringScopeSection(model: model, editor: model.scopeEditor) }.formStyle(.grouped).frame(width: 520),
                                 name: stem(c) + "-scope-section", out: out, into: c)
         },
@@ -89,6 +137,19 @@ extension QAScenarioRunner {
     }
 
     static let settingsScenarios: [String: String] = [
+        "settings-suppression-keeps-monitoring": #"""
+        {"name": "settings-suppression-keeps-monitoring", "steps": [
+          {"action": "snooze", "duration": "1h", "label": "snoozed"},
+          {"action": "open-settings", "pane": "alerts", "label": "alerts-snoozed"},
+          {"action": "inject-row", "label": "row-while-snoozed"},
+          {"action": "refresh", "label": "poll-while-snoozed"},
+          {"action": "snooze", "duration": "off", "label": "snooze-off"},
+          {"action": "quiet-hours", "on": true, "coverNow": true, "label": "quiet-hours-cover-now"},
+          {"action": "open-settings", "pane": "alerts", "label": "alerts-quiet-hours"},
+          {"action": "inject-row", "label": "row-during-quiet-hours"},
+          {"action": "refresh", "label": "poll-during-quiet-hours"},
+          {"action": "quiet-hours", "on": false, "label": "quiet-hours-off"}]}
+        """#,
         "settings-draft-apply-cancel": #"""
         {"name": "settings-draft-apply-cancel", "steps": [
           {"action": "settings-add", "kind": "organization", "text": "demo-b", "label": "draft-add-org"},
