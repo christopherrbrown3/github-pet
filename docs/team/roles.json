@@ -51,7 +51,7 @@
       "intendedModel": "claude-opus-5-5",
       "observedModel": "claude-opus-5-5",
       "reasoningEffort": null,
-      "assignment": "#88 app icon directions, design/88-app-icon, designer-icon-88",
+      "assignment": "#88 Direction A approved by Chris; PR91 ready at 4892eda, standing by for QA",
       "verification": "hc launch argv --model and live TUI on 2026-11-20",
       "previousCodexTerminal": "t6d"
     },
@@ -66,6 +66,16 @@
       "verification": "hc launch argv --model and live TUI on 2026-11-20",
       "previousCodexTerminal": "t6b",
       "previousCodexObservedModel": "gpt-6-luna"
+    },
+    {
+      "name": "developer-4",
+      "terminal": "t6n",
+      "runtime": "claude",
+      "intendedModel": "claude-sonnet-5-5",
+      "observedModel": "claude-sonnet-5-5",
+      "reasoningEffort": null,
+      "assignment": "#88 icon packaging, feat/88-app-icon-packaging (stacked on PR91 4892eda), developer-icon-88",
+      "verification": "hc launch argv on 2026-11-20"
     }
   ],
   "observedDate": "2026-11-20",
