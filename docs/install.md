@@ -106,11 +106,24 @@ accessibility output only; a live VoiceOver pass has not been done yet.
 
 ## Updating
 
-To update, download a newer build and replace the app in Applications (approve it once more).
+The first install always needs **Open Anyway** (above): the app is ad-hoc signed and not notarized. After
+that, GitHub Pet updates itself with [Sparkle](https://sparkle-project.org), **once the release signing key is
+configured** (until then Settings says "Updates not configured" and you update by hand as below).
 
-Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on
-where the app is. Replacing the app with a newer ZIP build should therefore keep them, but this
-has **not been tested** on a clean install yet, so check Settings after updating.
+- **Check for Updates…** is in the menu-bar menu and in Settings › GitHub › Software updates. Sparkle asks whether to check
+  automatically (at most every 24 hours), asks before installing, and shows release notes.
+- Updates are verified with GitHub Pet's update signing key, not by Apple notarization, and Sparkle clears
+  quarantine on the updates it installs. "Install updates automatically, without asking" is off unless you turn
+  it on.
+- Stable is the default. Turn on **Include beta releases** to receive betas; a beta build always follows betas.
+- No sign-in, `gh` or token is used, and nothing is sent about your Mac.
+- Builds before this feature (beta 1-3) have no updater: replace them once by downloading a newer ZIP from the
+  Releases page and moving the app into Applications.
+- An updated build may need Open at login approved again, because each build's ad-hoc signature is different.
+
+Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on where the app is,
+so an update should keep them. This has **not been tested** on a clean install yet, so check Settings after
+updating. How updates are signed and released: [updates.md](updates.md).
 
 ## Uninstalling
 
