@@ -231,6 +231,8 @@ enum SnapshotRenderer {
             }
         }
 
+        report += await inboxRedesignRenders(model: model, directory: directory)
+
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
         EphemeralDefaults.release(LaunchOptions.snapshotDefaultsSuite)
