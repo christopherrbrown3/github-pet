@@ -3,8 +3,9 @@
 // 1024 × 1024 design space, drawn with CoreGraphics. No raster inputs.
 //
 // Usage (from the repo root):
-//   swift docs/design/app-icon-88/render_icons.swift [output-dir]
-// Default output dir: docs/design/app-icon-88/renders
+//   swift docs/design/app-icon-88/render_icons.swift [output-dir] [iconset-dir]
+// Defaults: docs/design/app-icon-88/renders and assets/app-icon/AppIcon.iconset
+// (the production iconset of the approved Direction A).
 
 import CoreGraphics
 import Foundation
@@ -119,7 +120,7 @@ func monaHeadPieces(_ cx: CGFloat, _ cy: CGFloat, _ w: CGFloat) -> [CGPath] {
     return pieces
 }
 
-func drawMona(_ ctx: CGContext, cx: CGFloat, cy: CGFloat, w: CGFloat, d: Detail) {
+func drawMona(_ ctx: CGContext, cx: CGFloat, cy: CGFloat, w: CGFloat, d: Detail, px: Int) {
     let pieces = monaHeadPieces(cx, cy, w)
 
     // Silhouette in a transparency layer, then a soft top-lit gradient atop it.
@@ -161,31 +162,43 @@ func drawMona(_ ctx: CGContext, cx: CGFloat, cy: CGFloat, w: CGFloat, d: Detail)
     ctx.addPath(ellipse(cx, cy + 0.14 * w, faceW * w, faceH * w))
     ctx.setFillColor(mask.cg); ctx.fillPath()
 
-    // Eyes.
-    let eyeDX: CGFloat = d == .full ? 0.165 : 0.18
-    let eyeW: CGFloat = d == .full ? 0.095 : (d == .small ? 0.12 : 0.15)
-    let eyeH: CGFloat = d == .full ? 0.13 : (d == .small ? 0.15 : 0.17)
-    let eyeY = cy + 0.10 * w
-    for side in [-1.0, 1.0] as [CGFloat] {
-        ctx.addPath(ellipse(cx + side * eyeDX * w, eyeY, eyeW * w, eyeH * w))
-        ctx.setFillColor(eye.cg); ctx.fillPath()
-        if d == .full {
-            ctx.addPath(ellipse(cx + side * eyeDX * w + 0.018 * w, eyeY - 0.03 * w, 0.034 * w, 0.034 * w))
+    if d == .full {
+        // Eyes with a catchlight, and a curved smile.
+        let eyeY = cy + 0.10 * w
+        for side in [-1.0, 1.0] as [CGFloat] {
+            ctx.addPath(ellipse(cx + side * 0.165 * w, eyeY, 0.095 * w, 0.13 * w))
+            ctx.setFillColor(eye.cg); ctx.fillPath()
+            ctx.addPath(ellipse(cx + side * 0.165 * w + 0.018 * w, eyeY - 0.03 * w, 0.034 * w, 0.034 * w))
             ctx.setFillColor(white.cg); ctx.fillPath()
         }
-    }
-
-    if d != .tiny {
-        // Smile.
         let smile = CGMutablePath()
-        let sw: CGFloat = d == .full ? 0.065 : 0.08
-        smile.move(to: CGPoint(x: cx - sw * w, y: cy + 0.235 * w))
-        smile.addQuadCurve(to: CGPoint(x: cx + sw * w, y: cy + 0.235 * w),
+        smile.move(to: CGPoint(x: cx - 0.065 * w, y: cy + 0.235 * w))
+        smile.addQuadCurve(to: CGPoint(x: cx + 0.065 * w, y: cy + 0.235 * w),
                            control: CGPoint(x: cx, y: cy + 0.32 * w))
         ctx.addPath(smile)
         ctx.setStrokeColor(eye.cg)
-        ctx.setLineWidth((d == .full ? 0.026 : 0.04) * w)
+        ctx.setLineWidth(0.026 * w)
         ctx.setLineCap(.round); ctx.strokePath()
+    } else {
+        // Pixel-snapped features for 16/32 px: the eyes and smile fill whole
+        // device pixels (g design units each), mirrored about cx, so they stay
+        // solid black instead of anti-aliasing to grey.
+        let g = space / CGFloat(px)
+        let ew: CGFloat = d == .small ? 2 : 1, eh: CGFloat = d == .small ? 3 : 2
+        let eyeY = cy + 0.10 * w
+        let left = ((cx - 0.18 * w - ew * g / 2) / g).rounded() * g
+        let top = ((eyeY - eh * g / 2) / g).rounded() * g
+        ctx.setFillColor(eye.cg)
+        for x in [left, 2 * cx - left - ew * g] {
+            ctx.fill(CGRect(x: x, y: top, width: ew * g, height: eh * g))
+        }
+        if d == .small {
+            // A two-pixel mouth with one-pixel upturned corners.
+            let row = ((cy + 0.27 * w) / g).rounded() * g
+            ctx.fill(CGRect(x: cx - g, y: row, width: 2 * g, height: g))
+            ctx.fill(CGRect(x: cx - 2 * g, y: row - g, width: g, height: g))
+            ctx.fill(CGRect(x: cx + g, y: row - g, width: g, height: g))
+        }
     }
 
     if d == .full {
@@ -353,7 +366,7 @@ let directions: [Direction] = [
         let cx: CGFloat = 512
         let cy: CGFloat = d == .full ? 470 : 566
         if d == .full { drawTentacles(ctx, cx: cx, cy: cy, w: w) }
-        drawMona(ctx, cx: cx, cy: cy, w: w, d: d)
+        drawMona(ctx, cx: cx, cy: cy, w: w, d: d, px: px)
         ctx.restoreGState()
     },
     Direction(id: "b-mona-inbox", title: "B · Mona inbox peek") { ctx, px in
@@ -363,7 +376,7 @@ let directions: [Direction] = [
         ctx.addPath(tilePath()); ctx.clip()
         let w: CGFloat = d == .full ? 510 : 600
         let trayTop: CGFloat = d == .full ? 640 : 650
-        drawMona(ctx, cx: 512, cy: d == .full ? 456 : 432, w: w, d: d)
+        drawMona(ctx, cx: 512, cy: d == .full ? 456 : 432, w: w, d: d, px: px)
         drawTray(ctx, top: trayTop, color: RGBA(0x5B4BDB), lip: RGBA(0x3A2DA8), d: d)
         ctx.restoreGState()
     },
@@ -455,4 +468,17 @@ func contactSheet(background: RGBA) -> CGImage {
 
 writePNG(contactSheet(background: RGBA(0xF2F2F4)), outDir.appendingPathComponent("contact-light.png"))
 writePNG(contactSheet(background: RGBA(0x1E1E22)), outDir.appendingPathComponent("contact-dark.png"))
+// Production iconset for the approved direction (A). Detail level follows the
+// pixel size, so icon_16x16@2x uses the 32 px drawing.
+let approved = directions.first { $0.id == "a-mona-portrait" }!
+let iconsetDir = URL(fileURLWithPath: CommandLine.arguments.count > 2
+                     ? CommandLine.arguments[2] : "assets/app-icon/AppIcon.iconset")
+try FileManager.default.createDirectory(at: iconsetDir, withIntermediateDirectories: true)
+for points in [16, 32, 128, 256, 512] {
+    for scale in [1, 2] {
+        let name = scale == 1 ? "icon_\(points)x\(points).png" : "icon_\(points)x\(points)@2x.png"
+        writePNG(render(approved, px: points * scale), iconsetDir.appendingPathComponent(name))
+    }
+}
+print("wrote 10-image iconset into \(iconsetDir.path)")
 print("rendered \(directions.count) directions × \(sizes.count) sizes into \(outDir.path)")
