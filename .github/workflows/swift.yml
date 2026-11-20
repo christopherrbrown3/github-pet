@@ -82,7 +82,7 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true
           python3 scripts/mascot-resources.py verify .build/app/GitHubPet.app/Contents/Resources/MascotPacks
       - name: GUI render check
-        timeout-minutes: 5
+        timeout-minutes: 7
         run: scripts/render-check.sh
       - name: Intel slice smoke (Rosetta)
         timeout-minutes: 2

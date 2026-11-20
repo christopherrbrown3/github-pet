@@ -34,7 +34,7 @@ public enum InboxGroup: String, CaseIterable, Sendable {
         case .failingWorkflows: (one, many) = ("failing workflow", "failing workflows")
         case .approvals: (one, many) = ("approval", "approvals")
         case .reviewRequests: (one, many) = ("review", "reviews")
-        case .yourPullRequests: (one, many) = ("of your PRs", "of your PRs")
+        case .yourPullRequests: (one, many) = ("authored PR", "authored PRs")
         case .assignedIssues: (one, many) = ("issue", "issues")
         case .incidents: (one, many) = ("incident", "incidents")
         }

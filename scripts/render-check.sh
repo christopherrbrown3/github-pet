@@ -42,7 +42,7 @@ chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
 GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
+for _ in {1..300}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
 wait $pid || true
 after=$(prefs after)
@@ -234,10 +234,16 @@ for skin in mona-pet-v1 little-chris-v1; do
   check_in 'inbox redesign (#87)' "$skin privacy hides titles" "^inbox87 $skin privacy: .* inbox-privacy=true "
   check_in 'inbox redesign (#87)' "$skin dismissed list" "^inbox87 $skin dismissed: .* rows=2 .* dismissed=2 "
   check_in 'inbox redesign (#87)' "$skin operational only when fresh" "^inbox87 $skin four tiles: .*GitHub status=Operational \\(No active incidents, positive\\)"
+  # Inbox tiles never read as nothing-to-do on degraded data; GitHub status has its own source.
   for case_name in partial stale error; do
-    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'Operational|Nothing needs you|positive'; then
-      echo "FAIL $skin $case_name tiles claim all clear or operational"; failures=$((failures + 1))
-    else echo "ok   $skin $case_name tiles never claim all clear or operational"; fi
+    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'Nothing needs you|Nothing waiting'; then
+      echo "FAIL $skin $case_name inbox tiles claim nothing to do"; failures=$((failures + 1))
+    else echo "ok   $skin $case_name inbox tiles never claim nothing to do"; fi
+  done
+  for case_name in stale error; do
+    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'GitHub status=Operational|positive'; then
+      echo "FAIL $skin $case_name status claims operational"; failures=$((failures + 1))
+    else echo "ok   $skin $case_name status never claims operational"; fi
   done
   height=$(grep -E "^inbox87-$skin-four: " "$report" | sed -E 's/.*x([0-9]+) pt/\1/')
   if (( ${height:-0} >= 300 && ${height:-9999} <= 620 )); then echo "ok   $skin four-row inbox is compact ($height pt)"

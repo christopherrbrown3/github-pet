@@ -85,7 +85,7 @@ struct InboxView: View {
             }
             Spacer(minLength: 4)
             HStack(spacing: 2) {
-                if model.settings.privacyMode {
+                if FeatureFlags.privacyMode && model.settings.privacyMode { // #94: privacy-mode entry point
                     // Session-only reveal (design spec); turning privacy on again re-hides.
                     Button {
                         model.detailsRevealed.toggle()
@@ -157,7 +157,8 @@ struct InboxView: View {
                 Text(hint).font(.caption.monospaced()).textSelection(.enabled)
             }
             GhSetupView(state: model.dataState)
-            if model.settings.isSnoozed(at: model.now), let until = model.settings.snoozeUntil {
+            // #95: the Snoozed-until line is a snooze entry point.
+            if FeatureFlags.snooze, model.settings.isSnoozed(at: model.now), let until = model.settings.snoozeUntil {
                 Label("Snoozed until \(until.formatted(date: .abbreviated, time: .shortened)) · still updating",
                       systemImage: "moon.zzz")
                     .font(.caption).foregroundStyle(.secondary)
@@ -333,21 +334,25 @@ struct InboxView: View {
 
     // MARK: Footer
 
+    private var snoozeMenu: some View {
+        Menu {
+            ForEach(SnoozeOption.allCases, id: \.self) { option in
+                Button(option.title) { model.snooze(option) }
+            }
+            if model.settings.snoozeUntil != nil {
+                Divider()
+                Button("Turn off snooze") { model.cancelSnooze() }
+            }
+        } label: {
+            Label("Snooze", systemImage: "moon.zzz")
+        }
+        .fixedSize()
+        .help("Silence alerts; GitHub Pet keeps updating")
+    }
+
     private var footer: some View {
         HStack {
-            Menu {
-                ForEach(SnoozeOption.allCases, id: \.self) { option in
-                    Button(option.title) { model.snooze(option) }
-                }
-                if model.settings.snoozeUntil != nil {
-                    Divider()
-                    Button("Turn off snooze") { model.cancelSnooze() }
-                }
-            } label: {
-                Label("Snooze", systemImage: "moon.zzz")
-            }
-            .fixedSize()
-            .help("Silence alerts; GitHub Pet keeps updating")
+            if FeatureFlags.snooze { snoozeMenu } // #95: snooze entry point
             if model.simulatesScope { ScopeSimulationMenu(model: model); ScopeSettingsSimulationMenu(model: model) }
             if showsSimulator && model.usingFixtures && !model.simulatesScope {
                 SimulatorMenu(model: model).fixedSize()

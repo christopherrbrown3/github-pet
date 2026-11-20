@@ -18,8 +18,8 @@ extension SnapshotRenderer {
             model.settings.mascotSkin = skin
             for name in inbox87Cases {
                 var selection = InboxViewSelection()
+                // Fixture polls apply synchronously; each render below waits for SwiftUI to settle.
                 await prepare(name, model: model, selection: &selection)
-                try? await Task.sleep(nanoseconds: 300_000_000)
                 let overview = InboxOverview(dataState: model.dataState, items: model.items,
                                              allDismissed: model.allCurrentInboxItemsDismissed,
                                              authoredWaiting: model.authoredWaitingCount,
