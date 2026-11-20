@@ -14,7 +14,7 @@ A Homebrew cask is planned ([#15](https://github.com/christopherrbrown3/github-p
 - Apple Silicon or Intel: the app is a universal binary (arm64 + x86_64). The Intel half is built
   in CI and smoke-tested under Rosetta when the runner has it; it hasn't been tried on Intel hardware.
 - For live GitHub data: the [GitHub CLI](https://cli.github.com) (`brew install gh`), signed in
-  with `gh auth login`. Without it, GitHub Pet runs on invented Demo data.
+  with `gh auth login`. Without it, a new install shows `gh` setup guidance and an honest "unavailable" state, not an empty inbox. Demo data is an explicit choice in Settings.
 
 ## 1. Download
 
@@ -73,9 +73,14 @@ and confirm. You approve each downloaded version once. Apple's guidance:
 
 - GitHub Pet is a **menu-bar app**: it has no Dock icon. Look for its icon in the menu bar; the
   mascot appears near the bottom-right of the screen. Quit it from the inbox's power button.
-- It starts with **Demo data**: invented items, clearly labelled DEMO. To see your own review
-  requests and assigned issues, install and sign in to `gh`, then choose **GitHub CLI (gh)** under
-  **Settings → Data source**. GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
+- A fresh install (or settings with no saved source) starts on the **GitHub CLI (gh)** source and syncs your own review requests and
+  assigned issues. If `gh` is not installed or signed in, the inbox says so and links to setup
+  (`brew install gh`, `gh auth login`); it never shows an empty inbox or quietly switches to Demo data.
+  GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
+- **Demo data** (invented items, clearly labelled DEMO) is an explicit choice. If you already have
+  saved settings from an earlier beta and never changed the source, you stay on Demo until you
+  switch. To change source either way, open **Settings → GitHub → Source** and choose **GitHub CLI
+  (gh)** for your own data or **Fixtures (offline)** for Demo.
 - Privacy mode is on by default. Names and titles stay hidden until you choose **Show details**.
 - [Using the Inbox](inbox.md) explains the review filter, how to dismiss an item, and how to restore it.
 

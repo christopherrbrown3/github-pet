@@ -66,7 +66,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public var reducedMotion = false
     public var snoozeUntil: Date?
     public var quietHours = QuietHours()
-    public var dataSource: DataSourceMode = .fixtures
+    public var dataSource: DataSourceMode = .githubCLI
     public var assignmentMode: AssignmentMode = .all
     /// #8: local only, never committed. Normalized `owner/name` (see EntitlementRepositories).
     public var entitlementRepositories: [String] = []
@@ -158,7 +158,7 @@ public final class SettingsStore {
     public static let key = "GitHubPet.settings.v1"
     private let defaults: UserDefaults
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults) {
         self.defaults = defaults
     }
 

@@ -239,7 +239,7 @@ fields fall back to defaults, and values outside their range are clamped. They s
 - **Snooze** (1 h, 4 h, until 9:00 tomorrow) and **quiet hours** (local time; can wrap past midnight;
   start = end means off) keep the mascot and menu-bar icon calm. The inbox keeps updating, and
   auth/critical states still show as text.
-- Data source: Fixtures (default) or GitHub CLI.
+- Data source (Settings → GitHub → Source): GitHub CLI (default for new installs) or Fixtures. Saved settings keep their stored choice.
 
 ### Accessibility
 The mascot panel is a single VoiceOver button labelled with the status and the privacy-aware
