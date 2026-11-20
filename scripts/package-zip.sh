@@ -51,6 +51,7 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")" = "$(git 
 test "$(/usr/libexec/PlistBuddy -c 'Print :GitHubPetSourceRevision' "$plist")" = "$(git rev-parse HEAD)"
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$plist")" = true
 test "$(lipo -archs "$unpacked/Contents/MacOS/GitHubPet")" = "$archs"
+scripts/verify-app-icon.sh "$unpacked"
 python3 scripts/mascot-resources.py verify "$unpacked/Contents/Resources/MascotPacks"
 # Sparkle (#90): the framework survived zipping with its symlinks, without XPC services, and the
 # nested signatures still verify.

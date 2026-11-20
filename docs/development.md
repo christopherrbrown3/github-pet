@@ -30,7 +30,9 @@ a plain `swift test` works too.
 Updates (Sparkle, the appcast, QA build overrides, release steps) are covered in [updates.md](updates.md).
 
 `scripts/build-app.sh [debug|release] [--universal]` puts the bundle together from the SwiftPM
-binary and an `Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). It isn't
+binary and an `Info.plist` with `LSUIElement` set, compiles `assets/app-icon/AppIcon.iconset` into
+`Contents/Resources/AppIcon.icns` with `iconutil` (`CFBundleIconFile` = `AppIcon`; the `.icns` is generated,
+not committed), then ad-hoc signs it (`codesign -s -`). It isn't
 notarized or Developer ID signed. `--universal` builds arm64 and x86_64 separately with `--triple`
 (SwiftPM's multi-`--arch` build needs Xcode's xcbuild) and merges them with `lipo`. The version
 (`CFBundleShortVersionString`) comes from the `VERSION` file; the build number (`CFBundleVersion`)
@@ -41,7 +43,7 @@ before compilation; for a shallow clone, run `git fetch --unshallow` first.
 `scripts/package-zip.sh` builds the universal app, zips it with
 `ditto -c -k --sequesterRsrc --keepParent` as `GitHubPet-<version>-<shortsha>-universal.zip`, writes
 the `.sha256` beside it, then unpacks a copy and checks the checksum, signature, version, build
-number, architectures and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
+number, architectures, app icon (`scripts/verify-app-icon.sh`) and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
 (14 days for PRs, 90 for `main`). `scripts/intel-smoke.sh` runs the x86_64 slice under Rosetta
 (skipped, and says so, where Rosetta is absent). End-user steps are in [install.md](install.md).
 
@@ -49,7 +51,8 @@ On PRs, CI first builds/tests GitHub's combined branch, then checks out the exac
 full history for packaging and render checks. The ZIP's short SHA and the bundle's full SHA
 therefore identify the source actually packaged. CI asserts that checkout and history before
 packaging. `scripts/test-packaging.sh` exercises full and depth-1/depth-2 clones without compiling
-the app, proving shallow histories fail before reaching Swift.
+the app, proving shallow histories fail before reaching Swift, and that the icon verifier rejects a
+missing, empty or invalid `AppIcon.icns`, a wrong `CFBundleIconFile` and `LSUIElement` not true.
 
 `swift run GitHubPet` also works for quick iteration.
 

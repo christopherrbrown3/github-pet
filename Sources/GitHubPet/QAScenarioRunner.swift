@@ -363,20 +363,16 @@ enum QAScenarioRunner {
         "wait-real": Action(keys: ["seconds"], validate: { _ = try $0.number("seconds", 0...60) }) { c in
             try await Task.sleep(nanoseconds: UInt64(try c.number("seconds", 0...60) * 1e9))
         },
-        "open-settings": Action(keys: ["section"], validate: { c in
-            if c.step.params["section"] != nil { _ = try c.string("section", ["assignment", "mascot"]) }
+        // `section` (older scenarios) and `pane` both pick the pane: mascot, alerts (assignment is
+        // its old name) or github. Without either, the Mascot pane opens.
+        "open-settings": Action(keys: ["section", "pane"], validate: { c in
+            if c.step.params["section"] != nil { _ = try c.string("section", ["assignment", "mascot", "alerts", "github"]) }
+            if c.step.params["pane"] != nil { _ = try c.string("pane", ["mascot", "alerts", "github"]) }
         }) { c in
             guard c.plan!.rendersPNGs, let out = c.output else { return }
-            if c.step.params["section"] as? String == "mascot" {
-                try await renderPNG(Form { MascotSettingsSection(model: c.model) }.formStyle(.grouped)
-                    .frame(width: 520, height: 260), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
-            } else if c.step.params["section"] != nil {
-                // The full form opens at the top. Capture this section with its real grouped controls.
-                try await renderPNG(Form { AssignmentModeSection(model: c.model) }.formStyle(.grouped)
-                    .frame(width: 520, height: 220), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
-            } else {
-                try await renderPNG(SettingsView(model: c.model), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
-            }
+            let name = (c.step.params["pane"] ?? c.step.params["section"]) as? String ?? "mascot"
+            let pane = SettingsPane(rawValue: name == "assignment" ? "alerts" : name) ?? .mascot
+            try await renderPNG(SettingsView(model: c.model, pane: pane), name: stem(c) + "-settings", out: out, asWindow: true, into: c)
         },
         "quit": Action { c in
             // Normal-quit path with replies possibly still held; then prove no late callback revives the domain.
@@ -497,6 +493,7 @@ enum QAScenarioRunner {
                         "incidents": model.serviceIncidents.count, "unseenIncidents": model.unseenIncidents.count],
             "monitoringScope": ["identity": identity, "generation": model.monitoringScopeGeneration, "active": scope],
             "settingsScope": settingsSnapshot(model),
+            "suppression": suppressionSnapshot(model),
             "scopeSimulation": ["status": model.scopeSimulationStatus, "held": model.simulatedHeldReplies,
                                 "received": model.receivedScopeReplies, "discarded": model.discardedScopeReplies,
                                 "requests": model.simulatedPollLog.map { request -> [String: Any] in
