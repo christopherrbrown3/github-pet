@@ -11,21 +11,13 @@ private final class InertLoginBackend: LoginItemBackend, @unchecked Sendable {
     func unregister() throws { calls += 1 }
 }
 
-/// What the run could have written outside its in-memory defaults: GitHubPet keys in the test
-/// process's standard domain, and dev.github-pet preference files.
+/// What the run could have written outside its in-memory defaults: dev.github-pet preference files.
+/// (Writes to the real standard domain are excluded by TestDefaultsSourceTests, not read here.)
 private struct WriteGuard {
     let defaults: EphemeralDefaults
     let loginBackend: InertLoginBackend
-    let standardValues: [String: String]
     let preferenceFiles: Set<String>
 
-    /// Every standard-domain entry whose key mentions GitHubPet, including AppKit's
-    /// "NSWindow Frame GitHubPet.*" autosaves, with its value so a changed value counts too.
-    static func gitHubPetStandardValues() -> [String: String] {
-        UserDefaults.standard.dictionaryRepresentation()
-            .filter { $0.key.contains("GitHubPet") }
-            .mapValues { String(describing: $0) }
-    }
     static func preferenceFiles() -> Set<String> {
         let directory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences")
         let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
@@ -45,13 +37,11 @@ private struct WriteGuard {
         _ = NSApplication.shared
         let backend = InertLoginBackend()
         let guarded = WriteGuard(defaults: defaults, loginBackend: backend,
-                                 standardValues: WriteGuard.gitHubPetStandardValues(), preferenceFiles: WriteGuard.preferenceFiles())
+                                 preferenceFiles: WriteGuard.preferenceFiles())
         return (AppModel(options: options, runtime: AppModel.Runtime(loginItemBackend: backend)), guarded)
     }
     private func assertNothingWritten(_ guarded: WriteGuard) {
         #expect(guarded.defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
-        #expect(WriteGuard.gitHubPetStandardValues() == guarded.standardValues,
-                "no GitHubPet key or window frame is added to or changed in the standard (on-disk) defaults")
         #expect(WriteGuard.preferenceFiles().subtracting(guarded.preferenceFiles).isEmpty,
                 "no dev.github-pet preferences file appears")
         #expect(guarded.loginBackend.calls == 0, "the window tests never consult a login item")
@@ -133,5 +123,4 @@ private struct WriteGuard {
 func preferencesFileExists(_ domain: String) -> Bool {
     let file = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences/\(domain).plist")
     return FileManager.default.fileExists(atPath: file.path)
-        || UserDefaults.standard.persistentDomain(forName: domain) != nil
 }
