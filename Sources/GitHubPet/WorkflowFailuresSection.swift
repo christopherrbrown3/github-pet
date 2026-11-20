@@ -16,12 +16,14 @@ struct WorkflowFailuresSection: View {
                 Text(note).font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings.workflowWatchNote")
             }
-            Text("Workflow failures: GitHub Actions failures on each selected repository's default branch (its latest commit). Failures you triggered are urgent; others need attention.")
+            DisclosureGroup("How Actions watching works") {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Workflow failures: GitHub Actions failures on each selected repository's default branch (its latest commit). Failures you triggered are urgent; others need attention.")
+                    Text("Deployment approvals: runs waiting for a deployment you can approve, as GitHub reports for your account. Deployments waiting for other reviewers or a wait timer are only counted.")
+                    Text("A row opens the run on GitHub. GitHub Pet never approves, re-runs or changes anything.")
+                }
                 .font(.caption).foregroundStyle(.secondary)
-            Text("Deployment approvals: runs waiting for a deployment you can approve, as GitHub reports for your account. Deployments waiting for other reviewers or a wait timer are only counted.")
-                .font(.caption).foregroundStyle(.secondary)
-            Text("A row opens the run on GitHub. GitHub Pet never approves, re-runs or changes anything.")
-                .font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
 }
