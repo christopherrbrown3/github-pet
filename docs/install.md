@@ -79,7 +79,7 @@ and confirm. You approve each downloaded version once. Apple's guidance:
   GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
 - **Demo data** (invented items, clearly labelled DEMO) is an explicit choice. If you already have
   saved settings from an earlier beta and never changed the source, you stay on Demo until you
-  switch. To change source either way, open **Settings → Data source** and choose **GitHub CLI
+  switch. To change source either way, open **Settings → GitHub → Source** and choose **GitHub CLI
   (gh)** for your own data or **Fixtures (offline)** for Demo.
 - Privacy mode is on by default. Names and titles stay hidden until you choose **Show details**.
 - [Using the Inbox](inbox.md) explains the review filter, how to dismiss an item, and how to restore it.

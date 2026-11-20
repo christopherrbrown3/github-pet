@@ -89,8 +89,8 @@ source; Demo data appears only if you choose it under Settings (or kept it from 
    Developer account), macOS blocks the first launch. Approve it in **System Settings → Privacy &
    Security → Open Anyway**; you do this once per build. Don't disable Gatekeeper or remove quarantine
    attributes; the guide never asks you to.
-4. GitHub Pet is a **menu-bar app** with no Dock icon. To see your own data, choose **GitHub CLI (gh)**
-   under **Settings → Data source**.
+4. GitHub Pet is a **menu-bar app** with no Dock icon. It starts on your own GitHub data via
+   `gh`. To switch between **GitHub CLI (gh)** and Demo data, use **Settings → GitHub → Source**.
 
 The [installation guide](docs/install.md) also covers updating, uninstalling (including turning off Open
 at login first) and keyboard access. A Homebrew cask is planned but not available yet.
