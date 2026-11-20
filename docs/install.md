@@ -128,10 +128,10 @@ updating. How updates are signed and released: [updates.md](updates.md).
 ## Open at login
 
 Settings → Mascot → Startup shows what macOS reports for **Open at login**. GitHub Pet's builds are ad-hoc
-signed, and on every Mac we tested (macOS 27, in `/Applications` and elsewhere) macOS reports ad-hoc builds
-as unknown to its login-item service. Settings then says **Unavailable**, shows the switch as off and disabled,
-and never tries to register anything. The reason is the signature, not where the app is, so moving it to
-Applications doesn't help.
+signed, and in our tests (macOS 27, in `/Applications` and elsewhere) macOS reports ad-hoc builds as unknown
+to its login-item service. Settings then says **Unavailable**, shows the switch as off and disabled, and never
+tries to register anything. The location made no difference, so moving the app to Applications doesn't help; the
+signature is the leading suspect, but that is not proven.
 
 To start GitHub Pet at login anyway, add it yourself: choose **Open Login Items Settings** in that row (or open
 System Settings → General → Login Items), click **+** and pick GitHub Pet. That is macOS's own list; GitHub Pet

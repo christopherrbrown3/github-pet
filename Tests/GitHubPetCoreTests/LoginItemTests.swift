@@ -92,7 +92,7 @@ private final class FakeBackend: LoginItemBackend, @unchecked Sendable {
         #expect(result == LoginItemResult(status: .notFound, failure: nil))
         #expect(backend.calls.isEmpty, "register() is never attempted from notFound")
         let text = result.status.explanation ?? ""
-        #expect(text.contains("developer certificate") && text.contains("System Settings → General → Login Items"))
+        #expect(text.contains("ad-hoc-signed") && text.contains("System Settings → General → Login Items"))
         #expect(!text.contains("Applications"), "moving the app doesn't help, so the copy must not suggest it")
     }
 

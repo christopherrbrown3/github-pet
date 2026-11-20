@@ -71,7 +71,7 @@ private final class FakeLoginBackend: LoginItemBackend, @unchecked Sendable {
         let settings = LoginItemSettings(backend: backend, openURL: { opened.append($0) })
         settings.refresh()
         #expect(!settings.isOn && !settings.canToggle && settings.offersSystemSettings)
-        #expect(settings.summary.hasPrefix("Unavailable.") && settings.summary.contains("developer certificate"))
+        #expect(settings.summary.hasPrefix("Unavailable.") && settings.summary.contains("ad-hoc-signed"))
         settings.setEnabled(true)   // even if a control were driven, nothing is registered
         #expect(backend.calls.isEmpty && !settings.isOn)
         settings.openLoginItemsSettings()

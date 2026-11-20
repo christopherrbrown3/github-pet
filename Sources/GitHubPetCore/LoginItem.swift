@@ -8,7 +8,7 @@ public enum LoginItemStatus: Equatable, Sendable {
     /// Registered, but the user still has to allow it in System Settings → General → Login Items.
     case requiresApproval
     /// macOS reports the app as unknown to its login-item service. Seen for every ad-hoc-signed build,
-    /// in /Applications too: the service supports apps signed with a developer certificate.
+    /// in /Applications too. The cause is not proven; the signature is the leading suspect.
     case notFound
 
     public init(_ status: SMAppService.Status) {
@@ -30,7 +30,7 @@ public enum LoginItemStatus: Equatable, Sendable {
         case .enabled, .disabled: return nil
         case .requiresApproval: return "Allow GitHub Pet in System Settings → General → Login Items."
         case .notFound:
-            return "Open at login isn't available for this build: macOS only supports it for apps signed with a developer certificate. You can add GitHub Pet yourself in System Settings → General → Login Items."
+            return "Open at login isn't available in this beta. macOS doesn't register ad-hoc-signed builds like this one as login items. You can add GitHub Pet yourself in System Settings → General → Login Items."
         }
     }
 
