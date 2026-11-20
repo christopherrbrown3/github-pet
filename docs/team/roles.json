@@ -41,19 +41,8 @@
       "intendedModel": "claude-sonnet-5-5",
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
-      "assignment": "#90 update check phase 1, feat/90-update-check, developer-updates-90",
+      "assignment": "#90 Sparkle 2 auto-update integration on ad-hoc builds (Chris decision Nov 20), feat/90-update-check",
       "verification": "hc launch argv --model and live TUI on 2026-11-20"
-    },
-    {
-      "name": "graphic-designer",
-      "terminal": "t6k",
-      "runtime": "claude",
-      "intendedModel": "claude-opus-5-5",
-      "observedModel": "claude-opus-5-5",
-      "reasoningEffort": null,
-      "assignment": "#88 Direction A approved by Chris; PR91 ready at 4892eda, standing by for QA",
-      "verification": "hc launch argv --model and live TUI on 2026-11-20",
-      "previousCodexTerminal": "t6d"
     },
     {
       "name": "qa-engineer",
@@ -80,5 +69,5 @@
   ],
   "observedDate": "2026-11-20",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Claude takeover Nov 20. All Codex (t1r, t68, t69, t6b, t6d, t1s, t1t, t8) and old Claude (t4w-t4z, t61-t64) terminals ended and removed from Herdr; worktrees and evidence preserved. #89 Blocked on Chris's distribution decision. No Copilot."
+  "note": "Claude takeover Nov 20. All Codex (t1r, t68, t69, t6b, t6d, t1s, t1t, t8) and old Claude (t4w-t4z, t61-t64) terminals ended and removed from Herdr; worktrees and evidence preserved. #89 Blocked on Chris's distribution decision. No Copilot. Nov 20: PR91 (#88 icon assets) merged fbae373; designer t6k ended. Chris approved Sparkle auto-updates during beta on ad-hoc builds; #89 signing deferred post-beta (Backlog)."
 }

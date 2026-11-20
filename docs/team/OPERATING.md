@@ -1,3 +1,7 @@
+# Sparkle decision — Chris, 2026-11-20
+
+Chris approved Sparkle 2 automatic updates during the beta on the current ad-hoc builds. Users approve the first launch once with Open Anyway, and Sparkle installs later updates, verified by EdDSA. Developer ID signing and notarization (#89) are deferred until after the beta; #89 is in Backlog. Chris generates and backs up the production EdDSA key in his login Keychain. Agents never handle the private key; only the public key is committed. t6j now implements Sparkle for #90. PR91 (#88 icon assets) merged as fbae373 after QA PASS and green exact-head CI; designer t6k ended. Full decision: issue #90.
+
 # Claude takeover — 2026-11-20
 
 Chris directed a Claude takeover: Codex is out of weekly usage (6% left, resets Nov 24). Sole PM is **t6f**, Claude Opus 5.5, in the product-manager worktree; route reports with `hc send t6f`. Codex PM t1r had published and verified Beta.3 (tag v0.1.0-beta.3 at main 96b70d0, CI44562563081, ZIP f1a97e2c…). All Codex terminals (t8, t1r, t1s, t1t, t68, t69, t6b, t6d) and quota-parked Claude terminals (t4w–t4z, t61–t64) were ended and finished terminals removed from Herdr. Every worktree, branch and evidence directory is preserved.
