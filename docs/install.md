@@ -73,13 +73,14 @@ and confirm. You approve each downloaded version once. Apple's guidance:
 
 - GitHub Pet is a **menu-bar app**: it has no Dock icon. Look for its icon in the menu bar; the
   mascot appears near the bottom-right of the screen. Quit it from the inbox's power button.
-- A new install starts on the **GitHub CLI (gh)** source and syncs your own review requests and
+- A fresh install (or settings with no saved source) starts on the **GitHub CLI (gh)** source and syncs your own review requests and
   assigned issues. If `gh` is not installed or signed in, the inbox says so and links to setup
   (`brew install gh`, `gh auth login`); it never shows an empty inbox or quietly switches to Demo data.
   GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
-- **Demo data** (invented items, clearly labelled DEMO) is an explicit choice: pick **Fixtures
-  (offline)** under **Settings → Data source**. If you already chose Demo in an earlier beta, that
-  choice is kept until you switch.
+- **Demo data** (invented items, clearly labelled DEMO) is an explicit choice. If you already have
+  saved settings from an earlier beta and never changed the source, you stay on Demo until you
+  switch. To change source either way, open **Settings → Data source** and choose **GitHub CLI
+  (gh)** for your own data or **Fixtures (offline)** for Demo.
 - Privacy mode is on by default. Names and titles stay hidden until you choose **Show details**.
 - [Using the Inbox](inbox.md) explains the review filter, how to dismiss an item, and how to restore it.
 
