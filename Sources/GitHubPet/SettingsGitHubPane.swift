@@ -16,16 +16,10 @@ struct GitHubPane: View {
             if !model.features.showsAlertsPane { AssignmentModeSection(model: model) }
             EntitlementRepositoriesSection(model: model)
             WorkflowFailuresSection(model: model)
-            SoftwareUpdateSlot()
+            UpdateStatusSection(updates: model.updates)
         }
         .formStyle(.grouped)
     }
-}
-
-/// Reserved for #90 (feat/90-update-check): embed its `UpdateStatusSection` here, as a Form
-/// section. Renders nothing until then.
-struct SoftwareUpdateSlot: View {
-    var body: some View { EmptyView() }
 }
 
 struct GitHubConnectionSection: View {
