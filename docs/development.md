@@ -16,6 +16,7 @@ It needs no Xcode project, and Xcode itself is optional.
 swift build                       # debug build of the library and app
 scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
+scripts/test-update-build.sh      # Sparkle packaging regression (debug builds, ~1 min)
 scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
 scripts/readme-screenshots.sh .build/app/GitHubPet.app   # offscreen Demo renders -> docs/screenshots/beta
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
@@ -25,6 +26,8 @@ open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon
 swift-testing on its own, so the script adds the CLT framework search paths and turns off the CLT
 copy of the Testing/Foundation cross-import overlay, which is incomplete. If you have Xcode,
 a plain `swift test` works too.
+
+Updates (Sparkle, the appcast, QA build overrides, release steps) are covered in [updates.md](updates.md).
 
 `scripts/build-app.sh [debug|release] [--universal]` puts the bundle together from the SwiftPM
 binary and an `Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). It isn't

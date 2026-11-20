@@ -67,6 +67,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         mascot = MascotWindowController(model: model)
-        if model.checksUpdatesLive { model.updates.startPeriodicChecks() }
     }
 }

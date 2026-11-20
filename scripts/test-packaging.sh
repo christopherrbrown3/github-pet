@@ -8,6 +8,8 @@ trap 'rm -rf "$scratch"' EXIT
 mkdir -p "$scratch/source/scripts" "$scratch/bin"
 cp scripts/{build-app,package-zip}.sh "$scratch/source/scripts/"
 cp VERSION "$scratch/source/"
+mkdir -p "$scratch/source/updates"
+cp updates/sparkle-public-ed-key.txt "$scratch/source/updates/"
 git init -q "$scratch/source"
 git -C "$scratch/source" add .
 for number in 1 2 3; do

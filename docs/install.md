@@ -101,30 +101,24 @@ accessibility output only; a live VoiceOver pass has not been done yet.
 
 ## Updating
 
-GitHub Pet can **tell you** when a newer release exists, but it does **not** download or install
-updates itself yet. Automatic installation is waiting on trusted distribution
-([#89](https://github.com/christopherrbrown3/github-pet/issues/89)): today's builds are ad-hoc
-signed and not notarized, so an updater could not make a downloaded copy trusted.
+The first install always needs **Open Anyway** (above): the app is ad-hoc signed and not notarized. After
+that, GitHub Pet updates itself with [Sparkle](https://sparkle-project.org), **once the release signing key is
+configured** (until then Settings says "Updates not configured" and you update by hand as below).
 
-- **Check for Updates…** is in the menu-bar menu and in Settings › Software updates, which shows
-  the installed version and build, when it last checked, the result and the release notes.
-- Updates come from GitHub's public release list. No sign-in, `gh` or token is used.
-- Pick the **Stable** or **Beta** channel. Stable is the default, and GitHub Pet never moves you to
-  Beta by itself. Today every release is a Beta, so choose **Beta** in Settings to be told about
-  them.
-- "Check automatically once a day" is on by default: at most one quiet check per 24 hours, with
-  no notification or badge. Turn it off in Settings.
-- A failed check (offline, GitHub's rate limit, an unreadable reply) says so and offers **Retry**.
-  It is never shown as "up to date".
-- **Download…** opens the release page on GitHub in your browser. Download the new ZIP there and
-  replace the app in Applications, then approve it once more, as in the first install.
+- **Check for Updates…** is in the menu-bar menu and in Settings › Software updates. Sparkle asks whether to check
+  automatically (at most every 24 hours), asks before installing, and shows release notes.
+- Updates are verified with GitHub Pet's update signing key, not by Apple notarization, and Sparkle clears
+  quarantine on the updates it installs. "Install updates automatically, without asking" is off unless you turn
+  it on.
+- Stable is the default. Turn on **Include beta releases** to receive betas; a beta build always follows betas.
+- No sign-in, `gh` or token is used, and nothing is sent about your Mac.
+- Builds before this feature (beta 1-3) have no updater: replace them once by downloading a newer ZIP from the
+  Releases page and moving the app into Applications.
+- An updated build may need Open at login approved again, because each build's ad-hoc signature is different.
 
-Builds made before this feature don't record their own prerelease, so they show as "untagged" and
-may be offered the release they already are; builds from a release carry their full version.
-
-Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on
-where the app is. Replacing the app with a newer ZIP build should therefore keep them, but this
-has **not been tested** on a clean install yet, so check Settings after updating.
+Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on where the app is,
+so an update should keep them. This has **not been tested** on a clean install yet, so check Settings after
+updating. How updates are signed and released: [updates.md](updates.md).
 
 ## Uninstalling
 

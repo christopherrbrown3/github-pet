@@ -1,0 +1,3 @@
+# TEST ONLY public key. Its private half was discarded. Never used by default or release builds;
+# scripts/test-update-build.sh and QA builds pass it with SPARKLE_PUBLIC_KEY_FILE. See docs/updates.md.
+K4H7s323joU5ikcYUy5acraSN8ZDmWMfrTFg+gUSa30=

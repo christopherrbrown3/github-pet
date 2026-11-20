@@ -279,7 +279,6 @@ enum QAScenarioRunner {
     /// buttons, Settings toggles/picker). PR B adds its Settings draft/discovery actions here.
     static let actions: [String: Action] = coreActions.merging(settingsActions) { core, _ in core }
         .merging(dismissalActions) { existing, _ in existing }
-        .merging(updateActions) { existing, _ in existing }
     static let coreActions: [String: Action] = [
         "capture": Action { _ in },
         "account": Action(keys: ["account"], validate: { _ = try $0.account() }) { c in
@@ -428,7 +427,6 @@ enum QAScenarioRunner {
         }
         var state = snapshot(model, clock: plan.clock)
         state["dismissal"] = dismissalSnapshot(context)
-        state["updates"] = updateSnapshot(model)
         state["step"] = index
         state["label"] = step.label
         state["action"] = step.action
@@ -523,7 +521,6 @@ enum QAScenarioRunner {
 
     static let builtInScenarios: [String: String] = coreScenarios.merging(settingsScenarios) { core, _ in core }
         .merging(dismissalScenarios) { existing, _ in existing }
-        .merging(updateScenarios) { existing, _ in existing }
     static let coreScenarios: [String: String] = [
         "assignment-reach": #"""
         {"name": "assignment-reach", "steps": [
