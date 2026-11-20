@@ -237,8 +237,17 @@ private final class FrozenClock: @unchecked Sendable {
 }
 
 @MainActor @Suite(.serialized) struct SettingsPaneTests {
+    /// Regression guard: these tests use EphemeralDefaults or the in-memory simulation domain and
+    /// must never write the real GitHubPet preferences (standard defaults).
+    private static func standardValues() -> [String: String] {
+        UserDefaults.standard.dictionaryRepresentation().filter { $0.key.contains("GitHubPet") }
+            .mapValues { String(describing: $0) }
+    }
+
     @Test func suppressionScenarioParsesAndKeepsPollingAndInboxUpdates() async throws {
         #expect(QAScenarioRunner.settingsScenarios["settings-suppression-keeps-monitoring"] != nil)
+        let standardBefore = Self.standardValues()
+        defer { #expect(Self.standardValues() == standardBefore, "scenario wrote the real preferences") }
         let output = FileManager.default.temporaryDirectory.appendingPathComponent("qa-suppress-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: output) }
         var plan = try QAScenarioRunner.makePlan(LaunchOptions.parse(
@@ -274,6 +283,8 @@ private final class FrozenClock: @unchecked Sendable {
 
     @Test func skinCardsLoadTheRealBundledPacks() {
         // In-memory defaults: this test must never touch the real preferences.
+        let standardBefore = Self.standardValues()
+        defer { #expect(Self.standardValues() == standardBefore, "skin cards wrote the real preferences") }
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures", "--defaults-suite", "settings-pane-tests"], environment: [:])
         options.userDefaultsOverride = EphemeralDefaults(name: "settings-pane.tests.\(UUID().uuidString)")
         let model = AppModel(options: options, runtime: AppModel.Runtime(schedulesTimers: false))
