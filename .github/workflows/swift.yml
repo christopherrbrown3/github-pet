@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release candidate version, e.g. 0.1.0-beta.4 (empty: ordinary build). Run on main for a publishable ZIP.'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +27,19 @@ jobs:
         with:
           # Keep PR build/tests on GitHub's combined branch; metadata needs complete history.
           fetch-depth: 0
+      - name: Release version
+        # Only a manual run with release_version makes a release build; its version reaches
+        # package-zip.sh as RELEASE_VERSION and the app's Info.plist. A tag push does not rebuild:
+        # the published ZIP is the dispatch-run artifact QA verified (docs/updates.md).
+        id: release
+        env:
+          INPUT_VERSION: ${{ inputs.release_version }}
+        run: |
+          version="${INPUT_VERSION#v}"
+          if [[ -n "$version" ]]; then
+            [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::'$version' is not a release version like 0.1.0 or 0.1.0-beta.4"; exit 1; }
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Toolchain
         run: |
           xcodebuild -version
@@ -77,6 +95,10 @@ jobs:
         run: scripts/test-release-appcast.sh
       - name: Package app (universal ZIP)
         # Builds the arm64 + x86_64 app the checks below use, zips it and self-verifies the archive.
+        # RELEASE_VERSION is set for this step only (empty for ordinary builds), so the regression
+        # scripts that build their own apps are never affected by it.
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: scripts/package-zip.sh
       - name: Verify bundle
         run: |
@@ -86,6 +108,29 @@ jobs:
           codesign --verify --deep --strict .build/app/GitHubPet.app
           scripts/verify-app-icon.sh .build/app/GitHubPet.app
           python3 scripts/mascot-resources.py verify .build/app/GitHubPet.app/Contents/Resources/MascotPacks
+      - name: Verify release build
+        if: steps.release.outputs.version != ''
+        run: |
+          plist=.build/app/GitHubPet.app/Contents/Info.plist
+          version="${{ steps.release.outputs.version }}"
+          key=$(grep -v '^[[:space:]]*#' updates/sparkle-public-ed-key.txt | tr -d '[:space:]')
+          test -n "$key"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :GitHubPetReleaseVersion' "$plist")" = "$version"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")" = "$version"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$plist")" = "$key"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$plist")" = "https://raw.githubusercontent.com/christopherrbrown3/github-pet/main/updates/appcast.xml"
+          zip=$(ls .build/dist/*.zip)
+          {
+            echo "## Release build $version"
+            echo "- Source: \`$GITHUB_SHA\`, build number $(git rev-list --count HEAD)"
+            echo "- ZIP: \`$(basename "$zip")\`"
+            echo "- SHA-256: \`$(cut -d' ' -f1 < "$zip.sha256")\`"
+            if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+              echo "Run on main: QA verifies this artifact and the release publishes this exact ZIP. Create the tag at \`$GITHUB_SHA\`; do not rebuild."
+            else
+              echo "**TEST ONLY: not run on main, do not publish this ZIP.**"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: GUI render check
         timeout-minutes: 5
         run: scripts/render-check.sh
@@ -108,7 +153,7 @@ jobs:
       - name: Upload app ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: GitHubPet-app
+          name: ${{ steps.release.outputs.version != '' && format('GitHubPet-release-{0}', steps.release.outputs.version) || 'GitHubPet-app' }}
           path: |
             .build/dist/*.zip
             .build/dist/*.zip.sha256
