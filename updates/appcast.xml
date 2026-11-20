@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>GitHub Pet</title>
+        <link>https://github.com/christopherrbrown3/github-pet</link>
+        <description>GitHub Pet releases. Written by scripts/release-appcast.sh; no releases are signed yet.</description>
+        <language>en</language>
+    </channel>
+</rss>

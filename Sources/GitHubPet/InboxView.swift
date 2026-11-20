@@ -41,6 +41,7 @@ struct InboxView: View {
                 Label(note, systemImage: "exclamationmark.triangle").font(.caption)
             }
             Divider()
+            UpdateMenuRow(updates: model.updates)
             footer
         }
         .padding(12)
