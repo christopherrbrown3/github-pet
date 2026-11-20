@@ -111,7 +111,7 @@ public final class EventBaselineStore {
     private let defaults: UserDefaults
     private var lastSaved: EventBaseline?
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults) {
         self.defaults = defaults
     }
 
