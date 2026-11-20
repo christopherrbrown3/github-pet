@@ -123,7 +123,7 @@ has **not been tested** on a clean install yet, so check Settings after updating
    defaults delete dev.github-pet.GitHubPet
    ```
 
-4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Startup**,
+4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Mascot → Startup**,
    or under **System Settings → General → Login Items**. Do this before step 2, while the app is
    still installed. If you already deleted the app, check Login Items and remove GitHub Pet there
    if it is still listed. Open at login has **not been verified on a real Mac** with this
