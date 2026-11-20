@@ -225,6 +225,14 @@ fields fall back to defaults, and values outside their range are clamped. They s
   including its count/quality badge, is on the display's visible area; near a screen edge this
   takes precedence over keeping the ground point fixed when resizing. A drop saves that settled
   position, so what is saved is what is shown.
+- **Hidden for the beta (#94, #95, #107):** privacy mode, snooze and quiet hours stay in the code but
+  `FeatureFlags` (in `GitHubPetCore/SettingsPresentation.swift`) hides every entry point: the Inbox
+  Show/Hide details, Snooze menu and Snoozed/Quiet hours lines, and the Settings Alerts pane (whose
+  review filter moves to the GitHub pane). While a feature is hidden its effective value is off
+  (`PetSettings.effectivePrivacyMode`, `isSnoozed`, `quietHoursActive`, `alertsAllowed` take a
+  `FeatureSet`), whatever an earlier build stored; stored preferences are never rewritten. Flip a
+  switch to `true` to bring a feature back; tests run both states through `AppModel.Runtime.features`.
+  The descriptions below are the behaviour with a feature shown.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox

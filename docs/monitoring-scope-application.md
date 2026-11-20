@@ -47,6 +47,7 @@ The same build can drive these scenarios itself and write what a user would see:
   - Saved selections: `reload` {`viewer`: known|unknown, `account`: A|B}, `corrupt` {`account`} (no reload), `corrupt-reload`, `seed` (no reload), `repair`.
   - Incidents: `inject-incident` {`tier`: minor|major}, `resolve-incidents`.
   - Settings: `privacy` {`on`}, `show-details` {`on`}, `reduce-motion` {`on`}, `source` {`source`: fixtures|gh}, `open-settings` (also renders Settings).
+    `privacy`, `snooze` and `quiet-hours` write the *stored* setting even while #94/#95/#107 hide those features, which is how QA reproduces an upgrade from an earlier beta. Each step's `settings` block records `features`, `privacyMode` (stored) and `effectivePrivacyMode`; `suppression` reports effective snooze and quiet hours. Built-in `hidden-features-upgrade` runs that case end to end.
   - Time and capture: `clock-set` {`time`: ISO 8601}, `clock-advance` {`seconds`: 0-86400}, `wait-real` {`seconds`: 0-60}, `capture`.
   - `quit` must be the last step.
 - **Time.** The app clock starts at 2026-11-15T12:00:00Z and moves only on `clock-set`/`clock-advance`, so clips and bursts are reproducible. Repository budgets and held replies keep their real 20-second bound: use `wait-real` to let a held reply time out.

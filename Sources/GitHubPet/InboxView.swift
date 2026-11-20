@@ -88,7 +88,7 @@ struct InboxView: View {
             }
             Spacer(minLength: 4)
             HStack(spacing: 2) {
-                if FeatureFlags.privacyMode && model.settings.privacyMode { // #94: privacy-mode entry point
+                if model.privacyMode { // #94: shown only while privacy mode is available and on
                     // Session-only reveal (design spec); turning privacy on again re-hides.
                     Button {
                         model.detailsRevealed.toggle()
@@ -161,11 +161,12 @@ struct InboxView: View {
             }
             GhSetupView(state: model.dataState)
             // #95: the Snoozed-until line is a snooze entry point.
-            if FeatureFlags.snooze, model.settings.isSnoozed(at: model.now), let until = model.settings.snoozeUntil {
+            if model.settings.isSnoozed(at: model.now, features: model.features), let until = model.settings.snoozeUntil {
                 Label("Snoozed until \(until.formatted(date: .abbreviated, time: .shortened)) · still updating",
                       systemImage: "moon.zzz")
                     .font(.caption).foregroundStyle(.secondary)
-            } else if model.settings.quietHours.contains(model.now) {
+            // #107: effective quiet hours only, so a hidden feature never shows a status.
+            } else if model.settings.quietHoursActive(at: model.now, features: model.features) {
                 Label("Quiet hours · still updating", systemImage: "moon")
                     .font(.caption).foregroundStyle(.secondary)
             }
@@ -355,7 +356,7 @@ struct InboxView: View {
 
     private var footer: some View {
         HStack {
-            if FeatureFlags.snooze { snoozeMenu } // #95: snooze entry point
+            if model.features.snooze { snoozeMenu } // #95: snooze entry point
             if model.simulatesScope { ScopeSimulationMenu(model: model); ScopeSettingsSimulationMenu(model: model) }
             if showsSimulator && model.usingFixtures && !model.simulatesScope {
                 SimulatorMenu(model: model).fixedSize()

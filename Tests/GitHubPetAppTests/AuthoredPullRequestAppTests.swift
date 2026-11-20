@@ -5,12 +5,12 @@ import Testing
 
 /// #9 through the real AppModel path with the offline simulated scope (no gh, no network).
 @Suite(.serialized, .timeLimit(.minutes(2))) @MainActor struct AuthoredPullRequestAppTests {
-    private func simulated() -> AppModel {
+    private func simulated(features: FeatureSet = .current) -> AppModel {
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
         return AppModel(options: options, runtime: AppModel.Runtime(
             now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false },
-            schedulesTimers: false, scopeSimulationHoldLimit: nil))
+            schedulesTimers: false, scopeSimulationHoldLimit: nil, features: features))
     }
     private func settled(_ model: AppModel) async throws {
         await model.repositoryPollSettled()
@@ -65,8 +65,9 @@ import Testing
         #expect(authoredRows(app).isEmpty && app.authoredWaitingCount == 0 && app.authoredWaitingNote == nil)
     }
 
+    /// Flag-on path (#94 keeps privacy mode in the code base).
     @Test func privacyModeHidesAuthoredTitlesAndRepositories() async throws {
-        let app = simulated(); defer { app.cleanupScopeSimulation() }
+        let app = simulated(features: .allOn); defer { app.cleanupScopeSimulation() }
         try await settled(app)
         #expect(app.settings.privacyMode, "privacy mode is on by default")
         app.simulateScopeAuthored(.changesRequested); try await settled(app)

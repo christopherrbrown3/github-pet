@@ -12,7 +12,7 @@ import Testing
     }
 
     @Test func notSnoozedByDefaultAndStateIsExplicit() {
-        let state = AlertSuppression(PetSettings(), at: date(hour: 12), calendar: utc)
+        let state = AlertSuppression(PetSettings(), at: date(hour: 12), calendar: utc, features: .allOn)
         #expect(!state.isSnoozed)
         #expect(state.snoozeLine == "Not snoozed")
         #expect(state.quietHoursLine == "Quiet hours are off")
@@ -22,24 +22,24 @@ import Testing
     @Test func snoozeSuppressesUntilItExpires() {
         var settings = PetSettings()
         settings.snoozeUntil = date(hour: 14)
-        let during = AlertSuppression(settings, at: date(hour: 12), calendar: utc)
+        let during = AlertSuppression(settings, at: date(hour: 12), calendar: utc, features: .allOn)
         #expect(during.isSnoozed && during.interruptionsSuppressed)
         #expect(during.snoozeLine.hasPrefix("Snoozed until"))
-        let after = AlertSuppression(settings, at: date(hour: 15), calendar: utc)
+        let after = AlertSuppression(settings, at: date(hour: 15), calendar: utc, features: .allOn)
         #expect(!after.isSnoozed && after.snoozeLine == "Not snoozed")
     }
 
     @Test func quietHoursActiveOnlyInsideTheWindowAndOnlyWhenEnabled() {
         var settings = PetSettings()
         settings.quietHours = QuietHours(enabled: true, startMinute: 22 * 60, endMinute: 7 * 60)
-        #expect(AlertSuppression(settings, at: date(hour: 23), calendar: utc).quietHoursActive)
-        let outside = AlertSuppression(settings, at: date(hour: 12), calendar: utc)
+        #expect(AlertSuppression(settings, at: date(hour: 23), calendar: utc, features: .allOn).quietHoursActive)
+        let outside = AlertSuppression(settings, at: date(hour: 12), calendar: utc, features: .allOn)
         #expect(!outside.quietHoursActive && outside.quietHoursLine.contains("not active now"))
         settings.quietHours.enabled = false
-        #expect(!AlertSuppression(settings, at: date(hour: 23), calendar: utc).quietHoursActive)
+        #expect(!AlertSuppression(settings, at: date(hour: 23), calendar: utc, features: .allOn).quietHoursActive)
         // Equal start and end is no quiet time, even when enabled.
         settings.quietHours = QuietHours(enabled: true, startMinute: 60, endMinute: 60)
-        #expect(AlertSuppression(settings, at: date(hour: 1), calendar: utc).quietHoursLine == "Quiet hours are off")
+        #expect(AlertSuppression(settings, at: date(hour: 1), calendar: utc, features: .allOn).quietHoursLine == "Quiet hours are off")
     }
 
     @Test func suppressionMatchesAlertsAllowedAndNeverMentionsMonitoringStopping() {
@@ -84,7 +84,9 @@ import Testing
 }
 
 @Suite struct FeatureFlagTests {
-    @Test func privacyAndSnoozeStayVisibleUntilIssues94And95() {
-        #expect(FeatureFlags.privacyMode && FeatureFlags.snooze)
+    @Test func privacySnoozeAndQuietHoursAreHiddenForTheBeta() {
+        // #94, #95, #107: one switch each; flipping one back is a one-line change.
+        #expect(!FeatureFlags.privacyMode && !FeatureFlags.snooze && !FeatureFlags.quietHours)
+        #expect(FeatureSet.current == .allOff)
     }
 }

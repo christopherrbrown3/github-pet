@@ -77,8 +77,25 @@ else echo "FAIL snapshot run changed saved preferences"; failures=$((failures + 
 settings_height=$(grep -E '^settings: ' "$report" | sed -E 's/.*x([0-9]+) pt/\1/')
 if (( ${settings_height:-0} >= 660 )); then echo "ok   settings window height $settings_height >= 660"
 else echo "FAIL settings window height ${settings_height:-missing} < 660 (collapsed?)"; failures=$((failures + 1)); fi
-check_in 00-loading "forces fixtures, default privacy" '^source=fixtures privacy=true details=false inbox-privacy=true'
-check_in 01b-details "details shown for the session"   '^source=fixtures privacy=true details=true inbox-privacy=false'
+# Hideable features (#94 privacy, #95 snooze, #107 quiet hours): expectations follow the build's switches.
+privacy_shown=false; snooze_shown=false
+grep -q '^features: privacyMode=true ' "$report" && privacy_shown=true
+grep -qE '^features: .* snooze=true ' "$report" && snooze_shown=true
+if [[ $privacy_shown == true ]]; then
+  check_in 00-loading "forces fixtures, default privacy" '^source=fixtures privacy=true effective-privacy=true details=false inbox-privacy=true'
+  check_in 01b-details "details shown for the session"   '^source=fixtures privacy=true effective-privacy=true details=true inbox-privacy=false'
+else
+  check_in 00-loading "privacy hidden: stored default on, titles shown" '^source=fixtures privacy=true effective-privacy=false details=false inbox-privacy=false'
+fi
+if grep -q '^features: privacyMode=false snooze=false quietHours=false panes=mascot,github$' "$report"; then
+  echo "ok   privacy, snooze and quiet hours hidden; no Alerts tab"
+  check_in 'settings states (#87)' "upgrade: stored privacy, snooze and quiet hours are effectively off" \
+    '^stored privacy=true snoozed=true quiet-hours=true → effective privacy=false snoozed=false quiet-now=false alerts-allowed=true$'
+  for png in settings-mascot settings-github settings-github-dark; do
+    [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+  done
+  [[ ! -e $out/settings-alerts.png ]] && echo "ok   no Alerts pane rendered" || { echo "FAIL Alerts pane rendered while hidden"; failures=$((failures + 1)); }
+fi
 check_in 01-baseline "baseline count"            '^state=Up to date badge=3 rows=3 demo=true'
 check_in 02-injected "injection uses the app clock" '^injected-age-on-app-clock=[0-9]s$'
 check_in 02-injected "injected adds one row"     '^state=Up to date badge=4 rows=4 demo=true mood=attention'
@@ -127,8 +144,13 @@ if section "attention gesture (#29, live model)" | grep -q 'system-reduce-motion
 else
   check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
     '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
-  check_in "attention gesture (#29, live model)" "snooze stops a gesture at once, no replay" \
-    '^gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false'
+  if [[ $snooze_shown == true ]]; then
+    check_in "attention gesture (#29, live model)" "snooze stops a gesture at once, no replay" \
+      '^gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false'
+  else
+    check_in "attention gesture (#29, live model)" "hidden snooze: a stored snooze silences nothing" \
+      '^gesture cancel: snooze hidden, stored-snooze-keeps-playing=true$'
+  fi
 fi
 for png in gesture-64 gesture-128 gesture-256 near-touch-64-1x near-touch-128-2x near-touch-256-2x; do
   [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
@@ -231,7 +253,11 @@ for skin in mona-pet-v1 little-chris-v1; do
   check_in 'inbox redesign (#87)' "$skin partial is a lower bound" "^inbox87 $skin partial: state=Partial data health=partial badge=3\\+ "
   check_in 'inbox redesign (#87)' "$skin stale count unknown" "^inbox87 $skin stale: state=Stale health=stale badge=\\? "
   check_in 'inbox redesign (#87)' "$skin error count unknown" "^inbox87 $skin error: state=Error: simulated disconnect health=error badge=\\? "
-  check_in 'inbox redesign (#87)' "$skin privacy hides titles" "^inbox87 $skin privacy: .* inbox-privacy=true "
+  if [[ $privacy_shown == true ]]; then
+    check_in 'inbox redesign (#87)' "$skin privacy hides titles" "^inbox87 $skin privacy: .* inbox-privacy=true "
+  else
+    check_in 'inbox redesign (#87)' "$skin privacy hidden: stored on, titles shown" "^inbox87 $skin privacy: .* inbox-privacy=false "
+  fi
   check_in 'inbox redesign (#87)' "$skin dismissed list" "^inbox87 $skin dismissed: .* rows=2 .* dismissed=2 "
   check_in 'inbox redesign (#87)' "$skin operational only when fresh" "^inbox87 $skin four tiles: .*GitHub status=Operational \\(No active incidents, positive\\)"
   # Inbox tiles never read as nothing-to-do on degraded data; GitHub status has its own source.
