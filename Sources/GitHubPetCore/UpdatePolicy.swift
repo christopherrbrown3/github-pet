@@ -79,9 +79,17 @@ public struct UpdateConfiguration: Equatable, Sendable {
 /// The user's update choices that Sparkle doesn't store itself. Local only.
 public struct UpdatePreferences {
     public static let betaOptInKey = "update.betaOptIn"
+    public static let silentInstallOptInKey = "update.silentInstallOptIn"
 
     private let defaults: UserDefaults
     public init(defaults: UserDefaults) { self.defaults = defaults }
+
+    /// Set only by the Settings toggle for silent install. Sparkle's first-run prompt also has an
+    /// "automatically download and install" checkbox; install stays user-confirmed unless this is on.
+    public var silentInstallOptIn: Bool {
+        get { defaults.bool(forKey: Self.silentInstallOptInKey) }
+        nonmutating set { defaults.set(newValue, forKey: Self.silentInstallOptInKey) }
+    }
 
     public var betaOptIn: Bool {
         get { defaults.bool(forKey: Self.betaOptInKey) }

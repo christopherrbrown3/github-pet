@@ -10,11 +10,13 @@ A **lost or leaked production key has no in-band recovery** on ad-hoc builds: us
 
 ## What users get
 
-- **Check for Updates…** in the menu-bar menu and in Settings › Software updates (installed version and build,
+- **Check for Updates…** in the menu-bar menu and in Settings › GitHub › Software updates (installed version and build,
   last check, automatic-check and automatic-install toggles, beta opt-in). A scheduled check never opens a window
   over your work: the menu shows a quiet "Version X available" line and Sparkle waits until you check.
 - Sparkle's consent prompt asks about automatic checks. Checks run at most every 24 hours. Installing needs your OK
-  unless you turn on "Install updates automatically".
+  unless you turn on "Install updates automatically" in Settings. Sparkle's first-run prompt has the same checkbox, but
+  the app treats silent install as on only when it was turned on in Settings: anything else is switched back off, so a
+  default keystroke in the prompt can never enable it. A staged silent update shows "installs when GitHub Pet quits".
 - **Channels:** Stable is the default. Beta items (`<sparkle:channel>beta</sparkle:channel>`) are offered only to an
   installed prerelease build or to a user who turned on "Include beta releases". Nobody is moved to beta by a check.
 - System profiling is off; no sign-in, `gh` or token is used.
@@ -35,7 +37,7 @@ that changes any of them.
 | `SUScheduledCheckInterval` | `86400` |
 | `SUVerifyUpdateBeforeExtraction` | `true` (the EdDSA signature is checked before the ZIP is unpacked; our ZIPs are plain `ditto` archives, which this supports) |
 | `SUEnableSystemProfiling`, `SUEnableAutomaticChecks` | absent (Sparkle asks the user) |
-| `GitHubPetReleaseVersion` | only with `RELEASE_VERSION=0.1.0-beta.4`; tells the app it is a prerelease build |
+| `GitHubPetReleaseVersion`, `CFBundleShortVersionString` | with `RELEASE_VERSION=0.1.0-beta.4` both become the full release version (Sparkle's dialogs say "you have X" from the latter, and a prerelease build follows beta); without it the short version is `VERSION` |
 
 `Sparkle.framework` is copied into `Contents/Frameworks` with its symlinks, its XPC services are removed (they are
 for sandboxed apps), the binary gets the rpath `@executable_path/../Frameworks`, and the framework's `Autoupdate` and

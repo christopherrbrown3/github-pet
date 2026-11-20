@@ -100,4 +100,32 @@ private final class FakeUpdater: UpdaterBackend {
         model.checkForUpdates()
         #expect(fake.checks == 0)
     }
+
+    @Test func sparklesFirstRunPromptCannotTurnOnSilentInstall() {
+        // The prompt writes automaticallyDownloadsUpdates itself; only Settings' toggle may keep it on.
+        let fake = FakeUpdater()
+        let store = defaults()
+        let model = UpdateController.make(infoDictionary: info(configured: true), bundleURL: appURL, normalLaunch: true,
+                                          defaults: store, backend: fake)
+        fake.automaticallyDownloadsUpdates = true
+        model.refresh()
+        #expect(!fake.automaticallyDownloadsUpdates && !model.automaticInstall)
+        model.setAutomaticInstall(true)
+        model.refresh()
+        #expect(fake.automaticallyDownloadsUpdates && model.automaticInstall)
+        // The explicit choice survives a relaunch; turning it off is honoured too.
+        let relaunched = UpdateController.make(infoDictionary: info(configured: true), bundleURL: appURL, normalLaunch: true,
+                                               defaults: store, backend: fake)
+        #expect(relaunched.automaticInstall)
+        relaunched.setAutomaticInstall(false)
+        #expect(!fake.automaticallyDownloadsUpdates)
+    }
+
+    @Test func aStagedSilentUpdateIsShownQuietly() {
+        let model = UpdateController.make(infoDictionary: info(configured: true), bundleURL: appURL, normalLaunch: true,
+                                          defaults: defaults(), backend: FakeUpdater())
+        #expect(model.readyVersion == nil)
+        model.ready("0.1.0-beta.4")
+        #expect(model.readyVersion == "0.1.0-beta.4")
+    }
 }

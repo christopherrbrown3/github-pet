@@ -116,7 +116,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>$app_name</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>$version</string>
+  <key>CFBundleShortVersionString</key><string>${release_version:-$version}</string>
   <key>CFBundleVersion</key><string>$build_number</string>
   <key>GitHubPetSourceRevision</key><string>$source_revision</string>
   $release_plist
