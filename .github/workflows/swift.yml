@@ -80,6 +80,8 @@ jobs:
           plutil -lint .build/app/GitHubPet.app/Contents/Info.plist
           codesign --verify --strict .build/app/GitHubPet.app
           test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' .build/app/GitHubPet.app/Contents/Info.plist)" = true
+          codesign --verify --deep --strict .build/app/GitHubPet.app
+          scripts/verify-app-icon.sh .build/app/GitHubPet.app
           python3 scripts/mascot-resources.py verify .build/app/GitHubPet.app/Contents/Resources/MascotPacks
       - name: GUI render check
         timeout-minutes: 5

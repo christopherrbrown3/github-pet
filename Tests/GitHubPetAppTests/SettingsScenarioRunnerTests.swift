@@ -52,7 +52,7 @@ private final class FrozenClock: @unchecked Sendable {
             _ = try QAScenarioRunner.loadScenario(name)
         }
         #expect(QAScenarioRunner.builtInScenarios["account-a-b-a"] != nil, "PR A scenarios remain")
-        #expect(QAScenarioRunner.settingsScenarios.count == 9 && Set(QAScenarioRunner.settingsScenarios.keys).isDisjoint(with: QAScenarioRunner.coreScenarios.keys))
+        #expect(QAScenarioRunner.settingsScenarios.count == 10 && Set(QAScenarioRunner.settingsScenarios.keys).isDisjoint(with: QAScenarioRunner.coreScenarios.keys))
         #expect(throws: QAScenarioRunner.HarnessError.self) {
             try QAScenarioRunner.loadScenario(Self.file(#"{"name":"x","steps":[{"action":"settings-add","kind":"team","text":"a"}]}"#))
         }
