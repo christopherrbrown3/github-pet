@@ -42,7 +42,7 @@ chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
 GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
+for _ in {1..300}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
 wait $pid || true
 after=$(prefs after)
@@ -214,6 +214,45 @@ for state title in ghmissing 'Get GitHub CLI' unauthenticated 'How to sign in'; 
     done
   done
 done
+# Inbox redesign (#87): every state for both skins, light and dark; only a verified empty inbox
+# is all clear, only a fresh status check is Operational, and a four-row queue stays compact.
+inbox87=$(section 'inbox redesign (#87)')
+for skin in mona-pet-v1 little-chris-v1; do
+  for case_name in empty four long partial stale error privacy dismissed; do
+    for theme in '' '-dark'; do
+      png="inbox87-$skin-$case_name$theme"
+      [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+    done
+  done
+  check_in 'inbox redesign (#87)' "$skin selected pack in the header" "^inbox87 $skin empty: .* pack=$skin$"
+  check_in 'inbox redesign (#87)' "$skin empty healthy is all clear" "^inbox87 $skin empty: state=All clear health=healthy badge=none .* empty=allClear "
+  check_in 'inbox redesign (#87)' "$skin four rows, grouped, no scroll" "^inbox87 $skin four: state=Up to date health=healthy badge=4 mascot-badge=4 rows=4 groups=reviewRequests,yourPullRequests,assignedIssues scrolls=false "
+  check_in 'inbox redesign (#87)' "$skin long list scrolls" "^inbox87 $skin long: .* rows=14 .* scrolls=true "
+  check_in 'inbox redesign (#87)' "$skin partial is a lower bound" "^inbox87 $skin partial: state=Partial data health=partial badge=3\\+ "
+  check_in 'inbox redesign (#87)' "$skin stale count unknown" "^inbox87 $skin stale: state=Stale health=stale badge=\\? "
+  check_in 'inbox redesign (#87)' "$skin error count unknown" "^inbox87 $skin error: state=Error: simulated disconnect health=error badge=\\? "
+  check_in 'inbox redesign (#87)' "$skin privacy hides titles" "^inbox87 $skin privacy: .* inbox-privacy=true "
+  check_in 'inbox redesign (#87)' "$skin dismissed list" "^inbox87 $skin dismissed: .* rows=2 .* dismissed=2 "
+  check_in 'inbox redesign (#87)' "$skin operational only when fresh" "^inbox87 $skin four tiles: .*GitHub status=Operational \\(No active incidents, positive\\)"
+  # Inbox tiles never read as nothing-to-do on degraded data; GitHub status has its own source.
+  for case_name in partial stale error; do
+    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'Nothing needs you|Nothing waiting'; then
+      echo "FAIL $skin $case_name inbox tiles claim nothing to do"; failures=$((failures + 1))
+    else echo "ok   $skin $case_name inbox tiles never claim nothing to do"; fi
+  done
+  for case_name in stale error; do
+    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'GitHub status=Operational|positive'; then
+      echo "FAIL $skin $case_name status claims operational"; failures=$((failures + 1))
+    else echo "ok   $skin $case_name status never claims operational"; fi
+  done
+  height=$(grep -E "^inbox87-$skin-four: " "$report" | sed -E 's/.*x([0-9]+) pt/\1/')
+  if (( ${height:-0} >= 300 && ${height:-9999} <= 620 )); then echo "ok   $skin four-row inbox is compact ($height pt)"
+  else echo "FAIL $skin four-row inbox height ${height:-missing} outside 300-620 pt"; failures=$((failures + 1)); fi
+done
+if grep -E '^inbox87 ' <<< "$inbox87" | grep -v ' empty: ' | grep -q 'empty=allClear'; then
+  echo "FAIL a non-empty or degraded inbox claims all clear"; failures=$((failures + 1))
+else echo "ok   only the verified empty inbox is all clear"; fi
+
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do
