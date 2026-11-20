@@ -52,6 +52,13 @@ test "$(/usr/libexec/PlistBuddy -c 'Print :GitHubPetSourceRevision' "$plist")" =
 test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' "$plist")" = true
 test "$(lipo -archs "$unpacked/Contents/MacOS/GitHubPet")" = "$archs"
 python3 scripts/mascot-resources.py verify "$unpacked/Contents/Resources/MascotPacks"
+# Sparkle (#90): the framework survived zipping with its symlinks, without XPC services, and the
+# nested signatures still verify.
+test -L "$unpacked/Contents/Frameworks/Sparkle.framework/Sparkle"
+test -d "$unpacked/Contents/Frameworks/Sparkle.framework/Versions/B"
+test ! -e "$unpacked/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices"
+test "$(lipo -archs "$unpacked/Contents/Frameworks/Sparkle.framework/Versions/B/Sparkle" | tr ' ' '\n' | sort | tr '\n' ' ')" = "$(echo "$archs" | tr ' ' '\n' | sort | tr '\n' ' ')"
+codesign --verify --strict --deep "$unpacked"
 
 echo "Packaged $zip"
 echo "  source: $(git rev-parse HEAD) (complete history, $(git rev-list --count HEAD) commits)"
