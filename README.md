@@ -70,14 +70,14 @@ The red light beside the mascot marks an active GitHub service incident (a Demo 
   <img src="docs/screenshots/beta/settings-general.png" alt="Settings: mascot, Open at login (off), privacy and motion, snooze and quiet hours" width="400">
 </p>
 
-All images show invented Demo data (the app's offline fixtures), which is also what GitHub Pet shows
-before you choose the GitHub CLI source. Dark-mode versions sit beside each image (`*-dark.png`).
+All images show invented Demo data (the app's offline fixtures). New installs use the GitHub CLI
+source; Demo data appears only if you choose it under Settings (or kept it from an earlier beta). Dark-mode versions sit beside each image (`*-dark.png`).
 
 ## Requirements
 
 - macOS 13 Ventura or later, Apple Silicon or Intel (universal app).
 - For your own GitHub data: the [GitHub CLI](https://cli.github.com) (`brew install gh`), signed in with
-  `gh auth login`. Without it, GitHub Pet runs on clearly labelled Demo data.
+  `gh auth login`. Without it, a new install shows setup guidance for `gh` and an honest "unavailable" state, never an empty inbox. Demo data is an explicit choice in Settings and is always labelled DEMO.
 
 ## Install
 
