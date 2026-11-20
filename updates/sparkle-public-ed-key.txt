@@ -1,0 +1,2 @@
+# Sparkle public EdDSA key for GitHub Pet releases (public half only).
+# Chris adds it after running generate_keys; see docs/updates.md. Empty = updates not configured.
