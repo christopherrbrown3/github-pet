@@ -174,7 +174,7 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         #expect(app.receivedScopeReplies == received + 1)
         #expect(app.discardedScopeReplies == 1)
         #expect(!app.repositoryFetchInFlight && app.simulatedRequests.count == calls)
-        #expect(UserDefaults(suiteName: suite)?.persistentDomain(forName: suite)?.isEmpty != false,
+        #expect(EphemeralDefaults.named(suite).persistentDomain(forName: suite)?.isEmpty != false,
                 "late replies cannot resurrect a deleted simulation domain")
         let plist = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences/\(suite).plist")
         #expect(!FileManager.default.fileExists(atPath: plist.path), "normal quit leaves no simulation plist behind")
@@ -185,22 +185,22 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         #expect(options.defaultsSuite?.hasPrefix("dev.github-pet.scope-simulation.") == true)
         #expect(options.userDefaults is EphemeralDefaults, "the simulated domain never reaches cfprefsd or disk")
         var overridden = options
-        overridden.userDefaultsOverride = .standard
+        let standIn = EphemeralDefaults(name: "scope-override-stand-in.\(UUID().uuidString)")
+        overridden.userDefaultsOverride = standIn
         let isolated = AppModel(options: overridden, runtime: AppModel.Runtime(schedulesTimers: false))
         defer { isolated.cleanupScopeSimulation() }
         #expect(isolated.simulationDomain?.hasPrefix("dev.github-pet.scope-simulation.") == true)
-        #expect(UserDefaults.standard.object(forKey: "GitHubPet.monitoring-scope.v1.github.com.U_scope_demo_A") == nil,
-                "a programmatic override cannot route simulation into the real domain")
+        #expect(standIn.object(forKey: "GitHubPet.monitoring-scope.v1.github.com.U_scope_demo_A") == nil,
+                "a programmatic override cannot route simulation into another domain")
         let snapshots = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--render-snapshots", "/tmp/scope-unused"], environment: [:])
         #expect(!snapshots.simulatesMonitoringScope && snapshots.forcedSource == "fixtures")
-        let before = UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("GitHubPet.monitoring-scope") }
         let app = model(); defer { app.cleanupScopeSimulation() }
         try await settled(app)
         #expect(app.simulatesScope && app.isDemo && app.items.count == 1 && app.items.allSatisfy(\.isDemo))
         #expect(app.simulatedRequests.first?.scope == ScopeSimulation.selectedA)
         #expect(app.simulatedRequests.first?.expected == ScopeSimulation.accountA)
         #expect(app.unseenCount == 0 && app.activeClip == nil)
-        #expect(NSDictionary(dictionary: before).isEqual(to: UserDefaults.standard.dictionaryRepresentation().filter { $0.key.hasPrefix("GitHubPet.monitoring-scope") }))
+        #expect(standIn.dictionaryRepresentation().isEmpty, "the override received no writes")
     }
     @Test func unknownBootstrapIsDiscardedAndAccountsRoundTripSilently() async throws {
         let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)

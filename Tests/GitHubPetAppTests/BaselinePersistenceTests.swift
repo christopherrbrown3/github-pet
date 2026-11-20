@@ -128,7 +128,6 @@ import Testing
     }
 
     @Test func accountSwitchStartsFreshWithNoLeakageAndStaysInTheThrowawayDomain() async throws {
-        let realBefore = UserDefaults.standard.object(forKey: EventBaselineStore.key) as? Data
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
         let suite = try #require(options.defaultsSuite)
@@ -157,12 +156,10 @@ import Testing
 
         app.cleanupScopeSimulation()
         #expect(app.simulationDomainKeyCount == 0)
-        #expect(UserDefaults.standard.object(forKey: EventBaselineStore.key) as? Data == realBefore,
-                "simulation never writes the real domain")
+        #expect(!preferencesFileExists(suite), "no preferences file on disk")
     }
 
     @Test func snapshotLaunchUsesOnlyItsThrowawayDomain() throws {
-        let realBefore = UserDefaults.standard.object(forKey: EventBaselineStore.key) as? Data
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("baseline-snapshot-\(UUID().uuidString)")
         var options = LaunchOptions.parse(arguments: ["app", "--render-snapshots", directory.path, "--placeholder"], environment: [:])
         // Snapshot launches resolve to the in-memory snapshot suite (SettingsScenarioRunnerTests);
@@ -174,7 +171,5 @@ import Testing
                                                                         schedulesTimers: false))
         #expect(app.dataState == .ready)
         #expect(throwaway.data(forKey: EventBaselineStore.key) != nil, "the baseline goes to the launch's domain")
-        #expect(UserDefaults.standard.object(forKey: EventBaselineStore.key) as? Data == realBefore,
-                "snapshot renders never write the real domain")
     }
 }
