@@ -6,6 +6,16 @@
 set -euo pipefail
 cd "${0:A:h}/.."
 
+# The descriptor-leak check counts /dev/fd for the whole process, so any other suite running in
+# parallel (children, AppKit descriptors) can flake it (#102). CI runs it alone in its own
+# process; with no arguments, so does this script. With arguments (a filter, --skip-build, the
+# CI steps) they pass through unchanged and the caller owns the isolation.
+fd_test='\bdescendantHoldingThePipeDoesNotLeakReadsOrDescriptors\b'
+if (( $# == 0 )); then
+  "$0" --skip "$fd_test"
+  exec "$0" --skip-build --filter "$fd_test"
+fi
+
 clt_frameworks=/Library/Developer/CommandLineTools/Library/Developer/Frameworks
 developer_dir=$(xcode-select -p 2>/dev/null || true)
 
