@@ -12,11 +12,9 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
 
 ## What it does
 
-Settings has three panes: **Mascot** (show or hide the pet, skin, size, reduce motion, open at login), **Alerts** and **GitHub** (the gh connection with a Recheck button, monitoring scope, entitlement repositories, GitHub Actions).
-
 - **Review requests and assigned issues.** Pull requests waiting for your review and open issues assigned
   to you, from your GitHub CLI account on github.com. Click a row to open it on GitHub.
-- **Choose which review requests you see.** In **Settings → Alerts → Review requests**, show requests to you and
+- **Choose which review requests you see.** In **Settings → Notifications**, show requests to you and
   your teams, or only reviews requested directly from you. Both options keep issues assigned to you.
 - **Dismiss items you’re done with.** Use the **×** beside a dismissible Inbox item. Open **View
   dismissed** to restore it. Choices survive a restart and stay with the account that made them.
@@ -31,7 +29,7 @@ Settings has three panes: **Mascot** (show or hide the pet, skin, size, reduce m
   anything.
 - **A companion that stays calm.** An optional animated mascot sits on your desktop with a count badge and
   a hover summary. It plays a short animation once for a genuinely new item, not on every refresh.
-- **Choose your mascot.** Pick Mona or Little Chris under **Settings → Mascot → Choose a mascot**, on cards that show the real artwork with the count badge. Mona is the
+- **Choose your mascot.** Pick Mona or Little Chris under **Settings → Mascot → Skin**. Mona is the
   default; your choice is saved for the next launch.
 - **Remembers across restarts.** Items you have already seen don't come back as new after a relaunch;
   items that arrived while it was quit are announced once (within 24 hours).
@@ -50,7 +48,7 @@ Settings has three panes: **Mascot** (show or hide the pet, skin, size, reduce m
 - **Deployment approvals (opt-in).** Runs in the repositories you select that wait for a deployment you can
   approve, as GitHub reports for your account. The row opens the run; GitHub Pet never approves. Deployments
   waiting for other reviewers or a wait timer are only counted, in one line.
-- **Open at login.** An optional toggle under **Settings → Mascot** that shows what macOS reports: on, off or waiting for your
+- **Open at login.** An optional Settings toggle that shows what macOS reports: on, off or waiting for your
   approval.
 - **Custom mascot packs (advanced).** Replace the artwork with your own pack by launching the app from
   Terminal with `GITHUB_PET_PACK_DIR` set to the pack's directory ([pack format](docs/design/README.md)).
