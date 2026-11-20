@@ -62,8 +62,8 @@ Two panes.
   **Open at login** (see [limits](#known-limits)).
 - **GitHub.** The `gh` connection and setup help, the data source (GitHub CLI by default, or invented
   Demo data by choice), what to watch (everything you can access, or up to 10 organizations and
-  repositories, access-checked before they apply), entitlement repositories, the opt-in Actions
-  sources, and software updates.
+  repositories, access-checked before they apply), entitlement repositories, opt-in alerts for
+  failing Actions runs and deployment approvals, and software updates.
 
 ## Data source
 
@@ -99,7 +99,7 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
   checks are required.
 - **Announcements.** A merge conflict is announced at most once per pull request; failing checks once
   per new failing commit.
-- **Actions sources** cover only selected repositories, and only the default branch's latest commit.
+- **Actions alerts** cover only selected repositories, and only the default branch's latest commit.
   Changing coverage or the monitoring scope re-baselines quietly: items first seen then aren't
   announced. Actions items aren't remembered across a relaunch.
 - **Not verified by hand yet:** refresh after a real sleep and wake, keyboard and VoiceOver use of the

@@ -101,7 +101,8 @@ Active GitHub incidents from githubstatus.com appear on their own, apart from yo
 
 Settings has two panes. **Mascot** chooses and sizes your pet, turns motion down and helps with opening
 at login. **GitHub** shows your `gh` connection, what to watch (everything you can access, or up to 10
-organizations and repositories), entitlement-approval repositories, opt-in Actions sources and updates.
+organizations and repositories), entitlement-approval repositories, opt-in alerts for failing Actions
+runs and deployment approvals, and updates.
 
 More detail on every feature: [Features](docs/features.md).
 
@@ -113,6 +114,8 @@ More detail on every feature: [Features](docs/features.md).
   on github.com.
 - **Local.** No backend, no account, no analytics. Settings and dismissals stay on your Mac. The
   network is used only by `gh` (github.com), the public githubstatus.com feed and update checks.
+  Update checks fetch a static feed from GitHub (raw.githubusercontent.com), and updates download from
+  GitHub Releases.
 
 ## Updates
 
