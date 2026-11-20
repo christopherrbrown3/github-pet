@@ -1,3 +1,7 @@
+# Beta 4 plan — 2026-11-20
+
+Chris requested the next release include the #87 UI redesign, the #88 icon, the #96 gh default, removal of snooze (#95), and automatic updates (#90). He then added quiet hours (#107); privacy mode (#94) is included as part of the same simplification. Plan and checklist: issue #106. Target: RC Sat Nov 21. The ZIP must be the exact CI artifact (t6j). Chris signs the feed with release-appcast.sh. Dispatch: t6h (#94/#95/#107, one PR stacked on #92), t6j (#99 then CI release build), t6g (write guard, then Beta 4 docs/screenshots), t6p (#105), QA t6m (#92, then RC), QA t6q (#99 regression, #100).
+
 # Safety rules added — 2026-11-20 afternoon
 
 - Never send synthetic mouse clicks or keystrokes to the real desktop (cliclick, osascript UI scripting, CGEvent). A QA run's clicks landed in Chris's Outlook. Use the QA scenario runner, launch options, isolated defaults and offscreen renders; record real interaction as NOT VERIFIED.
