@@ -136,7 +136,7 @@ public struct InboxOverview: Equatable, Sendable {
         switch SourceHealth(dataState) {
         case .healthy:
             if case .hiddenOnly = dataState { detail = "Hidden from your account" }
-            else if items.isEmpty { detail = allDismissed ? "All dismissed locally" : (dataState == .empty ? "Nothing needs you" : "No visible items") }
+            else if items.isEmpty { detail = allDismissed && dataState == .ready ? "All dismissed locally" : "Nothing needs you" }
             else { detail = breakdown(items) }
         case .partial: detail = "Some sources unavailable"
         case .stale: detail = "Last known, out of date"
@@ -151,16 +151,19 @@ public struct InboxOverview: Equatable, Sendable {
         let health = SourceHealth(dataState)
         let total = max(0, authored) + max(0, deployments)
         let lowerBound = health == .partial || !deploymentsComplete
+        var parts: [String] = []
+        if authored > 0 { parts.append(authored == 1 ? "1 pull request" : "\(authored) pull requests") }
+        if deployments > 0 { parts.append(deployments == 1 ? "1 deployment" : "\(deployments) deployments") }
         let value: String, detail: String
         switch health {
-        case .healthy, .partial, .stale:
+        case .healthy, .partial:
             value = "\(total)" + (lowerBound ? "+" : "")
-            var parts: [String] = []
-            if authored > 0 { parts.append(authored == 1 ? "1 pull request" : "\(authored) pull requests") }
-            if deployments > 0 { parts.append(deployments == 1 ? "1 deployment" : "\(deployments) deployments") }
-            if health == .stale { detail = "Last known, out of date" }
-            else if lowerBound { detail = parts.isEmpty ? "Some sources unavailable" : "At least " + parts.joined(separator: " · ") }
+            if lowerBound { detail = parts.isEmpty ? "Some sources unavailable" : "At least " + parts.joined(separator: " · ") }
             else { detail = parts.isEmpty ? "Nothing waiting" : parts.joined(separator: " · ") }
+        case .stale:
+            // Like the badge: a stale count is not current. The last known one is labelled as such.
+            value = "?"
+            detail = parts.isEmpty ? "Last known, out of date" : "Last known: " + parts.joined(separator: " · ")
         case .loading: value = "?"; detail = "Loading…"
         case .unknown, .error: value = "?"; detail = "Unknown"
         }
@@ -215,12 +218,13 @@ public enum InboxEmptyState: Equatable, Sendable {
     case setupNeeded
     case failed
 
+    /// The dismissed message is only for a fresh, complete inbox that local dismissals emptied.
+    /// A verified empty inbox is all clear; degraded states keep saying what isn't known, even
+    /// when dismissals are also hiding rows.
     public init(dataState: DataState, allDismissed: Bool) {
-        if allDismissed { self = .allDismissed; return }
         switch dataState {
         case .empty: self = .allClear
-        // `.ready` with no rows only happens transiently; never call it all clear.
-        case .ready: self = .allDismissed
+        case .ready: self = allDismissed ? .allDismissed : .allClear
         case .hiddenOnly(let hidden): self = .hiddenOnly(hidden)
         case .partial: self = .partial
         case .stale: self = .stale

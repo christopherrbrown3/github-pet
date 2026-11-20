@@ -69,6 +69,8 @@ extension SnapshotRenderer {
             model.injectServiceIncident(.minor)
         case "dismissed":
             model.showFixtureItemsForSnapshot(inbox87Items(4))
+            // An open incident must not appear inside View dismissed (QA #92).
+            model.injectServiceIncident(.minor)
             if let context = model.inboxDismissalContext {
                 for item in model.items.prefix(2) { model.dismissInboxItem(item.id, in: context) }
                 selection.showDismissed(true, in: context)

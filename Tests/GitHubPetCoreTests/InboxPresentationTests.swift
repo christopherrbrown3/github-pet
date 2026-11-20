@@ -148,8 +148,18 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
         for state in [DataState.loading, .ghMissing, .unauthenticated, .error("x")] {
             #expect(overview(state, authored: 4).waiting.value == "?")
         }
-        let stale = overview(.stale, authored: 2).waiting
-        #expect(stale.value == "2" && stale.detail == "Last known, out of date" && stale.tone == .caution)
+        // Stale: unknown like the Assigned tile and the badge; the last known count is labelled.
+        let stale = overview(.stale, authored: 2, deployments: 1).waiting
+        #expect(stale.value == "?" && stale.detail == "Last known: 2 pull requests · 1 deployment" && stale.tone == .caution)
+        #expect(overview(.stale).waiting.value == "?" && overview(.stale).waiting.detail == "Last known, out of date")
+    }
+
+    @Test func tilesAgreeOnUnknownCounts() {
+        // QA #92: no tile may show a current-looking count while another says the count is unknown.
+        for state in allStates where !state.countIsKnown && state != .partial {
+            let tiles = overview(state, items: [item("r", .reviewRequest)], authored: 3, deployments: 2)
+            #expect(tiles.assigned.value == "?" && tiles.waiting.value == "?", "\(state)")
+        }
     }
 
     @Test func statusTileIsOperationalOnlyWhenFreshAndVerified() {
@@ -181,17 +191,38 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
     @Test func onlyAVerifiedEmptyInboxIsAllClear() {
         for state in allStates {
             let empty = InboxEmptyState(dataState: state, allDismissed: false)
-            #expect((empty == .allClear) == (state == .empty), "\(state)")
-            #expect(empty.showsMascot == (state == .empty), "\(state)")
-            if state != .empty { #expect(empty.headline != "All caught up") }
+            let verified = state == .empty || state == .ready
+            #expect((empty == .allClear) == verified, "\(state)")
+            #expect(empty.showsMascot == verified, "\(state)")
+            if !verified { #expect(empty.headline != "All caught up") }
         }
     }
 
-    @Test func dismissedWinsAndIsNeverAllClear() {
-        for state in allStates {
-            #expect(InboxEmptyState(dataState: state, allDismissed: true) == .allDismissed)
+    /// QA #92: the exact cases. Verified empty → All caught up; emptied by local dismissals →
+    /// the dismissed message; degraded data keeps its own message even with dismissals.
+    @Test func dismissedMessageOnlyForAnInboxEmptiedByDismissals() {
+        #expect(InboxEmptyState(dataState: .empty, allDismissed: false) == .allClear)
+        #expect(InboxEmptyState(dataState: .ready, allDismissed: false) == .allClear)
+        #expect(InboxEmptyState(dataState: .ready, allDismissed: false).headline == "All caught up")
+        #expect(InboxEmptyState(dataState: .ready, allDismissed: true) == .allDismissed)
+        #expect(InboxEmptyState(dataState: .ready, allDismissed: true).headline == "All current Inbox items are dismissed.")
+        #expect(!InboxEmptyState.allDismissed.showsMascot)
+        // GitHub returned nothing: verified empty, whatever the local dismissal list holds.
+        #expect(InboxEmptyState(dataState: .empty, allDismissed: true) == .allClear)
+        let degraded: [(DataState, InboxEmptyState)] = [
+            (.hiddenOnly(2), .hiddenOnly(2)), (.partial, .partial), (.stale, .stale), (.loading, .loading),
+            (.ghMissing, .setupNeeded), (.unauthenticated, .setupNeeded), (.error("x"), .failed),
+        ]
+        for (state, expected) in degraded {
+            #expect(InboxEmptyState(dataState: state, allDismissed: true) == expected, "\(state)")
+            #expect(InboxEmptyState(dataState: state, allDismissed: false) == expected, "\(state)")
         }
-        #expect(InboxEmptyState.allDismissed.headline == "All current Inbox items are dismissed.")
+    }
+
+    @Test func assignedTileDismissedDetailOnlyWhenEmptiedByDismissals() {
+        #expect(overview(.ready, allDismissed: true).assigned.detail == "All dismissed locally")
+        #expect(overview(.ready, allDismissed: false).assigned.detail == "Nothing needs you")
+        #expect(overview(.empty, allDismissed: true).assigned.detail == "Nothing needs you")
     }
 
     @Test func degradedStatesSayWhatIsUnknown() {

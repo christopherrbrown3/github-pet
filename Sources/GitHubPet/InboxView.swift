@@ -33,7 +33,10 @@ struct InboxView: View {
             overview
             Divider()
             inboxContent
-            ServiceIncidentsSection(model: model)
+            // Incidents belong to the live Inbox, not to the local dismissed list.
+            if !selection.showsDismissed(in: model.inboxDismissalContext) {
+                ServiceIncidentsSection(model: model)
+            }
             if let note = model.blockedLinkNote {
                 Label(note, systemImage: "exclamationmark.triangle").font(.caption)
             }
