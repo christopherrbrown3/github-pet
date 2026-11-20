@@ -3,13 +3,11 @@ name: Swift
 on:
   push:
     branches: [main]
-    # A v* tag builds the release ZIP: the artifact that is published is this exact build (docs/updates.md).
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Release candidate version, e.g. 0.1.0-beta.4 (empty: ordinary build). Tags set it from the tag.'
+        description: 'Release candidate version, e.g. 0.1.0-beta.4 (empty: ordinary build). Run on main for a publishable ZIP.'
         required: false
         type: string
 
@@ -30,21 +28,16 @@ jobs:
           # Keep PR build/tests on GitHub's combined branch; metadata needs complete history.
           fetch-depth: 0
       - name: Release version
-        # A tag or the dispatch input makes this a release build: its version reaches package-zip.sh as
-        # RELEASE_VERSION and the app's Info.plist. Anything else is an ordinary build with no release version.
+        # Only a manual run with release_version makes a release build; its version reaches
+        # package-zip.sh as RELEASE_VERSION and the app's Info.plist. A tag push does not rebuild:
+        # the published ZIP is the dispatch-run artifact QA verified (docs/updates.md).
         id: release
         env:
           INPUT_VERSION: ${{ inputs.release_version }}
         run: |
-          version=""
-          if [[ "$GITHUB_REF_TYPE" == tag ]]; then version="${GITHUB_REF_NAME#v}"; elif [[ -n "${INPUT_VERSION:-}" ]]; then version="${INPUT_VERSION#v}"; fi
+          version="${INPUT_VERSION#v}"
           if [[ -n "$version" ]]; then
             [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::'$version' is not a release version like 0.1.0 or 0.1.0-beta.4"; exit 1; }
-            if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-              # Release tags point at main's history, so the artifact is what main tested.
-              git fetch --no-tags origin main
-              git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::tag $GITHUB_REF_NAME is not on main"; exit 1; }
-            fi
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Toolchain
@@ -132,7 +125,11 @@ jobs:
             echo "- Source: \`$GITHUB_SHA\`, build number $(git rev-list --count HEAD)"
             echo "- ZIP: \`$(basename "$zip")\`"
             echo "- SHA-256: \`$(cut -d' ' -f1 < "$zip.sha256")\`"
-            echo "Publish exactly this artifact; do not rebuild it locally."
+            if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+              echo "Run on main: QA verifies this artifact and the release publishes this exact ZIP. Create the tag at \`$GITHUB_SHA\`; do not rebuild."
+            else
+              echo "**TEST ONLY: not run on main, do not publish this ZIP.**"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: GUI render check
         timeout-minutes: 5
