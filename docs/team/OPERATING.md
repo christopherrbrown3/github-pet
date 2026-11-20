@@ -1,3 +1,10 @@
+# Safety rules added — 2026-11-20 afternoon
+
+- Never send synthetic mouse clicks or keystrokes to the real desktop (cliclick, osascript UI scripting, CGEvent). A QA run's clicks landed in Chris's Outlook. Use the QA scenario runner, launch options, isolated defaults and offscreen renders; record real interaction as NOT VERIFIED.
+- The production Sparkle private key (Chris's login Keychain, default account, and any exported file) is off-limits to every agent. QA signs only with throwaway keys in its scratch dir via `sign_update --ed-key-file`, never with Keychain.
+- Never write under ~/Library outside isolated, per-run domains; tell PM first. Never delete preference files; list them for Chris.
+- Merged today: PR91, PR93 (#88 icon), PR97 (#87 Settings), PR98 (#96 gh default), PR101 and PR103 (test-defaults guards). Pending: PR92 (#87 Inbox), PR99/PR100 (#90 Sparkle + public key), PR105 (#102 flake), and the MascotWindow write-guard fix.
+
 # Sparkle decision — Chris, 2026-11-20
 
 Chris approved Sparkle 2 automatic updates during the beta on the current ad-hoc builds. Users approve the first launch once with Open Anyway, and Sparkle installs later updates, verified by EdDSA. Developer ID signing and notarization (#89) are deferred until after the beta; #89 is in Backlog. Chris generates and backs up the production EdDSA key in his login Keychain. Agents never handle the private key; only the public key is committed. t6j now implements Sparkle for #90. PR91 (#88 icon assets) merged as fbae373 after QA PASS and green exact-head CI; designer t6k ended. Full decision: issue #90.
