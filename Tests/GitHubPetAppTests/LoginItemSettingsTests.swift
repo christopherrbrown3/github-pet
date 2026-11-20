@@ -65,10 +65,28 @@ private final class FakeLoginBackend: LoginItemBackend, @unchecked Sendable {
         #expect(settings.failure == nil && settings.summary.hasPrefix("On"))
     }
 
-    @Test func notFoundExplainsWhereTheAppMustLive() {
-        let settings = LoginItemSettings(backend: FakeLoginBackend(.notFound))
+    @Test func notFoundIsOffDisabledAndOffersTheSettingsButton() {
+        var opened: [URL] = []
+        let backend = FakeLoginBackend(.notFound)
+        let settings = LoginItemSettings(backend: backend, openURL: { opened.append($0) })
         settings.refresh()
-        #expect(!settings.isOn && settings.summary.contains("Applications"))
+        #expect(!settings.isOn && !settings.canToggle && settings.offersSystemSettings)
+        #expect(settings.summary.hasPrefix("Unavailable.") && settings.summary.contains("developer certificate"))
+        settings.setEnabled(true)   // even if a control were driven, nothing is registered
+        #expect(backend.calls.isEmpty && !settings.isOn)
+        settings.openLoginItemsSettings()
+        #expect(opened == [SystemSettingsLink.loginItems])
+    }
+
+    @Test func otherStatusesKeepTheirToggleAndHaveNoSettingsButton() {
+        for status in [LoginItemStatus.enabled, .disabled, .requiresApproval] {
+            let settings = LoginItemSettings(backend: FakeLoginBackend(status), openURL: { _ in })
+            settings.refresh()
+            #expect(settings.canToggle && !settings.offersSystemSettings, "\(status)")
+        }
+        let unread = LoginItemSettings(backend: FakeLoginBackend(.enabled), openURL: { _ in })
+        #expect(!unread.canToggle, "not usable before the first read")
+        #expect(!LoginItemSettings(backend: nil, openURL: { _ in }).canToggle)
     }
 
     @Test func nonNormalLaunchesHaveNoBackendAndChangeNothing() {

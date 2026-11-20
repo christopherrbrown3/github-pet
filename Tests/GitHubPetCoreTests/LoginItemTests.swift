@@ -85,12 +85,36 @@ private final class FakeBackend: LoginItemBackend, @unchecked Sendable {
         }
     }
 
-    @Test func notFoundSurfacesTheSystemErrorAndStaysNotFound() {
+    @Test func notFoundNeverRegistersAndReportsNoFailure() {
         let backend = FakeBackend(.notFound)
         backend.registerError = FakeError()
         let result = LoginItem(backend: backend).setEnabled(true)
-        #expect(result == LoginItemResult(status: .notFound, failure: "denied"))
-        #expect(result.status.explanation?.contains("Applications") == true)
+        #expect(result == LoginItemResult(status: .notFound, failure: nil))
+        #expect(backend.calls.isEmpty, "register() is never attempted from notFound")
+        let text = result.status.explanation ?? ""
+        #expect(text.contains("developer certificate") && text.contains("System Settings → General → Login Items"))
+        #expect(!text.contains("Applications"), "moving the app doesn't help, so the copy must not suggest it")
+    }
+
+    @Test func statusToToggleAndSettingsButtonMapping() {
+        let table: [(LoginItemStatus, toggle: Bool, button: Bool)] = [
+            (.enabled, true, false), (.disabled, true, false), (.requiresApproval, true, false), (.notFound, false, true),
+        ]
+        for (status, toggle, button) in table {
+            #expect(status.allowsToggle == toggle, "\(status)")
+            #expect(status.offersSystemSettings == button, "\(status)")
+        }
+    }
+
+    @Test func onlyTheLoginItemsPaneMayBeOpenedThroughTheSystemSettingsLink() {
+        #expect(SystemSettingsLink.validated(SystemSettingsLink.loginItems) == SystemSettingsLink.loginItems)
+        for bad in ["x-apple.systempreferences:com.apple.preference.security", "https://github.com/x", "file:///etc/passwd",
+                    "x-apple.systempreferences:com.apple.LoginItems-Settings.extension?x=1", "x-apple.systempreferences:"] {
+            #expect(SystemSettingsLink.validated(URL(string: bad)) == nil, "\(bad)" as Comment)
+        }
+        #expect(SystemSettingsLink.validated(nil) == nil)
+        // SafeLink still allows only github.com.
+        #expect(SafeLink.validated(SystemSettingsLink.loginItems) == nil)
     }
 
     @Test func aFailedUnregisterKeepsTheRealStatus() {

@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import GitHubPetCore
 
@@ -13,7 +14,13 @@ final class LoginItemSettings: ObservableObject {
     /// The status the last failure was reported against; a later system change clears it.
     private var failedStatus: LoginItemStatus?
 
-    init(backend: (any LoginItemBackend)?) { item = backend.map { LoginItem(backend: $0) } }
+    private let openURL: (URL) -> Void
+
+    /// `openURL` is injected so tests never open System Settings.
+    init(backend: (any LoginItemBackend)?, openURL: @escaping (URL) -> Void = { NSWorkspace.shared.open($0) }) {
+        item = backend.map { LoginItem(backend: $0) }
+        self.openURL = openURL
+    }
 
     var isAvailable: Bool { item != nil }
 
@@ -37,6 +44,15 @@ final class LoginItemSettings: ObservableObject {
     }
 
     var isOn: Bool { status?.isRegistered ?? false }
+    /// The toggle works only once the status is known and the system supports this build.
+    var canToggle: Bool { isAvailable && (status?.allowsToggle ?? false) }
+    var offersSystemSettings: Bool { status?.offersSystemSettings ?? false }
+
+    /// Opens System Settings › Login Items so the user can add the app themselves. Registers nothing.
+    func openLoginItemsSettings() {
+        guard let url = SystemSettingsLink.validated(SystemSettingsLink.loginItems) else { return }
+        openURL(url)
+    }
 
     /// One honest line: on, off, waiting for approval, unavailable, or the failure.
     var summary: String {
