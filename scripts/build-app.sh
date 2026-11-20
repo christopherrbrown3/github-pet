@@ -100,6 +100,9 @@ otool -l "$app/Contents/MacOS/$app_name" | grep -q '@executable_path/../Framewor
 # Stage the built-in packs' manifests and referenced runtime frames.
 python3 scripts/mascot-resources.py stage assets/mascots "$app/Contents/Resources/MascotPacks"
 
+# Compile the committed iconset into the bundle's icon. The .icns is generated, never committed.
+iconutil -c icns assets/app-icon/AppIcon.iconset -o "$app/Contents/Resources/AppIcon.icns"
+
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -108,11 +111,12 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleDevelopmentRegion</key><string>en</string>
   <key>CFBundleDisplayName</key><string>GitHub Pet</string>
   <key>CFBundleExecutable</key><string>$app_name</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleIdentifier</key><string>$bundle_id</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleName</key><string>$app_name</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>$version</string>
+  <key>CFBundleShortVersionString</key><string>${release_version:-$version}</string>
   <key>CFBundleVersion</key><string>$build_number</string>
   <key>GitHubPetSourceRevision</key><string>$source_revision</string>
   $release_plist
@@ -139,4 +143,5 @@ for nested in "$sparkle/Versions/B/Autoupdate" "$sparkle/Versions/B/Updater.app"
 done
 codesign --force --sign - --timestamp=none "$app"
 codesign --verify --strict --deep "$app"
+scripts/verify-app-icon.sh "$app"
 echo "Built $app $version ($build_number), $configuration, $(lipo -archs "$app/Contents/MacOS/$app_name"), ad-hoc signed"

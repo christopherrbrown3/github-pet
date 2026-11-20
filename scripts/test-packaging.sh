@@ -143,6 +143,42 @@ fi
 grep -q 'bundled files differ from manifest runtime files' "$scratch/extra-assets.log"
 echo 'PASS mascot resources stage the two manifests and runtime frames only'
 
+# The icon verifier accepts a good bundle and rejects each way the icon can break.
+icon_app=$scratch/icon/GitHubPet.app
+mkdir -p "$icon_app/Contents/Resources"
+iconutil -c icns assets/app-icon/AppIcon.iconset -o "$icon_app/Contents/Resources/AppIcon.icns"
+write_icon_plist() {  # <CFBundleIconFile> <LSUIElement>
+  python3 - "$icon_app/Contents/Info.plist" "$1" "$2" <<'PLIST'
+import plistlib
+import sys
+info = {"LSUIElement": sys.argv[3] == "true"}
+if sys.argv[2]:
+    info["CFBundleIconFile"] = sys.argv[2]
+with open(sys.argv[1], "wb") as out:
+    plistlib.dump(info, out)
+PLIST
+}
+write_icon_plist AppIcon true
+scripts/verify-app-icon.sh "$icon_app" >/dev/null
+for icon_case in missing-icns empty-icns garbage-icns wrong-name no-name dock-icon; do
+  write_icon_plist AppIcon true
+  case $icon_case in
+    missing-icns) rm "$icon_app/Contents/Resources/AppIcon.icns"; wanted='missing or empty' ;;
+    empty-icns) : > "$icon_app/Contents/Resources/AppIcon.icns"; wanted='missing or empty' ;;
+    garbage-icns) printf 'icns-not-really' > "$icon_app/Contents/Resources/AppIcon.icns"; wanted='not a valid icns' ;;
+    wrong-name) write_icon_plist Other true; wanted='CFBundleIconFile is not AppIcon' ;;
+    no-name) write_icon_plist '' true; wanted='CFBundleIconFile is not AppIcon' ;;
+    dock-icon) write_icon_plist AppIcon false; wanted='LSUIElement is not true' ;;
+  esac
+  if scripts/verify-app-icon.sh "$icon_app" >"$scratch/icon-$icon_case.log" 2>&1 || ! grep -q "$wanted" "$scratch/icon-$icon_case.log"; then
+    cat "$scratch/icon-$icon_case.log" >&2
+    echo "FAIL verify-app-icon $icon_case: expected failure '$wanted'" >&2
+    exit 1
+  fi
+  echo "PASS verify-app-icon rejects $icon_case"
+  iconutil -c icns assets/app-icon/AppIcon.iconset -o "$icon_app/Contents/Resources/AppIcon.icns"
+done
+
 # Reaching this sentinel proves the complete checkout passed the provenance guard. Never compile.
 cat > "$scratch/bin/swift" <<'SH'
 #!/bin/sh

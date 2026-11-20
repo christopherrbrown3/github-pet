@@ -144,7 +144,7 @@ public enum ScopeLoadResult: Equatable, Sendable {
 public final class ScopeSelectionStore {
     public static let maximumRecordBytes = 16 * 1024
     private let defaults: UserDefaults
-    public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    public init(defaults: UserDefaults) { self.defaults = defaults }
     static func key(_ identity: ScopeIdentity) -> String { "GitHubPet.monitoring-scope.v1." + identity.storageSuffix }
     public func load(for identity: ScopeIdentity) -> ScopeLoadResult {
         let key = Self.key(identity)

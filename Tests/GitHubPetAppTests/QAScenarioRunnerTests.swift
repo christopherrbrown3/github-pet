@@ -386,7 +386,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         #expect(quit["heldAtQuit"] as? Int == 1 && quit["lateRepliesReceivedAfterCleanup"] as? Int == 1)
         #expect(quit["domainKeysAfterCleanup"] as? Int == 0 && quit["plistOnDisk"] as? Bool == false)
         let domain = try #require(model.simulationDomain)
-        #expect(UserDefaults.standard.persistentDomain(forName: domain)?.isEmpty != false)
+        #expect(!preferencesFileExists(domain))
         let steps = try records(output)
         let demo = steps.filter { ($0["settings"] as! [String: Any])["dataSource"] as? String == "fixtures" }
         #expect(!demo.isEmpty && demo.allSatisfy { (($0["inbox"] as! [String: Any])["scopeHeader"] as! String).hasPrefix("Demo scope") })

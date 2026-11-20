@@ -58,6 +58,8 @@ expect CFBundleIdentifier dev.github-pet.GitHubPet.qa
 expect SUFeedURL http://127.0.0.1:8123/appcast.xml
 expect SUPublicEDKey "$test_key"
 expect GitHubPetReleaseVersion 0.1.0-beta.9
+# Sparkle's dialogs say "you have X" from this key, so a release build shows its full version.
+expect CFBundleShortVersionString 0.1.0-beta.9
 [[ $(get NSAppTransportSecurity:NSAllowsLocalNetworking) == true ]] || fail "local feed needs the local-network exception"
 
 # Default build: committed feed, committed key (empty until Chris adds it), never the test key.
@@ -74,6 +76,7 @@ expect SUPublicEDKey "$committed_key"
 [[ $(get SUPublicEDKey) != "$test_key" ]] || fail "default build contains the test key"
 absent NSAppTransportSecurity
 absent GitHubPetReleaseVersion
+expect CFBundleShortVersionString "$(tr -d '[:space:]' < VERSION)"
 if grep -q "127.0.0.1" "$plist"; then fail "default build contains a local feed"; fi
 
 (( failures == 0 )) && echo "update build checks passed" || { echo "$failures update build check(s) failed" >&2; exit 1; }

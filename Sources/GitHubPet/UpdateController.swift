@@ -32,6 +32,8 @@ final class UpdateController: NSObject, ObservableObject {
     /// Set by a scheduled check that found an update while the user wasn't asking: shown quietly in
     /// the menu instead of Sparkle opening a window on top of their work.
     @Published private(set) var pendingVersion: String?
+    /// A verified update that Sparkle will install when GitHub Pet quits (silent install is on).
+    @Published private(set) var readyVersion: String?
     @Published var betaOptIn: Bool { didSet { if betaOptIn != oldValue { preferences.betaOptIn = betaOptIn } } }
 
     /// `backend` is nil when the build isn't configured or must not start an updater.
@@ -57,6 +59,11 @@ final class UpdateController: NSObject, ObservableObject {
 
     func refresh() {
         guard let backend else { canCheck = false; automaticChecks = false; automaticInstall = false; lastCheck = nil; return }
+        // Install is user-confirmed by default. Silent install counts only when the user turned it on
+        // in Settings, so a default keystroke in Sparkle's first-run prompt can never enable it.
+        if backend.automaticallyDownloadsUpdates && !preferences.silentInstallOptIn {
+            backend.automaticallyDownloadsUpdates = false
+        }
         canCheck = backend.canCheckForUpdates
         automaticChecks = backend.automaticallyChecksForUpdates
         automaticInstall = backend.automaticallyDownloadsUpdates
@@ -66,6 +73,7 @@ final class UpdateController: NSObject, ObservableObject {
     func setAutomaticChecks(_ on: Bool) { backend?.automaticallyChecksForUpdates = on; refresh() }
     func setAutomaticInstall(_ on: Bool) {
         guard configuration.allowsAutomaticInstall else { return }
+        preferences.silentInstallOptIn = on
         backend?.automaticallyDownloadsUpdates = on; refresh()
     }
 
@@ -86,7 +94,8 @@ final class UpdateController: NSObject, ObservableObject {
         } }
     }
 
-    fileprivate func found(_ version: String?) { pendingVersion = version }
+    func found(_ version: String?) { pendingVersion = version }
+    func ready(_ version: String?) { readyVersion = version }
 }
 
 // MARK: Sparkle
@@ -154,6 +163,15 @@ final class SparkleBackend: NSObject, UpdaterBackend, SPUUpdaterDelegate, SPUSta
         MainActor.assumeIsolated { model?.found(version) }
     }
 
+    // Silent install: Sparkle has verified and staged the update and installs it on quit. Say so
+    // quietly in the UI; returning false leaves the install to Sparkle.
+    nonisolated func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
+                             immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
+        let version = item.displayVersionString
+        MainActor.assumeIsolated { model?.ready(version) }
+        return false
+    }
+
     nonisolated func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
         MainActor.assumeIsolated { model?.found(nil) }
     }
@@ -198,7 +216,8 @@ struct UpdateStatusSection: View {
             if updates.isAvailable {
                 LabeledContent("Last checked", value: updates.lastCheck.map { $0.formatted(date: .abbreviated, time: .shortened) } ?? "Never")
                 HStack {
-                    Text(updates.pendingVersion.map { "Version \($0) is available." } ?? "Updates are checked by Sparkle.")
+                    Text(updates.readyVersion.map { "Version \($0) is ready and installs when GitHub Pet quits." }
+                         ?? updates.pendingVersion.map { "Version \($0) is available." } ?? "Updates are checked by Sparkle.")
                         .accessibilityIdentifier("settings.updateStatus")
                     Spacer()
                     Button("Check for Updates…") { updates.checkForUpdates() }
@@ -237,7 +256,9 @@ struct UpdateMenuRow: View {
                 .disabled(!updates.canCheck)
                 .accessibilityIdentifier("menu.checkForUpdates")
             Spacer()
-            if let version = updates.pendingVersion {
+            if let version = updates.readyVersion {
+                Text("Version \(version) installs on quit").foregroundStyle(.secondary)
+            } else if let version = updates.pendingVersion {
                 Text("Version \(version) available").foregroundStyle(.secondary)
             } else if !updates.isAvailable {
                 Text("Updates not configured").foregroundStyle(.secondary)

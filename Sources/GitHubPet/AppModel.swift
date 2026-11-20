@@ -941,6 +941,9 @@ final class AppModel: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
+    /// Settings skin cards: the real bundled frames for `skin`, through the same loader as the pet.
+    func artwork(for skin: MascotSkin) -> MascotArtwork { mascotArtworkLoader.resolve(skin) }
+
     func snooze(_ option: SnoozeOption) {
         settings.snoozeUntil = option.until(from: clock())
     }
