@@ -1,3 +1,16 @@
+# Claude takeover — 2026-11-20
+
+Chris directed a Claude takeover: Codex is out of weekly usage (6% left, resets Nov 24). Sole PM is **t6f**, Claude Opus 5.5, in the product-manager worktree; route reports with `hc send t6f`. Codex PM t1r had published and verified Beta.3 (tag v0.1.0-beta.3 at main 96b70d0, CI44562563081, ZIP f1a97e2c…). All Codex terminals (t8, t1r, t1s, t1t, t68, t69, t6b, t6d) and quota-parked Claude terminals (t4w–t4z, t61–t64) were ended and finished terminals removed from Herdr. Every worktree, branch and evidence directory is preserved.
+
+New issues #87–#90 were added to Project 3. Fresh Claude specialists start from main 96b70d0, verified by launch argv:
+- **t6h** developer, Opus 5.5: #87 Inbox redesign, `developer-inbox-87`, `feat/87-inbox-redesign`.
+- **t6g** developer-2, Sonnet 5.5: #87 Settings Mascot/Alerts/GitHub panes, `developer-settings-87`, `feat/87-settings-panes`.
+- **t6j** developer-3, Sonnet 5.5: #90 phase 1 update check (public Releases list, no gh/token, open release page; no auto-install until #89), `developer-updates-90`, `feat/90-update-check`.
+- **t6k** graphic-designer, Opus 5.5: #88 two or more vector icon directions for Chris to choose; packaging follows approval. `designer-icon-88`, `design/88-app-icon`.
+- **t6m** qa-engineer, Sonnet 5.5: functional acceptance plan for #87/#90, then exact-SHA review. `qa-nov20`, `qa/nov20-claude`.
+
+#89 is Blocked on Chris's distribution decision (free ad-hoc vs paid Developer ID + notarization). Model choice: Opus where design judgment or product-invariant risk is high, Sonnet for well-specified slices and QA. Merge gates are unchanged: exact-head green CI that contains current main, independent QA acceptance, `--match-head-commit`, merge commit. No releases without Chris.
+
 # QA model update — 2026-11-19
 
 Chris requested Luna for QA. Existing QA t6b now uses GPT-6-Luna at medium effort, verified in the TUI after an explicit session-only model change. Reuse this model for future QA launches unless Chris changes it. Worktree qa-nov18 and its evidence are preserved. Developers remain GPT-6.2 Sol high.
