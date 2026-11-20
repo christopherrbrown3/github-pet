@@ -25,6 +25,17 @@ app_name=GitHubPet
 bundle_id=dev.github-pet.GitHubPet
 version=$(tr -d '[:space:]' < VERSION)
 [[ $version =~ '^[0-9]+\.[0-9]+\.[0-9]+$' ]] || { echo "VERSION must be MAJOR.MINOR.PATCH, got '$version'" >&2; exit 65; }
+# Optional: the release's full version (RELEASE_VERSION=0.1.0-beta.4) lets the app know its own
+# prerelease and channel for update checks. It must extend VERSION; absent for local and CI builds.
+release_version=${RELEASE_VERSION:-}
+release_version=${release_version#v}
+if [[ -n $release_version ]]; then
+  [[ $release_version == $version || $release_version == $version-[0-9A-Za-z.-]## ]] \
+    || { echo "RELEASE_VERSION must be $version or $version-<prerelease>, got '$release_version'" >&2; exit 65; }
+  release_plist="<key>GitHubPetReleaseVersion</key><string>$release_version</string>"
+else
+  release_plist=""
+fi
 # A shallow count can look valid (even >1) while silently understating the build number.
 # Reject it before compiling; package verification must not compare two truncated counts.
 if [[ $(git rev-parse --is-shallow-repository 2>/dev/null) != false ]]; then
@@ -68,6 +79,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleShortVersionString</key><string>$version</string>
   <key>CFBundleVersion</key><string>$build_number</string>
   <key>GitHubPetSourceRevision</key><string>$source_revision</string>
+  $release_plist
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>

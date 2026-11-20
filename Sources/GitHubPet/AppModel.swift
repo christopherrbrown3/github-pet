@@ -103,6 +103,10 @@ final class AppModel: ObservableObject {
     private let store: SettingsStore
     let clockOffset: TimeInterval
     private let pollsPeriodically: Bool
+    /// Software updates (#90): its own state, never part of the inbox, its badge or the mascot.
+    let updates: UpdateModel
+    /// Only a normal launch may reach GitHub for update checks; QA, snapshot and simulated launches use fixtures.
+    let checksUpdatesLive: Bool
     // Snapshot-only CLI transport (#52): selecting the real CLI UI must never launch gh.
     private let snapshotMode: Bool
     private var snapshotCLIFailure: FetchFailure = .ghMissing
@@ -190,6 +194,12 @@ final class AppModel: ObservableObject {
             scopeAccess = ScopeGhAccess()
         }
         clockOffset = options.clockOffset
+        checksUpdatesLive = normalLaunch
+        updates = normalLaunch
+            ? UpdateModel(installed: InstalledBuild(infoDictionary: Bundle.main.infoDictionary),
+                          defaults: options.userDefaults, checker: UpdateChecker())
+            : UpdateModel(installed: UpdateFixture.installedBuild, defaults: options.userDefaults,
+                          checker: UpdateModel.fixtureChecker(.offline), now: runtime.now, opener: { _ in })
         // The snapshot scenario drives every refresh itself; a periodic poll firing mid-scenario
         // would refresh a step it just made stale (flaky render-check).
         pollsPeriodically = options.snapshotDirectory == nil && !options.simulatesMonitoringScope

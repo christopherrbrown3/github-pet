@@ -31,6 +31,7 @@ struct InboxView: View {
                 Text(note).font(.caption).foregroundStyle(.red)
             }
             Divider()
+            UpdateMenuRow(model: model, updates: model.updates)
             footer
         }
         .padding(12)

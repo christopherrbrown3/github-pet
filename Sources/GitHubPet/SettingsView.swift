@@ -16,6 +16,7 @@ struct SettingsView: View {
             AssignmentModeSection(model: model)
             EntitlementRepositoriesSection(model: model)
             WorkflowFailuresSection(model: model)
+            UpdateStatusSection(updates: model.updates)
         }
         .formStyle(.grouped)
         // A grouped Form scrolls, so it reports almost no height of its own and the hosting
