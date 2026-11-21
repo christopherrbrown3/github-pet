@@ -34,9 +34,9 @@ struct Owner: Identifiable {
 
 let owners: [Owner] = [
     Owner(login: "demo-user", detail: "23", isYou: true),
-    Owner(login: "example-org", detail: "289", badge: .all),
-    Owner(login: "harbor-demo", detail: "6,690"),
-    Owner(login: "lumen-labs", detail: "45", badge: .count(2)),
+    Owner(login: "example-org", detail: "240", badge: .all),
+    Owner(login: "harbor-demo", detail: "6,500"),
+    Owner(login: "lumen-labs", detail: "38", badge: .count(2)),
     Owner(login: "tidewater-demo", detail: "—", badge: .warning),
     Owner(login: "quiet-meadow", detail: "0"),
 ]
@@ -335,7 +335,7 @@ struct SheetChrome<Content: View>: View {
 struct BrowseScreen: View {
     var body: some View {
         SheetChrome(sidebarSelection: "lumen-labs") {
-            OwnerHeader(login: "lumen-labs", subtitle: "45 repositories · organization",
+            OwnerHeader(login: "lumen-labs", subtitle: "38 repositories · organization",
                         allState: .off, allNote: "Includes repositories added later. Uses 1 of 10.")
             ListCaption(left: "REPOSITORIES", right: "1 archived hidden")
             ForEach(lumenRepos.filter { !$0.archived }) { RepoRow(repo: $0) }
@@ -347,7 +347,7 @@ struct BrowseScreen: View {
             .padding(.horizontal, 12).padding(.top, 10)
             Spacer()
             HStack {
-                Text("Showing all 45").font(.callout).foregroundColor(.secondary)
+                Text("Showing all 38").font(.callout).foregroundColor(.secondary)
                 Spacer()
             }
             .padding(12)
@@ -358,9 +358,9 @@ struct BrowseScreen: View {
 struct OrgAllScreen: View {
     var body: some View {
         SheetChrome(sidebarSelection: "example-org") {
-            OwnerHeader(login: "example-org", subtitle: "289 repositories · organization",
+            OwnerHeader(login: "example-org", subtitle: "240 repositories · organization",
                         allState: .on, allNote: "Selected. Every repository, including new ones. Uses 1 of 10.")
-            ListCaption(left: "REPOSITORIES · INCLUDED BY “ALL REPOSITORIES”", right: "100 of 289 loaded")
+            ListCaption(left: "REPOSITORIES · INCLUDED BY “ALL REPOSITORIES”", right: "100 of 240 loaded")
             ForEach([
                 Repo(owner: "example-org", name: "checkout-service", isPrivate: true, pushed: "12 minutes ago", check: .inherited),
                 Repo(owner: "example-org", name: "mobile-app", isPrivate: true, pushed: "1 hour ago", check: .inherited),
@@ -372,7 +372,7 @@ struct OrgAllScreen: View {
             ]) { RepoRow(repo: $0) }
             Spacer()
             HStack {
-                Text("Showing the 100 most recently pushed of 289").font(.callout).foregroundColor(.secondary)
+                Text("Showing the 100 most recently pushed of 240").font(.callout).foregroundColor(.secondary)
                 Spacer()
                 Button("Load 100 More") {}.controlSize(.small)
             }
@@ -401,8 +401,8 @@ struct SearchScreen: View {
             RepoRow(repo: Repo(owner: "demo-user", name: "lantern-notes", pushed: "Jun 2025"), showOwner: true)
             ListCaption(left: "NOT FULLY LOADED")
             VStack(alignment: .leading, spacing: 6) {
-                searchMore("harbor-demo", "100 of 6,690 loaded")
-                searchMore("example-org", "100 of 289 loaded")
+                searchMore("harbor-demo", "100 of 6,500 loaded")
+                searchMore("example-org", "100 of 240 loaded")
             }
             .padding(.horizontal, 12)
             Spacer()
@@ -433,7 +433,7 @@ struct SelectedScreen: View {
                 Spacer()
             }
             .padding(12)
-            selected("example-org", "All repositories · 289", "building.2")
+            selected("example-org", "All repositories · 240", "building.2")
             selected("lumen-labs/lantern-api", "Repository · private", "lock.fill")
             selected("lumen-labs/lantern-web", "Repository · private", "lock.fill")
             selected("partner-sso-demo/billing", "Added by name · not listed by GitHub", "character.cursor.ibeam")
@@ -521,7 +521,7 @@ struct StatesScreen: View {
         let columns = [GridItem(.fixed(360), spacing: 20), GridItem(.fixed(360), spacing: 20), GridItem(.fixed(360), spacing: 20)]
         LazyVGrid(columns: columns, alignment: .leading, spacing: 20) {
             StatePanel(title: "1 · LOADING (FIRST PAGE)") {
-                MiniHeader(login: "harbor-demo", subtitle: "6,690 repositories")
+                MiniHeader(login: "harbor-demo", subtitle: "6,500 repositories")
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text("Loading the most recently pushed repositories…").font(.callout).foregroundColor(.secondary)
@@ -538,24 +538,24 @@ struct StatesScreen: View {
                 }
             }
             StatePanel(title: "2 · CAPPED (LARGE ORGANIZATION)") {
-                MiniHeader(login: "harbor-demo", subtitle: "6,690 repositories")
+                MiniHeader(login: "harbor-demo", subtitle: "6,500 repositories")
                 ForEach(sample) { RepoRow(repo: $0) }
                 Spacer()
                 HStack {
-                    Text("100 of 6,690 loaded. Search finds the rest.").font(.callout).foregroundColor(.secondary)
+                    Text("100 of 6,500 loaded. Search finds the rest.").font(.callout).foregroundColor(.secondary)
                     Spacer()
                     Button("Load 100 More") {}.controlSize(.small)
                 }
                 .padding(10)
             }
             StatePanel(title: "3 · PARTIAL (STOPPED MID-WAY)") {
-                MiniHeader(login: "harbor-demo", subtitle: "6,690 repositories")
+                MiniHeader(login: "harbor-demo", subtitle: "6,500 repositories")
                 Banner(kind: .warning, title: "Incomplete list", message: "200 loaded, then GitHub stopped answering. More exist.", action: "Retry")
                     .padding(.horizontal, 10)
                 ForEach(sample.prefix(2)) { RepoRow(repo: $0) }
             }
             StatePanel(title: "4 · RATE LIMITED") {
-                MiniHeader(login: "harbor-demo", subtitle: "6,690 repositories")
+                MiniHeader(login: "harbor-demo", subtitle: "6,500 repositories")
                 Banner(kind: .warning, title: "GitHub rate limit reached",
                        message: "Loaded rows stay usable. Browsing resumes after 14:05; Add by Name still works.", action: nil)
                     .padding(.horizontal, 10)
@@ -588,11 +588,11 @@ struct StatesScreen: View {
             }
             StatePanel(title: "8 · NO SEARCH MATCHES") {
                 CenteredState(symbol: "magnifyingglass", title: "No loaded repository matches “zeta”",
-                              message: "harbor-demo has 6,590 repositories not loaded yet.",
+                              message: "harbor-demo has 6,400 repositories not loaded yet.",
                               actions: ["Search GitHub in harbor-demo", "Add by Name…"])
             }
             StatePanel(title: "9 · LIMIT REACHED (10 OF 10)") {
-                MiniHeader(login: "harbor-demo", subtitle: "6,690 repositories")
+                MiniHeader(login: "harbor-demo", subtitle: "6,500 repositories")
                 Banner(kind: .info, title: "10 of 10 selected",
                        message: "Remove an entry, or choose “All repositories” for an organization to cover more.", action: nil)
                     .padding(.horizontal, 10)

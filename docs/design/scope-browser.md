@@ -19,7 +19,7 @@ offscreen renders from `scripts/render-check.sh` on `main` at 5902689
 | # | Heuristic | Problem | Severity |
 |---|---|---|---|
 | 1 | Recognition over recall | The main path is typing an exact `login` or `owner/name` into blank fields. The only aid is three steps away: **Find suggestions**, then a flat **Organizations** or **Repositories** pull-down, then a pick. The menus can't be searched, show nothing but names and can't be browsed by owner. | High |
-| 2 | Large accounts | Discovery (`ScopeDiscoveryPagePlan`) fetches at most 3 × 50 repositories from `viewer.repositories` in GitHub's affiliation order. One real account we measured (counts only) has 12 organizations and about 12,600 affiliated repositories; one organization alone has about 6,700. So the menu shows about 1% of what the user can read, in an order the user can't predict, with no search to find the rest. "first 150 shown (limit reached; more exist)" is a caption the user is unlikely to read. | High |
+| 2 | Large accounts | Discovery (`ScopeDiscoveryPagePlan`) fetches at most 3 × 50 repositories from `viewer.repositories` in GitHub's affiliation order. On a large real account (thousands of affiliated repositories; one organization with several thousand), the menu shows a small fraction of what the user can read, in an order the user can't predict, with no search to find the rest. "first 150 shown (limit reached; more exist)" is a caption the user is unlikely to read. | High |
 | 3 | Context and the selection at a glance | A chosen entry is an editable text field. Nothing shows the owner, whether it's private, archived or a fork, or when it was last pushed. The selection looks the same as the input. Editing a chosen row in place invites typos, and ten repeated **Remove** text buttons add noise. | High |
 | 4 | Feedback and error states | Three or four caption lines stack under the controls with no hierarchy ("Suggestions not loaded.", "Account not verified yet…", the limit message, the status). The limit message appears twice. When discovery fails or is denied, the menus are disabled in the same way as an empty result, and the reason is only in a caption. Visually, that is the "looks like no repositories" case AGENTS.md rules out. | High |
 | 5 | Constraints and org vs. repository meaning | The 10-entry cap (`MonitoringScope.maximumTargets`) is invisible until you hit it: there's no counter. The UI never says that an organization entry covers every repository, including future ones, or that it uses one slot where ten repositories use ten. Adding `org` plus `org/repo` is silently redundant. | Medium |
@@ -39,7 +39,7 @@ argument arrays, a viewer check on every page, and a 20 s / 2 MiB `CommandBudget
 | Need | Query | Notes |
 |---|---|---|
 | Organizations you belong to, with repository counts | `viewer { organizations(first: 100) { totalCount pageInfo nodes { login repositories { totalCount } } } }` | One page covers almost everyone. Counts let the sidebar show size before anything is loaded. Measured cost: 1 point. |
-| Repositories per organization, newest activity first | `organization(login: $o) { repositories(first: 100, after: $c, orderBy: {field: PUSHED_AT, direction: DESC}) { totalCount pageInfo nodes { name nameWithOwner isPrivate isArchived isFork pushedAt } } }` | **The maximum page size is 100.** `first: 101` returns `EXCESSIVE_PAGINATION`. 12 organizations × 100 repositories in one request still cost 1 point. |
+| Repositories per organization, newest activity first | `organization(login: $o) { repositories(first: 100, after: $c, orderBy: {field: PUSHED_AT, direction: DESC}) { totalCount pageInfo nodes { name nameWithOwner isPrivate isArchived isFork pushedAt } } }` | **The maximum page size is 100.** `first: 101` returns `EXCESSIVE_PAGINATION`. Several organizations × 100 repositories in one request still cost 1 point. |
 | Your own repositories | `viewer { repositories(first: 100, ownerAffiliations: [OWNER], orderBy: …) }` | Same row fields. |
 | Shared with you | `viewer { repositories(first: 100, affiliations: [COLLABORATOR], ownerAffiliations: [COLLABORATOR], …) }` | Repositories of owners you're not a member of. Group them by owner. |
 | Server-side search for big owners | `search(type: REPOSITORY, query: "org:$o $term in:name fork:true", first: 50) { repositoryCount nodes { ... on Repository { … } } }` | Measured cost: 1 point. Run it only on an explicit action (a row or Return), not on every keystroke: search has secondary limits. Omit `archived:` to include archived repositories, and add `fork:true` to include forks. |
@@ -114,7 +114,7 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
     count, and a status badge: ✓ (all repositories selected), a count capsule (N repositories
     selected), a lock-warning (access denied) or a small spinner (loading).
 - **Detail pane** for the selected owner:
-  - A header with monogram, name and "289 repositories · organization".
+  - A header with monogram, name and "240 repositories · organization".
   - The **All repositories in {org}** card: a checkbox, with "Includes repositories added later.
     Uses 1 of 10." Organizations only; your own account and Shared with you have no all option,
     because the model only supports organization targets.
@@ -122,7 +122,7 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
   - Rows (26 pt): checkbox, a private (lock), public (book) or fork glyph, the name (archived names
     in secondary colour plus an **Archived** tag), a **Fork** tag, and the trailing relative
     pushed time ("2 hours ago").
-  - A footer line: "Showing all 45", or "Showing the 100 most recently pushed of 289" with
+  - A footer line: "Showing all 38", or "Showing the 100 most recently pushed of 240" with
     **Load 100 More**.
 - **Sheet footer**: a **N of 10 selected** capsule (orange at 10), **Add by Name…**, then
   **Cancel** and **Apply** (the default button).
@@ -155,7 +155,7 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
   the current owner.
 - Search also matches organization names in the sidebar.
 - For every owner that isn't fully loaded, a **Search GitHub for "term" in {owner}** row appears,
-  showing "100 of 6,690 loaded". It runs the server search on click or Return. Results merge into
+  showing "100 of 6,500 loaded". It runs the server search on click or Return. Results merge into
   that owner's rows with a "From search" caption.
 - No matches (state 8) is never presented as empty. It says how many repositories haven't been
   loaded yet and offers the server search plus **Add by Name…**.
@@ -179,7 +179,7 @@ error.
 | # | State | Source | Presentation |
 |---|---|---|---|
 | 1 | Loading | owner page in flight | Header and count are known. A spinner with "Loading the most recently pushed repositories…" over placeholder rows. The sidebar badge shows a spinner. |
-| 2 | Capped | `.capped` / `hasNextPage` | Rows, plus "100 of 6,690 loaded. Search finds the rest." and **Load 100 More**. |
+| 2 | Capped | `.capped` / `hasNextPage` | Rows, plus "100 of 6,500 loaded. Search finds the rest." and **Load 100 More**. |
 | 3 | Partial | `.partial` | A warning banner, "Incomplete list: N loaded, then GitHub stopped answering. More exist.", with **Retry**. Loaded rows stay selectable. |
 | 4 | Rate limited | `ScopeAccessFailure.rateLimited` | A warning banner with the reset time from `rateLimit.resetAt` when known. Loaded rows stay usable, and Add by Name still works. Retry is disabled until the reset time. |
 | 5 | Access denied | `GhFailure.accessDenied` / FORBIDDEN | An error banner: "GitHub withheld this list. Single sign-on or a token scope blocks it. Run gh auth refresh and authorize SSO, then Retry." **All repositories** stays enabled, because Apply verifies it, and **Add a Repository by Name…** is offered. The sidebar shows the lock-warning badge with "—" instead of a count. |
@@ -226,10 +226,10 @@ error.
   `Toggle` so its value is spoken, and don't add a separate `accessibilityLabel` on top of a Text
   label (per `AccessibilityTreeTests`: read once, not twice).
 - An inherited row reads "checked, included by All repositories in example-org" and is disabled.
-- Sidebar rows: "lumen-labs, organization, 45 repositories, 2 selected". For access denied:
+- Sidebar rows: "lumen-labs, organization, 38 repositories, 2 selected". For access denied:
   "tidewater-demo, organization, repositories hidden by GitHub".
 - Announce through `ScopeEditor.report` and `postAnnouncement`, once per change: page loaded ("Loaded
-  100 of 289 repositories for example-org"), the state banners, selection count changes ("5 of 10
+  100 of 240 repositories for example-org"), the state banners, selection count changes ("5 of 10
   selected"), redundant picks removed, and the Apply outcome.
 - Banners are a single combined element with their action button kept separate. The search field's
   label is "Search repositories and organizations".
