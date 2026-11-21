@@ -18,10 +18,16 @@ private struct WriteGuard {
     let loginBackend: InertLoginBackend
     let preferenceFiles: Set<String>
 
+    /// Only the preference files this test run could itself create: its own suite's plist. Other
+    /// processes (QA app runs, other agents) create unrelated dev.github-pet.* files at any time,
+    /// so those are never compared. Names only; nothing is read, written or deleted.
+    static let suitePrefix = "dev.github-pet.tests.mascot-window."
+    static func ownPreferenceFiles(in names: [String]) -> Set<String> {
+        Set(names.filter { $0.hasPrefix(suitePrefix) })
+    }
     static func preferenceFiles() -> Set<String> {
         let directory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences")
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
-        return Set(names.filter { $0.hasPrefix("dev.github-pet") })
+        return ownPreferenceFiles(in: (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [])
     }
 }
 
@@ -30,7 +36,7 @@ private struct WriteGuard {
 /// preferences file is created; the relaunch baseline (#12) a fixtures launch saves lands there too.
 @Suite(.serialized) @MainActor struct MascotWindowLifetimeTests {
     private func model() -> (AppModel, WriteGuard) {
-        let defaults = EphemeralDefaults(name: "dev.github-pet.tests.mascot-window.\(UUID().uuidString)")
+        let defaults = EphemeralDefaults(name: WriteGuard.suitePrefix + UUID().uuidString)
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures"], environment: [:])
         options.forcePlaceholder = true
         options.userDefaultsOverride = defaults
@@ -43,7 +49,7 @@ private struct WriteGuard {
     private func assertNothingWritten(_ guarded: WriteGuard) {
         #expect(guarded.defaults.object(forKey: SettingsStore.key) == nil, "the test must not persist settings")
         #expect(WriteGuard.preferenceFiles().subtracting(guarded.preferenceFiles).isEmpty,
-                "no dev.github-pet preferences file appears")
+                "this test creates no preferences file for its own suite")
         #expect(guarded.loginBackend.calls == 0, "the window tests never consult a login item")
     }
 
@@ -123,4 +129,14 @@ private struct WriteGuard {
 func preferencesFileExists(_ domain: String) -> Bool {
     let file = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences/\(domain).plist")
     return FileManager.default.fileExists(atPath: file.path)
+}
+
+/// The write guard ignores other processes' preference files and still sees this test's own.
+@Suite struct MascotWriteGuardFilterTests {
+    @Test func onlyFilesThisTestCouldCreateAreWatched() {
+        let names = ["dev.github-pet.app.plist", "dev.github-pet.app.qaspk99b.plist", "dev.github-pet.verscheck.plist",
+                     "dev.github-pet.tests.mascot-window.ABC.plist", "unrelated.plist"]
+        #expect(WriteGuard.ownPreferenceFiles(in: names) == ["dev.github-pet.tests.mascot-window.ABC.plist"])
+        #expect(WriteGuard.ownPreferenceFiles(in: []).isEmpty)
+    }
 }

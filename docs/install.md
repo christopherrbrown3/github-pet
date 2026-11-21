@@ -125,6 +125,20 @@ Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which d
 so an update should keep them. This has **not been tested** on a clean install yet, so check Settings after
 updating. How updates are signed and released: [updates.md](updates.md).
 
+## Open at login
+
+Settings → Mascot → Startup shows what macOS reports for **Open at login**. GitHub Pet's builds are ad-hoc
+signed, and in our tests (macOS 27, in `/Applications` and elsewhere) macOS reports ad-hoc builds as unknown
+to its login-item service. Settings then says **Unavailable**, shows the switch as off and disabled, and never
+tries to register anything. The location made no difference, so moving the app to Applications doesn't help; the
+signature is the leading suspect, but that is not proven.
+
+To start GitHub Pet at login anyway, add it yourself: choose **Open Login Items Settings** in that row (or open
+System Settings → General → Login Items), click **+** and pick GitHub Pet. That is macOS's own list; GitHub Pet
+doesn't change it. Whether such an entry survives updates (each build's ad-hoc signature differs) has not been
+tested. A build signed with a developer certificate (#89, after the beta) is expected to make the switch work;
+that is unverified until such a build exists.
+
 ## Uninstalling
 
 1. Quit GitHub Pet from the inbox's power button.
@@ -139,9 +153,7 @@ updating. How updates are signed and released: [updates.md](updates.md).
 4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Mascot → Startup**,
    or under **System Settings → General → Login Items**. Do this before step 2, while the app is
    still installed. If you already deleted the app, check Login Items and remove GitHub Pet there
-   if it is still listed. Open at login has **not been verified on a real Mac** with this
-   ad-hoc-signed build yet; Settings shows whatever macOS reports (On, Off, Pending approval or
-   Unavailable).
+   if it is still listed.
 
 Uninstalling does not touch the GitHub CLI or its sign-in. A Homebrew cask is planned but not
 available, so there is no `brew uninstall` path yet.
