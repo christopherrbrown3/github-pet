@@ -53,8 +53,8 @@ selection=(
   inbox-stale         inbox87-mona-pet-v1-stale       window+footer
   mascot-mona         readme-mascot-mona-pet-v1       plain
   mascot-little-chris readme-mascot-little-chris-v1   plain
-  settings-mascot     settings-mascot                 window
-  settings-github     settings-github                 window
+  settings-mascot     readme-settings-mascot          window
+  settings-github     readme-settings-github          window
 )
 mkdir -p "${out:?}"
 # Replace only this set's own files, by explicit name; nothing else in $out is touched.
@@ -91,6 +91,13 @@ rendered pixels; \`+footer\` crops the Inbox below its last divider, removing th
 row (offscreen it reads "Updates not configured" because snapshot mode never starts the updater;
 the shipped app shows Check for Updates… there). Kept pixels are unchanged and the PNGs are
 recompressed losslessly.
+
+The Settings images are the Mascot and GitHub panes' content: the Mascot | GitHub tab strip
+doesn't draw offscreen, so it is left out rather than painted in. Each pane is rendered at a height
+that ends between sections (the whole Mascot pane; the GitHub pane through Monitoring scope, as a
+window that size shows it before scrolling). Open at login shows what ad-hoc-signed builds read
+(unavailable, with the Login Items button). Offscreen windows are never key, so switches that are
+on draw grey rather than in the accent colour.
 
 - Source revision of the rendered app: \`$revision\`
 - Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)

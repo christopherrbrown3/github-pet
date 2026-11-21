@@ -2,14 +2,23 @@ import AppKit
 import GitHubPetCore
 import SwiftUI
 
-/// README desktop-pet renders (scripts/readme-screenshots.sh): each built-in skin in its idle pose
-/// with the real count badge for the first four #87 Demo rows, no service incident, on a
-/// transparent canvas like the real borderless mascot panel. Render-only: runs inside
-/// `--render-snapshots`, changes no app behaviour, and restores the model afterwards.
-/// Files: `readme-mascot-<skin>[-dark].png`.
+/// README renders (scripts/readme-screenshots.sh) on the first four #87 Demo rows, up to date, no
+/// service incident. Render-only: runs inside `--render-snapshots`, changes no app behaviour, and
+/// restores the model afterwards.
+/// - `readme-mascot-<skin>[-dark].png`: each built-in skin idle with the real count badge, on a
+///   transparent canvas like the real borderless mascot panel.
+/// - `readme-settings-<pane>[-dark].png`: the Mascot and GitHub panes' content (the tab strip
+///   doesn't draw offscreen) with new-install defaults, Mona selected, and Open at login in the
+///   state ad-hoc-signed builds read (`.notFound`, #112) through an inert backend that never
+///   registers. Heights end between sections, as a window that size shows them before scrolling:
+///   the whole Mascot pane, and the GitHub pane through Monitoring scope (its Software updates
+///   section reads "not configured" here because snapshot mode never starts the updater).
 extension SnapshotRenderer {
-    static func readmeMascotRenders(model: AppModel, directory: URL) async -> [String] {
-        var report = ["## readme mascots"]
+    static let readmeMascotPaneHeight: CGFloat = 935
+    static let readmeGitHubPaneHeight: CGFloat = 695
+
+    static func readmeBeta4Renders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## readme beta 4"]
         let saved = model.settings
         model.settings.dataSource = .fixtures
         model.settings.reducedMotion = true
@@ -31,8 +40,30 @@ extension SnapshotRenderer {
                                                       directory: directory, appearance: appearance))
             }
         }
+        model.settings.mascotSkin = saved.mascotSkin
+        model.settings.reducedMotion = PetSettings().reducedMotion
+        let startup = LoginItemSettings(backend: AdHocLoginItemBackend())
+        startup.refresh()
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        report.append("readme-settings: badge=\(model.mascotBadge ?? "none") state=\(model.dataState.statusText) "
+                      + "skin=\(model.settings.mascotSkin.rawValue) login-item=\(startup.status.map { "\($0)" } ?? "nil") offers-settings=\(startup.offersSystemSettings)")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(MascotPane(model: model, loginItem: startup).frame(width: 520, height: Self.readmeMascotPaneHeight),
+                                   name: "readme-settings-mascot\(suffix)", directory: directory, appearance: appearance)
+                .prefix(1)
+            report += await render(GitHubPane(model: model).frame(width: 520, height: Self.readmeGitHubPaneHeight),
+                                   name: "readme-settings-github\(suffix)", directory: directory, appearance: appearance)
+                .prefix(1)
+        }
         model.settings = saved
         return report
+    }
+
+    /// What `SMAppService.mainApp` reads on ad-hoc-signed builds (#112); never registers.
+    private struct AdHocLoginItemBackend: LoginItemBackend {
+        var status: LoginItemStatus { .notFound }
+        func register() throws { throw CocoaError(.featureUnsupported) }
+        func unregister() throws { throw CocoaError(.featureUnsupported) }
     }
 
     /// Like `render`, without the window-background fill: the mascot panel is transparent on screen.
