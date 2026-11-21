@@ -317,8 +317,22 @@ enum SnapshotRenderer {
         try? await Task.sleep(nanoseconds: 300_000_000)
 
         guard let content = window.contentView else { return ["\(name): no content view"] }
-        content.layoutSubtreeIfNeeded()
+        // The first SwiftUI layout pass can land after the settle delay and leave a 1x0 view (#111).
+        // Wait, bounded, for a real size instead of sleeping longer, then force the fitting size.
+        for _ in 0..<50 {
+            content.layoutSubtreeIfNeeded()
+            if content.bounds.width > 1, content.bounds.height > 1 { break }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        if content.bounds.width <= 1 || content.bounds.height <= 1, asWindow {
+            window.setContentSize(content.fittingSize)
+            content.layoutSubtreeIfNeeded()
+        }
         var lines = ["\(name): \(Int(content.bounds.width))x\(Int(content.bounds.height)) pt"]
+        if content.bounds.width <= 1 || content.bounds.height <= 1 {
+            // Never a silent empty capture: render-check fails on any "FAIL" line in the report.
+            lines.append("FAIL \(name): no real layout size after waiting (fitting \(Int(content.fittingSize.width))x\(Int(content.fittingSize.height)))")
+        }
         if let png = renderPNG(content) {
             try? png.write(to: directory.appendingPathComponent("\(name).png"))
         }
