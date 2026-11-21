@@ -1,6 +1,6 @@
 # GitHub Pet features
 
-The detail behind the [README](../README.md). Everything here describes the Beta 4 app. GitHub Pet is
+The detail behind the [README](../README.md). Everything here describes the Beta 5 app. GitHub Pet is
 read-only: every item opens on github.com, and nothing is approved, merged or changed from the app.
 
 ## The Inbox
@@ -73,7 +73,7 @@ DEMO, and appears only if you choose it under Settings → GitHub → Source.
 
 ## Updates
 
-Beta 4 is installed by hand once. Later versions are delivered by
+Anyone on Beta 3 or earlier installs by hand once; Beta 4 and later get updates in the app, delivered by
 [Sparkle](https://sparkle-project.org). GitHub Pet first asks once whether to check automatically
 (Sparkle's prompt). With checks on, it checks at most once a day, shows a quiet "Version X
 available" line in the menu and asks before installing, unless you turn on automatic installs. Updates
@@ -90,15 +90,15 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 
 ## Known limits
 
-- **Updates start after Beta 4.** In-app updates begin with the first release after Beta 4; earlier
-  betas must install Beta 4 by hand.
+- **In-app updates work from Beta 4 onward.** Beta 5 is the first update delivered that way, so the
+  production update path is first exercised by it. Earlier betas install by hand.
 - **Intel.** The app is universal (Apple Silicon and Intel). The Intel half is checked in CI under
   Rosetta, not on Intel hardware.
 - **Not notarized.** Ad-hoc signed builds need **Open Anyway** on first launch
   ([installation guide](install.md)).
 - **Open at login** isn't available on ad-hoc signed builds. A button in Settings → Mascot opens
   Login Items in System Settings so you can add GitHub Pet yourself.
-- **Hidden in Beta 4.** Privacy mode, snooze and quiet hours are hidden to keep things simple.
+- **Hidden in this beta.** Privacy mode, snooze and quiet hours are hidden to keep things simple.
   Settings saved by an earlier beta are kept but have no effect until those features return, so
   repository names and titles are shown.
 - **github.com only.** GitHub Enterprise Server isn't supported.
