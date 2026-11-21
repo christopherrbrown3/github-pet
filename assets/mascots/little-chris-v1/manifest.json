@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "little-chris-v1",
+  "name": "Little Chris",
+  "canvas": {
+    "width": 256,
+    "height": 256
+  },
+  "anchor": [
+    128,
+    232
+  ],
+  "states": {
+    "idle": {
+      "frames": [
+        "frames/idle-00.png",
+        "frames/idle-01.png",
+        "frames/idle-02.png"
+      ],
+      "durationMs": [
+        2000,
+        125,
+        125
+      ],
+      "loop": true,
+      "staticFallback": "frames/idle-00.png"
+    },
+    "attention": {
+      "frames": [
+        "frames/attention-00.png",
+        "frames/attention-01.png",
+        "frames/attention-02.png"
+      ],
+      "durationMs": [
+        350,
+        600,
+        350
+      ],
+      "loop": false,
+      "staticFallback": "frames/idle-00.png"
+    },
+    "urgent": {
+      "frames": [
+        "frames/urgent-00.png",
+        "frames/urgent-01.png",
+        "frames/urgent-02.png"
+      ],
+      "durationMs": [
+        300,
+        900,
+        500
+      ],
+      "loop": false,
+      "staticFallback": "frames/urgent-02.png"
+    }
+  },
+  "frameSha256": {
+    "frames/idle-00.png": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
+    "frames/idle-01.png": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
+    "frames/idle-02.png": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
+    "frames/attention-00.png": "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
+    "frames/attention-01.png": "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
+    "frames/attention-02.png": "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
+    "frames/urgent-00.png": "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
+    "frames/urgent-01.png": "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
+    "frames/urgent-02.png": "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"
+  }
+}

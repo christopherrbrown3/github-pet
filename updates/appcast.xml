@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>GitHub Pet</title>
+        <link>https://github.com/christopherrbrown3/github-pet</link>
+        <description>GitHub Pet releases. Written by scripts/release-appcast.sh; no releases are signed yet.</description>
+        <language>en</language>
+        <item>
+            <title>GitHub Pet 0.1.0-beta.5</title>
+            <pubDate>Sat, 21 Nov 2026 21:41:25 GMT</pubDate>
+            <sparkle:version>436</sparkle:version>
+            <sparkle:shortVersionString>0.1.0-beta.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:fullReleaseNotesLink>https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.5</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/christopherrbrown3/github-pet/releases/download/v0.1.0-beta.5/GitHubPet-0.1.0-14cc8da-universal.zip" type="application/octet-stream" sparkle:edSignature="VjcNS6qI98/LulqMc+Uf/1U6Wcup2AhhYg+xErL0abE95ieOJmxFJLj3EzVkQdosnpQ2zsOq/Anskyi8lpzlCQ==" length="6025173" />
+        </item>
+    </channel>
+</rss>

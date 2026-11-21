@@ -6,6 +6,12 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
     case assignedIssue
     case authoredPullRequest
     case ciFailure
+    /// #10: a failing workflow on a watched repository's default branch that someone else
+    /// triggered: actionable. One the viewer triggered is `ciFailure` (critical).
+    case workflowFailure
+    /// #10: a workflow run waiting for a deployment approval the viewer can give. Actionable;
+    /// the row opens the run on GitHub, and GitHub Pet never approves.
+    case deploymentApproval
     case entitlement
     /// A confirmed GitHub service incident from githubstatus.com (see `ServiceIncident`).
     case serviceIncident
@@ -16,7 +22,8 @@ public enum ItemKind: String, Codable, CaseIterable, Sendable {
         case .reviewRequest: return "Review request"
         case .assignedIssue: return "Assigned issue"
         case .authoredPullRequest: return "Your pull request"
-        case .ciFailure: return "Workflow failure"
+        case .ciFailure, .workflowFailure: return "Workflow failure"
+        case .deploymentApproval: return "Deployment approval"
         case .entitlement: return "Entitlement update"
         case .serviceIncident: return "GitHub service incident"
         }
@@ -47,9 +54,18 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
     public var updatedAt: Date
     /// Invented fixture data. Always labelled "Demo", including in privacy mode.
     public var isDemo: Bool
+    /// Why it needs you, e.g. "Changes requested, checks failing" (#9). Fixed wording, no names,
+    /// so it stays visible in privacy mode.
+    public var attention: String?
+    /// Extra event keys besides `id` (#9): one per attention reason. The item is new when its ID
+    /// is new or when it gains a key never seen before; losing keys never announces.
+    public var attentionKeys: [String]
+    /// Evidence for an authored review round, independent of its stable Changes requested reason.
+    var authoredReview: AuthoredAttention.Review?
 
     public init(id: String, kind: ItemKind, repository: String, title: String,
-                url: URL?, updatedAt: Date, isDemo: Bool = false) {
+                url: URL?, updatedAt: Date, isDemo: Bool = false, attention: String? = nil,
+                attentionKeys: [String] = []) {
         self.id = id
         self.kind = kind
         self.repository = repository
@@ -57,6 +73,8 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
         self.url = url
         self.updatedAt = updatedAt
         self.isDemo = isDemo
+        self.attention = attention
+        self.attentionKeys = attentionKeys
     }
 }
 
@@ -66,18 +84,26 @@ public enum DataState: Equatable, Sendable {
     case loading
     case ready
     case empty
+    /// Complete, nothing visible, but GitHub counted this many matches the viewer can't see.
+    /// Never the verified-empty "all clear" state.
+    case hiddenOnly(Int)
     case partial
     case stale
     case ghMissing
     case unauthenticated
     case error(String)
 
-    public var countIsKnown: Bool { self == .ready || self == .empty }
+    public var countIsKnown: Bool {
+        switch self {
+        case .ready, .empty, .hiddenOnly: return true
+        default: return false
+        }
+    }
 
     /// Whether items held in this state came from at least one successful fetch.
     public var hasUsableItems: Bool {
         switch self {
-        case .ready, .empty, .partial, .stale: return true
+        case .ready, .empty, .hiddenOnly, .partial, .stale: return true
         default: return false
         }
     }
@@ -87,6 +113,7 @@ public enum DataState: Equatable, Sendable {
         case .loading: return "Loading…"
         case .ready: return "Up to date"
         case .empty: return "All clear"
+        case .hiddenOnly(let hidden): return "No visible items · " + HiddenResults.matchesHidden(hidden)
         case .partial: return "Partial data"
         case .stale: return "Stale"
         case .ghMissing: return "GitHub CLI not found"
@@ -112,10 +139,33 @@ public enum FetchFailure: Equatable, Sendable {
     case failed(String)
 }
 
+/// Wording for matches GitHub counted but the viewer can't see (#35). Counts only, no names.
+public enum HiddenResults {
+    public static func matchesHidden(_ count: Int) -> String {
+        count == 1 ? "1 match hidden from your account" : "\(count) matches hidden from your account"
+    }
+    public static func notVisible(_ count: Int) -> String {
+        count == 1 ? "1 matching item isn't visible to your account" : "\(count) matching items aren't visible to your account"
+    }
+}
+
+/// Wording for your open PRs that need nothing from you (#9). Counts only, no names.
+public enum AuthoredWaiting {
+    /// Shown beside usable data only; a lower bound ("at least") while data is partial.
+    public static func note(_ count: Int, dataState: DataState) -> String? {
+        guard count > 0, dataState.hasUsableItems else { return nil }
+        let prefix = dataState == .partial ? "At least " : ""
+        let verb = count == 1 && prefix.isEmpty ? "is" : "are"
+        return "\(prefix)\(count) of your pull requests \(verb) waiting on others or being checked by GitHub"
+    }
+}
+
 /// The result of one poll, from fixtures or from `gh`.
 public enum FetchOutcome: Equatable, Sendable {
     /// `complete == false` means some sub-query failed; items are a lower bound.
-    case snapshot(items: [InboxItem], complete: Bool)
+    /// `hidden` (only with `complete`): matches GitHub counted that the viewer can't see. They are
+    /// informational, never a Partial result: the visible results are complete.
+    case snapshot(items: [InboxItem], complete: Bool, hidden: Int = 0)
     case failure(FetchFailure)
 }
 

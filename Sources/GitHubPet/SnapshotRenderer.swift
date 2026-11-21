@@ -12,6 +12,9 @@ enum SnapshotRenderer {
     static func run(model: AppModel, directory: URL) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var report: [String] = []
+        // Hideable features (#94, #95, #107): render-check's expectations follow this line.
+        report.append("features: privacyMode=\(model.features.privacyMode) snooze=\(model.features.snooze) "
+                      + "quietHours=\(model.features.quietHours) panes=\(model.features.settingsPanes.map(\.rawValue).joined(separator: ","))")
 
         func capture(_ name: String) async {
             // Let polls, ticks and SwiftUI updates settle.
@@ -25,6 +28,7 @@ enum SnapshotRenderer {
                           + "hover-top=\(model.hoverLines(compact: false).first ?? "") "
                           + "compact-hover=\(model.hoverLines(compact: true).joined(separator: " | "))")
             report.append("source=\(model.settings.dataSource.rawValue) privacy=\(model.settings.privacyMode) "
+                          + "effective-privacy=\(model.privacyMode) "
                           + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
             report.append(mascotAccessibility(model))
@@ -52,6 +56,7 @@ enum SnapshotRenderer {
         // As if the user pressed "Show details": rows show titles, hover stays generic.
         model.detailsRevealed = true
         await capture("01b-details")
+        report += await readmeRenders(model: model, directory: directory)
         report.append("## lane labels (native text, widest count)")
         for side in [CGFloat(64), 128, 256] {
             report.append(tagFit(model: model, side: side))
@@ -73,6 +78,10 @@ enum SnapshotRenderer {
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
         }
+        report += await littleChrisPlacementProbes(model: model, directory: directory)
+        // Rendering can take longer than the freshness window under load. Re-poll unchanged
+        // fixtures before deliberate events: recovery stays silent, then the new event is comparable.
+        model.refresh()
         model.injectEntitlementEvent()
         await capture("02-injected")
         // Fixture timestamps must use the app clock (QA clock hooks), not the wall clock.
@@ -97,6 +106,7 @@ enum SnapshotRenderer {
         // Attention needs an unseen event while alerts are allowed; with reduced motion the
         // mascot holds the attention state's static fallback pose (no clip plays).
         model.settings.reducedMotion = true
+        model.refresh()
         model.injectEntitlementEvent()
         await capture("09-attention-static")
         report.append("## hover placement (attention, swept lean outline)")
@@ -104,6 +114,7 @@ enum SnapshotRenderer {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
         }
         model.markAllSeen()
+        model.refresh()
         model.injectWorkflowFailure()
         await capture("10-urgent-static")
         report.append("## hover placement (urgent, privacy off: names and titles)")
@@ -117,12 +128,15 @@ enum SnapshotRenderer {
         report += await gestureProbe(model: model, directory: directory)
         // GitHub Status (#11): a new major incident is urgent; resolving leaves quietly.
         model.markAllSeen()
+        model.refresh()
         model.injectServiceIncident(.major)
         await capture("10c-incident-major")
         // Simulator range (#37): critical via the simulator; maintenance is never an incident; a
         // service-only fetch failure never reads as "no incidents".
+        model.refresh()
         model.injectServiceIncident(.critical)
         await capture("10e-incident-critical")
+        model.refresh()
         model.injectScheduledMaintenance()
         await capture("10f-maintenance-ignored")
         model.setServiceFetchFails(true)
@@ -130,10 +144,14 @@ enum SnapshotRenderer {
         model.setServiceFetchFails(false)
         report.append("## incident marker (#37: rasterised marker vs labels and keep-out, every tier and pose)")
         report += await incidentMarkerProbe(model: model, directory: directory)
+        report += await withSkin(.littleChris, model: model) {
+            await incidentMarkerProbe(model: model, directory: directory, skin: .littleChris)
+        }
         model.resolveServiceIncidents()
         await capture("10d-incidents-resolved")
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
         report.append("## count cap")
+        model.refresh()
         for _ in 0..<100 { model.injectEntitlementEvent() }
         model.markAllSeen()
         report.append("count cap: items=\(model.items.count) mascot-badge=\(model.mascotBadge ?? "none") "
@@ -142,11 +160,9 @@ enum SnapshotRenderer {
             .frame(width: model.layout(model.settings.mascotSize).panelSize.width,
                    height: model.layout(model.settings.mascotSize).panelSize.height),
                                name: "count-cap-mascot", directory: directory, appearance: .aqua)
-        // Only with an explicit gh path that does not exist (e.g. /nonexistent/gh): the result
-        // is deterministic and can never contain live GitHub data.
-        if let path = ProcessInfo.processInfo.environment[GhLocator.overrideVariable],
-           !FileManager.default.fileExists(atPath: path) {
-            model.settings.dataSource = .githubCLI
+        // Snapshot-only CLI transport, independent of the installed gh or saved account.
+        do {
+            model.showSourceFailureForSnapshot(.ghMissing)
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await capture("11-gh-override")
         }
@@ -161,22 +177,133 @@ enum SnapshotRenderer {
         report.append("## resize (real mascot window controller, as the Settings slider does)")
         report += await resizeProbe(model: model, directory: directory)
 
-        // Settings goes through the same window sizing as the real Settings window.
+        // Settings goes through the same window sizing as the real Settings window: every pane,
+        // light and dark, with the plain window ("settings") kept for the render check.
         report.append("## settings")
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
+            // The whole GitHub pane unscrolled, so the review filter it holds while the Alerts
+            // tab is hidden (#107) is visible in one image.
+            report += await render(GitHubPane(model: model).frame(width: 520, height: Self.githubPaneFullHeight),
+                                   name: "settings-github-full\(suffix)", directory: directory, appearance: appearance)
+            for pane in model.features.settingsPanes {
+                report += await render(SettingsView(model: model, pane: pane), name: "settings-\(pane.rawValue)\(suffix)",
+                                       directory: directory, appearance: appearance, asWindow: true)
+            }
         }
+        // States QA reviews: privacy off/on, snoozed, quiet hours, and the gh error panes below.
+        report.append("## settings states (#87)")
+        let savedSettings = model.settings
+        model.settings.mascotSkin = .littleChris
+        model.settings.privacyMode = true
+        model.snooze(.fourHours)
+        model.settings.quietHours.enabled = true
+        model.settings.quietHours.startMinute = 0
+        model.settings.quietHours.endMinute = 24 * 60 - 1
+        // As after upgrading from a build where all three were on: hidden ones are effectively off.
+        report.append("stored privacy=\(model.settings.privacyMode) snoozed=\(model.settings.snoozeUntil != nil) "
+                      + "quiet-hours=\(model.settings.quietHours.enabled) → effective privacy=\(model.privacyMode) "
+                      + "snoozed=\(model.settings.isSnoozed(at: model.now, features: model.features)) "
+                      + "quiet-now=\(model.settings.quietHoursActive(at: model.clock(), features: model.features)) "
+                      + "alerts-allowed=\(model.settings.alertsAllowed(at: model.clock(), features: model.features))")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(SettingsView(model: model, pane: .alerts), name: "settings-alerts-snoozed-privacy\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+            report += await render(SettingsView(model: model, pane: .mascot), name: "settings-mascot-chris\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+        }
+        model.settings = savedSettings
+        // Monitoring scope editor with a full 10-entry Demo draft and inline errors; nothing is
+        // applied. The Form keeps its 520 pt width and scrolls rather than growing the window.
+        report.append("## settings monitoring scope (long draft)")
+        let editor = model.scopeEditor
+        editor.setMode(.selected)
+        for index in 0..<5 { editor.organizationInput = "demo-org-with-a-long-name-\(index)"; editor.addOrganization() }
+        for index in 0..<5 { editor.repositoryInput = "demo-owner/a-much-longer-demo-repository-name-\(index)"; editor.addRepository() }
+        editor.update(editor.draft.rows[1].id, text: "org:demo is:pr")
+        editor.repositoryInput = "demo-owner/one-too-many"; editor.addRepository()
+        report.append("scope editor: rows=\(editor.draft.rows.count) apply=\(editor.canApply) blocked=\(editor.applyBlockedReason ?? "none")")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(Form { MonitoringScopeSection(model: model, editor: editor) }.formStyle(.grouped).frame(width: 520),
+                                   name: "settings-scope-long\(suffix)", directory: directory, appearance: appearance)
+        }
+        editor.cancel()
+
+        // gh setup links (#52): the real engine in each setup state, never a live gh call.
+        report.append("## gh setup links")
+        for (name, failure) in [("ghmissing", FetchFailure.ghMissing), ("unauthenticated", .unauthenticated)] {
+            model.showSourceFailureForSnapshot(failure)
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            // Refresh again to prove a later poll retains the injected state, without gh.
+            model.refresh()
+            report.append("setup=\(name) source=\(model.settings.dataSource.rawValue) demo=\(model.usingFixtures) "
+                          + "badge=\(model.badge ?? "none") rows=\(model.items.count) "
+                          + "unseen=\(model.unseenCount) clip=\(model.activeClip == nil ? "none" : "active") "
+                          + "state=\(model.dataState.statusText) links=\(GhSetup.links(for: model.dataState).map(\.title))")
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false),
+                                       name: "gh-setup-\(name)-inbox\(suffix)", directory: directory,
+                                       appearance: appearance, asWindow: true)
+                report += await render(SettingsView(model: model, pane: .github).frame(height: 1000),
+                                       name: "gh-setup-\(name)-settings\(suffix)",
+                                       directory: directory, appearance: appearance, asWindow: true)
+            }
+        }
+
+        report += await inboxRedesignRenders(model: model, directory: directory)
+        report += await readmeBeta4Renders(model: model, directory: directory)
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
-        UserDefaults.standard.removePersistentDomain(forName: LaunchOptions.snapshotDefaultsSuite)
+        EphemeralDefaults.release(LaunchOptions.snapshotDefaultsSuite)
         FileHandle.standardError.write(Data("GitHubPet: snapshots written to \(directory.path)\n".utf8))
     }
 
     /// Renders `view` the way the app shows it. With `asWindow`, it goes through the same
     /// NSHostingController window sizing as the real Inbox window.
-    private static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
+    /// README images (scripts/readme-screenshots.sh), on Demo fixtures: privacy off so the inbox,
+    /// hover and Settings agree; one invented fixture repository listed as an entitlement
+    /// repository; no Simulator menu; and Startup shown in a neutral Off state through an inert
+    /// stand-in, since snapshot launches never touch the real login item. Everything is restored.
+    static func readmeRenders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## readme"]
+        let saved = model.settings
+        model.settings.privacyMode = false
+        model.settings.entitlementRepositories = ["example/pet-demo"]
+        let startup = LoginItemSettings(backend: InertLoginItemBackend())
+        startup.refresh()
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        func form<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+            Form(content: content).formStyle(.grouped).frame(width: 520)
+        }
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            report += await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false, showsSimulator: false),
+                                   name: "readme-inbox\(suffix)", directory: directory, appearance: appearance, asWindow: true)
+            report += await render(HoverSummaryView(model: model, compact: model.hoverIsCompact), name: "readme-hover\(suffix)",
+                                   directory: directory, appearance: appearance)
+            report += await render(form {
+                MonitoringScopeSection(model: model, editor: model.scopeEditor)
+                EntitlementRepositoriesSection(model: model)
+            }.frame(height: Self.readmeScopeHeight), name: "readme-settings-scope\(suffix)", directory: directory, appearance: appearance)
+            report += await render(SettingsView(model: model, pane: .mascot, loginItem: startup), name: "readme-settings-general\(suffix)",
+                                   directory: directory, appearance: appearance, asWindow: true)
+        }
+        model.settings = saved
+        return report
+    }
+    static let githubPaneFullHeight: CGFloat = 1500
+    static let readmeScopeHeight: CGFloat = 540
+    static let readmeGeneralHeight: CGFloat = 690
+
+    /// Reports Off and never registers: the README's Startup section, offscreen only.
+    private struct InertLoginItemBackend: LoginItemBackend {
+        var status: LoginItemStatus { .disabled }
+        func register() throws { throw CocoaError(.featureUnsupported) }
+        func unregister() throws { throw CocoaError(.featureUnsupported) }
+    }
+
+    static func render<V: View>(_ view: V, name: String, directory: URL, appearance: NSAppearance.Name,
                                         asWindow: Bool = false) async -> [String] {
         let window: NSWindow
         if asWindow {
@@ -195,8 +322,22 @@ enum SnapshotRenderer {
         try? await Task.sleep(nanoseconds: 300_000_000)
 
         guard let content = window.contentView else { return ["\(name): no content view"] }
-        content.layoutSubtreeIfNeeded()
+        // The first SwiftUI layout pass can land after the settle delay and leave a 1x0 view (#111).
+        // Wait, bounded, for a real size instead of sleeping longer, then force the fitting size.
+        for _ in 0..<50 {
+            content.layoutSubtreeIfNeeded()
+            if content.bounds.width > 1, content.bounds.height > 1 { break }
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        if content.bounds.width <= 1 || content.bounds.height <= 1, asWindow {
+            window.setContentSize(content.fittingSize)
+            content.layoutSubtreeIfNeeded()
+        }
         var lines = ["\(name): \(Int(content.bounds.width))x\(Int(content.bounds.height)) pt"]
+        if content.bounds.width <= 1 || content.bounds.height <= 1 {
+            // Never a silent empty capture: render-check fails on any "FAIL" line in the report.
+            lines.append("FAIL \(name): no real layout size after waiting (fitting \(Int(content.fittingSize.width))x\(Int(content.fittingSize.height)))")
+        }
         if let png = renderPNG(content) {
             try? png.write(to: directory.appendingPathComponent("\(name).png"))
         }
@@ -460,9 +601,13 @@ enum SnapshotRenderer {
     /// each size, backing scale, pose (static and every frame of every state) and count text, the
     /// real MascotView is drawn twice (art only, labels only) and the nearest pair of visible
     /// pixels is found. Reports the range and any overlapping pixels.
-    private static func nearTouchMeasurements(model: AppModel, directory: URL) async -> [String] {
+    /// `skin` (#116) prefixes the lines and file names for a probe run with another skin selected.
+    /// The same renders feed the badge-fit lines (#116) for the selected skin.
+    static func nearTouchMeasurements(model: AppModel, directory: URL, skin: MascotSkin? = nil) async -> [String] {
+        let label = skin.map { "near-touch \($0.rawValue) " } ?? "near-touch "
+        let file = skin.map { "near-touch-\($0.rawValue)-" } ?? "near-touch-"
         guard let pack = model.pack else { return ["near-touch: no pack"] }
-        var lines: [String] = []
+        var lines: [String] = [], fits: [String] = []
         // One offscreen window reused for every case: SwiftUI only commits its layers inside one.
         let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -485,6 +630,7 @@ enum SnapshotRenderer {
                 var overlaps = 0
                 var worst = "", closest = ""
                 var sheet: [(name: String, art: [UInt8], labels: [UInt8], gap: CGFloat)] = []
+                var fit = BadgeFit(layout: layout, scale: scale)
                 // Every upright pose, plus the attention gesture's leaning frames.
                 var poses = MascotState.allCases.flatMap { state in
                     (pack.frameURLs(for: state).indices.map { Optional($0) } + [nil])
@@ -519,24 +665,28 @@ enum SnapshotRenderer {
                             gaps.append(gap)
                             if pose.angle == 0 { upright.append(gap) } else { leaning.append(gap) }
                             sheet.append((name, artAlpha, labelAlpha, gap))
+                            fit.add(pose, badge: badge, art: artAlpha, labels: labelAlpha)
                         }
                 }
                 writeContactSheet(sheet, size: layout.panelSize, scale: scale,
-                                  to: directory.appendingPathComponent("near-touch-\(Int(side))-\(Int(scale))x.png"))
-                lines.append("near-touch @\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
+                                  to: directory.appendingPathComponent("\(file)\(Int(side))-\(Int(scale))x.png"))
+                lines.append("\(label)@\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
                              + "upright=\(format(upright.min()))-\(format(upright.max())) leaning=\(format(leaning.min()))-\(format(leaning.max())) "
                              + "(closest \(closest), farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
                              + "lane=\(format(layout.laneHeight))")
+                fits.append(fit.line(skin: model.settings.mascotSkin))
                 empty = 0
             }
         }
-        return lines
+        return lines + fits
     }
 
     /// The incident marker never touches the labels (#37): at 64/128/256 and 1×/2×, the union of
     /// every tier's marker (static and burst frames) against the union of the labels over every
     /// pose with the widest count. Reports the nearest gap and pixels visible in both.
-    private static func incidentMarkerProbe(model: AppModel, directory: URL) async -> [String] {
+    /// `skin` (#116): measurements only, prefixed, for a probe run with another skin selected.
+    static func incidentMarkerProbe(model: AppModel, directory: URL, skin: MascotSkin? = nil) async -> [String] {
+        let label = skin.map { "incident marker \($0.rawValue) " } ?? "incident marker "
         guard let lead = model.serviceIncidents.first else { return ["incident marker: no incident"] }
         let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -579,7 +729,7 @@ enum SnapshotRenderer {
                     }
                 }
                 guard let labels, let marker, labels.contains(where: { $0 > 0 }), marker.contains(where: { $0 > 0 }) else {
-                    lines.append("incident marker @\(Int(side)) \(Int(scale))x: empty render")
+                    lines.append("\(label)@\(Int(side)) \(Int(scale))x: empty render")
                     continue
                 }
                 let (gap, overlap) = nearestGap(marker, labels, size: layout.panelSize, scale: scale)
@@ -596,10 +746,11 @@ enum SnapshotRenderer {
                 // gap: nearest marker-to-label distance in points; the probe searches 16 pt around the
                 // labels, so ">16" means nothing nearer. slot: the clip rect (panel points, origin at the
                 // panel's bottom-left: x, y, width, height).
-                lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(gap.isFinite ? format(gap) : ">16") "
+                lines.append("\(label)@\(Int(side)) \(Int(scale))x: gap=\(gap.isFinite ? format(gap) : ">16") "
                              + "overlapping-pixels=\(overlap) keep-out-pixels=\(keepOutPixels) gutter-pixels=\(gutterPixels) "
                              + "slot=\(IncidentMarker.frame(in: layout).integral)")
             }
+            guard skin == nil else { continue }
             // Native renders for design to compare with docs/design/incidents/previews: the real
             // mascot panel (labels, widest count) over the marker, design's preview columns.
             let tierPoses: [IncidentMarker.Tier: MascotPose] = [
@@ -646,24 +797,31 @@ enum SnapshotRenderer {
         var lines: [String] = []
         let savedReduced = model.settings.reducedMotion
         model.settings.reducedMotion = false
+        // This probe follows potentially slow raster work, with no periodic snapshot polls.
+        model.refresh()
         model.injectEntitlementEvent()
         let first = model.activeClip
         try? await Task.sleep(nanoseconds: 300_000_000)
+        model.refresh()
         model.injectEntitlementEvent()
         let merged = model.activeClip?.startedAt == first?.startedAt && first != nil
         try? await Task.sleep(nanoseconds: 1_900_000_000)
         let ended = model.activeClip == nil
         model.markAllSeen()
         // Snooze mid-gesture stops it at once (no tick wait); lifting snooze replays nothing.
+        model.refresh()
         model.injectEntitlementEvent()
         let playing = model.activeClip != nil
         model.snooze(.oneHour)
         let stoppedAtOnce = playing && model.activeClip == nil
+        // #95: while snooze is hidden, a stored snooze (as from an earlier build) silences nothing.
+        let keptPlaying = playing && model.activeClip != nil
         model.cancelSnooze()
         try? await Task.sleep(nanoseconds: 400_000_000)
         let replayed = model.activeClip != nil
         model.markAllSeen()
         model.settings.reducedMotion = true
+        model.refresh()
         model.injectEntitlementEvent()
         let reducedPlays = model.activeClip != nil
         model.settings.reducedMotion = savedReduced
@@ -674,7 +832,11 @@ enum SnapshotRenderer {
         lines.append("gesture: started=\(first != nil) state=\(first?.state.rawValue ?? "none") "
                      + "duration=\(format(first.map { CGFloat($0.endsAt.timeIntervalSince($0.startedAt)) })) "
                      + "second-event-merged=\(merged) ended=\(ended) reduced-motion-plays=\(reducedPlays)")
-        lines.append("gesture cancel: snooze-stops-at-once=\(stoppedAtOnce) replayed-after-unsnooze=\(replayed)")
+        if model.features.snooze {
+            lines.append("gesture cancel: snooze-stops-at-once=\(stoppedAtOnce) replayed-after-unsnooze=\(replayed)")
+        } else {
+            lines.append("gesture cancel: snooze hidden, stored-snooze-keeps-playing=\(keptPlaying)")
+        }
 
         guard let pack = model.pack, let gesture = pack.attentionGesture else { return lines + ["gesture: no pack gesture"] }
         var queue = EventClipQueue()
@@ -767,14 +929,16 @@ enum SnapshotRenderer {
 
     /// Alpha channel of a view rasterised at `scale` (rows top first), via its layer tree, drawn
     /// by `hosting` inside an offscreen window.
-    private static func alphaBitmap<V: View>(_ view: V, in hosting: NSHostingView<AnyView>, size: CGSize,
+    static func alphaBitmap<V: View>(_ view: V, in hosting: NSHostingView<AnyView>, size: CGSize,
                                              scale: CGFloat) async -> [UInt8]? {
         hosting.rootView = AnyView(view.frame(width: size.width, height: size.height))
         hosting.window?.setContentSize(size)
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.layoutSubtreeIfNeeded()
         hosting.window?.displayIfNeeded()
-        try? await Task.sleep(nanoseconds: 15_000_000)
+        // A yield lets SwiftUI commit; a fixed sleep here cost ~15 ms x thousands of bitmaps (render-check
+        // headroom, #104) and measured identical.
+        await Task.yield()
         guard let layer = hosting.layer else { return nil }
         layer.contentsScale = scale
         let width = Int((size.width * scale).rounded(.up)), height = Int((size.height * scale).rounded(.up))
@@ -797,7 +961,7 @@ enum SnapshotRenderer {
 
     /// Nearest distance (points) between visible pixels of two same-size alpha bitmaps, and the
     /// number of pixels visible in both. Only edge pixels can be nearest, so only they are compared.
-    private static func nearestGap(_ a: [UInt8], _ b: [UInt8], size: CGSize, scale: CGFloat) -> (CGFloat, Int) {
+    static func nearestGap(_ a: [UInt8], _ b: [UInt8], size: CGSize, scale: CGFloat) -> (CGFloat, Int) {
         let width = Int((size.width * scale).rounded(.up)), height = a.count / max(width, 1)
         func edges(_ alpha: [UInt8], in box: (Int, Int, Int, Int)) -> [(Int, Int)] {
             var result: [(Int, Int)] = []
@@ -877,9 +1041,12 @@ enum SnapshotRenderer {
     /// Shows the real mascot panel and hover popover on screen for a moment, measures the actual
     /// windows against the visible art of every frame of the current state, and writes one
     /// combined image (art, popover with its arrow, display edge) for visual review.
-    private static func hoverPlacement(model: AppModel, _ placementCase: HoverCase, directory: URL) async -> String {
+    static func hoverPlacement(model: AppModel, _ placementCase: HoverCase, directory: URL,
+                               skin: MascotSkin? = nil) async -> String {
         let state = model.mascotState
-        let label = "hover \(placementCase.name(state))"
+        let prefix = skin.map { "\($0.rawValue) " } ?? ""
+        let filePrefix = skin.map { "\($0.rawValue)-" } ?? ""
+        let label = "hover \(prefix)\(placementCase.name(state))"
         guard let screenFrame = NSScreen.main?.visibleFrame else { return "\(label): no screen" }
         let savedSize = model.settings.mascotSize
         model.settings.mascotSize = placementCase.side
@@ -907,8 +1074,8 @@ enum SnapshotRenderer {
         MascotWindowController.show(popover, placement: placement, panelFrame: panel.frame, anchor: anchor)
         defer { popover.close(); panel.orderOut(nil); anchor.orderOut(nil) }
         var shown: NSWindow?
-        for _ in 0..<8 where shown == nil {
-            try? await Task.sleep(nanoseconds: 200_000_000)
+        for _ in 0..<32 where shown == nil {
+            try? await Task.sleep(nanoseconds: 50_000_000)
             shown = popover.contentViewController?.view.window.flatMap { $0.isVisible ? $0 : nil }
         }
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -966,7 +1133,7 @@ enum SnapshotRenderer {
             + "window-boundary gap \(format(best))-\(format(worst)) pt over \(poses.count) frames; arrow anchor to static art "
             + "\(format(tipGap)) pt; overlap \(overlaps == 0 ? "none" : "\(overlaps)"); "
             + "tags \(laneClear ? "clear" : "COVERED"); popover from \(source)"
-        await writeHoverComposite(name: "hover-\(placementCase.name(state))", directory: directory, screen: screenFrame,
+        await writeHoverComposite(name: "hover-\(filePrefix)\(placementCase.name(state))", directory: directory, screen: screenFrame,
                                   panel: panel, popoverWindow: popoverWindow, capture: capture, tip: tip, labels: labels,
                                   caption: caption)
         func rect(_ r: CGRect) -> String { "(\(Int(r.minX)),\(Int(r.minY)) \(Int(r.width))x\(Int(r.height)))" }
@@ -1027,7 +1194,7 @@ enum SnapshotRenderer {
         return rects
     }
 
-    private static func format(_ value: CGFloat?) -> String {
+    static func format(_ value: CGFloat?) -> String {
         guard let value, value.isFinite else { return "none" }
         return String(format: "%.1f", value)
     }

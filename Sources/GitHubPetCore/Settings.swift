@@ -5,6 +5,22 @@ public enum DataSourceMode: String, Codable, CaseIterable, Sendable {
     case githubCLI
 }
 
+public enum AssignmentMode: String, Codable, Sendable {
+    case all, direct
+}
+
+public enum MascotSkin: String, Codable, CaseIterable, Sendable {
+    case mona = "mona-pet-v1"
+    case littleChris = "little-chris-v1"
+
+    public var name: String {
+        switch self {
+        case .mona: return "Mona"
+        case .littleChris: return "Little Chris"
+        }
+    }
+}
+
 /// Daily quiet window in local minutes since midnight. Wraps past midnight when
 /// `startMinute > endMinute`; `startMinute == endMinute` means no quiet time.
 public struct QuietHours: Codable, Equatable, Sendable {
@@ -40,6 +56,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public static let mascotSizeRange: ClosedRange<Double> = 64...256
 
     public var mascotVisible = true
+    public var mascotSkin: MascotSkin = .mona
     public var mascotSize: Double = 128
     /// Bottom-left window origin in screen coordinates; nil means the default spot.
     public var mascotOriginX: Double?
@@ -49,19 +66,28 @@ public struct PetSettings: Codable, Equatable, Sendable {
     public var reducedMotion = false
     public var snoozeUntil: Date?
     public var quietHours = QuietHours()
-    public var dataSource: DataSourceMode = .fixtures
+    public var dataSource: DataSourceMode = .githubCLI
+    public var assignmentMode: AssignmentMode = .all
+    /// #8: local only, never committed. Normalized `owner/name` (see EntitlementRepositories).
+    public var entitlementRepositories: [String] = []
+    /// #10: watch GitHub Actions failures in the selected repositories. Opt-in.
+    public var watchWorkflowFailures = false
+    /// #10: watch deployment approvals in the selected repositories. Opt-in.
+    public var watchDeploymentApprovals = false
 
     public init() {}
 
     enum CodingKeys: String, CodingKey {
-        case schemaVersion, mascotVisible, mascotSize, mascotOriginX, mascotOriginY
-        case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource
+        case schemaVersion, mascotVisible, mascotSkin, mascotSize, mascotOriginX, mascotOriginY
+        case privacyMode, reducedMotion, snoozeUntil, quietHours, dataSource, assignmentMode
+        case entitlementRepositories, watchWorkflowFailures, watchDeploymentApprovals
     }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let defaults = PetSettings()
         mascotVisible = (try? c.decodeIfPresent(Bool.self, forKey: .mascotVisible)) ?? defaults.mascotVisible
+        mascotSkin = (try? c.decodeIfPresent(MascotSkin.self, forKey: .mascotSkin)) ?? defaults.mascotSkin
         mascotSize = (try? c.decodeIfPresent(Double.self, forKey: .mascotSize)) ?? defaults.mascotSize
         mascotOriginX = try? c.decodeIfPresent(Double.self, forKey: .mascotOriginX)
         mascotOriginY = try? c.decodeIfPresent(Double.self, forKey: .mascotOriginY)
@@ -70,6 +96,10 @@ public struct PetSettings: Codable, Equatable, Sendable {
         snoozeUntil = try? c.decodeIfPresent(Date.self, forKey: .snoozeUntil)
         quietHours = (try? c.decodeIfPresent(QuietHours.self, forKey: .quietHours)) ?? defaults.quietHours
         dataSource = (try? c.decodeIfPresent(DataSourceMode.self, forKey: .dataSource)) ?? defaults.dataSource
+        assignmentMode = (try? c.decodeIfPresent(AssignmentMode.self, forKey: .assignmentMode)) ?? defaults.assignmentMode
+        entitlementRepositories = (try? c.decodeIfPresent([String].self, forKey: .entitlementRepositories)) ?? []
+        watchWorkflowFailures = (try? c.decodeIfPresent(Bool.self, forKey: .watchWorkflowFailures)) ?? defaults.watchWorkflowFailures
+        watchDeploymentApprovals = (try? c.decodeIfPresent(Bool.self, forKey: .watchDeploymentApprovals)) ?? defaults.watchDeploymentApprovals
         self = sanitized()
     }
 
@@ -77,6 +107,7 @@ public struct PetSettings: Codable, Equatable, Sendable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(Self.schemaVersion, forKey: .schemaVersion)
         try c.encode(mascotVisible, forKey: .mascotVisible)
+        try c.encode(mascotSkin, forKey: .mascotSkin)
         try c.encode(mascotSize, forKey: .mascotSize)
         try c.encodeIfPresent(mascotOriginX, forKey: .mascotOriginX)
         try c.encodeIfPresent(mascotOriginY, forKey: .mascotOriginY)
@@ -85,6 +116,10 @@ public struct PetSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(snoozeUntil, forKey: .snoozeUntil)
         try c.encode(quietHours, forKey: .quietHours)
         try c.encode(dataSource, forKey: .dataSource)
+        try c.encode(assignmentMode, forKey: .assignmentMode)
+        try c.encode(entitlementRepositories, forKey: .entitlementRepositories)
+        try c.encode(watchWorkflowFailures, forKey: .watchWorkflowFailures)
+        try c.encode(watchDeploymentApprovals, forKey: .watchDeploymentApprovals)
     }
 
     /// Clamp out-of-range values (size, non-finite coordinates, quiet-hour minutes).
@@ -102,18 +137,30 @@ public struct PetSettings: Codable, Equatable, Sendable {
         copy.quietHours = QuietHours(enabled: copy.quietHours.enabled,
                                      startMinute: copy.quietHours.startMinute,
                                      endMinute: copy.quietHours.endMinute)
+        copy.entitlementRepositories = EntitlementRepositories.normalized(copy.entitlementRepositories)
         return copy
     }
 
-    public func isSnoozed(at now: Date) -> Bool {
-        guard let snoozeUntil else { return false }
+    /// Effective snooze: never while snooze is hidden (#95), whatever `snoozeUntil` holds.
+    public func isSnoozed(at now: Date, features: FeatureSet = .current) -> Bool {
+        guard features.snooze, let snoozeUntil else { return false }
         return snoozeUntil > now
+    }
+
+    /// Effective quiet hours: never while quiet hours are hidden (#107), whatever is stored.
+    public func quietHoursActive(at now: Date, calendar: Calendar = .current, features: FeatureSet = .current) -> Bool {
+        features.quietHours && quietHours.contains(now, calendar: calendar)
+    }
+
+    /// Effective privacy: off while privacy mode is hidden (#94), whatever `privacyMode` holds.
+    public func effectivePrivacyMode(features: FeatureSet = .current) -> Bool {
+        features.privacyMode && privacyMode
     }
 
     /// Whether the mascot and menu-bar icon may draw attention to new events right now.
     /// The inbox itself always updates regardless.
-    public func alertsAllowed(at now: Date, calendar: Calendar = .current) -> Bool {
-        !isSnoozed(at: now) && !quietHours.contains(now, calendar: calendar)
+    public func alertsAllowed(at now: Date, calendar: Calendar = .current, features: FeatureSet = .current) -> Bool {
+        !isSnoozed(at: now, features: features) && !quietHoursActive(at: now, calendar: calendar, features: features)
     }
 }
 
@@ -122,7 +169,7 @@ public final class SettingsStore {
     public static let key = "GitHubPet.settings.v1"
     private let defaults: UserDefaults
 
-    public init(defaults: UserDefaults = .standard) {
+    public init(defaults: UserDefaults) {
         self.defaults = defaults
     }
 

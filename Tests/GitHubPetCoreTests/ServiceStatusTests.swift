@@ -725,10 +725,19 @@ private final class StubProtocol: URLProtocol {
     override func stopLoading() { stopLock.withLock { stopped = true } }
 }
 
-/// CI runners have been seen stalling the whole test process for 25–40 s, so only the hanging
-/// case relies on a short timeout; everything else gets one far beyond any stall.
-private func stubTransport(timeout: TimeInterval = 120) -> URLSessionStatusTransport {
+/// Generous timeout for cases that test anything but timeouts. CI runners have stalled the whole
+/// test process for minutes (#124: four of these hit the old 60 s request / 120 s resource timers
+/// 235 s into a busy run while the stub's bytes were still crossing the async byte iterator), so
+/// only the timeout cases rely on a short one; a real hang still fails at the suite's time limit.
+private let stallProofTimeout: TimeInterval = 3600
+
+private func stubTransport(timeout: TimeInterval = stallProofTimeout) -> URLSessionStatusTransport {
     URLSessionStatusTransport(timeout: timeout) { $0.protocolClasses = [StubProtocol.self] }
+}
+
+/// A request whose own timeout matches the transport's: `URLRequest(url:)` alone defaults to 60 s.
+private func stubRequest(_ url: URL, timeout: TimeInterval = stallProofTimeout) -> URLRequest {
+    URLRequest(url: url, timeoutInterval: timeout)
 }
 
 private func stubURL(_ name: String) -> URL {
@@ -812,12 +821,12 @@ private func stubURL(_ name: String) -> URL {
     }
 }
 
-@Suite struct URLSessionStatusTransportTests {
+@Suite(.timeLimit(.minutes(10))) struct URLSessionStatusTransportTests {
     @Test func returnsBodyAndSendsNoCookiesOrCredentials() async throws {
         let url = stubURL("ok")
         let body = payload([raw("a1")])
         StubRegistry.shared.set(.respond(200, ["Content-Type": "application/json"], body), for: url)
-        let (data, response) = try await stubTransport().get(URLRequest(url: url), maxBytes: 1 << 20)
+        let (data, response) = try await stubTransport().get(stubRequest(url), maxBytes: 1 << 20)
         #expect(data == body)
         #expect(response.statusCode == 200)
         let sent = try #require(StubRegistry.shared.request(for: url))
@@ -829,7 +838,7 @@ private func stubURL(_ name: String) -> URL {
         let url = stubURL("big")
         StubRegistry.shared.set(.respond(200, ["Content-Type": "application/json"], Data(count: 10_000)), for: url)
         await #expect(throws: StatusFetchError.tooLarge) {
-            _ = try await stubTransport().get(URLRequest(url: url), maxBytes: 4096)
+            _ = try await stubTransport().get(stubRequest(url), maxBytes: 4096)
         }
     }
 
@@ -838,23 +847,23 @@ private func stubURL(_ name: String) -> URL {
         StubRegistry.shared.set(.respond(200, ["Content-Type": "application/json", "Content-Length": "10000"],
                                          Data(count: 10_000)), for: url)
         await #expect(throws: StatusFetchError.tooLarge) {
-            _ = try await stubTransport().get(URLRequest(url: url), maxBytes: 4096)
+            _ = try await stubTransport().get(stubRequest(url), maxBytes: 4096)
         }
     }
 
     @Test func exactlyMaxBytesIsAccepted() async throws {
         let url = stubURL("exact")
         StubRegistry.shared.set(.respond(200, ["Content-Type": "application/json"], Data(count: 4096)), for: url)
-        let (data, _) = try await stubTransport().get(URLRequest(url: url), maxBytes: 4096)
+        let (data, _) = try await stubTransport().get(stubRequest(url), maxBytes: 4096)
         #expect(data.count == 4096)
     }
 
-    // Wall-clock guard: a broken timeout fails the test instead of hanging CI.
+    // Timeout guard: a broken timeout fails the test instead of hanging CI.
     @Test(.timeLimit(.minutes(1))) func hangingServerTimesOut() async {
         let url = stubURL("hang")
         StubRegistry.shared.set(.hang, for: url)
         await #expect {
-            _ = try await stubTransport(timeout: 0.5).get(URLRequest(url: url, timeoutInterval: 0.5), maxBytes: 4096)
+            _ = try await stubTransport(timeout: 0.5).get(stubRequest(url, timeout: 0.5), maxBytes: 4096)
         } throws: { error in
             (error as? URLError)?.code == .timedOut
         }
@@ -864,14 +873,15 @@ private func stubURL(_ name: String) -> URL {
     @Test(.timeLimit(.minutes(1))) func slowDripHitsTheTotalDeadline() async {
         let url = stubURL("drip")
         StubRegistry.shared.set(.drip(0.3), for: url)
-        let started = Date()
+        let clock = ContinuousClock()
+        let started = clock.now
         await #expect {
-            _ = try await stubTransport(timeout: 2).get(URLRequest(url: url, timeoutInterval: 2), maxBytes: 1 << 20)
+            _ = try await stubTransport(timeout: 2).get(stubRequest(url, timeout: 2), maxBytes: 1 << 20)
         } throws: { error in
             (error as? URLError)?.code == .timedOut
         }
         // At least the deadline; the upper bound is the time limit (CI stalls make a tight bound flaky).
-        #expect(Date().timeIntervalSince(started) >= 1.9)
+        #expect(started.duration(to: clock.now) >= .milliseconds(1900))
     }
 
     @Test func redirectsAreNotFollowed() async throws {
@@ -879,7 +889,7 @@ private func stubURL(_ name: String) -> URL {
         let target = stubURL("target")
         StubRegistry.shared.set(.respond(302, ["Location": target.absoluteString], Data()), for: url)
         StubRegistry.shared.set(.respond(200, ["Content-Type": "application/json"], payload([])), for: target)
-        let (_, response) = try await stubTransport().get(URLRequest(url: url), maxBytes: 4096)
+        let (_, response) = try await stubTransport().get(stubRequest(url), maxBytes: 4096)
         #expect(response.statusCode == 302)
         #expect(StubRegistry.shared.request(for: target) == nil)
     }

@@ -6,7 +6,7 @@ import SwiftUI
 /// Transparent, borderless, always-on-top panel holding the mascot. Drag moves it (the
 /// position is persisted), hover shows a privacy-aware summary, click opens the Inbox.
 @MainActor
-final class MascotWindowController {
+final class MascotWindowController: NSObject, NSPopoverDelegate {
     private let model: AppModel
     private var panel: NSPanel?
     private var popover: NSPopover?
@@ -22,6 +22,7 @@ final class MascotWindowController {
 
     init(model: AppModel) {
         self.model = model
+        super.init()
         model.$settings
             .map { ($0.mascotVisible, $0.mascotSize, $0.mascotOriginX, $0.mascotOriginY) }
             .removeDuplicates { $0 == $1 }
@@ -32,6 +33,16 @@ final class MascotWindowController {
         model.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.repositionSummaryIfNeeded() }
+            .store(in: &cancellables)
+        model.$mascotArtwork
+            .map(\.source)
+            .removeDuplicates()
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] source in
+                guard let self, source == self.model.mascotArtwork.source else { return }
+                self.updateAfterArtworkChange()
+            }
             .store(in: &cancellables)
     }
 
@@ -107,8 +118,11 @@ final class MascotWindowController {
             self.update(visible: self.model.settings.mascotVisible, size: self.model.settings.mascotSize, origin: origin)
             if let actual = self.panel?.frame.origin { self.saveOrigin(actual) }
         }
-        container.onHover = { [weak self] inside in
-            if inside { self?.showSummary(from: container) } else { self?.hideSummary() }
+        // Weak: the container owns this closure, so a strong capture kept it (and its hosting
+        // view and the model) alive after the panel went away (#41).
+        container.onHover = { [weak self, weak container] inside in
+            guard let self else { return }
+            if inside, let container { self.showSummary(from: container) } else { self.hideSummary() }
         }
         panel.contentView = container
         return panel
@@ -122,6 +136,20 @@ final class MascotWindowController {
         model.settings = settings
     }
 
+    private func updateAfterArtworkChange() {
+        let settings = model.settings
+        guard settings.mascotVisible, let panel, panel.isVisible, let groundOnScreen else { return }
+        let size = settings.mascotSize
+        let ground = model.layout(size).ground
+        let origin = CGPoint(x: groundOnScreen.x - ground.x, y: groundOnScreen.y - ground.y)
+        update(visible: true, size: size, origin: origin)
+        if let x = settings.mascotOriginX, let y = settings.mascotOriginY,
+           panel.frame.origin != CGPoint(x: x, y: y) {
+            saveOrigin(panel.frame.origin)
+        }
+        repositionSummaryIfNeeded(force: true)
+    }
+
     /// The mascot panel's frame, if it is shown (render-check probe).
     var panelFrame: CGRect? { panel?.isVisible == true ? panel?.frame : nil }
     var panelContentView: NSView? { panel?.contentView }
@@ -132,9 +160,24 @@ final class MascotWindowController {
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
         let (popover, placement) = Self.prepareHover(model: model, panelFrame: window.frame, screen: screen)
         Self.reportIfUnclear(placement)
+        popover.delegate = self
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
         summaryInputs = inputs(popover: popover, panelFrame: window.frame)
+    }
+
+    /// macOS can dismiss the semitransient summary itself (a click elsewhere, Esc, a Space
+    /// change). Forget it then, or the next model change re-aimed and re-showed it while the
+    /// pointer was elsewhere (#41). Only the current popover counts: a replaced one's late
+    /// close must not clear its successor.
+    nonisolated func popoverDidClose(_ notification: Notification) {
+        let closed = notification.object as AnyObject?
+        MainActor.assumeIsolated {
+            guard let popover, closed === popover else { return }
+            self.popover = nil
+            summaryInputs = nil
+            hoverAnchor.orderOut(nil)
+        }
     }
 
     private func inputs(popover: NSPopover, panelFrame: CGRect) -> HoverPlacementInputs {
@@ -153,6 +196,9 @@ final class MascotWindowController {
         showSummary(from: view)
     }
     var summaryWindowFrame: CGRect? { popover?.contentViewController?.view.window?.frame }
+    /// Lifetime and dismissal probes (tests).
+    var panelWindow: NSPanel? { panel }
+    var summaryPopover: NSPopover? { popover }
 
     /// The hover summary popover, sized to its content before it is shown. Without that, the
     /// hosting controller's provisional size placed the popover ~237 pt above the mascot (#27).
@@ -253,11 +299,11 @@ final class MascotWindowController {
     }
 
     /// Each state's frames have their own outline: re-aim the open summary when the mood changes.
-    private func repositionSummaryIfNeeded() {
+    private func repositionSummaryIfNeeded(force: Bool = false) {
         // Re-place when the content's size, the panel, the mood or a gesture changed (e.g. Loading
         // replaced by results), re-choosing full or compact; never per animation frame.
         guard let popover, let placed = summaryInputs, let window = panel,
-              placed.needsReplacement(for: inputs(popover: popover, panelFrame: window.frame)) else { return }
+              force || placed.needsReplacement(for: inputs(popover: popover, panelFrame: window.frame)) else { return }
         let screen = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame ?? window.frame
         let placement = Self.placeHover(popover, model: model, panelFrame: window.frame, screen: screen)
         Self.reportIfUnclear(placement)

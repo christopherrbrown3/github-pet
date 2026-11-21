@@ -16,12 +16,17 @@ struct MascotView: View {
     var drawsLabels = true
     /// Incident marker (#37); by default only in full renders, not in single-layer probes.
     var drawsMarker: Bool?
+    /// QA runner only: draw one still at this app-clock instant instead of the live timeline,
+    /// so the rendered phase matches the recorded scenario clock. Production leaves it nil.
+    var renderDate: Date?
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
         let layout = model.layout(model.settings.mascotSize)
         Group {
-            if reduced {
+            if let renderDate {
+                scene(at: renderDate, reduced: reduced, layout: layout)
+            } else if reduced {
                 scene(at: model.clock(), reduced: true, layout: layout)
             } else {
                 // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
@@ -82,7 +87,7 @@ struct MascotView: View {
             .joined(separator: ". ")
     }
 
-    private func pose(at date: Date, reduced: Bool) -> MascotPose {
+    func pose(at date: Date, reduced: Bool) -> MascotPose {
         MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
                             idleEpoch: .distantPast, gesture: model.pack?.attentionGesture) { state in
             model.pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
@@ -241,7 +246,7 @@ struct PackFigure: View {
     }
 }
 
-/// Decoded frames for the single loaded pack (12 images, about 3 MB), decoded from the bytes
+/// Decoded frames keyed by pack directory and frame path, decoded from the bytes
 /// validated at load: no disk I/O at all after validation, and none per tick.
 @MainActor
 final class PackImageCache {

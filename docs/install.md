@@ -1,12 +1,15 @@
-# Installing GitHub Pet (development builds)
+# Installing GitHub Pet
 
 GitHub Pet is a free project without a paid Apple Developer account. Its builds are **ad-hoc
 signed and not notarized**, so macOS asks you to approve the app once before its first launch.
 This page shows how to do that with macOS's own settings. You never need to remove quarantine
 attributes or turn off Gatekeeper, and you shouldn't.
 
-There is no tagged release or Homebrew cask yet ([#15](https://github.com/christopherrbrown3/github-pet/issues/15)).
-Every build of `main` produces a downloadable ZIP as a GitHub Actions artifact.
+Find the newest beta on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases).
+A Homebrew cask is written and ready in this repository
+([#15](https://github.com/christopherrbrown3/github-pet/issues/15)), but it is **not installable yet**: it needs
+the project's tap (`christopherrbrown3/homebrew-tap`), which hasn't been created. See [Homebrew](#homebrew-planned).
+Until then, use the manual steps below.
 
 ## Requirements
 
@@ -14,30 +17,55 @@ Every build of `main` produces a downloadable ZIP as a GitHub Actions artifact.
 - Apple Silicon or Intel: the app is a universal binary (arm64 + x86_64). The Intel half is built
   in CI and smoke-tested under Rosetta when the runner has it; it hasn't been tried on Intel hardware.
 - For live GitHub data: the [GitHub CLI](https://cli.github.com) (`brew install gh`), signed in
-  with `gh auth login`. Without it, GitHub Pet runs on invented Demo data.
+  with `gh auth login`. Without it, a new install shows `gh` setup guidance and an honest "unavailable" state, not an empty inbox. Demo data is an explicit choice in Settings.
+
+## Homebrew (planned)
+
+Once the tap exists, the install will be:
+
+```sh
+brew install --cask christopherrbrown3/tap/github-pet
+```
+
+**This does not work today.** The cask source is [packaging/homebrew/Casks/github-pet.rb](../packaging/homebrew/Casks/github-pet.rb);
+it points at the GitHub Release ZIP and its SHA-256, and has been style-checked with `brew style`.
+It has not been installed or tried through a real tap. What to expect when it is live:
+
+- Homebrew verifies the ZIP's checksum, but the app is still ad-hoc signed and not notarized, so the first
+  launch needs **Open Anyway** exactly as in [step 4](#4-first-launch-approve-the-app-once). The cask doesn't
+  remove quarantine, and Homebrew's caveats say so.
+- The cask doesn't install the GitHub CLI. Install and sign in to `gh` yourself (`brew install gh`,
+  `gh auth login`); it's only needed for live data, and without it the app says so.
+- The app updates itself with Sparkle, so `brew upgrade` leaves it alone unless you pass `--greedy`.
+- `brew uninstall --cask --zap github-pet` will also remove the app's own preferences and caches
+  (`dev.github-pet.GitHubPet`).
+
+Maintainers refresh the cask for a release with `scripts/update-cask.sh <tag> <zip>` and copy it into the tap.
 
 ## 1. Download
 
-The ZIP is attached to each successful **push** run of the **Swift** workflow on `main` as the artifact
-**GitHubPet-app** (kept for 90 days). Downloading artifacts requires a GitHub account.
-
-In a browser: open the repository's **Actions** tab, choose the **Swift** workflow, open the latest
-successful **push** run on this repository's `main` (not a pull request), and download
-**GitHubPet-app** under **Artifacts**. GitHub delivers it
-as a ZIP that contains:
+Open the [Releases page](https://github.com/christopherrbrown3/github-pet/releases) and, under the newest
+release, download both assets into the same folder (no GitHub account needed):
 
 - `GitHubPet-<version>-<commit>-universal.zip`: the app.
 - `GitHubPet-<version>-<commit>-universal.zip.sha256`: its checksum.
 
+Beta builds are marked **Pre-release**. GitHub's "latest release" link skips pre-releases, so use the
+Releases page itself (or the command below) rather than `/releases/latest`.
+
 With the GitHub CLI:
 
 ```sh
-run=$(gh run list --repo christopherrbrown3/github-pet --workflow Swift --branch main \
-  --event push --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-test -n "$run" && test "$run" != null || { echo "No successful main push build is available yet" >&2; exit 1; }
-gh run download "$run" --repo christopherrbrown3/github-pet --name GitHubPet-app --dir GitHubPet-download
+tag=$(gh release list --repo christopherrbrown3/github-pet --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName')
+test -n "$tag" && test "$tag" != null || { echo "No release is available yet" >&2; exit 1; }
+gh release download "$tag" --repo christopherrbrown3/github-pet \
+  --pattern 'GitHubPet-*-universal.zip' --pattern 'GitHubPet-*-universal.zip.sha256' --dir GitHubPet-download
 cd GitHubPet-download
 ```
+
+Developers who want an unreleased build of `main` can still take the **GitHubPet-app** artifact of a
+successful `main` push run of the **Swift** workflow in GitHub Actions (needs a GitHub account); see the
+[development guide](development.md).
 
 ## 2. Check the download
 
@@ -71,16 +99,86 @@ and confirm. You approve each downloaded version once. Apple's guidance:
 
 - GitHub Pet is a **menu-bar app**: it has no Dock icon. Look for its icon in the menu bar; the
   mascot appears near the bottom-right of the screen. Quit it from the inbox's power button.
-- It starts with **Demo data**: invented items, clearly labelled DEMO. To see your own review
-  requests and assigned issues, install and sign in to `gh`, then choose **GitHub CLI (gh)** under
-  **Settings → Data source**. GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
-- Privacy mode is on by default: names and titles stay hidden until you choose **Show details**.
+- A fresh install (or settings with no saved source) starts on the **GitHub CLI (gh)** source and syncs your own review requests and
+  assigned issues. If `gh` is not installed or signed in, the inbox says so and links to setup
+  (`brew install gh`, `gh auth login`); it never shows an empty inbox or quietly switches to Demo data.
+  GitHub Pet uses `gh`'s sign-in; it never asks for or stores a token.
+- **Demo data** (invented items, clearly labelled DEMO) is an explicit choice. If you already have
+  saved settings from an earlier beta and never changed the source, you stay on Demo until you
+  switch. To change source either way, open **Settings → GitHub → Source** and choose **GitHub CLI
+  (gh)** for your own data or **Fixtures (offline)** for Demo.
+- Repository names and titles are shown in the Inbox and hover.
+- [Using the Inbox](inbox.md) explains the review filter, how to dismiss an item, and how to restore it.
 
-## Updating and removing
+## Keyboard and VoiceOver access
 
-To update, download a newer build and replace the app in Applications (approve it once more).
-To remove it, quit GitHub Pet and delete **GitHubPet.app**. Its settings live in the
-`dev.github-pet.GitHubPet` preferences domain (`defaults delete dev.github-pet.GitHubPet`).
+The **menu-bar icon** and **Settings** are the intended keyboard route. They use standard macOS
+controls, but keyboard behaviour has **not been verified on a real Mac** yet, so treat the
+following as what to expect, not a guarantee:
+
+- **Reaching the menu-bar icon is a separate step.** GitHub Pet has no Dock icon or app menu of
+  its own, so you reach its icon the way you reach any menu-bar item, for example with the
+  system's "Move focus to status menus" shortcut (System Settings → Keyboard → Keyboard
+  Shortcuts → Keyboard), if it is enabled on your Mac.
+- **Tab only reaches buttons when Keyboard Navigation is on** (System Settings → Keyboard →
+  Keyboard navigation). With it off, Tab moves only between text fields and lists.
+- **Activation keys depend on the control.** Space usually presses the focused button; Return
+  triggers the default button of a window or sheet, which is not always the focused one.
+
+The floating mascot is a mouse and VoiceOver target only: it is not focusable from the keyboard,
+but everything it opens (the inbox) is reachable from the menu-bar icon. With VoiceOver the
+mascot reads as one button and pressing it opens the inbox. This has been checked from static
+accessibility output only; a live VoiceOver pass has not been done yet.
+
+## Updating
+
+The first install always needs **Open Anyway** (above): the app is ad-hoc signed and not notarized. After
+that, GitHub Pet updates itself with [Sparkle](https://sparkle-project.org).
+
+- **Check for Updates…** is in the menu-bar menu and in Settings › GitHub › Software updates. Sparkle asks whether to check
+  automatically (at most every 24 hours), asks before installing, and shows release notes.
+- Updates are verified with GitHub Pet's update signing key, not by Apple notarization, and Sparkle clears
+  quarantine on the updates it installs. "Install updates automatically, without asking" is off unless you turn
+  it on.
+- Stable is the default. Turn on **Include beta releases** to receive betas; a beta build always follows betas.
+- No sign-in, `gh` or token is used, and nothing is sent about your Mac.
+- Builds before this feature (beta 1-3) have no updater: replace them once by downloading a newer ZIP from the
+  Releases page and moving the app into Applications.
+- Open at login isn't available on these ad-hoc builds (see [Open at login](#open-at-login)), so an update has no login item to re-approve.
+
+Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on where the app is,
+so an update keeps them (QA verified this for the update path in #99). How updates are signed and released: [updates.md](updates.md).
+
+## Open at login
+
+Settings → Mascot → Startup shows what macOS reports for **Open at login**. GitHub Pet's builds are ad-hoc
+signed, and in our tests (macOS 27, in `/Applications` and elsewhere) macOS reports ad-hoc builds as unknown
+to its login-item service. Settings then says **Unavailable**, shows the switch as off and disabled, and never
+tries to register anything. The location made no difference, so moving the app to Applications doesn't help; the
+signature is the leading suspect, but that is not proven.
+
+To start GitHub Pet at login anyway, add it yourself: choose **Open Login Items Settings** in that row (or open
+System Settings → General → Login Items), click **+** and pick GitHub Pet. That is macOS's own list; GitHub Pet
+doesn't change it. Whether such an entry survives updates (each build's ad-hoc signature differs) has not been
+tested. A build signed with a developer certificate (#89, after the beta) is expected to make the switch work;
+that is unverified until such a build exists.
+
+## Uninstalling
+
+1. Quit GitHub Pet from the inbox's power button.
+2. If you added GitHub Pet yourself under **System Settings → General → Login Items**, remove it
+   there. In our tests these builds couldn't register themselves as a login item (see
+   [Open at login](#open-at-login)), so an entry should exist only if you added one.
+3. Delete **GitHubPet.app** from Applications (move it to the Bin).
+4. Optional: remove its saved settings. This command is for you to run in Terminal; nothing in the
+   app or the ZIP runs it for you:
+
+   ```sh
+   defaults delete dev.github-pet.GitHubPet
+   ```
+
+Uninstalling does not touch the GitHub CLI or its sign-in. The planned Homebrew cask isn't available yet
+(see [Homebrew](#homebrew-planned)), so there is no `brew uninstall` path today.
 
 ## Building it yourself
 

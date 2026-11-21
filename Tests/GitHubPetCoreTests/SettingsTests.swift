@@ -2,6 +2,29 @@ import Foundation
 import Testing
 @testable import GitHubPetCore
 
+@Test func mascotSkinDefaultsToMonaAndPersistsLittleChris() throws {
+    let decoder = JSONDecoder()
+    for payload in [#"{"mascotSize":144}"#, #"{"mascotSkin":"unknown","mascotSize":144}"#,
+                    #"{"mascotSkin":false,"mascotSize":144}"#] {
+        let settings = try decoder.decode(PetSettings.self, from: Data(payload.utf8))
+        #expect(settings.mascotSkin == .mona && settings.mascotSize == 144)
+    }
+    var settings = PetSettings()
+    settings.mascotSkin = .littleChris
+    #expect(try decoder.decode(PetSettings.self, from: JSONEncoder().encode(settings)).mascotSkin == .littleChris)
+}
+
+@Test func assignmentModeDefaultsToAllAndPersistsDirect() throws {
+    let decoder = JSONDecoder()
+    for payload in ["{}", #"{"assignmentMode":"unknown"}"#, #"{"assignmentMode":true}"#] {
+        #expect(try decoder.decode(PetSettings.self, from: Data(payload.utf8)).assignmentMode == .all)
+    }
+    var settings = PetSettings()
+    settings.assignmentMode = .direct
+    let bytes = try JSONEncoder().encode(settings)
+    #expect(try decoder.decode(PetSettings.self, from: bytes).assignmentMode == .direct)
+}
+
 private func utcCalendar() -> Calendar {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "UTC")!
@@ -76,11 +99,11 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         var settings = PetSettings()
         let now = utc(10, 0)
         settings.snoozeUntil = SnoozeOption.oneHour.until(from: now)
-        #expect(settings.isSnoozed(at: now))
-        #expect(!settings.alertsAllowed(at: now, calendar: utcCalendar()))
-        #expect(settings.isSnoozed(at: utc(10, 59)))
-        #expect(!settings.isSnoozed(at: utc(11, 0)))
-        #expect(settings.alertsAllowed(at: utc(11, 0), calendar: utcCalendar()))
+        #expect(settings.isSnoozed(at: now, features: .allOn))
+        #expect(!settings.alertsAllowed(at: now, calendar: utcCalendar(), features: .allOn))
+        #expect(settings.isSnoozed(at: utc(10, 59), features: .allOn))
+        #expect(!settings.isSnoozed(at: utc(11, 0), features: .allOn))
+        #expect(settings.alertsAllowed(at: utc(11, 0), calendar: utcCalendar(), features: .allOn))
     }
 
     @Test func untilTomorrowMorning() {
@@ -91,17 +114,15 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
     @Test func quietHoursAlsoBlockAlerts() {
         var settings = PetSettings()
         settings.quietHours = QuietHours(enabled: true, startMinute: 22 * 60, endMinute: 7 * 60)
-        #expect(!settings.alertsAllowed(at: utc(23, 0), calendar: utcCalendar()))
-        #expect(settings.alertsAllowed(at: utc(12, 0), calendar: utcCalendar()))
+        #expect(!settings.alertsAllowed(at: utc(23, 0), calendar: utcCalendar(), features: .allOn))
+        #expect(settings.alertsAllowed(at: utc(12, 0), calendar: utcCalendar(), features: .allOn))
     }
 }
 
 @Suite struct SettingsPersistenceTests {
     private func freshDefaults() -> UserDefaults {
         let name = "GitHubPetTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
+        return EphemeralDefaults(name: name)
     }
 
     @Test func defaultsWhenNothingStored() {
@@ -110,7 +131,24 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         #expect(settings.mascotVisible)
         #expect(!settings.reducedMotion)
         #expect(settings.privacyMode, "privacy is on until the user opts out")
-        #expect(settings.dataSource == .fixtures)
+        #expect(settings.dataSource == .githubCLI, "a fresh install reads the user's own gh data (#96)")
+    }
+
+    @Test func missingDataSourceKeyDecodesAsGitHubCLI() throws {
+        let missing = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"schemaVersion":2,"mascotSize":96}"#.utf8))
+        #expect(missing.dataSource == .githubCLI)
+    }
+
+    @Test func storedDataSourceChoicesAreRespected() throws {
+        for mode in DataSourceMode.allCases {
+            let defaults = freshDefaults()
+            var settings = PetSettings()
+            settings.dataSource = mode
+            SettingsStore(defaults: defaults).save(settings)
+            #expect(SettingsStore(defaults: defaults).load().dataSource == mode)
+        }
+        let stored = try JSONDecoder().decode(PetSettings.self, from: Data(#"{"schemaVersion":1,"dataSource":"fixtures"}"#.utf8))
+        #expect(stored.dataSource == .fixtures, "beta users who saved Demo stay on Demo")
     }
 
     @Test func privacyDefaultsOnButAnExplicitChoiceIsKept() throws {
@@ -147,7 +185,7 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         let settings = try JSONDecoder().decode(PetSettings.self, from: Data(json.utf8))
         #expect(settings.privacyMode)
         #expect(settings.mascotSize == PetSettings().mascotSize)
-        #expect(settings.dataSource == .fixtures)
+        #expect(settings.dataSource == PetSettings().dataSource, "an unknown value falls back to the default")
     }
 
     @Test func outOfRangeValuesAreClamped() throws {

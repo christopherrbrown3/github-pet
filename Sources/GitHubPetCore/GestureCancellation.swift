@@ -6,8 +6,9 @@ import Foundation
 /// anything, so lifting snooze or quiet hours replays nothing.
 public enum GestureCancellation {
     public static func shouldCancel(from old: PetSettings, to new: PetSettings, at now: Date,
-                                    calendar: Calendar = .current) -> Bool {
-        let newlyQuiet = old.alertsAllowed(at: now, calendar: calendar) && !new.alertsAllowed(at: now, calendar: calendar)
+                                    calendar: Calendar = .current, features: FeatureSet = .current) -> Bool {
+        let newlyQuiet = old.alertsAllowed(at: now, calendar: calendar, features: features)
+            && !new.alertsAllowed(at: now, calendar: calendar, features: features)
         return newlyQuiet || (new.reducedMotion && !old.reducedMotion)
     }
 }

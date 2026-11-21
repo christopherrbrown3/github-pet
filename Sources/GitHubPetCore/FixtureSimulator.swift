@@ -3,6 +3,7 @@ import Foundation
 /// Offline data source for development and QA. Produces deterministic fixture snapshots
 /// and lets the user inject events and simulate disconnects, partial data and recovery.
 public final class FixtureSimulator {
+    private static let teamReviewID = "reviewRequest:example/pet-tools#7"
     public private(set) var baseItems: [InboxItem]
     public private(set) var injected: [InboxItem] = []
     public private(set) var connected = true
@@ -18,13 +19,14 @@ public final class FixtureSimulator {
     }
 
     /// The next poll result. Partial polls drop the assigned-issue fixtures.
-    public func poll() -> FetchOutcome {
+    public func poll(assignmentMode: AssignmentMode = .all) -> FetchOutcome {
         guard connected else { return .failure(.failed("simulated disconnect")) }
         let all = baseItems + injected
+        let matching = assignmentMode == .direct ? all.filter { $0.id != Self.teamReviewID } : all
         if partialPolls {
-            return .snapshot(items: all.filter { $0.kind != .assignedIssue }, complete: false)
+            return .snapshot(items: matching.filter { $0.kind != .assignedIssue }, complete: false)
         }
-        return .snapshot(items: all, complete: true)
+        return .snapshot(items: matching, complete: true)
     }
 
     /// Add one entitlement item with a never-before-used stable ID.
@@ -53,6 +55,12 @@ public final class FixtureSimulator {
         return item
     }
 
+    /// Replace every fixture row, injected ones included (render hooks: an exact set of rows).
+    public func replaceItems(_ items: [InboxItem]) {
+        baseItems = items
+        injected = []
+    }
+
     public func disconnect() { connected = false }
     public func reconnect() { connected = true }
 
@@ -66,7 +74,7 @@ public final class FixtureSimulator {
         return [
             item(.reviewRequest, "example/pet-demo", 42, "Add hover summary to mascot", 1),
             item(.reviewRequest, "example/pet-tools", 7, "Tighten link validation", 5),
-            item(.assignedIssue, "example/pet-demo", 18, "Quiet hours should wrap midnight", 26),
+            item(.assignedIssue, "example/pet-demo", 18, "Mascot position resets after a display change", 26),
         ]
     }
 }

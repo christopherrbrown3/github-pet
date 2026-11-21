@@ -61,6 +61,34 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
 }
 
 @Suite struct InboxEngineTests {
+    @Test func reviewReseedAllowsFreshAuthoredAttentionButADegradedReplacementCannotCertifyIt() {
+        let allReview = item("review:team")
+        let directReview = item("review:personal")
+        var authored = item("authored:1", .authoredPullRequest)
+        authored.attentionKeys = ["authored:1#changes"]
+        var changed = authored
+        changed.attentionKeys.append("authored:1#checks")
+
+        for degradation in [nil, FetchOutcome.snapshot(items: [authored, directReview], complete: false),
+                            .failure(.failed("unavailable"))] {
+            let engine = InboxEngine()
+            engine.apply(.snapshot(items: [allReview, authored], complete: true, hidden: 3), now: t0)
+            engine.beginReviewReachChange()
+            #expect(engine.items == [authored] && engine.hiddenCount == 0 && engine.reviewReachPending)
+            if let degradation {
+                #expect(engine.apply(degradation, now: t0 + 1).isEmpty)
+                #expect(engine.reviewReachPending)
+            }
+            let first = engine.apply(.snapshot(items: [changed, directReview], complete: true), now: t0 + 2)
+            #expect(first.map(\.item) == (degradation == nil ? [changed] : []))
+            #expect(!engine.reviewReachPending)
+            #expect(engine.apply(.snapshot(items: [changed, directReview], complete: true), now: t0 + 3).isEmpty)
+            let newReview = item("review:new")
+            #expect(engine.apply(.snapshot(items: [changed, directReview, newReview], complete: true), now: t0 + 4)
+                .map(\.item) == [newReview])
+        }
+    }
+
     @Test func firstSnapshotEstablishesBaselineWithoutEvents() {
         let engine = InboxEngine()
         let events = engine.apply(.snapshot(items: [item("a"), item("b")], complete: true), now: t0)
@@ -117,6 +145,28 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         #expect(engine.state == .stale)
         #expect(engine.apply(.snapshot(items: [item("a"), item("b")], complete: true), now: t0 + 700).isEmpty)
         #expect(engine.state == .ready)
+    }
+
+    @Test func refreshBeforeFixtureInjectionAfterLongRenderAnnouncesOnlyTheNewItem() {
+        // #44: advance domain time past staleAfter (including the reported 17.7 minute delay),
+        // without sleeping or changing the system clock. Snapshot rendering must re-poll the
+        // unchanged fixtures before it injects; production stale recovery must still be silent.
+        let gaps: [TimeInterval] = [InboxEngine.defaultStaleAfter + 1, 17 * 60 + 42]
+        for gap in gaps {
+            let fixtures = FixtureSimulator(makeID: { "after-render" })
+            let refreshed = InboxEngine(), unrefreshed = InboxEngine()
+            for engine in [refreshed, unrefreshed] {
+                #expect(engine.apply(fixtures.poll(), now: t0).isEmpty)
+            }
+            let resumed = t0 + gap
+            #expect(refreshed.apply(fixtures.poll(), now: resumed).isEmpty, "recovery announces nothing")
+            #expect(refreshed.state == .ready)
+            let injected = fixtures.injectEntitlementEvent(now: resumed)
+            #expect(unrefreshed.apply(fixtures.poll(), now: resumed).isEmpty,
+                    "without the unchanged refresh, this would still be silent stale recovery")
+            #expect(refreshed.apply(fixtures.poll(), now: resumed).map(\.item.id) == [injected.id])
+            #expect(refreshed.apply(fixtures.poll(), now: resumed + 1).isEmpty, "unchanged poll never replays")
+        }
     }
 
     @Test func partialSnapshotsNeverProduceEventsAndAreNotEmpty() {
@@ -266,7 +316,7 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         engine.apply(simulator.poll(), now: t0)
         simulator.partialPolls = true
         for poll in 1...3 {
-            guard case .snapshot(let items, false) = simulator.poll() else {
+            guard case .snapshot(let items, false, _) = simulator.poll() else {
                 Issue.record("expected partial snapshot")
                 return
             }
@@ -417,5 +467,60 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest, minutesAgo: D
         var unseen = marked("a", "b")
         unseen.reconcile(after: .snapshot(items: [item("a")], complete: true), items: [item("a")])
         #expect(unseen.ids == ["a"])
+    }
+}
+
+/// #35: matches GitHub counts but the viewer can't see are informational, never all clear.
+@Suite struct HiddenResultsTests {
+    private let now = Date(timeIntervalSince1970: 10_000)
+
+    @Test func zeroVisibleWithHiddenMatchesIsNeverAllClear() {
+        let engine = InboxEngine()
+        engine.apply(.snapshot(items: [], complete: true, hidden: 3), now: now)
+        #expect(engine.state == .hiddenOnly(3) && engine.state != .empty && engine.hiddenCount == 3)
+        #expect(engine.state.countIsKnown && engine.state.hasUsableItems)
+        #expect(engine.state.statusText == "No visible items · 3 matches hidden from your account")
+        #expect(MascotPolicy.badge(dataState: engine.state, count: 0) == "0", "not the verified-empty no-badge state")
+        #expect(MascotPolicy.countDescription(dataState: engine.state, count: 0) == "no visible items, 3 matches hidden from your account")
+        #expect(MascotPolicy.state(dataState: engine.state, items: [], unseenCount: 0, alertsAllowed: true) == .idle)
+        let summary = PrivacyText.summary(dataState: engine.state, items: [], unseenCount: 0, privacy: true)
+        let compact = PrivacyText.compactSummary(dataState: engine.state, items: [], unseenCount: 0)
+        for line in summary + compact { #expect(!line.localizedCaseInsensitiveContains("all clear")) }
+        #expect(summary.contains("No visible items · 3 matches hidden from your account"))
+        #expect(DataState.hiddenOnly(1).statusText == "No visible items · 1 match hidden from your account")
+    }
+
+    @Test func rowsWithHiddenMatchesStayReadyWithoutPartialBadgeOrMoodChange() {
+        let rows = [item("a")]
+        let plain = InboxEngine(), hidden = InboxEngine()
+        plain.apply(.snapshot(items: rows, complete: true), now: now)
+        hidden.apply(.snapshot(items: rows, complete: true, hidden: 2), now: now)
+        #expect(hidden.state == .ready && hidden.hiddenCount == 2 && plain.hiddenCount == 0)
+        #expect(MascotPolicy.badge(dataState: hidden.state, count: 1) == MascotPolicy.badge(dataState: plain.state, count: 1))
+        #expect(MascotPolicy.state(dataState: hidden.state, items: rows, unseenCount: 0, alertsAllowed: true)
+                == MascotPolicy.state(dataState: plain.state, items: rows, unseenCount: 0, alertsAllowed: true))
+        #expect(HiddenResults.notVisible(2) == "2 matching items aren't visible to your account")
+        #expect(HiddenResults.notVisible(1) == "1 matching item isn't visible to your account")
+    }
+
+    @Test func hiddenCountClearsOnPartialFailureAndResetAndBaselineStaysSilent() {
+        let engine = InboxEngine()
+        engine.apply(.snapshot(items: [], complete: true, hidden: 4), now: now)
+        // A complete hidden-only snapshot is a valid baseline: the next new visible row alerts once.
+        let events = engine.apply(.snapshot(items: [item("new")], complete: true, hidden: 3), now: now + 1)
+        #expect(events.map(\.item.id) == ["new"] && engine.state == .ready && engine.hiddenCount == 3)
+        #expect(engine.apply(.snapshot(items: [item("new")], complete: true, hidden: 3), now: now + 2).isEmpty, "no replay")
+        // An incomplete snapshot never carries a hidden count, even if one was supplied.
+        engine.apply(.snapshot(items: [item("new")], complete: false, hidden: 9), now: now + 3)
+        #expect(engine.state == .partial && engine.hiddenCount == 0)
+        engine.apply(.snapshot(items: [], complete: true, hidden: 2), now: now + 4)
+        engine.apply(.failure(.failed("x")), now: now + 5)
+        #expect(engine.hiddenCount == 0 && engine.state == .error("x"))
+        engine.apply(.snapshot(items: [], complete: true, hidden: 2), now: now + 6)
+        engine.reset()
+        #expect(engine.hiddenCount == 0 && engine.state == .loading)
+        // Zero visible and zero hidden is still the verified empty state.
+        engine.apply(.snapshot(items: [], complete: true), now: now + 7)
+        #expect(engine.state == .empty)
     }
 }

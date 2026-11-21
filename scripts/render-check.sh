@@ -11,31 +11,55 @@ binary=${1:-.build/app/GitHubPet.app/Contents/MacOS/GitHubPet}
 out=${2:-.build/render-check}
 rm -rf "$out"
 
-# Snapshot mode must ignore saved settings and leave them alone. Seed a test preferences suite
-# with a live source and privacy off, point the app at it with --defaults-suite and --gh, then
-# check the render used Demo fixtures with default privacy and the suite is unchanged. (The app's
-# real preferences domain is never touched: a running copy of the app may be writing to it.)
-suite=dev.github-pet.render-check.$$
+# Snapshot mode must ignore saved settings and leave them alone. Seed a preferences file with a
+# live source and privacy off, point the app at it with --defaults-suite and --gh, then check the
+# render used Demo fixtures with default privacy and the file is unchanged. The seed lives in a
+# temp directory as an absolute-path domain: a named `defaults write` suite left an empty
+# ~/Library/Preferences/dev.github-pet.render-check.<pid>.plist behind even after `defaults
+# delete` (cfprefsd rewrites it), and the app's real preferences domain is never touched.
 scratch=$(mktemp -d)
-trap 'defaults delete "$suite" >/dev/null 2>&1 || true' EXIT
-seed=$(printf '%s' '{"schemaVersion":1,"dataSource":"githubCLI","privacyMode":false}' | xxd -p | tr -d '\n')
-defaults write "$suite" GitHubPet.settings.v1 -data "$seed"
-# Key-sorted dump: the exported plist's byte order is not stable.
-prefs() { defaults export "$suite" "$scratch/$1.plist" && plutil -p "$scratch/$1.plist"; }
+trap 'rm -rf "$scratch"' EXIT
+suite=$scratch/seeded-preferences
+seed=$(printf '%s' '{"schemaVersion":1,"dataSource":"githubCLI","privacyMode":false}' | base64)
+# Written directly: plutil -insert would read the dotted key as a key path.
+cat > "$suite.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict><key>GitHubPet.settings.v1</key><data>$seed</data></dict></plist>
+PLIST
+plutil -lint -s "$suite.plist"
+# Exact bytes plus a readable dump, so any rewrite (even an identical-looking one) is caught.
+prefs() { shasum -a 256 "$suite.plist" && plutil -p "$suite.plist"; }
 before=$(prefs before)
 
+# An executable gh trap proves snapshot CLI selection cannot launch even an installed CLI.
+cat > "$scratch/gh" <<'SH'
+#!/bin/sh
+printf 'unexpected gh invocation\n' >> "$GITHUB_PET_SNAPSHOT_GH_TRAP"
+exit 99
+SH
+chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
-GITHUB_PET_GH_PATH=/nonexistent/gh "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
+GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-for _ in {1..240}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
+limit=300
+started=$SECONDS
+for _ in {1..$limit}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
 wait $pid || true
+# Headroom evidence (#104): CI logs how much of the wait the render used.
+echo "info render finished in $((SECONDS - started)) s of the ${limit} s limit"
 after=$(prefs after)
 
 report=$out/report.txt
 [[ -f $report ]] || { echo "render-check: no report at $report" >&2; exit 1; }
 
 failures=0
+if [[ ! -e $scratch/gh-called ]]; then echo "ok   snapshot CLI never launched gh"
+else echo "FAIL snapshot CLI launched gh"; failures=$((failures + 1)); fi
+if grep -qE '^FAIL ' "$report"; then
+  echo "FAIL snapshot render reported a failure:"; grep -E '^FAIL ' "$report"; failures=$((failures + 1))
+else echo "ok   snapshot render reported no layout failures"; fi
 check() {
   if grep -qE -- "$2" "$report"; then echo "ok   $1"; else echo "FAIL $1 (expected /$2/)"; failures=$((failures + 1)); fi
 }
@@ -60,8 +84,25 @@ else echo "FAIL snapshot run changed saved preferences"; failures=$((failures + 
 settings_height=$(grep -E '^settings: ' "$report" | sed -E 's/.*x([0-9]+) pt/\1/')
 if (( ${settings_height:-0} >= 660 )); then echo "ok   settings window height $settings_height >= 660"
 else echo "FAIL settings window height ${settings_height:-missing} < 660 (collapsed?)"; failures=$((failures + 1)); fi
-check_in 00-loading "forces fixtures, default privacy" '^source=fixtures privacy=true details=false inbox-privacy=true'
-check_in 01b-details "details shown for the session"   '^source=fixtures privacy=true details=true inbox-privacy=false'
+# Hideable features (#94 privacy, #95 snooze, #107 quiet hours): expectations follow the build's switches.
+privacy_shown=false; snooze_shown=false
+grep -q '^features: privacyMode=true ' "$report" && privacy_shown=true
+grep -qE '^features: .* snooze=true ' "$report" && snooze_shown=true
+if [[ $privacy_shown == true ]]; then
+  check_in 00-loading "forces fixtures, default privacy" '^source=fixtures privacy=true effective-privacy=true details=false inbox-privacy=true'
+  check_in 01b-details "details shown for the session"   '^source=fixtures privacy=true effective-privacy=true details=true inbox-privacy=false'
+else
+  check_in 00-loading "privacy hidden: stored default on, titles shown" '^source=fixtures privacy=true effective-privacy=false details=false inbox-privacy=false'
+fi
+if grep -q '^features: privacyMode=false snooze=false quietHours=false panes=mascot,github$' "$report"; then
+  echo "ok   privacy, snooze and quiet hours hidden; no Alerts tab"
+  check_in 'settings states (#87)' "upgrade: stored privacy, snooze and quiet hours are effectively off" \
+    '^stored privacy=true snoozed=true quiet-hours=true → effective privacy=false snoozed=false quiet-now=false alerts-allowed=true$'
+  for png in settings-mascot settings-github settings-github-dark settings-github-full settings-github-full-dark; do
+    [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+  done
+  [[ ! -e $out/settings-alerts.png ]] && echo "ok   no Alerts pane rendered" || { echo "FAIL Alerts pane rendered while hidden"; failures=$((failures + 1)); }
+fi
 check_in 01-baseline "baseline count"            '^state=Up to date badge=3 rows=3 demo=true'
 check_in 02-injected "injection uses the app clock" '^injected-age-on-app-clock=[0-9]s$'
 check_in 02-injected "injected adds one row"     '^state=Up to date badge=4 rows=4 demo=true mood=attention'
@@ -85,8 +126,8 @@ hover_lines=$(grep -E '^hover [a-z]+-[0-9]+-' "$report" || true)
 hover_count=$(printf '%s\n' "$hover_lines" | grep -c . || true)
 if (( hover_count >= 11 )); then echo "ok   $hover_count hover placements measured"
 else echo "FAIL only $hover_count hover placements measured"; failures=$((failures + 1)); fi
-while IFS= read -r line; do
-  [[ -n $line ]] || continue
+check_hover() {
+  local line=$1 name worst arrow
   name=${${line#hover }%%:*}
   worst=$(sed -E 's/.* window-gap-max=([0-9.]+|none) .*/\1/' <<< "$line")
   arrow=$(sed -E 's/.* arrow-anchor-to-static-art=([0-9.]+|none) .*/\1/' <<< "$line")
@@ -98,7 +139,8 @@ while IFS= read -r line; do
   else
     echo "FAIL hover $name: $line"; failures=$((failures + 1))
   fi
-done <<< "$hover_lines"
+}
+while IFS= read -r line; do [[ -n $line ]] && check_hover "$line"; done <<< "$hover_lines"
 for size in 64 128 256; do
   check "labels fit at $size" "^tags @$size: .* fits=true"
 done
@@ -110,8 +152,13 @@ if section "attention gesture (#29, live model)" | grep -q 'system-reduce-motion
 else
   check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
     '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
-  check_in "attention gesture (#29, live model)" "snooze stops a gesture at once, no replay" \
-    '^gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false'
+  if [[ $snooze_shown == true ]]; then
+    check_in "attention gesture (#29, live model)" "snooze stops a gesture at once, no replay" \
+      '^gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false'
+  else
+    check_in "attention gesture (#29, live model)" "hidden snooze: a stored snooze silences nothing" \
+      '^gesture cancel: snooze hidden, stored-snooze-keeps-playing=true$'
+  fi
 fi
 for png in gesture-64 gesture-128 gesture-256 near-touch-64-1x near-touch-128-2x near-touch-256-2x; do
   [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
@@ -120,14 +167,47 @@ done
 # never an overlapping pixel, and the nearest gap (to any pixel with alpha > 0, antialiased
 # fringe included) between 0.5 and 4 pt. Upright poses target about 1 pt; while the attention art
 # leans it keeps extra room for resampling (0.5 pt at 2x, 1.5 pt at 1x), reported separately.
-for size in 64 128 256; do
-  for scale in 1x 2x; do
-    line=$(grep -E "^near-touch @$size $scale: " "$report" || true)
-    low=$(sed -E 's/.* gap-min=([0-9.]+) .*/\1/' <<< "$line"); high=$(sed -E 's/.* gap-max=([0-9.]+) .*/\1/' <<< "$line")
-    if [[ $line == *" empty-renders=0 "* && $line == *" overlapping-pixels=0 "* && $low != none ]] \
-        && (( low >= 0.5 && high <= 4.0 )); then
-      echo "ok   near-touch $size $scale: gap $low-$high pt, no overlap"
-    else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
+# Little Chris (#116) runs the same probe with his own pack selected.
+for skin in '' 'little-chris-v1 '; do
+  for size in 64 128 256; do
+    for scale in 1x 2x; do
+      line=$(grep -E "^near-touch $skin@$size $scale: " "$report" || true)
+      low=$(sed -E 's/.* gap-min=([0-9.]+) .*/\1/' <<< "$line"); high=$(sed -E 's/.* gap-max=([0-9.]+) .*/\1/' <<< "$line")
+      if [[ $line == *" empty-renders=0 "* && $line == *" overlapping-pixels=0 "* && $low != none ]] \
+          && (( low >= 0.5 && high <= 4.0 )); then
+        echo "ok   near-touch $skin$size $scale: gap $low-$high pt, no overlap"
+      else echo "FAIL near-touch $skin$size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
+    done
+  done
+done
+for png in near-touch-little-chris-v1-64-1x near-touch-little-chris-v1-128-2x near-touch-little-chris-v1-256-2x; do
+  [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+done
+# Little Chris placement (#116): his pack really is selected; hover placement meets the same
+# targets as Mona's.
+check_in 'little chris placement (#116)' "probes run with the Little Chris pack" '^little chris placement: pack=little-chris-v1'
+chris_hover=$(grep -E '^hover little-chris-v1 [a-z]+-[0-9]+-' "$report" || true)
+if (( $(printf '%s\n' "$chris_hover" | grep -c .) == 5 )); then echo "ok   5 Little Chris hover placements measured"
+else echo "FAIL Little Chris hover placements: $(printf '%s\n' "$chris_hover" | grep -c .) of 5"; failures=$((failures + 1)); fi
+while IFS= read -r line; do [[ -n $line ]] && check_hover "$line"; done <<< "$chris_hover"
+# Badge fit (#116): for both skins, at every size and scale and in every upright pose, the
+# count's leading edge is over the head and a one-digit count's centre is at most a quarter of
+# its height past the head's right edge, near-touching. 2 pt of slack: the measured head band ends
+# on the slanted side of the head, and resampling fringe moves its first row by a backing pixel
+# (Little Chris attention/1 at 256 pt measures 12 pt at 1x, 10 pt at 2x, for the same slot).
+for skin in mona-pet-v1 little-chris-v1; do
+  for size in 64 128 256; do
+    for scale in 1x 2x; do
+      line=$(grep -E "^badge fit $skin @$size $scale: " "$report" || true)
+      past=$(sed -E 's/.* centre-past-head=-?[0-9.]+\.\.(-?[0-9.]+) .*/\1/' <<< "$line")
+      limit=$(sed -E 's/.* limit=([0-9.]+) .*/\1/' <<< "$line")
+      lead=$(sed -E 's/.* lead-inside-head-min=(-?[0-9.]+) .*/\1/' <<< "$line")
+      gap=$(sed -E 's/.* gap=[0-9.]+-([0-9.]+) .*/\1/' <<< "$line")
+      if [[ $line == *" empty-renders=0 "* && $past == (-|)[0-9]* && $lead == (-|)[0-9]* && $gap == [0-9]* ]] \
+          && (( past <= limit + 2 && lead > 0 && gap <= 4.0 )); then
+        echo "ok   badge fit $skin $size $scale: centre ${past} pt past the head (limit $limit), leading edge $lead pt inside, gap <= $gap pt"
+      else echo "FAIL badge fit $skin $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
+    done
   done
 done
 for case_name in transparent no-candidate; do
@@ -180,6 +260,9 @@ check_in 10d-incidents-resolved "marker leaves on resolve" '^incident-marker=non
 marker_lines=$(grep -E '^incident marker @' "$report" || true)
 if (( $(printf '%s\n' "$marker_lines" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x"
 else echo "FAIL incident marker vs labels:"; printf '%s\n' "$marker_lines"; failures=$((failures + 1)); fi
+chris_marker=$(grep -E '^incident marker little-chris-v1 @' "$report" || true)
+if (( $(printf '%s\n' "$chris_marker" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   Little Chris incident marker clear of labels and keep-out at 64/128/256, 1x/2x"
+else echo "FAIL Little Chris incident marker vs labels:"; printf '%s\n' "$chris_marker"; failures=$((failures + 1)); fi
 # D1 (#37 review): at 64 pt the outer tongues reach into the panel gutters instead of being cut at the art square.
 if (( $(grep -cE '^incident marker @64 [12]x: .* gutter-pixels=[1-9]' "$report") == 2 )); then echo "ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)"
 else echo "FAIL incident marker clipped to the 64 pt art square"; failures=$((failures + 1)); fi
@@ -187,6 +270,59 @@ if (( $(grep -cE '^incident renders @[0-9]+: 24 PNGs' "$report") == 3 )); then e
 else echo "FAIL incident renders missing"; failures=$((failures + 1)); fi
 check_in 11-gh-override "live status offline in snapshots" '^service=GitHub status unavailable: live status disabled in snapshot mode incident-rows=0'
 check_in 11-gh-override "missing gh is not demo"    '^menu-bar AX: GitHub Pet, count unknown, GitHub CLI not found'
+for state title in ghmissing 'Get GitHub CLI' unauthenticated 'How to sign in'; do
+  check_in 'gh setup links' "$state uses silent actual CLI source" \
+    "^setup=$state source=githubCLI demo=false badge=\\? rows=0 unseen=0 clip=none state=.*links=.*$title"
+  for surface in inbox settings; do
+    for theme in '' '-dark'; do
+      png="gh-setup-$state-$surface$theme"
+      [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+    done
+  done
+done
+# Inbox redesign (#87): every state for both skins, light and dark; only a verified empty inbox
+# is all clear, only a fresh status check is Operational, and a four-row queue stays compact.
+inbox87=$(section 'inbox redesign (#87)')
+for skin in mona-pet-v1 little-chris-v1; do
+  for case_name in empty four long partial stale error privacy dismissed; do
+    for theme in '' '-dark'; do
+      png="inbox87-$skin-$case_name$theme"
+      [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+    done
+  done
+  check_in 'inbox redesign (#87)' "$skin selected pack in the header" "^inbox87 $skin empty: .* pack=$skin$"
+  check_in 'inbox redesign (#87)' "$skin empty healthy is all clear" "^inbox87 $skin empty: state=All clear health=healthy badge=none .* empty=allClear "
+  check_in 'inbox redesign (#87)' "$skin four rows, grouped, no scroll" "^inbox87 $skin four: state=Up to date health=healthy badge=4 mascot-badge=4 rows=4 groups=reviewRequests,yourPullRequests,assignedIssues scrolls=false "
+  check_in 'inbox redesign (#87)' "$skin long list scrolls" "^inbox87 $skin long: .* rows=14 .* scrolls=true "
+  check_in 'inbox redesign (#87)' "$skin partial is a lower bound" "^inbox87 $skin partial: state=Partial data health=partial badge=3\\+ "
+  check_in 'inbox redesign (#87)' "$skin stale count unknown" "^inbox87 $skin stale: state=Stale health=stale badge=\\? "
+  check_in 'inbox redesign (#87)' "$skin error count unknown" "^inbox87 $skin error: state=Error: simulated disconnect health=error badge=\\? "
+  if [[ $privacy_shown == true ]]; then
+    check_in 'inbox redesign (#87)' "$skin privacy hides titles" "^inbox87 $skin privacy: .* inbox-privacy=true "
+  else
+    check_in 'inbox redesign (#87)' "$skin privacy hidden: stored on, titles shown" "^inbox87 $skin privacy: .* inbox-privacy=false "
+  fi
+  check_in 'inbox redesign (#87)' "$skin dismissed list" "^inbox87 $skin dismissed: .* rows=2 .* dismissed=2 "
+  check_in 'inbox redesign (#87)' "$skin operational only when fresh" "^inbox87 $skin four tiles: .*GitHub status=Operational \\(No active incidents, positive\\)"
+  # Inbox tiles never read as nothing-to-do on degraded data; GitHub status has its own source.
+  for case_name in partial stale error; do
+    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'Nothing needs you|Nothing waiting'; then
+      echo "FAIL $skin $case_name inbox tiles claim nothing to do"; failures=$((failures + 1))
+    else echo "ok   $skin $case_name inbox tiles never claim nothing to do"; fi
+  done
+  for case_name in stale error; do
+    if grep -E "^inbox87 $skin $case_name tiles: " <<< "$inbox87" | grep -qE 'GitHub status=Operational|positive'; then
+      echo "FAIL $skin $case_name status claims operational"; failures=$((failures + 1))
+    else echo "ok   $skin $case_name status never claims operational"; fi
+  done
+  height=$(grep -E "^inbox87-$skin-four: " "$report" | sed -E 's/.*x([0-9]+) pt/\1/')
+  if (( ${height:-0} >= 300 && ${height:-9999} <= 620 )); then echo "ok   $skin four-row inbox is compact ($height pt)"
+  else echo "FAIL $skin four-row inbox height ${height:-missing} outside 300-620 pt"; failures=$((failures + 1)); fi
+done
+if grep -E '^inbox87 ' <<< "$inbox87" | grep -v ' empty: ' | grep -q 'empty=allClear'; then
+  echo "FAIL a non-empty or degraded inbox claims all clear"; failures=$((failures + 1))
+else echo "ok   only the verified empty inbox is all clear"; fi
+
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do

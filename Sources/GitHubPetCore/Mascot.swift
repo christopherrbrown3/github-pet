@@ -43,6 +43,8 @@ public enum MascotPolicy {
         switch dataState {
         case .ready: return "\(count)"
         case .empty: return nil
+        // Zero visible is known, but it is not the verified-empty "all clear" (no badge) state.
+        case .hiddenOnly: return "0"
         case .partial: return "\(count)+"
         default: return "?"
         }
@@ -53,6 +55,7 @@ public enum MascotPolicy {
         switch dataState {
         case .ready: return count == 1 ? "1 item" : "\(count) items"
         case .empty: return "all clear"
+        case .hiddenOnly(let hidden): return "no visible items, " + HiddenResults.matchesHidden(hidden)
         case .partial: return "at least \(count) items, some sources unavailable"
         case .stale: return "count unknown, data is stale"
         case .loading: return "count unknown, loading"
@@ -71,6 +74,7 @@ public enum PrivacyText {
         var parts: [String] = []
         if item.isDemo { parts.append(demoLabel) }
         parts.append(item.kind.genericLabel)
+        if let attention = item.attention { parts.append(attention) }
         if let repo = repository(item, privacy: privacy) { parts.append(repo) }
         return parts.joined(separator: " · ")
     }
@@ -87,29 +91,32 @@ public enum PrivacyText {
     /// count, and the count's quality. Unknown, partial, stale and failed data stay explicit;
     /// item details are left to the Inbox.
     public static func compactSummary(dataState: DataState, items: [InboxItem], unseenCount: Int,
-                                      demo: Bool = false) -> [String] {
+                                      demo: Bool = false, demoSource: String = "fixtures",
+                                      emptyInboxMessage: String? = nil) -> [String] {
         let quality: String
         switch dataState {
         case .ready:
             let noun = items.count == 1 ? "item" : "items"
-            quality = "\(items.count) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : "")
+            quality = emptyInboxMessage ?? ("\(items.count) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : ""))
         case .partial:
             let badge = MascotPolicy.badge(dataState: dataState, count: items.count) ?? "?"
             quality = "\(badge) items · \(dataState.statusText)"
         default:
             quality = dataState.statusText
         }
-        return demo ? ["\(demoLabel) data (fixtures)", quality] : [quality, "Open the Inbox for details"]
+        return demo ? ["\(demoLabel) data (\(demoSource))", quality] : [quality, "Open the Inbox for details"]
     }
 
     public static func summary(dataState: DataState, items: [InboxItem], unseenCount: Int,
-                               privacy: Bool, demo: Bool = false, maxLines: Int = 3) -> [String] {
-        var lines: [String] = demo ? ["\(demoLabel) data (fixtures)"] : []
+                               privacy: Bool, demo: Bool = false, demoSource: String = "fixtures", maxLines: Int = 3,
+                               emptyInboxMessage: String? = nil) -> [String] {
+        // `demoSource` names where invented data comes from: fixtures, or the simulated scope launch.
+        var lines: [String] = demo ? ["\(demoLabel) data (\(demoSource))"] : []
         switch dataState {
         case .ready, .partial:
             let badge = MascotPolicy.badge(dataState: dataState, count: items.count) ?? ""
             let noun = items.count == 1 && dataState == .ready ? "item" : "items"
-            lines.append("\(badge) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : ""))
+            lines.append(emptyInboxMessage ?? ("\(badge) \(noun)" + (unseenCount > 0 ? " · \(unseenCount) new" : "")))
             if dataState == .partial { lines.append(dataState.statusText) }
         default:
             lines.append(dataState.statusText)
@@ -130,10 +137,11 @@ public enum PrivacyText {
 
 public enum AccessibilityText {
     /// e.g. "GitHub Pet, Demo data, at least 2 items, some sources unavailable".
-    public static func statusLabel(dataState: DataState, count: Int, demo: Bool, needsAttention: Bool) -> String {
+    public static func statusLabel(dataState: DataState, count: Int, demo: Bool, needsAttention: Bool,
+                                   countDescription: String? = nil) -> String {
         var parts = ["GitHub Pet"]
         if demo { parts.append("\(PrivacyText.demoLabel) data") }
-        parts.append(MascotPolicy.countDescription(dataState: dataState, count: count))
+        parts.append(countDescription ?? MascotPolicy.countDescription(dataState: dataState, count: count))
         if needsAttention { parts.append("needs attention") }
         return parts.joined(separator: ", ")
     }
@@ -143,16 +151,19 @@ public enum AccessibilityText {
 /// events jump the queue; duplicate IDs are ignored; clips never loop.
 /// At most one event gesture at a time (#29). A batch of new events plays one gesture, led by its
 /// most severe event; events arriving while it plays merge into it (no restart, no queue, no
-/// backlog). Only an urgent batch preempts an attention gesture, and the interrupted gesture is
-/// not replayed. After a gesture ends, a later batch may start a new one.
+/// backlog). Each source retains at most one clip at its original time bounds. Urgency chooses
+/// the visible clip; a scope reset can remove repositories without restarting public incidents.
 public struct EventClipQueue: Sendable {
+    public enum Origin: Hashable, Sendable { case repository, serviceIncident }
     public struct Clip: Equatable, Sendable {
         public var event: InboxEvent
+        public var origin: Origin
         public var startedAt: Date
         public var endsAt: Date
 
-        init(event: InboxEvent, startedAt: Date) {
+        init(event: InboxEvent, startedAt: Date, origin: Origin = .repository) {
             self.event = event
+            self.origin = origin
             self.startedAt = startedAt
             self.endsAt = startedAt.addingTimeInterval(EventClipQueue.duration(of: event.severity == .critical ? .urgent : .attention))
         }
@@ -166,33 +177,54 @@ public struct EventClipQueue: Sendable {
         state == .attention ? TimeInterval(AttentionGesture.friendlyDoubleWave.durationMs) / 1000 : 2.0
     }
 
-    public private(set) var active: Clip?
+    // At most two independently timed clips. Clearing repositories must not discard a
+    // concurrent incident that merged behind a higher-priority repository gesture.
+    private var byOrigin: [Origin: Clip] = [:]
+    public var active: Clip? {
+        let repository = byOrigin[.repository], service = byOrigin[.serviceIncident]
+        guard let repository else { return service }
+        guard let service else { return repository }
+        if repository.event.severity != service.event.severity {
+            return repository.event.severity > service.event.severity ? repository : service
+        }
+        return repository.startedAt < service.startedAt ? repository : service
+    }
 
     public init() {}
 
     /// Start a gesture for a batch of new events, or merge them into the one playing. With motion
     /// reduced or alerts disallowed nothing plays: the inbox and static mood still show the change,
     /// and nothing is replayed later.
-    public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool) {
+    public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool, origin: Origin = .repository) {
         tick(now: now)
         guard playable, let top = events.map(\.severity).max(),
               let lead = events.first(where: { $0.severity == top }) else { return }
-        if let current = active {
-            if lead.severity > current.event.severity { active = Clip(event: lead, startedAt: now) }
+        if let current = byOrigin[origin] {
+            if lead.severity > current.event.severity { byOrigin[origin] = Clip(event: lead, startedAt: now, origin: origin) }
             return
         }
-        active = Clip(event: lead, startedAt: now)
+        byOrigin[origin] = Clip(event: lead, startedAt: now, origin: origin)
     }
 
     /// Advance time; returns the clip that should be showing, if any.
     @discardableResult
     public mutating func tick(now: Date) -> Clip? {
-        if let current = active, now >= current.endsAt { active = nil }
+        // Hidden source state exists only to preserve incidents across an explicit scope
+        // reset. Natural completion coalesces the whole batch, never promotes a backlog.
+        if let visible = active, now >= visible.endsAt {
+            byOrigin.removeAll()
+            return nil
+        }
+        byOrigin = byOrigin.filter { now < $0.value.endsAt }
         return active
     }
 
-    public mutating func clear() {
-        active = nil
+    public mutating func clear(origin: Origin? = nil) {
+        if let origin { byOrigin.removeValue(forKey: origin) } else { byOrigin.removeAll() }
+    }
+
+    public mutating func clear(origin: Origin, matching predicate: (InboxEvent) -> Bool) {
+        if let clip = byOrigin[origin], predicate(clip.event) { clear(origin: origin) }
     }
 }
 

@@ -88,6 +88,25 @@ private struct PackFixture {
         #expect(fixture.errors() == [.unreadableManifest])
     }
 
+    @Test func missingAssetsWithLongSharedPrefixRemainIdentifiableInRejection() throws {
+        let fixture = try PackFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let prefix = "frames/" + String(repeating: "shared-diagnostic-prefix-", count: 3) + "/"
+        let alpha = prefix + "missing-alpha.png", beta = prefix + "missing-beta.png"
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            var idle = states["idle"] as! [String: Any]
+            idle["frames"] = [alpha, beta]; idle["staticFallback"] = alpha
+            states["idle"] = idle; json["states"] = states
+        }
+        let errors = fixture.errors()
+        #expect(errors.count == 2 && errors.contains(.missingFile(alpha)) && errors.contains(.missingFile(beta)),
+                "Loading still rejects both exact stored paths without rewriting their identity")
+        #expect(Set(errors.map(\.description)).count == 2, "The actual loader must identify both missing files")
+        #expect(errors.contains { $0.description.contains("missing-alpha.png") })
+        #expect(errors.contains { $0.description.contains("missing-beta.png") })
+    }
+
     @Test func wrongSchemaIsRejected() throws {
         let fixture = try PackFixture()
         try fixture.manifest { $0["schemaVersion"] = 2 }
@@ -102,6 +121,28 @@ private struct PackFixture {
             json["states"] = states
         }
         #expect(fixture.errors().contains(.missingState("urgent")))
+    }
+
+    @Test func loopFlagsMustMatchHowTheRendererPlaysEachState() throws {
+        func errors(setting state: String, loop: Bool) throws -> [MascotPackError] {
+            let fixture = try PackFixture()
+            try fixture.manifest { json in
+                var states = json["states"] as! [String: [String: Any]]
+                states[state]!["loop"] = loop
+                json["states"] = states
+            }
+            return fixture.errors()
+        }
+        #expect(try errors(setting: "idle", loop: false) == [.wrongLoopFlag("idle", expected: true)])
+        #expect(try errors(setting: "attention", loop: true) == [.wrongLoopFlag("attention", expected: false)])
+        #expect(try errors(setting: "urgent", loop: true) == [.wrongLoopFlag("urgent", expected: false)])
+        #expect(try errors(setting: "idle", loop: true).isEmpty)
+        #expect(try errors(setting: "urgent", loop: false).isEmpty)
+        #expect(MascotPackError.wrongLoopFlag("idle", expected: true).description.contains("\"loop\": true"))
+        #expect(MascotPackError.wrongLoopFlag("urgent", expected: false).description.contains("\"loop\": false"))
+        // State names in the message go through the same label sanitizer as every other state error.
+        let hostile = MascotPackError.wrongLoopFlag("id\u{202E}le\nx", expected: true).description
+        #expect(hostile == "state 'idle x' must declare \"loop\": true (idle loops; attention and urgent play once)")
     }
 
     @Test func oneShotSequencesMustFitTheirEventClip() throws {
@@ -301,6 +342,54 @@ private struct PackFixture {
         #expect(fixture.errors() == [.tooLarge("frames/attention_0.png")])
     }
 
+    @Test func packWithTooManyTotalFramesIsRejectedBeforeAnyFileIsRead() throws {
+        let fixture = try PackFixture()
+        // 3 states x 9 frames = 27 > 24; none of the extra files exist, and none may be opened.
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            for key in states.keys {
+                var spec = states[key] as! [String: Any]
+                spec["frames"] = (0..<9).map { "frames/missing_\(key)_\($0).png" }
+                spec["durationMs"] = Array(repeating: 125, count: 9)
+                states[key] = spec
+            }
+            json["states"] = states
+        }
+        #expect(fixture.errors() == [.tooManyFrames(27)])
+        #expect(MascotPackError.tooManyFrames(27).description.contains("at most 24"))
+    }
+
+    @Test func packOverTheTotalByteCapIsRejectedWithAClearError() throws {
+        let fixture = try PackFixture()
+        // Six images just under the per-image cap: each is allowed alone, together they pass 16 MiB.
+        var padded = validFrame
+        padded.append(Data(count: MascotPack.maxImageBytes - validFrame.count - 1))
+        for state in MascotState.allCases {
+            for index in 0..<2 {
+                try padded.write(to: fixture.directory.appendingPathComponent("frames/\(state.rawValue)_\(index).png"))
+            }
+        }
+        try fixture.manifest()
+        #expect(fixture.errors() == [.packTooLarge(MascotPack.maxPackBytes)])
+        #expect(MascotPackError.packTooLarge(MascotPack.maxPackBytes).description.contains("16 MiB"))
+    }
+
+    @Test func tooLargeImagesAreNotCountedTowardTheTotalByteCap() throws {
+        let fixture = try PackFixture()
+        // Six over-limit images would pass 16 MiB together, but each is only its own tooLarge error.
+        var big = validFrame
+        big.append(Data(count: MascotPack.maxImageBytes))
+        for state in MascotState.allCases {
+            for index in 0..<2 {
+                try big.write(to: fixture.directory.appendingPathComponent("frames/\(state.rawValue)_\(index).png"))
+            }
+        }
+        try fixture.manifest()
+        let errors = fixture.errors()
+        #expect(errors.count == 6)
+        #expect(errors.allSatisfy { if case .tooLarge = $0 { true } else { false } })
+    }
+
     @Test func oversizedManifestIsRejected() throws {
         let fixture = try PackFixture()
         try fixture.manifest { $0["padding"] = String(repeating: "x", count: MascotPack.maxManifestBytes) }
@@ -403,6 +492,20 @@ private struct PackFixture {
 }
 
 @Suite struct BundledPackTests {
+    @Test func littleChrisHasNineValidatedRuntimeFrames() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let id = MascotSkin.littleChris.rawValue
+        let directory = root.appendingPathComponent("assets/mascots/\(id)", isDirectory: true)
+        let pack = try MascotPack.load(from: directory, expectedID: id).get()
+        #expect(pack.manifest.name == "Little Chris")
+        #expect(pack.manifest.anchor == MascotPack.anchor && pack.imageData.count == 9)
+        #expect(pack.manifest.frameSha256?.count == 9)
+        for state in MascotState.allCases {
+            #expect(pack.frameData(for: state).count == 3 && pack.staticFallbackData(for: state) != nil)
+        }
+    }
+
     /// The repository's shipped pack must pass the same validation the app runs at launch.
     @Test func repositoryPackIsValid() throws {
         let root = URL(fileURLWithPath: #filePath)

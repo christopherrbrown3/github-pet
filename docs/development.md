@@ -16,7 +16,9 @@ It needs no Xcode project, and Xcode itself is optional.
 swift build                       # debug build of the library and app
 scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
+scripts/test-update-build.sh      # Sparkle packaging regression (debug builds, ~1 min)
 scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
+scripts/readme-screenshots.sh .build/app/GitHubPet.app   # offscreen Demo renders -> docs/screenshots/beta-5
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
 ```
 
@@ -25,8 +27,12 @@ swift-testing on its own, so the script adds the CLT framework search paths and 
 copy of the Testing/Foundation cross-import overlay, which is incomplete. If you have Xcode,
 a plain `swift test` works too.
 
+Updates (Sparkle, the appcast, QA build overrides, release steps) are covered in [updates.md](updates.md).
+
 `scripts/build-app.sh [debug|release] [--universal]` puts the bundle together from the SwiftPM
-binary and an `Info.plist` with `LSUIElement` set, then ad-hoc signs it (`codesign -s -`). It isn't
+binary and an `Info.plist` with `LSUIElement` set, compiles `assets/app-icon/AppIcon.iconset` into
+`Contents/Resources/AppIcon.icns` with `iconutil` (`CFBundleIconFile` = `AppIcon`; the `.icns` is generated,
+not committed), then ad-hoc signs it (`codesign -s -`). It isn't
 notarized or Developer ID signed. `--universal` builds arm64 and x86_64 separately with `--triple`
 (SwiftPM's multi-`--arch` build needs Xcode's xcbuild) and merges them with `lipo`. The version
 (`CFBundleShortVersionString`) comes from the `VERSION` file; the build number (`CFBundleVersion`)
@@ -37,7 +43,7 @@ before compilation; for a shallow clone, run `git fetch --unshallow` first.
 `scripts/package-zip.sh` builds the universal app, zips it with
 `ditto -c -k --sequesterRsrc --keepParent` as `GitHubPet-<version>-<shortsha>-universal.zip`, writes
 the `.sha256` beside it, then unpacks a copy and checks the checksum, signature, version, build
-number, architectures and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
+number, architectures, app icon (`scripts/verify-app-icon.sh`) and bundled pack. CI uploads both files as the **GitHubPet-app** artifact
 (14 days for PRs, 90 for `main`). `scripts/intel-smoke.sh` runs the x86_64 slice under Rosetta
 (skipped, and says so, where Rosetta is absent). End-user steps are in [install.md](install.md).
 
@@ -45,7 +51,8 @@ On PRs, CI first builds/tests GitHub's combined branch, then checks out the exac
 full history for packaging and render checks. The ZIP's short SHA and the bundle's full SHA
 therefore identify the source actually packaged. CI asserts that checkout and history before
 packaging. `scripts/test-packaging.sh` exercises full and depth-1/depth-2 clones without compiling
-the app, proving shallow histories fail before reaching Swift.
+the app, proving shallow histories fail before reaching Swift, and that the icon verifier rejects a
+missing, empty or invalid `AppIcon.icns`, a wrong `CFBundleIconFile` and `LSUIElement` not true.
 
 `swift run GitHubPet` also works for quick iteration.
 
@@ -94,7 +101,13 @@ the app, proving shallow histories fail before reaching Swift.
 - **Demo**: fixture data is always identified as Demo. The menu bar shows `DEMO` next to the icon,
   the inbox header shows a DEMO tag and an explanatory line, every row subtitle starts with
   "Demo", the hover summary starts with "Demo data (fixtures)", the mascot shows a DEMO tag, and
-  the accessibility labels say "Demo data". Privacy mode never hides it.
+  the accessibility labels say "Demo data". Privacy mode never hides it. The opt-in
+  `--simulate-monitoring-scope` launch is Demo too, but it is not fixtures: its explanatory line
+  reads "Simulated scope (demo): …" and its hover says "Demo data (simulated scope)".
+- Refresh during an in-flight GitHub CLI poll reads "Refreshing…" and is queued once, then runs
+  after that reply lands. A source, account or scope change in the meantime drops the queued
+  request, since that change already started its own poll. Waking the Mac refreshes the live source
+  once, after 5 s, with repeated wakes collapsed. Snapshot and simulated launches don't observe wake.
 - Switching the data source clears the inbox to Loading. Rows, counts and baseline from the
   previous source are never shown as the new source's data, and a slow fetch from an earlier
   session is discarded.
@@ -104,6 +117,20 @@ the app, proving shallow histories fail before reaching Swift.
 - Unread markers are pruned only after a complete snapshot. A partial snapshot (a failed source)
   keeps them, since recovery does not re-announce those items.
 - Items are keyed by stable IDs such as `reviewRequest:owner/repo#12`.
+- Your open PRs (#9) come from one more search per inclusion (`authored<i>`: `is:pr is:open
+  author:@me archived:false`) with `isDraft reviewDecision mergeable` and the head commit's `oid` and
+  `statusCheckRollup { state }`. Only PRs needing action become rows: changes requested, CONFLICTING,
+  or rollup FAILURE/ERROR ("Checks failing": any check, not only required ones). Drafts, other states and
+  `UNKNOWN` mergeability are counted as waiting on others, shown as one informational Inbox line that is never a
+  row, count, badge, mood or alert. Each PR is one row with the stable ID `authoredPullRequest:<nodeID>`, and
+  each reason has a stable event key (`#changes`, `#conflict`, `#checks@<head OID>`) persisted as a digest.
+  The authored search asks for one changes-requesting review's ID and submission time. A distinct review
+  can announce once when its timestamp is strictly later than the last verified review in a comparable
+  snapshot. Losing or regaining review detail is silent. The baseline stores a bounded collection of
+  comparison records with digests and timestamps. Losing or regaining an existing reason and comment
+  churn are silent. Disagreeing overlapping inclusions or malformed review data make the poll Partial.
+  `ScopeQueryPlan.categories` is the table to extend, and `categoriesVersion` is part of the baseline key.
+  Bumping it makes a relaunch re-baseline silently.
 - The first complete snapshot sets the baseline and fires no events. Unchanged polls never fire
   again. An ID fires at most once, even if it disappears and comes back.
 - A snapshot only counts as comparable if the previous one was complete and is still fresh at
@@ -111,6 +138,15 @@ the app, proving shallow histories fail before reaching Swift.
   stale data or from a partial snapshot records IDs silently, so nothing is replayed on reconnect.
   New IDs are decided before the tracker records anything, so eviction can't make existing IDs
   look new.
+- The baseline survives relaunches (#12): `GitHubPet.event-baseline.v1` in the launch's defaults
+  domain (`--defaults-suite`, or the in-memory domain of snapshot and simulated launches) holds
+  only truncated SHA-256 digests of seen IDs (at most 1024, 64 KB), a digest of the
+  source/account/scope session, the quality tag and the last success time. A relaunch stays
+  Loading until a poll lands. If the record was complete and at most 24 hours old, the first
+  complete snapshot is comparable: items that arrived while the app was quit fire once, seen ones
+  never. Partial, stale, error, signed-out or older records re-baseline silently. A record from
+  another source, account or scope, or a corrupt, oversized or other-version one, is removed.
+  `--reset-settings` and Reset baseline clear it.
 - Event gestures (#29): one batch of new events plays one gesture, led by its most severe event;
   events arriving while it plays merge into it (no restart, no queue, no backlog). An urgent batch
   preempts an attention gesture, which is not replayed. Attention plays the finite "friendly
@@ -192,6 +228,14 @@ fields fall back to defaults, and values outside their range are clamped. They s
   including its count/quality badge, is on the display's visible area; near a screen edge this
   takes precedence over keeping the ground point fixed when resizing. A drop saves that settled
   position, so what is saved is what is shown.
+- **Hidden for the beta (#94, #95, #107):** privacy mode, snooze and quiet hours stay in the code but
+  `FeatureFlags` (in `GitHubPetCore/SettingsPresentation.swift`) hides every entry point: the Inbox
+  Show/Hide details, Snooze menu and Snoozed/Quiet hours lines, and the Settings Alerts pane (whose
+  review filter moves to the GitHub pane). While a feature is hidden its effective value is off
+  (`PetSettings.effectivePrivacyMode`, `isSnoozed`, `quietHoursActive`, `alertsAllowed` take a
+  `FeatureSet`), whatever an earlier build stored; stored preferences are never rewritten. Flip a
+  switch to `true` to bring a feature back; tests run both states through `AppModel.Runtime.features`.
+  The descriptions below are the behaviour with a feature shown.
 - **Privacy mode** is **on by default**. It hides repository names and titles in the inbox, the
   menu-bar popover, the hover summary and accessibility labels, showing generic labels such as
   "Review request". Counts and data quality are still shown, and links behave the same. The inbox
@@ -203,7 +247,7 @@ fields fall back to defaults, and values outside their range are clamped. They s
 - **Snooze** (1 h, 4 h, until 9:00 tomorrow) and **quiet hours** (local time; can wrap past midnight;
   start = end means off) keep the mascot and menu-bar icon calm. The inbox keeps updating, and
   auth/critical states still show as text.
-- Data source: Fixtures (default) or GitHub CLI.
+- Data source (Settings → GitHub → Source): GitHub CLI (default for new installs) or Fixtures. Saved settings keep their stored choice.
 
 ### Accessibility
 The mascot panel is a single VoiceOver button labelled with the status and the privacy-aware
@@ -215,14 +259,21 @@ summary; its press action opens the Inbox, the same as a click.
 - Panel geometry follows the near-touch badge spacing (#28, docs/design/notifications/
   compact-badge-spacing.md at ef98a48; `MascotLayout`): art S×S centred at the bottom of a panel
   W = max(S, 96, labels) wide. DEMO is fixed at the leading inset; the count is left-aligned in a
-  slot reserved for "99+" and, for each drawn pose, moves down so its rounded capsule sits
-  1 pt (+0.75 pt raster reserve) from the art's actual top contour (nearest distance), computed
-  from per-pose contours precomputed at pack load, in the same render pass as the pose. The art
+  slot reserved for "99+". The slot sits at the trailing inset, or further left for a narrow skin
+  (#116): a one-digit count's centre stays within a quarter of its height of the head's right edge
+  (the rightmost column within 24 canvas px of each upright pose's top, narrowest pose), never
+  closer to DEMO than the minimum gap. Mona keeps the trailing-inset slot at every size; Little
+  Chris's moves to 50/72/149 pt at 64/128/256. For each drawn pose the count moves down so its
+  rounded capsule sits 1 pt (+0.75 pt raster reserve, +0.75 pt more for upright poses at 1×,
+  where resampled art leaves faint fringe) from the art's actual top contour (nearest distance);
+  with nothing under it, it stays at the top of its lane. Contours are precomputed per pose at
+  pack load, and the count is placed in the same render pass as the pose. The art
   top L is the smallest whole point at which DEMO and the widest count clear every pose:
   64/128/256 pt → 96×81, 128×148, 256×270. Labels are never truncated; fills keep at least 4.5:1
   text contrast. Without a pack, the labels stay above the art square. render-check rasterises
-  the real view at 1× and 2× for every pose and count text and requires no overlapping pixel and
-  a 0.5–2.5 pt nearest gap (measured 0.6–2.0 pt). Resizing (including dragging the size slider)
+  the real view at 1× and 2× for every pose and count text, for Mona and again for Little Chris,
+  and requires no overlapping pixel and a 0.5–4 pt nearest gap. Its badge-fit lines measure the
+  rasterised count against each skin's rasterised head (`badge fit <skin> @<size> <scale>x`). Resizing (including dragging the size slider)
   keeps the art's ground point fixed on screen; the new origin is saved on the next run-loop
   turn because `$settings` delivers before the new value is stored.
 - The hover summary sits beside the character (#27): right by default, left when the right
