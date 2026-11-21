@@ -117,10 +117,10 @@ Active GitHub incidents from githubstatus.com appear on their own, apart from yo
   </tr>
 </table>
 
-Settings has two panes. **Mascot** chooses and sizes your pet, turns motion down and opens Login Items so
-you can add it yourself. **GitHub** shows your `gh` connection, what to watch (everything you can access, or up to 10
-organizations and repositories), entitlement-approval repositories, opt-in alerts for failing Actions
-runs and deployment approvals, and updates.
+Settings has two panes. **Mascot** chooses and sizes your pet, turns motion down and opens Login Items
+so you can add it yourself. **GitHub** shows your `gh` connection, what to watch (everything you can access,
+or up to 10 organizations and repositories), entitlement-approval repositories, opt-in alerts for failing
+Actions runs and deployment approvals, and updates.
 
 More detail on every feature: [Features](docs/features.md).
 
