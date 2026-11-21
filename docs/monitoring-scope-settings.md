@@ -4,7 +4,7 @@ Builds on slice A's session/controller (`docs/monitoring-scope-application.md`).
 
 ## Behaviour
 
-- The section sits after **Data source** in the existing 520 pt grouped Form. The Form scrolls; the window keeps its minimum height. The list holds at most 10 combined entries, and no list grows the window.
+- The section sits after **Settings → GitHub → Source** in the existing 520 pt grouped Form. The Form scrolls; the window keeps its minimum height. The list holds at most 10 combined entries, and no list grows the window.
 - It shows the account (login is display only; Demo/Simulated are labelled) and the active scope summary with counts. A radio choice offers **Everything accessible** or **Selected organizations and repositories**. Selected mode shows separate Organizations and Repositories lists. Each has editable rows, Remove, and a typed Add field (Return or Add).
 - Input is trimmed and deduplicated case-insensitively against both lists. The combined maximum is 10. Malformed input (qualifiers, spaces, quotes, extra `/`, non-ASCII look-alikes, over-length) is rejected inline before it can reach a query. Errors are text labels on the row/field and in accessibility labels/hints. Results are announced with `NSAccessibility` announcements. Messages never echo the input.
 - Edits are a draft. **Cancel** restores the active selection. Apply is blocked for an empty or invalid Selected draft, or while the account is unknown. **Apply** for Selected runs one `gh api graphql --hostname github.com` operation: `viewer { id login }` plus per-target `organization(login:)` / `repository(owner:name:)` metadata, with every value passed as a `-f` variable. A per-target `NOT_FOUND`/`FORBIDDEN` (null alias) marks that row *not found or not readable*. A different returned name marks it *renamed*. Any other error, a missing alias, a wrong viewer or a failed gh exit leaves the selection **unverified**: nothing is saved and the active scope and rows are unchanged. A zero-match search is never used as evidence.
@@ -34,7 +34,7 @@ Simulated access rule: an owner starting with `demo-` is accessible unless the e
 - **Late validation:** choose Hold next validation, then Apply. Switch to Account B: the draft resets to B's selection with a discarded-draft announcement. Deliver held replies: nothing changes, and returning to A shows A's original selection.
 - **Discovery:** Find suggestions with each discovery mode: complete (3 orgs, end of list), capped (150, limit reached), partial (100, incomplete), denied (sign-in message, no hints), identityMismatch (all hints discarded). Typed Add still works in every state.
 - **Corrupt saved:** in the Simulated scope menu, choose Corrupt saved A and reload. Settings shows an empty Selected draft and the quality text points to Settings. Apply a valid selection or Everything to repair it.
-- **Demo isolation:** switch the data source to Fixtures. Settings says Demo, Find suggestions is disabled, and Apply never validates. Return to GitHub CLI: A's selection is intact.
+- **Demo isolation:** switch **Settings → GitHub → Source** to Fixtures. Settings says Demo, Find suggestions is disabled, and Apply never validates. Return to GitHub CLI: A's selection is intact.
 
 ### Scenario runner (no clicks or Screen Recording)
 

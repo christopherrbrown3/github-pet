@@ -81,8 +81,7 @@ and confirm. You approve each downloaded version once. Apple's guidance:
   saved settings from an earlier beta and never changed the source, you stay on Demo until you
   switch. To change source either way, open **Settings → GitHub → Source** and choose **GitHub CLI
   (gh)** for your own data or **Fixtures (offline)** for Demo.
-- Repository names and titles are shown in the Inbox and hover. Privacy mode, snooze and quiet hours
-  are hidden in this beta; if an earlier beta saved them on, those saved values are kept but ignored.
+- Repository names and titles are shown in the Inbox and hover.
 - [Using the Inbox](inbox.md) explains the review filter, how to dismiss an item, and how to restore it.
 
 ## Keyboard and VoiceOver access
@@ -108,8 +107,7 @@ accessibility output only; a live VoiceOver pass has not been done yet.
 ## Updating
 
 The first install always needs **Open Anyway** (above): the app is ad-hoc signed and not notarized. After
-that, GitHub Pet updates itself with [Sparkle](https://sparkle-project.org), **once the release signing key is
-configured** (until then Settings says "Updates not configured" and you update by hand as below).
+that, GitHub Pet updates itself with [Sparkle](https://sparkle-project.org).
 
 - **Check for Updates…** is in the menu-bar menu and in Settings › GitHub › Software updates. Sparkle asks whether to check
   automatically (at most every 24 hours), asks before installing, and shows release notes.
@@ -120,11 +118,10 @@ configured** (until then Settings says "Updates not configured" and you update b
 - No sign-in, `gh` or token is used, and nothing is sent about your Mac.
 - Builds before this feature (beta 1-3) have no updater: replace them once by downloading a newer ZIP from the
   Releases page and moving the app into Applications.
-- An updated build may need Open at login approved again, because each build's ad-hoc signature is different.
+- Open at login isn't available on these ad-hoc builds (see [Open at login](#open-at-login)), so an update has no login item to re-approve.
 
 Your settings live in the `dev.github-pet.GitHubPet` preferences domain, which doesn't depend on where the app is,
-so an update should keep them. This has **not been tested** on a clean install yet, so check Settings after
-updating. How updates are signed and released: [updates.md](updates.md).
+so an update keeps them (QA verified this for the update path in #99). How updates are signed and released: [updates.md](updates.md).
 
 ## Open at login
 
@@ -151,7 +148,7 @@ that is unverified until such a build exists.
    defaults delete dev.github-pet.GitHubPet
    ```
 
-4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Startup**,
+4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Mascot → Startup**,
    or under **System Settings → General → Login Items**. Do this before step 2, while the app is
    still installed. If you already deleted the app, check Login Items and remove GitHub Pet there
    if it is still listed.
