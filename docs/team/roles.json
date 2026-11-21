@@ -21,7 +21,8 @@
       "reasoningEffort": null,
       "assignment": "#87 Inbox redesign, feat/87-inbox-redesign, developer-inbox-87",
       "verification": "hc launch argv --model and live TUI on 2026-11-20",
-      "previousCodexTerminal": "t68"
+      "previousCodexTerminal": "t68",
+      "status": "ended 2026-11-21 (work merged; worktree kept)"
     },
     {
       "name": "developer-2",
@@ -30,7 +31,7 @@
       "intendedModel": "claude-sonnet-5-5",
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
-      "assignment": "#87 Settings panes, feat/87-settings-panes, developer-settings-87",
+      "assignment": "Beta 5: #104 (PR121), #41 (PR123, PR126) merged; now #127 test timing",
       "verification": "hc launch argv --model and live TUI on 2026-11-20",
       "previousCodexTerminal": "t69"
     },
@@ -41,7 +42,7 @@
       "intendedModel": "claude-sonnet-5-5",
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
-      "assignment": "#90 Sparkle 2 auto-update integration on ad-hoc builds (Chris decision Nov 20), feat/90-update-check",
+      "assignment": "#7 (PR118) merged; on call for Beta 4 appcast PR (release/appcast-beta4) after Chris signs",
       "verification": "hc launch argv --model and live TUI on 2026-11-20"
     },
     {
@@ -74,7 +75,8 @@
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
       "assignment": "#96 default data source gh, feat/96-gh-default-source, developer-gh-default-96",
-      "verification": "hc launch argv on 2026-11-20"
+      "verification": "hc launch argv on 2026-11-20",
+      "status": "ended 2026-11-21 (work merged; worktree kept)"
     },
     {
       "name": "qa-engineer-2",
@@ -84,10 +86,31 @@
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
       "assignment": "PR99 #90 Sparkle review and real update QA, qa/sparkle-99, qa-sparkle-99",
-      "verification": "hc launch argv on 2026-11-20"
+      "verification": "hc launch argv on 2026-11-20",
+      "status": "ended 2026-11-21 (work merged; worktree kept)"
+    },
+    {
+      "name": "developer-brew",
+      "terminal": "t6s",
+      "runtime": "claude",
+      "intendedModel": "claude-sonnet-5-5",
+      "observedModel": "claude-sonnet-5-5",
+      "reasoningEffort": null,
+      "assignment": "#15 Homebrew cask prepared in-repo (no tap repo; Chris decides), developer-brew-15",
+      "verification": "hc launch argv --model on 2026-11-21"
+    },
+    {
+      "name": "developer-a11y",
+      "terminal": "t6t",
+      "runtime": "claude",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "reasoningEffort": null,
+      "assignment": "#13 offscreen accessibility-tree tests, fixes and hand-check checklist, developer-a11y-13",
+      "verification": "hc launch argv --model on 2026-11-21"
     }
   ],
   "observedDate": "2026-11-20",
   "noMergeWithoutUserAuthorization": true,
-  "note": "Claude takeover Nov 20. All Codex (t1r, t68, t69, t6b, t6d, t1s, t1t, t8) and old Claude (t4w-t4z, t61-t64) terminals ended and removed from Herdr; worktrees and evidence preserved. #89 Blocked on Chris's distribution decision. No Copilot. Nov 20: PR91 (#88 icon assets) merged fbae373; designer t6k ended. Chris approved Sparkle auto-updates during beta on ad-hoc builds; #89 signing deferred post-beta (Backlog). Backlog #94 hide privacy mode, #95 hide snooze (Chris, UI simplification; #87 gates them behind flags). #96 gh default source in progress. PR97 QA PASS (pending flake-guard fix and main merge). PR99 Sparkle CI green, dedicated QA t6q."
+  "note": "Claude takeover Nov 20. All Codex (t1r, t68, t69, t6b, t6d, t1s, t1t, t8) and old Claude (t4w-t4z, t61-t64) terminals ended and removed from Herdr; worktrees and evidence preserved. #89 Blocked on Chris's distribution decision. No Copilot. Nov 20: PR91 (#88 icon assets) merged fbae373; designer t6k ended. Chris approved Sparkle auto-updates during beta on ad-hoc builds; #89 signing deferred post-beta (Backlog). Backlog #94 hide privacy mode, #95 hide snooze (Chris, UI simplification; #87 gates them behind flags). #96 gh default source in progress. PR97 QA PASS (pending flake-guard fix and main merge). PR99 Sparkle CI green, dedicated QA t6q. Nov 21: Beta 4 published (v0.1.0-beta.4 at 89876e7, Chris approved). Merged for Beta 5: PR117, PR119 (docs), PR118 (#7), PR120 (#60), PR121 (#104), PR122 (#116), PR123 and PR126 (#41), PR125 (#124). Closed #7, #8, #9, #10, #12, #41, #60, #61, #116, #124. Ended t6h, t6p, t6q, t6r. Chris: don't wait on him; appcast signing stays his (production key)."
 }
