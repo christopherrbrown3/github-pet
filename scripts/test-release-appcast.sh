@@ -11,7 +11,22 @@ fail() { echo "FAIL: $*" >&2; failures=$((failures + 1)); }
 # The script reads the committed key file; give it a scratch checkout holding the test key.
 mkdir -p "$scratch/repo/scripts" "$scratch/repo/updates"
 cp scripts/release-appcast.sh "$scratch/repo/scripts/"
-cp updates/appcast.xml "$scratch/repo/updates/"
+# Start from an empty channel, never the live updates/appcast.xml: the test must not depend on which
+# releases are already published (build numbers in the fixtures are compared against it).
+cat > "$scratch/repo/updates/appcast.xml" <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>GitHub Pet</title>
+        <link>https://github.com/christopherrbrown3/github-pet</link>
+        <description>GitHub Pet releases. Written by scripts/release-appcast.sh; no releases are signed yet.</description>
+        <language>en</language>
+    </channel>
+</rss>
+XML
+# The committed appcast, whatever it holds, must stay well-formed XML.
+python3 -c 'import sys, xml.etree.ElementTree as E; E.parse(sys.argv[1])' updates/appcast.xml \
+  || fail "committed updates/appcast.xml is not valid XML"
 echo "$key" > "$scratch/repo/updates/sparkle-public-ed-key.txt"
 cat > "$scratch/signer" <<'SH'
 #!/bin/sh
