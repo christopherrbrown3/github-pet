@@ -48,7 +48,35 @@ extension SnapshotRenderer {
                 await cleanUp(name, model: model)
             }
         }
+        report += await inboxLegibilityRenders(model: model, directory: directory)
         model.settings = saved
+        return report
+    }
+
+    /// #104: last-known rows (stale) and rows at the largest accessibility text size, light and dark,
+    /// plus the dimmed contrast ratios the renders use. Sizes show that rows grow, not clip.
+    private static func inboxLegibilityRenders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## inbox legibility (#104)"]
+        model.settings.mascotSkin = MascotSkin.allCases[0]
+        var selection = InboxViewSelection()
+        await prepare("stale", model: model, selection: &selection)
+        for (name, size) in [("default", DynamicTypeSize.large), ("xxxl", .accessibility3)] {
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                                   showsSimulator: false, initialSelection: selection)
+                                            .environment(\.dynamicTypeSize, size),
+                                         name: "inbox104-stale-\(name)\(suffix)", directory: directory,
+                                         appearance: appearance, asWindow: true)
+                if let first = lines.first { report.append("inbox104 \(name)\(suffix): \(first)") }
+            }
+        }
+        for (mode, labelGray, backgrounds) in [("light", 0.0, [236.0, 255]), ("dark", 255.0, [30.0, 50])] {
+            for role in [InboxDimming.Role.title, .context] {
+                let worst = backgrounds.map { InboxDimming.textRatio(role, labelGray: labelGray, backgroundGray: $0) }.min() ?? 0
+                report.append("inbox104 dimmed-\(role) \(mode): ratio>=\(String(format: "%.2f", worst)) (AA \(WCAGContrast.normalTextAA))")
+            }
+        }
+        await cleanUp("stale", model: model)
         return report
     }
 

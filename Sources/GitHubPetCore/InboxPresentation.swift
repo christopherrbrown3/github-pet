@@ -48,7 +48,7 @@ extension ItemKind {
         switch self {
         case .reviewRequest: return "eye"
         case .assignedIssue: return "smallcircle.filled.circle"
-        case .authoredPullRequest: return "arrow.triangle.pull"
+        case .authoredPullRequest: return "arrow.triangle.branch"
         case .ciFailure, .workflowFailure: return "xmark.octagon"
         case .deploymentApproval: return "checkmark.shield"
         case .entitlement: return "key"
