@@ -15,7 +15,7 @@ struct MascotArtwork {
     var logDescription: String {
         pack.map { "mascot pack \($0.manifest.displayID) loaded from \(PackLabel.sanitizePath($0.directory.path))" }
             ?? (errors.isEmpty ? "mascot placeholder (no pack)"
-                : "mascot placeholder (pack rejected: \(errors.map(\.description).joined(separator: "; ")))")
+                : "mascot placeholder (pack rejected: \(PackLabel.joined(errors, separator: "; ")))")
     }
 }
 

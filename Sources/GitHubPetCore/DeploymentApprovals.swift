@@ -191,7 +191,7 @@ public struct DeploymentGhClient: DeploymentPolling {
 
     private static func authFailure(_ result: CommandResult) -> Bool {
         let message = result.stderrText.lowercased()
-        return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
+        return GhAuth.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
     }
 
     /// `successfulSources` counts readable repositories. With no waiting run anywhere there is no

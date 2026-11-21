@@ -348,7 +348,7 @@ public struct ScopedGhClient: ScopedPolling {
     }
     private static func authFailure(_ result: CommandResult) -> Bool {
         let message = result.stderrText.lowercased()
-        return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
+        return GhAuth.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
     }
     public func fetch(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil,
                       assignmentMode: AssignmentMode = .all) -> ScopedPollResult {
@@ -368,7 +368,7 @@ public struct ScopedGhClient: ScopedPolling {
     private func run(_ plan: ScopeQueryPlan, budget: CommandBudget) -> ScopedPollResult {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
         do {
-            let auth = try runner.run(executable: gh, arguments: GhClient.authStatusArguments, budget: budget)
+            let auth = try runner.run(executable: gh, arguments: GhAuth.authStatusArguments, budget: budget)
             guard auth.outputComplete else { return .failure(.incompleteOutput) }
             if auth.exitCode != 0 && !auth.stderrText.lowercased().contains("unknown flag") {
                 let message = auth.stderrText.lowercased()

@@ -200,7 +200,7 @@ enum ScopeGraphQL {
     /// gh exits 4 when authentication is required.
     static func authFailure(_ result: CommandResult) -> Bool {
         let message = result.stderrText.lowercased()
-        return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
+        return GhAuth.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
     }
     /// Pre-parse transport classification shared by validation and discovery pages.
     static func transportFailure(_ result: CommandResult) -> ScopeAccessFailure? {

@@ -211,7 +211,7 @@ public struct ActionsGhClient: ActionsPolling {
         do {
             let result = try runner.run(executable: gh, arguments: plan.arguments, budget: budget)
             let message = result.stderrText.lowercased()
-            if GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401") {
+            if GhAuth.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401") {
                 return .failure(.signedOut)
             }
             guard result.outputComplete else { return .failure(.incompleteOutput) }

@@ -3,7 +3,7 @@ import Testing
 
 /// Static guard (#7): GitHub Pet never reads or stores tokens. No file under Sources reads a token
 /// environment variable, asks gh to print a token, or runs a `gh auth` subcommand other than the
-/// documented `auth status` preflight (`GhClient.authStatusArguments`). Hint text such as
+/// documented `auth status` preflight (`GhAuth.authStatusArguments`). Hint text such as
 /// "Run: gh auth login" is a string for the user to read, not an argument array, so it is not matched.
 @Suite struct TokenAccessSourceTests {
     static let forbiddenSubstrings = [
