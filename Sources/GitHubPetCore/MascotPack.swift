@@ -171,8 +171,10 @@ public struct MascotPack: Equatable, Sendable {
     /// Read limits, enforced before decoding or hashing.
     public static let maxManifestBytes = 256 * 1024
     public static let maxImageBytes = 4 * 1024 * 1024
-    /// All distinct images of one pack together (the bundled packs are under 5 MiB). Reading stops
-    /// once the running total passes it, so a pack of many large images can't stall or exhaust memory.
+    /// All distinct images of one pack together (the bundled packs' referenced images are about
+    /// 0.5 MiB). Reading stops once the running total passes it, so a pack of many large images
+    /// can't stall or exhaust memory. An image over `maxImageBytes` is rejected on its own
+    /// (`tooLarge`) and is not added to the total: it is already an error and is never retained.
     public static let maxPackBytes = 16 * 1024 * 1024
     /// Largest attention lean (design storyboard #29), about the ground anchor.
     public static let attentionLeanDegrees = 5.0
