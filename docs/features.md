@@ -9,8 +9,8 @@ Open it from the menu-bar icon or by clicking the pet.
 
 - **Header.** Your chosen pet with a blue count badge, the source status and when the list last
   updated. Refresh and Settings sit on the right.
-- **Tiles.** **Assigned** counts what's waiting on you, **Waiting** counts your pull requests that are
-  waiting on others, and **GitHub** shows the githubstatus.com status.
+- **Tiles.** **Assigned to you** counts what's waiting on you, **Waiting on others** counts your pull
+  requests that are waiting on someone else, and **GitHub status** shows the githubstatus.com status.
 - **Grouped rows.** Items are grouped by what they ask of you. Click a row to open it on GitHub.
 - **Dismiss, Undo and Restore.** **×** removes an item from your Inbox on this Mac only; GitHub still
   has it. **Undo** reverses the last dismissal. **View dismissed** lists saved dismissals, each with

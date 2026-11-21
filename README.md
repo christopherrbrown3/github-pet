@@ -16,7 +16,7 @@ macOS 13 or later · Apple Silicon and Intel · Free
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/hero-inbox-dark.png">
-  <img src="docs/screenshots/beta-4/hero-inbox.png" alt="The GitHub Pet Inbox with Mona in the header and a blue badge of 4. Tiles read Assigned 3, Waiting 1 and GitHub OK. Below, Demo rows are grouped: two review requests, an assigned issue and one of your pull requests with changes requested." width="420">
+  <img src="docs/screenshots/beta-4/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Assigned to you 4, Waiting on others 0, and GitHub status Operational. Below, under Needs you, rows are grouped into two review requests, one of your pull requests with changes requested, and one assigned issue, each with a dismiss button." width="420">
 </picture>
 
 </div>
@@ -45,11 +45,12 @@ uninstalling.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/inbox-dismissed-dark.png">
-  <img src="docs/screenshots/beta-4/inbox-dismissed.png" alt="The Inbox in its View dismissed list, with Little Chris in the header. Two dismissed Demo items each have a Restore button, and Back to Inbox returns to the live list." width="380" align="right">
+  <img src="docs/screenshots/beta-4/inbox-dismissed.png" alt="The Inbox with Little Chris in the header, showing the Dismissed here list: two dismissed Demo items, a pull request and a review request, each with its dismissal time and a Restore button, and a Back to Inbox link." width="380" align="right">
 </picture>
 
 Review requests, issues assigned to you and your own pull requests that need a change sit in one list,
-grouped by what they ask of you. Three tiles sum it up: **Assigned**, **Waiting** and **GitHub** status.
+grouped by what they ask of you. Three tiles sum it up: **Assigned to you**, **Waiting on others** and
+**GitHub status**.
 
 Click a row and it opens on GitHub. Done with something? Dismiss it with **×**. It stays dismissed on this
 Mac, **Undo** brings it straight back, and **View dismissed** lets you restore it later.
@@ -63,14 +64,14 @@ Mac, **Undo** brings it straight back, and **View dismissed** lets you restore i
     <td align="center" width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/mascot-mona-dark.png">
-        <img src="docs/screenshots/beta-4/mascot-mona.png" alt="Mona, the default desktop pet, with a blue count badge" width="160">
+        <img src="docs/screenshots/beta-4/mascot-mona.png" alt="Mona, the default desktop pet: a black cat-eared octopus with a blue count badge of 4 and a DEMO tag" width="160">
       </picture>
       <br><sub><b>Mona</b> (default)</sub>
     </td>
     <td align="center" width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/mascot-little-chris-dark.png">
-        <img src="docs/screenshots/beta-4/mascot-little-chris.png" alt="Little Chris, the second desktop pet, with a blue count badge" width="160">
+        <img src="docs/screenshots/beta-4/mascot-little-chris.png" alt="Little Chris, the second desktop pet: a small bearded figure in a navy hoodie, with a blue count badge of 4 and a DEMO tag" width="160">
       </picture>
       <br><sub><b>Little Chris</b></sub>
     </td>
@@ -85,7 +86,7 @@ it: the Inbox and menu-bar icon keep working either way.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/inbox-stale-dark.png">
-  <img src="docs/screenshots/beta-4/inbox-stale.png" alt="The Inbox when data is out of date: a warning symbol and a stale status line in the header, with the last successful update time, above the last known Demo rows." width="380" align="right">
+  <img src="docs/screenshots/beta-4/inbox-stale.png" alt="The Inbox when its data is out of date: the header reads Stale with a warning symbol and the last update time, the badge and both counts show a question mark, the GitHub status tile reads Stale, and the last known Demo rows are dimmed under 'Showing last known items'." width="380" align="right">
 </picture>
 
 Loading, partial, out-of-date, signed-out and failed results are labelled for what they are. They never
@@ -97,7 +98,24 @@ Active GitHub incidents from githubstatus.com appear on their own, apart from yo
 
 ### Simple settings
 
-<!-- SETTINGS: rendered after #113 merges (Mascot | GitHub panes). -->
+<table>
+  <tr>
+    <td align="center" valign="top" width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/settings-mascot-dark.png">
+        <img src="docs/screenshots/beta-4/settings-mascot.png" alt="The Mascot settings pane: Show desktop pet, a choice between Mona (selected) and Little Chris with badge previews, a size slider at 128 pt, Reset position, Reduce motion, and a Startup section explaining that Open at login isn't available in this beta, with an Open Login Items Settings button." width="380">
+      </picture>
+      <br><sub><b>Mascot</b></sub>
+    </td>
+    <td align="center" valign="top" width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/settings-github-dark.png">
+        <img src="docs/screenshots/beta-4/settings-github.png" alt="The GitHub settings pane in Demo mode: the GitHub CLI section with the data source set to Fixtures (offline) and a Recheck button, source health for reviews and issues and for GitHub status incidents, and the Monitoring scope set to Everything accessible." width="380">
+      </picture>
+      <br><sub><b>GitHub</b> (top of the pane, Demo mode)</sub>
+    </td>
+  </tr>
+</table>
 
 Settings has two panes. **Mascot** chooses and sizes your pet, turns motion down and helps with opening
 at login. **GitHub** shows your `gh` connection, what to watch (everything you can access, or up to 10
