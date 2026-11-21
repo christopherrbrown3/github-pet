@@ -360,7 +360,7 @@ public struct ScopedGhClient: ScopedPolling {
     private func run(_ plan: ScopeQueryPlan, budget: CommandBudget) -> ScopedPollResult {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
         do {
-            let auth = try runner.run(executable: gh, arguments: GhClient.authStatusArguments, budget: budget)
+            let auth = try runner.run(executable: gh, arguments: GhFailure.authStatusArguments, budget: budget)
             guard auth.outputComplete else { return .failure(.incompleteOutput) }
             if auth.exitCode != 0 && !auth.stderrText.lowercased().contains("unknown flag") {
                 switch GhFailure.classifyPreflight(auth) {

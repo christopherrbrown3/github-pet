@@ -20,6 +20,16 @@ import Testing
         #expect(GhFailure.isAuthFailure(result(4)) && !GhFailure.isAuthFailure(result(1, "HTTP 401")))
     }
 
+    @Test func http401AloneWithoutBadCredentialsIsSignedOut() {
+        #expect(GhFailure.isSignedOut(result(1, "HTTP 401")))
+        #expect(GhFailure.isSignedOut(result(1, "gh: HTTP 401 (https://api.github.com/graphql)")))
+        #expect(GhFailure.classifyPreflight(result(2, "HTTP 401")) == .signedOut)
+    }
+
+    @Test func authStatusChecksOnlyTheActiveAccountOnGitHubDotCom() {
+        #expect(GhFailure.authStatusArguments == ["auth", "status", "--active", "--hostname", "github.com"])
+    }
+
     @Test func rateLimitIsDistinctFromDenial() {
         #expect(GhFailure.isRateLimited("API rate limit exceeded for user"))
         #expect(!GhFailure.isRateLimited("HTTP 403: Resource protected by organization SAML enforcement"))
@@ -49,8 +59,6 @@ import Testing
         let account = try ScopeAccount(viewerID: "u1")
         let scope = try MonitoringScope(selected: [try MonitoringTarget(repository: "octo/repo")])
         let repositories = [try MonitoringTarget(repository: "octo/repo")]
-        #expect(GhClient(locator: locator).authState() == .missing)
-        #expect(GhClient(locator: locator).fetchWithAccount().outcome == .failure(.ghMissing))
         #expect(ScopedGhClient(locator: locator).fetch(scope: scope, expectedAccount: account) == .failure(.ghMissing))
         #expect(ActionsGhClient(locator: locator).fetch(repositories: repositories, expectedAccount: account,
                                                        budget: CommandBudget(timeout: 1)) == .failure(.ghMissing))
