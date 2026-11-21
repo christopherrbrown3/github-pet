@@ -53,18 +53,18 @@ extension SnapshotRenderer {
         return report
     }
 
-    /// #104: last-known rows (stale) and rows at the largest accessibility text size, light and dark,
-    /// plus the dimmed contrast ratios the renders use. Sizes show that rows grow, not clip.
+    /// #104: last-known (stale) rows, light and dark, plus the dimmed contrast ratios. Large text is
+    /// not rendered here (an offscreen render ignores the Dynamic Type environment); it is covered
+    /// only by the InboxRowMetrics unit tests.
     private static func inboxLegibilityRenders(model: AppModel, directory: URL) async -> [String] {
         var report = ["## inbox legibility (#104)"]
         model.settings.mascotSkin = MascotSkin.allCases[0]
         var selection = InboxViewSelection()
         await prepare("stale", model: model, selection: &selection)
-        for (name, size) in [("default", DynamicTypeSize.large), ("xxxl", .accessibility3)] {
+        for name in ["default"] {
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
-                                                   showsSimulator: false, initialSelection: selection)
-                                            .environment(\.dynamicTypeSize, size),
+                                                   showsSimulator: false, initialSelection: selection),
                                          name: "inbox104-stale-\(name)\(suffix)", directory: directory,
                                          appearance: appearance, asWindow: true)
                 if let first = lines.first { report.append("inbox104 \(name)\(suffix): \(first)") }

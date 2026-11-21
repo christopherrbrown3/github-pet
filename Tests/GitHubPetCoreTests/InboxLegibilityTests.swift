@@ -14,12 +14,14 @@ import Testing
     }
 
     @Test func dimmedTextMeetsAAInLightAndDark() {
-        for role in [InboxDimming.Role.title, .context] {
+        // Floors are the claimed minima (above AA 4.5), so a small alpha regression is caught.
+        for (role, floor) in [(InboxDimming.Role.title, 6.0), (.context, 5.0)] {
+            #expect(floor > WCAGContrast.normalTextAA)
             for background in lightBackgrounds {
-                #expect(InboxDimming.textRatio(role, labelGray: 0, backgroundGray: background) >= WCAGContrast.normalTextAA)
+                #expect(InboxDimming.textRatio(role, labelGray: 0, backgroundGray: background) >= floor)
             }
             for background in darkBackgrounds {
-                #expect(InboxDimming.textRatio(role, labelGray: 255, backgroundGray: background) >= WCAGContrast.normalTextAA)
+                #expect(InboxDimming.textRatio(role, labelGray: 255, backgroundGray: background) >= floor)
             }
         }
     }
