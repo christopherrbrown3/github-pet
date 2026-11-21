@@ -222,12 +222,15 @@ struct UpdateStatusSection: View {
                     Spacer()
                     Button("Check for Updates…") { updates.checkForUpdates() }
                         .disabled(!updates.canCheck)
+                        .accessibilityHint(updates.canCheck ? "" : "Unavailable while an update check is running.")
                         .accessibilityIdentifier("settings.updateCheck")
                 }
                 Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticChecks }, set: updates.setAutomaticChecks))
                     .accessibilityIdentifier("settings.updateAutoCheck")
                 Toggle("Install updates automatically, without asking", isOn: Binding(get: { updates.automaticInstall }, set: updates.setAutomaticInstall))
                     .disabled(!updates.configuration.allowsAutomaticInstall || !updates.automaticChecks)
+                    .accessibilityHint(!updates.configuration.allowsAutomaticInstall ? "This build doesn't allow automatic install."
+                                       : !updates.automaticChecks ? "Turn on automatic checks first." : "")
                     .accessibilityIdentifier("settings.updateAutoInstall")
             } else if case .notConfigured(let reason) = updates.state {
                 Text("Updates not configured. \(reason)")
@@ -236,6 +239,7 @@ struct UpdateStatusSection: View {
             }
             Toggle("Include beta releases", isOn: Binding(get: { updates.betaOptIn || updates.betaForced }, set: { updates.betaOptIn = $0 }))
                 .disabled(updates.betaForced)
+                .accessibilityHint(updates.betaForced ? "This is a beta build, so it always follows beta releases." : "")
                 .accessibilityIdentifier("settings.updateBeta")
             if updates.betaForced {
                 Text("This is a beta build, so it always follows beta releases.").font(.caption).foregroundStyle(.secondary)
@@ -254,6 +258,8 @@ struct UpdateMenuRow: View {
         HStack(spacing: 6) {
             Button("Check for Updates…") { updates.checkForUpdates() }
                 .disabled(!updates.canCheck)
+                .accessibilityHint(updates.canCheck ? ""
+                                   : updates.isAvailable ? "Unavailable while an update check is running." : "Updates are not configured in this build.")
                 .accessibilityIdentifier("menu.checkForUpdates")
             Spacer()
             if let version = updates.readyVersion {

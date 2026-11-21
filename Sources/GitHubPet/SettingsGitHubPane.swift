@@ -115,8 +115,12 @@ struct EntitlementRepositoriesSection: View {
                 TextField("owner/name", text: $input)
                     .onSubmit(add)
                     .onChange(of: input) { _ in problem = nil }
+                    .accessibilityLabel("New entitlement repository, owner/name")
                     .accessibilityIdentifier("settings.entitlementInput")
                 Button("Add", action: add).disabled(input.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityLabel("Add entitlement repository")
+                    .accessibilityHint(input.trimmingCharacters(in: .whitespaces).isEmpty
+                                       ? "Type a repository as owner/name first." : "")
             }
             if let problem {
                 Text(problem.message).font(.caption).foregroundStyle(.orange)
