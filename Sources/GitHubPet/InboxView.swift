@@ -315,7 +315,9 @@ struct InboxView: View {
         return {
             let title = PrivacyText.title(item, privacy: model.inboxPrivacy)
             model.dismissInboxItem(item.id, in: context)
-            undo = UndoDismissal(id: item.id, title: title)
+            // Records are keyed by the item's digest (as the Dismissed list's Restore uses);
+            // the raw id made Undo hide the banner without restoring anything.
+            undo = UndoDismissal(id: EventBaseline.digest(item.id), title: title)
         }
     }
 
@@ -419,8 +421,11 @@ struct InboxMascotHeader: View {
             }
         }
         .frame(width: Self.side + 6, height: Self.side)
+        // One image announcing the count and state (stale, unknown, needs attention), as the
+        // desktop pet and menu-bar icon do; the badge alone said only "4 items".
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(model.inboxCountDescription)
+        .accessibilityLabel(model.statusAccessibilityLabel)
+        .accessibilityAddTraits(.isImage)
         .accessibilityIdentifier("inbox.mascot")
     }
 }
@@ -470,6 +475,7 @@ struct OverviewTile: View {
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(tint.opacity(0.25)))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tile.accessibilityLabel)
+        .accessibilityAddTraits(.isStaticText)
     }
 
     /// Tint supports the words; it never carries meaning on its own.
@@ -568,6 +574,8 @@ struct InboxRow: View {
             .help(privacy ? "Open on GitHub" : "\(item.title)\nOpen on GitHub")
             .accessibilityLabel(accessibilityText)
             .accessibilityHint("Opens on GitHub")
+            .accessibilityAction(named: "Open on GitHub", open)
+            .modifier(OptionalAccessibilityAction(name: "Dismiss Here", action: dismiss))
             if let dismiss {
                 Button(action: dismiss) {
                     Image(systemName: "xmark")
@@ -594,6 +602,20 @@ struct InboxRow: View {
 
     private var accessibilityText: String {
         (unseen ? "New. " : "") + title + ". " + PrivacyText.subtitle(item, privacy: privacy)
+    }
+}
+
+/// A named VoiceOver action only when the action exists (a row that can't be dismissed has none).
+struct OptionalAccessibilityAction: ViewModifier {
+    let name: String
+    let action: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let action {
+            content.accessibilityAction(named: name, action)
+        } else {
+            content
+        }
     }
 }
 

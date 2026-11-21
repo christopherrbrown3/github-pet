@@ -44,10 +44,13 @@ struct MonitoringScopeSection: View {
                 Spacer()
                 Button("Cancel") { editor.cancel() }
                     .disabled(!editor.hasChanges && editor.phase == .idle)
-                    .accessibilityHint("Discards the draft and keeps the active monitoring scope.")
+                    .accessibilityHint((!editor.hasChanges && editor.phase == .idle ? "No changes to discard. " : "")
+                                       + "Discards the draft and keeps the active monitoring scope.")
                 Button("Apply") { editor.apply() }
                     .disabled(!editor.canApply)
-                    .accessibilityHint("Checks access to every entry, then applies the scope.")
+                    .accessibilityHint((editor.canApply ? "" : (editor.hasChanges ? editor.applyBlockedReason.map { $0 + " " } ?? ""
+                                                                : "No changes to apply. "))
+                                       + "Checks access to every entry, then applies the scope.")
                     .accessibilityIdentifier("settings.scope.apply")
             }
         } header: {
@@ -78,6 +81,7 @@ struct MonitoringScopeSection: View {
             }
             .disabled(lists.organizations.isEmpty)
             .accessibilityLabel("Organization suggestions, \(lists.organizations.count)")
+            .accessibilityHint(lists.organizations.isEmpty ? editor.discoveryText : "")
             Menu("Repositories") {
                 ForEach(lists.repositories, id: \.self) { value in
                     Button(value) { editor.useSuggestion(value, kind: .repository) }
@@ -85,6 +89,7 @@ struct MonitoringScopeSection: View {
             }
             .disabled(lists.repositories.isEmpty)
             .accessibilityLabel("Repository suggestions, \(lists.repositories.count)")
+            .accessibilityHint(lists.repositories.isEmpty ? editor.discoveryText : "")
             .fixedSize()
         }
         Text(editor.discoveryText).font(.caption).foregroundStyle(.secondary)
@@ -130,11 +135,12 @@ private struct TargetListEditor: View {
             let input = kind == .organization ? $editor.organizationInput : $editor.repositoryInput
             let inputProblem = kind == .organization ? editor.organizationInputProblem : editor.repositoryInputProblem
             HStack {
-                TextField("Add \(noun.lowercased())", text: input, prompt: Text(prompt))
+                // The hidden title is the spoken name; an accessibilityLabel as well was read
+                // after it ("Add organization, New organization, login").
+                TextField("New \(noun.lowercased()), \(prompt)", text: input, prompt: Text(prompt))
                     .labelsHidden()
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { kind == .organization ? editor.addOrganization() : editor.addRepository() }
-                    .accessibilityLabel("New \(noun.lowercased()), \(prompt)")
                     .accessibilityHint(inputProblem?.message(for: kind) ?? "Press Return or Add to put it in the draft.")
                 Button("Add") { kind == .organization ? editor.addOrganization() : editor.addRepository() }
                     .accessibilityLabel("Add \(noun.lowercased())")

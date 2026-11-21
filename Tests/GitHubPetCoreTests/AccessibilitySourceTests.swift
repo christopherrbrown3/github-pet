@@ -12,7 +12,8 @@ import Testing
         let source = try String(contentsOf: sources.appendingPathComponent("SettingsView.swift"), encoding: .utf8)
         let toggle = try #require(source.range(of: #"Toggle("Open at login""#))
         let caption = try #require(source.range(of: "Text(settings.summary)", range: toggle.upperBound..<source.endIndex))
-        #expect(source[toggle.upperBound..<caption.lowerBound].contains(".accessibilityValue(Text(verbatim: settings.summary))"))
+        // A hint, not a value: a switch announces on/off as its value (AccessibilityTreeTests).
+        #expect(source[toggle.upperBound..<caption.lowerBound].contains(".accessibilityHint(Text(verbatim: settings.summary))"))
     }
 
     @Test func everySliderHasAnAccessibilityLabel() throws {
@@ -26,7 +27,10 @@ import Testing
                 sliders += 1
                 // The modifiers that follow the control, up to the next blank line or closing view.
                 let tail = rest[range.upperBound...].prefix(600)
-                #expect(tail.contains(".accessibilityLabel("), "unlabelled Slider in \(file.lastPathComponent)")
+                // A Text label or an accessibilityLabel, not both (read twice; AccessibilityTreeTests).
+                let labelled = tail.contains(".accessibilityLabel(")
+                    || tail.range(of: #"^[^)]*\)\s*\{\s*Text\("#, options: .regularExpression) != nil
+                #expect(labelled, "unlabelled Slider in \(file.lastPathComponent)")
                 rest = rest[range.upperBound...]
             }
         }

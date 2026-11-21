@@ -70,12 +70,12 @@ struct MascotPane: View {
                         .accessibilityHidden(true)
                 }
                 VStack(spacing: 2) {
-                    // Labelled for VoiceOver: the sibling "Size" text doesn't label the control.
+                    // Labelled for VoiceOver by its hidden Text label (the sibling "Size" text doesn't
+                    // label the control); an accessibilityLabel as well was read twice.
                     Slider(value: $model.settings.mascotSize, in: PetSettings.mascotSizeRange, step: 16) {
                         Text("Mascot size")
                     }
                     .labelsHidden()
-                    .accessibilityLabel("Mascot size")
                     .accessibilityValue("\(Int(model.settings.mascotSize)) points")
                     HStack {
                         Text("Small"); Spacer(); Text("Large")
@@ -171,6 +171,7 @@ private struct SkinCard: View {
         .accessibilityLabel("\(skin.name) skin")
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityHint(locked ? (model.mascotArtwork.notice ?? "The mascot can't be changed in this launch.") : "")
         .accessibilityIdentifier("settings.mascotSkin.\(skin == .mona ? "mona" : "littleChris")")
     }
 
@@ -193,7 +194,9 @@ struct LoginItemSection: View {
         Section("Startup") {
             Toggle("Open at login", isOn: Binding(get: { settings.isOn }, set: { settings.setEnabled($0) }))
                 .disabled(!settings.canToggle)
-                .accessibilityValue(Text(verbatim: settings.summary))
+                // The hint, not the value: a switch's value is its on/off state, and the summary
+                // set as the value was never announced. It also says why the switch is disabled.
+                .accessibilityHint(Text(verbatim: settings.summary))
                 .accessibilityIdentifier("settings.openAtLogin")
             Text(settings.summary)
                 .font(.caption).foregroundStyle(settings.failure == nil ? .secondary : Color.orange)
