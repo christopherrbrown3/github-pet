@@ -198,15 +198,12 @@ enum ScopeGraphQL {
         return (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any]
     }
     /// gh exits 4 when authentication is required.
-    static func authFailure(_ result: CommandResult) -> Bool {
-        let message = result.stderrText.lowercased()
-        return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
-    }
+    static func authFailure(_ result: CommandResult) -> Bool { GhFailure.isSignedOut(result) }
     /// Pre-parse transport classification shared by validation and discovery pages.
     static func transportFailure(_ result: CommandResult) -> ScopeAccessFailure? {
         if authFailure(result) { return .signedOut }
         if !result.outputComplete { return .incompleteOutput }
-        if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .rateLimited }
+        if result.exitCode != 0 && GhFailure.isRateLimited(result.stderrText) { return .rateLimited }
         return nil
     }
 }

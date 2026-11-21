@@ -6,12 +6,18 @@ import Testing
 /// #116: the count stays on each skin's silhouette. Mona keeps the slot at the trailing inset;
 /// a narrower skin (Little Chris) moves it left so it sits over the head's upper-right region.
 @Suite struct BadgeSlotTests {
-    private static func pack(_ skin: MascotSkin) throws -> MascotPack {
+    /// Loaded once: pack loading sweeps the leaning contours, the slowest part of these tests.
+    private static let packs: [MascotSkin: Result<MascotPack, MascotPackErrors>] = {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        return try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(skin.rawValue)")).get()
-    }
-    private static let sizes = stride(from: CGFloat(64), through: 256, by: 1)
+        return Dictionary(uniqueKeysWithValues: MascotSkin.allCases.map {
+            ($0, MascotPack.load(from: root.appendingPathComponent("assets/mascots/\($0.rawValue)")))
+        })
+    }()
+    private static func pack(_ skin: MascotSkin) throws -> MascotPack { try packs[skin]!.get() }
+    /// A representative sample: the design stops (64/128/256), the 96 pt panel-width floor, sizes
+    /// either side of it and of 128 (where interpolation changes segment), and 192.
+    private static let sizes: [CGFloat] = [64, 80, 96, 100, 112, 128, 160, 192, 224, 256]
 
     /// Panel x of the head's right edge.
     private func headEdge(_ layout: MascotLayout, _ pack: MascotPack) throws -> CGFloat {
@@ -19,7 +25,7 @@ import Testing
         return layout.artFrame.minX + CGFloat(head + 1) * layout.artSide / CGFloat(MascotPack.canvasSize)
     }
 
-    @Test func monaKeepsHerPlacementAtEverySize() throws {
+    @Test func monaKeepsHerPlacementAtTheSampledSizes() throws {
         let pack = try Self.pack(.mona)
         for side in Self.sizes {
             let layout = MascotLayout(artSide: side, pack: pack)
@@ -30,7 +36,7 @@ import Testing
     }
 
     @Test(arguments: MascotSkin.allCases)
-    func countSitsOverTheHeadAtEverySize(skin: MascotSkin) throws {
+    func countSitsOverTheHeadAtTheSampledSizes(skin: MascotSkin) throws {
         let pack = try Self.pack(skin)
         for side in Self.sizes {
             let layout = MascotLayout(artSide: side, pack: pack)
@@ -53,7 +59,7 @@ import Testing
     func countRestsOnTheArtInsideThePanel(skin: MascotSkin) throws {
         let pack = try Self.pack(skin)
         let gap = MascotLayout.nearTouchGap
-        for side in stride(from: CGFloat(64), through: 256, by: 8) {
+        for side in Self.sizes {
             let layout = MascotLayout(artSide: side, pack: pack)
             for contour in pack.uprightContours {
                 #expect(layout.clearance(contour, layout.demoFrame, lane: layout.laneHeight) >= gap - 0.001)

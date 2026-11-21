@@ -42,10 +42,13 @@ chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
 GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-# CI took about 260 s before the per-skin probes (#116) were added; 420 s leaves room for them.
-for _ in {1..420}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
+limit=420
+started=$SECONDS
+for _ in {1..$limit}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
 wait $pid || true
+# Headroom evidence (#104): CI logs how much of the wait the render used.
+echo "info render finished in $((SECONDS - started)) s of the ${limit} s limit"
 after=$(prefs after)
 
 report=$out/report.txt

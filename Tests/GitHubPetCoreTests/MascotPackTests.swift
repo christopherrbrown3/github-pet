@@ -342,6 +342,54 @@ private struct PackFixture {
         #expect(fixture.errors() == [.tooLarge("frames/attention_0.png")])
     }
 
+    @Test func packWithTooManyTotalFramesIsRejectedBeforeAnyFileIsRead() throws {
+        let fixture = try PackFixture()
+        // 3 states x 9 frames = 27 > 24; none of the extra files exist, and none may be opened.
+        try fixture.manifest { json in
+            var states = json["states"] as! [String: Any]
+            for key in states.keys {
+                var spec = states[key] as! [String: Any]
+                spec["frames"] = (0..<9).map { "frames/missing_\(key)_\($0).png" }
+                spec["durationMs"] = Array(repeating: 125, count: 9)
+                states[key] = spec
+            }
+            json["states"] = states
+        }
+        #expect(fixture.errors() == [.tooManyFrames(27)])
+        #expect(MascotPackError.tooManyFrames(27).description.contains("at most 24"))
+    }
+
+    @Test func packOverTheTotalByteCapIsRejectedWithAClearError() throws {
+        let fixture = try PackFixture()
+        // Six images just under the per-image cap: each is allowed alone, together they pass 16 MiB.
+        var padded = validFrame
+        padded.append(Data(count: MascotPack.maxImageBytes - validFrame.count - 1))
+        for state in MascotState.allCases {
+            for index in 0..<2 {
+                try padded.write(to: fixture.directory.appendingPathComponent("frames/\(state.rawValue)_\(index).png"))
+            }
+        }
+        try fixture.manifest()
+        #expect(fixture.errors() == [.packTooLarge(MascotPack.maxPackBytes)])
+        #expect(MascotPackError.packTooLarge(MascotPack.maxPackBytes).description.contains("16 MiB"))
+    }
+
+    @Test func tooLargeImagesAreNotCountedTowardTheTotalByteCap() throws {
+        let fixture = try PackFixture()
+        // Six over-limit images would pass 16 MiB together, but each is only its own tooLarge error.
+        var big = validFrame
+        big.append(Data(count: MascotPack.maxImageBytes))
+        for state in MascotState.allCases {
+            for index in 0..<2 {
+                try big.write(to: fixture.directory.appendingPathComponent("frames/\(state.rawValue)_\(index).png"))
+            }
+        }
+        try fixture.manifest()
+        let errors = fixture.errors()
+        #expect(errors.count == 6)
+        #expect(errors.allSatisfy { if case .tooLarge = $0 { true } else { false } })
+    }
+
     @Test func oversizedManifestIsRejected() throws {
         let fixture = try PackFixture()
         try fixture.manifest { $0["padding"] = String(repeating: "x", count: MascotPack.maxManifestBytes) }

@@ -5,6 +5,7 @@ struct DismissedInboxView: View {
     let rows: [DismissedInboxRow]
     let privacy: Bool
     let restore: (String) -> Void
+    @ScaledMetric(relativeTo: .body) private var textScale = 1.0
 
     var body: some View {
         if rows.isEmpty {
@@ -35,7 +36,7 @@ struct DismissedInboxView: View {
                     }
                 }
             }
-            .frame(minHeight: InboxView.listHeight(rows: rows.count), maxHeight: InboxView.maxListHeight)
+            .frame(minHeight: InboxView.listHeight(rows: rows.count, textScale: textScale), maxHeight: InboxView.maxListHeight)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Dismissed items")
         }

@@ -602,11 +602,12 @@ enum SnapshotRenderer {
     /// real MascotView is drawn twice (art only, labels only) and the nearest pair of visible
     /// pixels is found. Reports the range and any overlapping pixels.
     /// `skin` (#116) prefixes the lines and file names for a probe run with another skin selected.
+    /// The same renders feed the badge-fit lines (#116) for the selected skin.
     static func nearTouchMeasurements(model: AppModel, directory: URL, skin: MascotSkin? = nil) async -> [String] {
         let label = skin.map { "near-touch \($0.rawValue) " } ?? "near-touch "
         let file = skin.map { "near-touch-\($0.rawValue)-" } ?? "near-touch-"
         guard let pack = model.pack else { return ["near-touch: no pack"] }
-        var lines: [String] = []
+        var lines: [String] = [], fits: [String] = []
         // One offscreen window reused for every case: SwiftUI only commits its layers inside one.
         let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -629,6 +630,7 @@ enum SnapshotRenderer {
                 var overlaps = 0
                 var worst = "", closest = ""
                 var sheet: [(name: String, art: [UInt8], labels: [UInt8], gap: CGFloat)] = []
+                var fit = BadgeFit(layout: layout, scale: scale)
                 // Every upright pose, plus the attention gesture's leaning frames.
                 var poses = MascotState.allCases.flatMap { state in
                     (pack.frameURLs(for: state).indices.map { Optional($0) } + [nil])
@@ -663,6 +665,7 @@ enum SnapshotRenderer {
                             gaps.append(gap)
                             if pose.angle == 0 { upright.append(gap) } else { leaning.append(gap) }
                             sheet.append((name, artAlpha, labelAlpha, gap))
+                            fit.add(pose, badge: badge, art: artAlpha, labels: labelAlpha)
                         }
                 }
                 writeContactSheet(sheet, size: layout.panelSize, scale: scale,
@@ -671,10 +674,11 @@ enum SnapshotRenderer {
                              + "upright=\(format(upright.min()))-\(format(upright.max())) leaning=\(format(leaning.min()))-\(format(leaning.max())) "
                              + "(closest \(closest), farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
                              + "lane=\(format(layout.laneHeight))")
+                fits.append(fit.line(skin: model.settings.mascotSkin))
                 empty = 0
             }
         }
-        return lines
+        return lines + fits
     }
 
     /// The incident marker never touches the labels (#37): at 64/128/256 and 1×/2×, the union of
@@ -932,7 +936,9 @@ enum SnapshotRenderer {
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.layoutSubtreeIfNeeded()
         hosting.window?.displayIfNeeded()
-        try? await Task.sleep(nanoseconds: 15_000_000)
+        // A yield lets SwiftUI commit; a fixed sleep here cost ~15 ms x thousands of bitmaps (render-check
+        // headroom, #104) and measured identical.
+        await Task.yield()
         guard let layer = hosting.layer else { return nil }
         layer.contentsScale = scale
         let width = Int((size.width * scale).rounded(.up)), height = Int((size.height * scale).rounded(.up))
@@ -1068,8 +1074,8 @@ enum SnapshotRenderer {
         MascotWindowController.show(popover, placement: placement, panelFrame: panel.frame, anchor: anchor)
         defer { popover.close(); panel.orderOut(nil); anchor.orderOut(nil) }
         var shown: NSWindow?
-        for _ in 0..<8 where shown == nil {
-            try? await Task.sleep(nanoseconds: 200_000_000)
+        for _ in 0..<32 where shown == nil {
+            try? await Task.sleep(nanoseconds: 50_000_000)
             shown = popover.contentViewController?.view.window.flatMap { $0.isVisible ? $0 : nil }
         }
         try? await Task.sleep(nanoseconds: 200_000_000)
