@@ -8,8 +8,13 @@ import Testing
 /// A pack directory lookup that can be held on the background thread until the test releases it.
 final class Gate: @unchecked Sendable {
     private let semaphore = DispatchSemaphore(value: 0)
-    private(set) var entered = DispatchSemaphore(value: 0)
-    func wait() { entered.signal(); semaphore.wait() }
+    private let entered = DispatchSemaphore(value: 0)
+    /// A bounded park: a test that forgets or fails to open the gate can't hang the run (#127).
+    func wait() { entered.signal(); _ = semaphore.wait(timeout: .now() + 20) }
+    /// True once a loader has reached the gate (bounded, off the cooperative pool's async context).
+    func waitUntilEntered() async -> Bool {
+        await Task.detached { [entered] in entered.wait(timeout: .now() + 20) == .success }.value
+    }
     /// Releases every waiter, now and later (the background prewarm may ask for the same pack too).
     func open() { for _ in 0..<16 { semaphore.signal() } }
 }
@@ -72,6 +77,7 @@ final class Gate: @unchecked Sendable {
         let root = try newRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         let gate = Gate()
+        defer { gate.open() }
         let app = model(root, gates: [.mona: gate])
         // The loader is parked on the background thread, yet the model was built and is usable.
         #expect(app.mascotArtworkLoading)
@@ -87,12 +93,13 @@ final class Gate: @unchecked Sendable {
         let root = try newRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         let slow = Gate()
+        defer { slow.open() }
         let app = model(root, gates: [.littleChris: slow])
         await requestedLoadFinished(app)
         #expect(app.mascotArtwork.source == .builtIn(.mona))
         app.settings.mascotSkin = .littleChris        // parked on the background thread
         app.settings.mascotSkin = .mona               // newer choice
-        await Task.detached { slow.entered.wait() }.value
+        #expect(await slow.waitUntilEntered())
         slow.open()                                   // the older load finishes after the newer request
         await app.mascotArtworkSettled()
         #expect(app.mascotArtwork.source == .builtIn(.mona))
@@ -104,6 +111,7 @@ final class Gate: @unchecked Sendable {
         let root = try newRoot()
         defer { try? FileManager.default.removeItem(at: root) }
         let gate = Gate()
+        defer { gate.open() }
         let app = model(root, gates: [.littleChris: gate])
         await requestedLoadFinished(app)
         let before = app.layout(128)
@@ -147,6 +155,7 @@ final class Gate: @unchecked Sendable {
         let root = try helper.root()
         defer { try? FileManager.default.removeItem(at: root) }
         let gate = Gate()
+        defer { gate.open() }
         let app = helper.model(root, gates: [.littleChris: gate])
         await Task.yield()
         // Mona is current (or loading); Little Chris is parked on the background thread. Asking for
