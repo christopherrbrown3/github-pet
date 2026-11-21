@@ -4,6 +4,7 @@ import Testing
 @testable import GitHubPetCore
 
 @MainActor @Suite(.serialized) struct SettingsPaneTests {
+    /// Flag-on path: snooze and quiet hours stay in the code base (#95, #107).
     @Test func suppressionScenarioParsesAndKeepsPollingAndInboxUpdates() async throws {
         #expect(QAScenarioRunner.settingsScenarios["settings-suppression-keeps-monitoring"] != nil)
         let output = FileManager.default.temporaryDirectory.appendingPathComponent("qa-suppress-\(UUID().uuidString)")
@@ -17,7 +18,8 @@ import Testing
         var launch = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         launch.forcePlaceholder = true
         let model = AppModel(options: launch, runtime: AppModel.Runtime(
-            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false, scopeSimulationHoldLimit: nil))
+            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false, scopeSimulationHoldLimit: nil,
+            features: .allOn))
         defer { model.cleanupScopeSimulation() }
         _ = try await QAScenarioRunner.execute(plan, model: model)
         let records = try FileManager.default.contentsOfDirectory(atPath: output.path)
@@ -37,6 +39,38 @@ import Testing
         #expect(quiet["interruptionsSuppressed"] as? Bool == true)
         #expect((quietPoll["pollsRequested"] as! Int) > (quiet["pollsRequested"] as! Int))
         #expect((quietPoll["inboxRowCount"] as! Int) > (quiet["inboxRowCount"] as! Int))
+    }
+
+    /// #94, #95, #107 with the build's switches (all hidden): stored values are recorded as stored,
+    /// effective ones are off, and a new row still alerts.
+    @Test func hiddenFeaturesUpgradeScenarioKeepsAlertsAndTitles() async throws {
+        #expect(QAScenarioRunner.settingsScenarios["hidden-features-upgrade"] != nil)
+        let output = FileManager.default.temporaryDirectory.appendingPathComponent("qa-hidden-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: output) }
+        var plan = try QAScenarioRunner.makePlan(LaunchOptions.parse(
+            arguments: ["GitHubPet", "--simulate-monitoring-scope", "--qa-scenario", "hidden-features-upgrade",
+                        "--qa-output", output.path], environment: [:]))
+        plan.rendersPNGs = false
+        plan.settleLimit = .seconds(600)
+        let clock = plan.clock
+        var launch = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
+        launch.forcePlaceholder = true
+        let model = AppModel(options: launch, runtime: AppModel.Runtime(
+            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false, scopeSimulationHoldLimit: nil,
+            features: .allOff))
+        defer { model.cleanupScopeSimulation() }
+        _ = try await QAScenarioRunner.execute(plan, model: model)
+        let records = try FileManager.default.contentsOfDirectory(atPath: output.path)
+            .filter { $0.hasPrefix("step-") && $0.hasSuffix(".json") }.sorted()
+            .map { try JSONSerialization.jsonObject(with: Data(contentsOf: output.appendingPathComponent($0))) as! [String: Any] }
+        let record = try #require(records.first { $0["label"] as? String == "new-row-alerts" })
+        let settings = try #require(record["settings"] as? [String: Any])
+        let suppression = try #require(record["suppression"] as? [String: Any])
+        #expect(settings["privacyMode"] as? Bool == true && settings["effectivePrivacyMode"] as? Bool == false)
+        #expect(settings["inboxPrivacy"] as? Bool == false)
+        #expect(suppression["snoozeUntil"] is String, "the stored snooze is kept")
+        #expect(suppression["snoozed"] as? Bool == false && suppression["quietHoursActive"] as? Bool == false)
+        #expect(suppression["alertsAllowed"] as? Bool == true && suppression["showsAlertIcon"] as? Bool == true)
     }
 
     @Test func skinCardsLoadTheRealBundledPacks() {
