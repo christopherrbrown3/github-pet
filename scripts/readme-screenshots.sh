@@ -6,13 +6,14 @@
 #
 #   scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir] [build notes file]
 #
-# Output defaults to docs/screenshots/beta-4. A build notes file (for example the CI run, artifact
+# Output defaults to docs/screenshots/beta-5; the provenance heading is derived from its name. A build notes file (for example the CI run, artifact
 # and ZIP checksum the app came from) is copied into the provenance README.
 set -euo pipefail
 cd "${0:A:h}/.."
 
 app=${1:?usage: scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir]}
-out=${2:-docs/screenshots/beta-4}
+out=${2:-docs/screenshots/beta-5}
+label=${${out:t}//-/ }; label=${(C)label}
 notes=${3:-}
 [[ -z $notes || -f $notes ]] || { echo "readme-screenshots: no build notes file at $notes" >&2; exit 1; }
 binary=$app/Contents/MacOS/GitHubPet
@@ -82,7 +83,7 @@ done
 (( missing == 0 )) || exit 1
 
 cat > "$out/README.md" <<MD
-# Beta 4 README image provenance
+# $label README image provenance
 
 Native offscreen renders (\`--render-snapshots\`) of the real SwiftUI views, not live desktop
 screenshots or mockups. Every Inbox value is an invented Demo fixture; nothing came from GitHub.

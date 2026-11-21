@@ -15,8 +15,8 @@ macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/hero-inbox-dark.png">
-  <img src="docs/screenshots/beta-4/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Assigned to you 4, Waiting on others 0, and GitHub status Operational. Below, under Needs you, rows are grouped into two review requests, one of your pull requests with changes requested, and one assigned issue, each with a dismiss button." width="420">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/hero-inbox-dark.png">
+  <img src="docs/screenshots/beta-5/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Assigned to you 4, Waiting on others 0, and GitHub status Operational. Below, under Needs you, rows are grouped into two review requests, one of your pull requests with changes requested (marked with a branch symbol), and one assigned issue, each with a dismiss button." width="420">
 </picture>
 
 </div>
@@ -67,15 +67,15 @@ Mac, and **View dismissed** lets you **Restore** it later.
   <tr>
     <td align="center" width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/mascot-mona-dark.png">
-        <img src="docs/screenshots/beta-4/mascot-mona.png" alt="Mona, the default desktop pet: a black cat-eared octopus with a blue count badge of 4 and a DEMO tag" width="160">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/mascot-mona-dark.png">
+        <img src="docs/screenshots/beta-5/mascot-mona.png" alt="Mona, the default desktop pet: a black cat-eared octopus with a blue count badge of 4 and a DEMO tag" width="160">
       </picture>
       <br><sub><b>Mona</b> (default)</sub>
     </td>
     <td align="center" width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/mascot-little-chris-dark.png">
-        <img src="docs/screenshots/beta-4/mascot-little-chris.png" alt="Little Chris, the second desktop pet: a small bearded figure in a navy hoodie, with a blue count badge of 4 and a DEMO tag" width="160">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/mascot-little-chris-dark.png">
+        <img src="docs/screenshots/beta-5/mascot-little-chris.png" alt="Little Chris, the second desktop pet: a small bearded figure in a navy hoodie, with a blue count badge of 4 beside his head and a DEMO tag" width="160">
       </picture>
       <br><sub><b>Little Chris</b></sub>
     </td>
@@ -89,8 +89,8 @@ it: the Inbox and menu-bar icon keep working either way.
 ### Honest about what it knows
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/inbox-stale-dark.png">
-  <img src="docs/screenshots/beta-4/inbox-stale.png" alt="The Inbox when its data is out of date: the header reads Stale with a warning symbol and the last update time, the badge and both counts show a question mark, the GitHub status tile reads Stale, and the last known Demo rows are dimmed under 'Showing last known items'." width="380" align="right">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/inbox-stale-dark.png">
+  <img src="docs/screenshots/beta-5/inbox-stale.png" alt="The Inbox when its data is out of date: the header reads Stale with a warning symbol and the last update time, the badge and both counts show a question mark, the GitHub status tile reads Stale, and the last known Demo rows, still readable, are dimmed under 'Showing last known items'." width="380" align="right">
 </picture>
 
 Loading, partial, out-of-date, signed-out and failed results are labelled for what they are. They never
@@ -106,8 +106,8 @@ Active GitHub incidents from githubstatus.com appear on their own, apart from yo
   <tr>
     <td align="center" valign="top" width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/settings-mascot-dark.png">
-        <img src="docs/screenshots/beta-4/settings-mascot.png" alt="The Mascot settings pane: Show desktop pet, a choice between Mona (selected) and Little Chris with badge previews, a size slider at 128 pt, Reset position, Reduce motion, and a Startup section explaining that Open at login isn't available in this beta, with an Open Login Items Settings button." width="380">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/settings-mascot-dark.png">
+        <img src="docs/screenshots/beta-5/settings-mascot.png" alt="The Mascot settings pane: Show desktop pet, a choice between Mona (selected) and Little Chris with badge previews and a caption saying the badge shows how many items need you, a size slider at 128 pt, Reset position, Reduce motion, and a Startup section explaining that Open at login isn't available in this beta, with an Open Login Items Settings button." width="380">
       </picture>
       <br><sub>Settings → <b>Mascot</b></sub>
     </td>
@@ -173,7 +173,7 @@ scripts/package-zip.sh          # universal, ad-hoc signed app + ZIP in .build/d
 ```
 
 See the [development guide](docs/development.md). README images are offscreen renders of Demo data;
-see their [provenance](docs/screenshots/beta-4/README.md).
+see their [provenance](docs/screenshots/beta-5/README.md).
 
 ---
 
