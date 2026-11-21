@@ -140,6 +140,39 @@ struct PackLabelTests {
         #expect(PackLabel.sanitize(state).count == PackLabel.maxGraphemes + 1)
     }
 
+    @Test func pathsDifferingOnlyInTheCutMiddleStayDistinguishable() {
+        func path(_ middle: String) -> String {
+            "/Users/someone/" + String(repeating: "a", count: 90) + "/" + middle + "/" + String(repeating: "b", count: 90) + "/pack"
+        }
+        let one = PackLabel.sanitizePath(path("variant-1")), two = PackLabel.sanitizePath(path("variant-2"))
+        #expect(one != two)
+        #expect(one.count <= PackLabel.maxPathGraphemes && two.count <= PackLabel.maxPathGraphemes)
+        #expect(one.hasSuffix("/pack") && two.hasSuffix("/pack"))
+        // Same input, same label; short paths carry no digest.
+        #expect(PackLabel.sanitizePath(path("variant-1")) == one)
+        #expect(!PackLabel.sanitizePath("/Users/me/pack").contains("#"))
+    }
+
+    @Test func pathsPastTheScalarCapDifferingOnlyBeyondItStayDistinguishable() {
+        let base = "/p/" + String(repeating: "x", count: PackLabel.maxPathScalars)
+        let one = PackLabel.sanitizePath(base + "one"), two = PackLabel.sanitizePath(base + "two")
+        #expect(one != two)
+        #expect(one.count <= PackLabel.maxPathGraphemes)
+    }
+
+    @Test func joinedErrorCaptionIsBounded() {
+        let long = String(repeating: "q", count: 5_000)
+        let many = (1...40).map { MascotPackError.missingFile("frames/\(long)\($0).png") }
+        let caption = PackLabel.joined(many, separator: "\n")
+        #expect(caption.count <= PackLabel.maxJoinedGraphemes)
+        let few = (1...8).map { MascotPackError.missingState("s\($0)") }
+        let listed = PackLabel.joined(few, separator: "; ")
+        #expect(listed.hasSuffix("+3 more"))
+        #expect(listed.contains("'s5'") && !listed.contains("'s6'"))
+        #expect(PackLabel.joined([.badCanvas], separator: "; ") == MascotPackError.badCanvas.description)
+        #expect(PackLabel.joined([], separator: "; ") == "")
+    }
+
     @Test func longPathKeepsTheIdentifyingTail() {
         let tail = "/work/custom-packs/hostile-pack-B"
         let path = "/Users/someone" + String(repeating: "/very-long-directory-name", count: 20) + tail
