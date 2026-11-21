@@ -12,9 +12,17 @@ import Testing
             now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false },
             schedulesTimers: false, scopeSimulationHoldLimit: nil, features: features))
     }
-    private func settled(_ model: AppModel) async throws {
-        await model.repositoryPollSettled()
-        try #require(!model.repositoryFetchInFlight)
+    /// Waits on explicit model state, not elapsed time: the poll task is done, every simulated
+    /// request has been received, and the first load has landed. A stalled CI run (#127) only makes
+    /// this wait longer, up to a bound, instead of letting the assertions read a half-applied poll.
+    private func settled(_ model: AppModel, timeout: Duration = .seconds(60)) async throws {
+        let deadline = ContinuousClock.now + timeout
+        while true {
+            await model.repositoryPollSettled()
+            if !model.repositoryFetchInFlight && model.simulatedScopeQuiescent && model.dataState != .loading { return }
+            try #require(ContinuousClock.now < deadline, "timed out waiting for the simulated poll to settle")
+            try await Task.sleep(for: .milliseconds(10))
+        }
     }
     private func authoredRows(_ app: AppModel) -> [InboxItem] { app.items.filter { $0.kind == .authoredPullRequest } }
 

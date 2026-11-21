@@ -39,6 +39,10 @@ macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 The [installation guide](docs/install.md) covers checking the download, first launch in detail and
 uninstalling.
 
+A Homebrew cask is written and ready, but **not available yet**: it needs the project's tap, which hasn't been
+created. Once it exists the command will be `brew install --cask christopherrbrown3/tap/github-pet`
+([details](docs/install.md#homebrew-planned)). Until then, use the steps above.
+
 ## What it does
 
 ### One Inbox for what needs you

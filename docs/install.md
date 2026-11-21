@@ -6,7 +6,10 @@ This page shows how to do that with macOS's own settings. You never need to remo
 attributes or turn off Gatekeeper, and you shouldn't.
 
 Find the newest beta on the [Releases page](https://github.com/christopherrbrown3/github-pet/releases).
-A Homebrew cask is planned ([#15](https://github.com/christopherrbrown3/github-pet/issues/15)).
+A Homebrew cask is written and ready in this repository
+([#15](https://github.com/christopherrbrown3/github-pet/issues/15)), but it is **not installable yet**: it needs
+the project's tap (`christopherrbrown3/homebrew-tap`), which hasn't been created. See [Homebrew](#homebrew-planned).
+Until then, use the manual steps below.
 
 ## Requirements
 
@@ -15,6 +18,29 @@ A Homebrew cask is planned ([#15](https://github.com/christopherrbrown3/github-p
   in CI and smoke-tested under Rosetta when the runner has it; it hasn't been tried on Intel hardware.
 - For live GitHub data: the [GitHub CLI](https://cli.github.com) (`brew install gh`), signed in
   with `gh auth login`. Without it, a new install shows `gh` setup guidance and an honest "unavailable" state, not an empty inbox. Demo data is an explicit choice in Settings.
+
+## Homebrew (planned)
+
+Once the tap exists, the install will be:
+
+```sh
+brew install --cask christopherrbrown3/tap/github-pet
+```
+
+**This does not work today.** The cask source is [packaging/homebrew/Casks/github-pet.rb](../packaging/homebrew/Casks/github-pet.rb);
+it points at the GitHub Release ZIP and its SHA-256, and has been style-checked with `brew style`.
+It has not been installed or tried through a real tap. What to expect when it is live:
+
+- Homebrew verifies the ZIP's checksum, but the app is still ad-hoc signed and not notarized, so the first
+  launch needs **Open Anyway** exactly as in [step 4](#4-first-launch-approve-the-app-once). The cask doesn't
+  remove quarantine, and Homebrew's caveats say so.
+- The cask doesn't install the GitHub CLI. Install and sign in to `gh` yourself (`brew install gh`,
+  `gh auth login`); it's only needed for live data, and without it the app says so.
+- The app updates itself with Sparkle, so `brew upgrade` leaves it alone unless you pass `--greedy`.
+- `brew uninstall --cask --zap github-pet` will also remove the app's own preferences and caches
+  (`dev.github-pet.GitHubPet`).
+
+Maintainers refresh the cask for a release with `scripts/update-cask.sh <tag> <zip>` and copy it into the tap.
 
 ## 1. Download
 
@@ -151,8 +177,8 @@ that is unverified until such a build exists.
    defaults delete dev.github-pet.GitHubPet
    ```
 
-Uninstalling does not touch the GitHub CLI or its sign-in. A Homebrew cask is planned but not
-available, so there is no `brew uninstall` path yet.
+Uninstalling does not touch the GitHub CLI or its sign-in. The planned Homebrew cask isn't available yet
+(see [Homebrew](#homebrew-planned)), so there is no `brew uninstall` path today.
 
 ## Building it yourself
 

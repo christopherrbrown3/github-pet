@@ -93,6 +93,9 @@ jobs:
       - name: Release appcast regression
         timeout-minutes: 2
         run: scripts/test-release-appcast.sh
+      - name: Homebrew cask update script regression
+        timeout-minutes: 2
+        run: scripts/test-update-cask.sh
       - name: Package app (universal ZIP)
         # Builds the arm64 + x86_64 app the checks below use, zips it and self-verifies the archive.
         # RELEASE_VERSION is set for this step only (empty for ordinary builds), so the regression
