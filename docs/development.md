@@ -259,14 +259,21 @@ summary; its press action opens the Inbox, the same as a click.
 - Panel geometry follows the near-touch badge spacing (#28, docs/design/notifications/
   compact-badge-spacing.md at ef98a48; `MascotLayout`): art S×S centred at the bottom of a panel
   W = max(S, 96, labels) wide. DEMO is fixed at the leading inset; the count is left-aligned in a
-  slot reserved for "99+" and, for each drawn pose, moves down so its rounded capsule sits
-  1 pt (+0.75 pt raster reserve) from the art's actual top contour (nearest distance), computed
-  from per-pose contours precomputed at pack load, in the same render pass as the pose. The art
+  slot reserved for "99+". The slot sits at the trailing inset, or further left for a narrow skin
+  (#116): a one-digit count's centre stays within a quarter of its height of the head's right edge
+  (the rightmost column within 24 canvas px of each upright pose's top, narrowest pose), never
+  closer to DEMO than the minimum gap. Mona keeps the trailing-inset slot at every size; Little
+  Chris's moves to 50/72/149 pt at 64/128/256. For each drawn pose the count moves down so its
+  rounded capsule sits 1 pt (+0.75 pt raster reserve, +0.75 pt more for upright poses at 1×,
+  where resampled art leaves faint fringe) from the art's actual top contour (nearest distance);
+  with nothing under it, it stays at the top of its lane. Contours are precomputed per pose at
+  pack load, and the count is placed in the same render pass as the pose. The art
   top L is the smallest whole point at which DEMO and the widest count clear every pose:
   64/128/256 pt → 96×81, 128×148, 256×270. Labels are never truncated; fills keep at least 4.5:1
   text contrast. Without a pack, the labels stay above the art square. render-check rasterises
-  the real view at 1× and 2× for every pose and count text and requires no overlapping pixel and
-  a 0.5–2.5 pt nearest gap (measured 0.6–2.0 pt). Resizing (including dragging the size slider)
+  the real view at 1× and 2× for every pose and count text, for Mona and again for Little Chris,
+  and requires no overlapping pixel and a 0.5–4 pt nearest gap. Its badge-fit lines measure the
+  rasterised count against each skin's rasterised head (`badge fit <skin> @<size> <scale>x`). Resizing (including dragging the size slider)
   keeps the art's ground point fixed on screen; the new origin is saved on the next run-loop
   turn because `$settings` delivers before the new value is stored.
 - The hover summary sits beside the character (#27): right by default, left when the right

@@ -229,10 +229,11 @@ public struct MascotPack: Equatable, Sendable {
         return contours.indices.contains(index) ? contours[index] : nil
     }
 
+    /// Every upright pose's contour (static and frames of every state): where the head is (#116).
+    public var uprightContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) }
+
     /// Every pose's contour, upright and leaning, for the fixed lane height and the count's range.
-    public var allContours: [[Int?]] {
-        MascotState.allCases.flatMap(poseContours) + leaningContours
-    }
+    public var allContours: [[Int?]] { uprightContours + leaningContours }
 
     /// Outline across every state.
     public var artProfile: ArtProfile? { ArtProfile.union(MascotState.allCases.compactMap { artProfiles[$0] }) }
@@ -474,5 +475,12 @@ public struct MascotPack: Equatable, Sendable {
             bytes[offset..<offset + 4].reduce(0) { $0 << 8 | Int($1) }
         }
         return (be32(16), be32(20))
+    }
+}
+
+extension MascotLayout {
+    /// Layout for a loaded pack (nil: the placeholder, labels above the art square).
+    public init(artSide: CGFloat, pack: MascotPack?) {
+        self.init(artSide: artSide, contours: pack?.allContours ?? [], headContours: pack?.uprightContours ?? [])
     }
 }

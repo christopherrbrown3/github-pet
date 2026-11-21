@@ -63,7 +63,7 @@ extension SnapshotRenderer {
                 // DEMO sits at the leading inset; only pixels right of it belong to the count.
                 let countMinX = Int(((layout.demoFrame.maxX + 1) * scale).rounded(.up))
                 var centres: [CGFloat] = [], leads: [CGFloat] = [], gaps: [CGFloat] = []
-                var empty = 0
+                var empty = 0, farthest = ""
                 for pose in poses {
                     func image(art: Bool, badge: String) async -> [UInt8]? {
                         let view = MascotView(model: model, poseOverride: pose, badgeOverride: badge,
@@ -80,13 +80,19 @@ extension SnapshotRenderer {
                         for index in labels.indices where index % width < countMinX { labels[index] = 0 }
                         let columns = labels.indices.filter { labels[$0] > 0 }.map { $0 % width }
                         guard let minX = columns.min(), let maxX = columns.max() else { empty += 1; continue }
-                        if badge == "2" { centres.append(CGFloat(minX + maxX + 1) / 2 / scale - headRight) }
+                        if badge == "2" {
+                            let past = CGFloat(minX + maxX + 1) / 2 / scale - headRight
+                            if past > (centres.max() ?? -.infinity) {
+                                farthest = "\(pose.state.rawValue)/\(pose.frame.map(String.init) ?? "static")"
+                            }
+                            centres.append(past)
+                        }
                         leads.append(headRight - CGFloat(minX) / scale)
                         gaps.append(nearestGap(art, labels, size: layout.panelSize, scale: scale).0)
                     }
                 }
                 lines.append("badge fit \(skin.rawValue) @\(Int(side)) \(Int(scale))x: "
-                             + "centre-past-head=\(format(centres.min()))..\(format(centres.max())) "
+                             + "centre-past-head=\(format(centres.min()))..\(format(centres.max())) (farthest \(farthest)) "
                              + "limit=\(format(layout.count.height / 4)) lead-inside-head-min=\(format(leads.min())) "
                              + "gap=\(format(gaps.min()))-\(format(gaps.max())) cases=\(gaps.count) empty-renders=\(empty) "
                              + "count-slot-x=\(format(layout.countSlotX)) lane=\(format(layout.laneHeight))")

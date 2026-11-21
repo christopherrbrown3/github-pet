@@ -42,7 +42,8 @@ chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
 GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-for _ in {1..300}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
+# CI took about 260 s before the per-skin probes (#116) were added; 420 s leaves room for them.
+for _ in {1..420}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
 wait $pid || true
 after=$(prefs after)
@@ -188,7 +189,9 @@ else echo "FAIL Little Chris hover placements: $(printf '%s\n' "$chris_hover" | 
 while IFS= read -r line; do [[ -n $line ]] && check_hover "$line"; done <<< "$chris_hover"
 # Badge fit (#116): for both skins, at every size and scale and in every upright pose, the
 # count's leading edge is over the head and a one-digit count's centre is at most a quarter of
-# its height past the head's right edge (plus one 1x pixel for rasterisation), near-touching.
+# its height past the head's right edge, near-touching. 2 pt of slack: the measured head band ends
+# on the slanted side of the head, and resampling fringe moves its first row by a backing pixel
+# (Little Chris attention/1 at 256 pt measures 12 pt at 1x, 10 pt at 2x, for the same slot).
 for skin in mona-pet-v1 little-chris-v1; do
   for size in 64 128 256; do
     for scale in 1x 2x; do
@@ -198,7 +201,7 @@ for skin in mona-pet-v1 little-chris-v1; do
       lead=$(sed -E 's/.* lead-inside-head-min=(-?[0-9.]+) .*/\1/' <<< "$line")
       gap=$(sed -E 's/.* gap=[0-9.]+-([0-9.]+) .*/\1/' <<< "$line")
       if [[ $line == *" empty-renders=0 "* && $past == (-|)[0-9]* && $lead == (-|)[0-9]* && $gap == [0-9]* ]] \
-          && (( past <= limit + 1 && lead > 0 && gap <= 4.0 )); then
+          && (( past <= limit + 2 && lead > 0 && gap <= 4.0 )); then
         echo "ok   badge fit $skin $size $scale: centre ${past} pt past the head (limit $limit), leading edge $lead pt inside, gap <= $gap pt"
       else echo "FAIL badge fit $skin $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
     done
