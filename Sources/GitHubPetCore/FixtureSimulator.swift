@@ -55,6 +55,12 @@ public final class FixtureSimulator {
         return item
     }
 
+    /// Replace every fixture row, injected ones included (render hooks: an exact set of rows).
+    public func replaceItems(_ items: [InboxItem]) {
+        baseItems = items
+        injected = []
+    }
+
     public func disconnect() { connected = false }
     public func reconnect() { connected = true }
 

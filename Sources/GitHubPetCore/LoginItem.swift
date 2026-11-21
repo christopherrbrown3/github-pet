@@ -7,7 +7,8 @@ public enum LoginItemStatus: Equatable, Sendable {
     case disabled
     /// Registered, but the user still has to allow it in System Settings → General → Login Items.
     case requiresApproval
-    /// The system cannot find the app to register (for example it runs from an unsupported location).
+    /// macOS reports the app as unknown to its login-item service. Seen for every ad-hoc-signed build,
+    /// in /Applications too. The cause is not proven; the signature is the leading suspect.
     case notFound
 
     public init(_ status: SMAppService.Status) {
@@ -28,9 +29,16 @@ public enum LoginItemStatus: Equatable, Sendable {
         switch self {
         case .enabled, .disabled: return nil
         case .requiresApproval: return "Allow GitHub Pet in System Settings → General → Login Items."
-        case .notFound: return "macOS can't register this copy of GitHub Pet. Move it to Applications and try again."
+        case .notFound:
+            return "Open at login isn't available in this beta. macOS doesn't register ad-hoc-signed builds like this one as login items. You can add GitHub Pet yourself in System Settings → General → Login Items."
         }
     }
+
+    /// Whether the Settings toggle may be used. `notFound` is off and disabled: nothing is attempted.
+    public var allowsToggle: Bool { self != .notFound }
+
+    /// Whether Settings should offer a button that opens the system Login Items pane.
+    public var offersSystemSettings: Bool { self == .notFound }
 }
 
 /// The system calls behind the login item, so the logic around them is testable.
@@ -40,8 +48,8 @@ public protocol LoginItemBackend: Sendable {
     func unregister() throws
 }
 
-/// `SMAppService.mainApp`. Behaviour for an ad-hoc-signed build (no Developer ID) is unproven until
-/// it is exercised on real macOS; callers must show whatever status the system reports.
+/// `SMAppService.mainApp`. Ad-hoc-signed builds read `.notFound` (measured on macOS 27, in /Applications and
+/// elsewhere); callers show whatever status the system reports and never register from `.notFound`.
 public struct SystemLoginItemBackend: LoginItemBackend {
     public init() {}
     public var status: LoginItemStatus { LoginItemStatus(SMAppService.mainApp.status) }
@@ -71,6 +79,8 @@ public struct LoginItem: Sendable {
     @discardableResult
     public func setEnabled(_ enabled: Bool) -> LoginItemResult {
         let current = backend.status
+        // The system doesn't know this build, so register() would only fail or do nothing useful.
+        guard current.allowsToggle else { return LoginItemResult(status: current, failure: nil) }
         do {
             if enabled {
                 if !current.isRegistered { try backend.register() }
@@ -82,4 +92,12 @@ public struct LoginItem: Sendable {
             return LoginItemResult(status: backend.status, failure: error.localizedDescription)
         }
     }
+}
+
+/// The one system-settings page the app may open: Login Items. Kept apart from `SafeLink`, which
+/// only ever allows github.com, and exact-match so nothing else can pass through it.
+public enum SystemSettingsLink {
+    public static let loginItems = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")!
+
+    public static func validated(_ url: URL?) -> URL? { url == loginItems ? loginItems : nil }
 }
