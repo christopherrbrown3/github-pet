@@ -14,7 +14,7 @@ import SwiftUI
 ///   the whole Mascot pane, and the GitHub pane through Monitoring scope (its Software updates
 ///   section reads "not configured" here because snapshot mode never starts the updater).
 extension SnapshotRenderer {
-    static let readmeMascotPaneHeight: CGFloat = 935
+    static let readmeMascotPaneHeight: CGFloat = 815
     static let readmeGitHubPaneHeight: CGFloat = 695
 
     static func readmeBeta4Renders(model: AppModel, directory: URL) async -> [String] {
