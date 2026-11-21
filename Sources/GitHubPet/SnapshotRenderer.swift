@@ -78,6 +78,7 @@ enum SnapshotRenderer {
         for placementCase in HoverCase.all {
             report.append(await hoverPlacement(model: model, placementCase, directory: directory))
         }
+        report += await littleChrisPlacementProbes(model: model, directory: directory)
         // Rendering can take longer than the freshness window under load. Re-poll unchanged
         // fixtures before deliberate events: recovery stays silent, then the new event is comparable.
         model.refresh()
@@ -143,6 +144,9 @@ enum SnapshotRenderer {
         model.setServiceFetchFails(false)
         report.append("## incident marker (#37: rasterised marker vs labels and keep-out, every tier and pose)")
         report += await incidentMarkerProbe(model: model, directory: directory)
+        report += await withSkin(.littleChris, model: model) {
+            await incidentMarkerProbe(model: model, directory: directory, skin: .littleChris)
+        }
         model.resolveServiceIncidents()
         await capture("10d-incidents-resolved")
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
@@ -597,9 +601,13 @@ enum SnapshotRenderer {
     /// each size, backing scale, pose (static and every frame of every state) and count text, the
     /// real MascotView is drawn twice (art only, labels only) and the nearest pair of visible
     /// pixels is found. Reports the range and any overlapping pixels.
-    private static func nearTouchMeasurements(model: AppModel, directory: URL) async -> [String] {
+    /// `skin` (#116) prefixes the lines and file names for a probe run with another skin selected.
+    /// The same renders feed the badge-fit lines (#116) for the selected skin.
+    static func nearTouchMeasurements(model: AppModel, directory: URL, skin: MascotSkin? = nil) async -> [String] {
+        let label = skin.map { "near-touch \($0.rawValue) " } ?? "near-touch "
+        let file = skin.map { "near-touch-\($0.rawValue)-" } ?? "near-touch-"
         guard let pack = model.pack else { return ["near-touch: no pack"] }
-        var lines: [String] = []
+        var lines: [String] = [], fits: [String] = []
         // One offscreen window reused for every case: SwiftUI only commits its layers inside one.
         let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -622,6 +630,7 @@ enum SnapshotRenderer {
                 var overlaps = 0
                 var worst = "", closest = ""
                 var sheet: [(name: String, art: [UInt8], labels: [UInt8], gap: CGFloat)] = []
+                var fit = BadgeFit(layout: layout, scale: scale)
                 // Every upright pose, plus the attention gesture's leaning frames.
                 var poses = MascotState.allCases.flatMap { state in
                     (pack.frameURLs(for: state).indices.map { Optional($0) } + [nil])
@@ -656,24 +665,28 @@ enum SnapshotRenderer {
                             gaps.append(gap)
                             if pose.angle == 0 { upright.append(gap) } else { leaning.append(gap) }
                             sheet.append((name, artAlpha, labelAlpha, gap))
+                            fit.add(pose, badge: badge, art: artAlpha, labels: labelAlpha)
                         }
                 }
                 writeContactSheet(sheet, size: layout.panelSize, scale: scale,
-                                  to: directory.appendingPathComponent("near-touch-\(Int(side))-\(Int(scale))x.png"))
-                lines.append("near-touch @\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
+                                  to: directory.appendingPathComponent("\(file)\(Int(side))-\(Int(scale))x.png"))
+                lines.append("\(label)@\(Int(side)) \(Int(scale))x: gap-min=\(format(gaps.min())) gap-max=\(format(gaps.max())) "
                              + "upright=\(format(upright.min()))-\(format(upright.max())) leaning=\(format(leaning.min()))-\(format(leaning.max())) "
                              + "(closest \(closest), farthest \(worst)) cases=\(gaps.count) empty-renders=\(empty) overlapping-pixels=\(overlaps) "
                              + "lane=\(format(layout.laneHeight))")
+                fits.append(fit.line(skin: model.settings.mascotSkin))
                 empty = 0
             }
         }
-        return lines
+        return lines + fits
     }
 
     /// The incident marker never touches the labels (#37): at 64/128/256 and 1×/2×, the union of
     /// every tier's marker (static and burst frames) against the union of the labels over every
     /// pose with the widest count. Reports the nearest gap and pixels visible in both.
-    private static func incidentMarkerProbe(model: AppModel, directory: URL) async -> [String] {
+    /// `skin` (#116): measurements only, prefixed, for a probe run with another skin selected.
+    static func incidentMarkerProbe(model: AppModel, directory: URL, skin: MascotSkin? = nil) async -> [String] {
+        let label = skin.map { "incident marker \($0.rawValue) " } ?? "incident marker "
         guard let lead = model.serviceIncidents.first else { return ["incident marker: no incident"] }
         let window = NSWindow(contentRect: CGRect(x: -10_000, y: -10_000, width: 300, height: 320),
                               styleMask: [.borderless], backing: .buffered, defer: false)
@@ -716,7 +729,7 @@ enum SnapshotRenderer {
                     }
                 }
                 guard let labels, let marker, labels.contains(where: { $0 > 0 }), marker.contains(where: { $0 > 0 }) else {
-                    lines.append("incident marker @\(Int(side)) \(Int(scale))x: empty render")
+                    lines.append("\(label)@\(Int(side)) \(Int(scale))x: empty render")
                     continue
                 }
                 let (gap, overlap) = nearestGap(marker, labels, size: layout.panelSize, scale: scale)
@@ -733,10 +746,11 @@ enum SnapshotRenderer {
                 // gap: nearest marker-to-label distance in points; the probe searches 16 pt around the
                 // labels, so ">16" means nothing nearer. slot: the clip rect (panel points, origin at the
                 // panel's bottom-left: x, y, width, height).
-                lines.append("incident marker @\(Int(side)) \(Int(scale))x: gap=\(gap.isFinite ? format(gap) : ">16") "
+                lines.append("\(label)@\(Int(side)) \(Int(scale))x: gap=\(gap.isFinite ? format(gap) : ">16") "
                              + "overlapping-pixels=\(overlap) keep-out-pixels=\(keepOutPixels) gutter-pixels=\(gutterPixels) "
                              + "slot=\(IncidentMarker.frame(in: layout).integral)")
             }
+            guard skin == nil else { continue }
             // Native renders for design to compare with docs/design/incidents/previews: the real
             // mascot panel (labels, widest count) over the marker, design's preview columns.
             let tierPoses: [IncidentMarker.Tier: MascotPose] = [
@@ -915,7 +929,7 @@ enum SnapshotRenderer {
 
     /// Alpha channel of a view rasterised at `scale` (rows top first), via its layer tree, drawn
     /// by `hosting` inside an offscreen window.
-    private static func alphaBitmap<V: View>(_ view: V, in hosting: NSHostingView<AnyView>, size: CGSize,
+    static func alphaBitmap<V: View>(_ view: V, in hosting: NSHostingView<AnyView>, size: CGSize,
                                              scale: CGFloat) async -> [UInt8]? {
         hosting.rootView = AnyView(view.frame(width: size.width, height: size.height))
         hosting.window?.setContentSize(size)
@@ -947,7 +961,7 @@ enum SnapshotRenderer {
 
     /// Nearest distance (points) between visible pixels of two same-size alpha bitmaps, and the
     /// number of pixels visible in both. Only edge pixels can be nearest, so only they are compared.
-    private static func nearestGap(_ a: [UInt8], _ b: [UInt8], size: CGSize, scale: CGFloat) -> (CGFloat, Int) {
+    static func nearestGap(_ a: [UInt8], _ b: [UInt8], size: CGSize, scale: CGFloat) -> (CGFloat, Int) {
         let width = Int((size.width * scale).rounded(.up)), height = a.count / max(width, 1)
         func edges(_ alpha: [UInt8], in box: (Int, Int, Int, Int)) -> [(Int, Int)] {
             var result: [(Int, Int)] = []
@@ -1027,9 +1041,12 @@ enum SnapshotRenderer {
     /// Shows the real mascot panel and hover popover on screen for a moment, measures the actual
     /// windows against the visible art of every frame of the current state, and writes one
     /// combined image (art, popover with its arrow, display edge) for visual review.
-    private static func hoverPlacement(model: AppModel, _ placementCase: HoverCase, directory: URL) async -> String {
+    static func hoverPlacement(model: AppModel, _ placementCase: HoverCase, directory: URL,
+                               skin: MascotSkin? = nil) async -> String {
         let state = model.mascotState
-        let label = "hover \(placementCase.name(state))"
+        let prefix = skin.map { "\($0.rawValue) " } ?? ""
+        let filePrefix = skin.map { "\($0.rawValue)-" } ?? ""
+        let label = "hover \(prefix)\(placementCase.name(state))"
         guard let screenFrame = NSScreen.main?.visibleFrame else { return "\(label): no screen" }
         let savedSize = model.settings.mascotSize
         model.settings.mascotSize = placementCase.side
@@ -1116,7 +1133,7 @@ enum SnapshotRenderer {
             + "window-boundary gap \(format(best))-\(format(worst)) pt over \(poses.count) frames; arrow anchor to static art "
             + "\(format(tipGap)) pt; overlap \(overlaps == 0 ? "none" : "\(overlaps)"); "
             + "tags \(laneClear ? "clear" : "COVERED"); popover from \(source)"
-        await writeHoverComposite(name: "hover-\(placementCase.name(state))", directory: directory, screen: screenFrame,
+        await writeHoverComposite(name: "hover-\(filePrefix)\(placementCase.name(state))", directory: directory, screen: screenFrame,
                                   panel: panel, popoverWindow: popoverWindow, capture: capture, tip: tip, labels: labels,
                                   caption: caption)
         func rect(_ r: CGRect) -> String { "(\(Int(r.minX)),\(Int(r.minY)) \(Int(r.width))x\(Int(r.height)))" }
@@ -1177,7 +1194,7 @@ enum SnapshotRenderer {
         return rects
     }
 
-    private static func format(_ value: CGFloat?) -> String {
+    static func format(_ value: CGFloat?) -> String {
         guard let value, value.isFinite else { return "none" }
         return String(format: "%.1f", value)
     }

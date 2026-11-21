@@ -56,7 +56,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         // Design's full upright envelope (near-touch-measurements at ef98a48): 15.75/19.5/13 pt.
         let design: [(CGFloat, CGFloat)] = [(64, 15.75), (128, 19.5), (256, 13)]
         for (side, lane) in design {
-            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            let layout = MascotLayout(artSide: side, pack: pack)
             // Never tighter than design; at most the larger raster reserve (0.75 vs 0.25 pt) plus
             // rounding up to a whole point above it.
             // Never tighter than design's fixed envelope; above it by at most the reserves (raster
@@ -66,7 +66,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         }
         let gap = MascotLayout.nearTouchGap
         for side in stride(from: CGFloat(64), through: 256, by: 16) {
-            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            let layout = MascotLayout(artSide: side, pack: pack)
             for contour in pack.allContours {
                 #expect(layout.clearance(contour, layout.demoFrame, lane: layout.laneHeight) >= gap - 0.001, "DEMO at \(side)")
                 for width in [layout.count.height, layout.widestCountWidth] {
@@ -191,7 +191,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
             for side in [CGFloat(64), 72, 80, 128, 256] {
                 // Below 80 pt the hover is the compact two-line summary; above, up to four lines.
                 for wanted in side < 80 ? [short] : [short, tall] {
-                    let layout = MascotLayout(artSide: side, contours: pack.allContours)
+                    let layout = MascotLayout(artSide: side, pack: pack)
                     func place(_ popover: CGSize) -> HoverPlacement {
                         HoverPlacement.place(art: art, poses: poses, layout: layout, popover: popover,
                                              panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
@@ -244,7 +244,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         let gesture = try #require(pack.attentionGesture)
         let frames = Array(try #require(pack.poseOutlines[.attention]).dropFirst().prefix(gesture.frameCount))
         for side in [CGFloat(64), 128, 256] {
-            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            let layout = MascotLayout(artSide: side, pack: pack)
             for (index, outline) in frames.enumerated() {
                 // Between bucket centres too: every 0.05°.
                 for angle in stride(from: -5.0, through: 5.0, by: 0.05) {
@@ -275,7 +275,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         let swept = try #require(pack.sweptAttentionProfile)
         let poses = try #require(pack.poseProfiles[.attention])
         for side in [CGFloat(64), 128, 256] {
-            let layout = MascotLayout(artSide: side, contours: pack.allContours)
+            let layout = MascotLayout(artSide: side, pack: pack)
             func place(_ popover: CGSize) -> HoverPlacement {
                 HoverPlacement.place(art: swept, poses: poses, layout: layout, popover: popover,
                                      panelOrigin: CGPoint(x: 600, y: 300), screen: screen)
@@ -372,7 +372,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         for state in MascotState.allCases {
             let art = try #require(pack.artProfiles[state]), poses = try #require(pack.poseProfiles[state])
             for side in [CGFloat(64), 128, 256] {
-                let layout = MascotLayout(artSide: side, contours: pack.allContours)
+                let layout = MascotLayout(artSide: side, pack: pack)
                 let size = layout.panelSize
                 let origins = [CGPoint(x: 600, y: 300), CGPoint(x: screen.maxX - size.width - 24, y: 300),
                                CGPoint(x: screen.minX, y: 300)]

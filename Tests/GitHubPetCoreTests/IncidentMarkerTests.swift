@@ -176,7 +176,7 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
         return [64, 128, 256].flatMap { side in
-            [MascotLayout(artSide: side, contours: pack.allContours), MascotLayout(artSide: side)]
+            [MascotLayout(artSide: side, pack: pack), MascotLayout(artSide: side)]
         }
     }
 

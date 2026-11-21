@@ -165,7 +165,8 @@ public struct ArtProfile: Equatable, Sendable {
 /// Mascot panel geometry for an art size: near-touch badge spacing (design #28,
 /// docs/design/notifications/compact-badge-spacing.md at ef98a48). The S×S art sits at the bottom,
 /// centred in a panel at least 96 pt wide, its top L below the panel's top edge. DEMO is fixed at
-/// the leading inset; the count is left-aligned in a slot reserved for "99+" and, for each pose,
+/// the leading inset; the count is left-aligned in a slot reserved for "99+" (at the trailing inset,
+/// or further left for a narrow skin so it stays over the head, #116) and, for each pose,
 /// moves down within the lane so its rounded capsule sits `nearTouchGap` above the art's actual
 /// top contour under it. L is the smallest quarter point at which the widest count (at the top)
 /// and DEMO clear every pose. Metrics between 64, 128 and 256 pt are interpolated linearly over
@@ -193,7 +194,12 @@ public struct MascotLayout: Equatable, Sendable {
     public private(set) var laneHeight: CGFloat = 0
     /// Furthest the count moves down for any pose (any count width).
     public private(set) var maxCountOffset: CGFloat = 0
+    /// Leading edge of the reserved "99+" slot (top-left x).
+    public private(set) var countSlotX: CGFloat = 0
 
+    /// Canvas rows (of 256) below a pose's highest pixel that count as its head: the count sits
+    /// over the head's upper-right region (#116).
+    public static let headDepth = 24
     /// Design's capsule-to-art target clearance.
     public static let nearTouchTarget: CGFloat = 1
     /// Extra room for antialiased edges at 1× and 2× backing. Design asked for 0.25 pt, enlarged
@@ -206,6 +212,10 @@ public struct MascotLayout: Equatable, Sendable {
     /// antialiased edge by about a backing pixel (measured: 0.5 pt is enough at 2×; at 1× the
     /// fringe consumed ~1.9 pt at 64 pt, so 1.5 pt there).
     public static func leanReserve(displayScale: CGFloat) -> CGFloat { displayScale >= 2 ? 0.5 : 1.5 }
+    /// Extra clearance for upright poses at 1× backing: high-quality downsampling of the 256 px
+    /// art leaves faint alpha up to a backing pixel past its outline. With the shared reserve alone,
+    /// Little Chris's slanted hair measured 0.0–0.4 pt at 64/128 pt 1× (#116); Mona 1.0 pt.
+    public static func uprightReserve(displayScale: CGFloat) -> CGFloat { displayScale >= 2 ? 0 : 0.75 }
     /// The larger lean reserve, used for the fixed lane so the panel never depends on the screen.
     public static var maxLeanReserve: CGFloat { leanReserve(displayScale: 1) }
 
@@ -222,9 +232,12 @@ public struct MascotLayout: Equatable, Sendable {
              inset: 8, gap: 12, demoWidth: 54, countWidth: 62),
     ]
 
-    /// - Parameter contours: top contours (`ArtProfile.columnTops`, 256-px canvas) of every pose
-    ///   the art can show. Empty means unknown: the labels then stay above the art square.
-    public init(artSide: CGFloat, contours: [[Int?]] = []) {
+    /// - Parameters:
+    ///   - contours: top contours (`ArtProfile.columnTops`, 256-px canvas) of every pose the art
+    ///     can show. Empty means unknown: the labels then stay above the art square.
+    ///   - headContours: the upright poses' contours, which place the count over the head (#116).
+    ///     Empty keeps the count at the trailing inset.
+    public init(artSide: CGFloat, contours: [[Int?]] = [], headContours: [[Int?]] = []) {
         let side = min(max(artSide, 64), 256)
         let (a, b) = side <= 128 ? (Self.stops[0], Self.stops[1]) : (Self.stops[1], Self.stops[2])
         let t = (side - a.side) / (b.side - a.side)
@@ -239,6 +252,15 @@ public struct MascotLayout: Equatable, Sendable {
         minimumGap = mix(\.gap)
         demoWidth = mix(\.demoWidth)
         widestCountWidth = mix(\.countWidth)
+        countSlotX = panelWidth - inset - widestCountWidth
+        // A one-digit count's centre stays within a quarter of its height of the head's right edge
+        // (Mona's slot already does: her widest case is 7 pt past at 256 pt), never closer to DEMO
+        // than the minimum gap.
+        if let head = Self.headRight(headContours) {
+            let edge = artFrame.minX + CGFloat(head + 1) * artSide / CGFloat(headContours[0].count)
+            let overHead = (edge + count.height / 4 - count.height / 2).rounded(.down)
+            countSlotX = max(inset + demoWidth + minimumGap, min(countSlotX, overHead))
+        }
 
         let poses = contours.isEmpty ? [[Int?](repeating: 0, count: 256)] : contours
         // The smallest whole-point L (no fractional panel heights; the count's tracking takes up
@@ -265,8 +287,15 @@ public struct MascotLayout: Equatable, Sendable {
     public var artFrame: CGRect { CGRect(x: (panelWidth - artSide) / 2, y: 0, width: artSide, height: artSide) }
     /// The ground point (the pack's anchor [128, 232]) in panel coordinates.
     public var ground: CGPoint { CGPoint(x: panelWidth / 2, y: 24 * artSide / 256) }
-    /// Leading edge of the reserved "99+" slot (top-left x).
-    public var countSlotX: CGFloat { panelWidth - inset - widestCountWidth }
+
+    /// The head's right edge (canvas column) in every pose: per contour, the rightmost column whose
+    /// top is within `headDepth` of that pose's highest pixel; the smallest over the poses.
+    public static func headRight(_ contours: [[Int?]]) -> Int? {
+        contours.compactMap { contour -> Int? in
+            guard let top = contour.compactMap({ $0 }).min() else { return nil }
+            return contour.indices.last { contour[$0].map { $0 <= top + headDepth } ?? false }
+        }.min()
+    }
 
     /// Count capsule in top-left coordinates, moved down by `offset`.
     public func countFrame(width: CGFloat, offset: CGFloat) -> CGRect {
@@ -280,12 +309,14 @@ public struct MascotLayout: Equatable, Sendable {
     /// How far the count of `width` moves down for a pose with this contour, so its capsule sits
     /// `nearTouchGap` from the art (nearest distance, not just vertically).
     public func countOffset(contour: [Int?], width: CGFloat, leaning: Bool = false, displayScale: CGFloat = 2) -> CGFloat {
-        let gap = Self.nearTouchGap + (leaning ? Self.leanReserve(displayScale: displayScale) : 0)
+        let gap = Self.nearTouchGap + (leaning ? Self.leanReserve(displayScale: displayScale)
+                                               : Self.uprightReserve(displayScale: displayScale))
         func clear(_ offset: CGFloat) -> CGFloat { clearance(contour, countFrame(width: width, offset: offset), lane: laneHeight) }
         guard clear(0) > gap else { return 0 }
         // Clearance shrinks as the capsule moves down; find the offset where it reaches the gap.
         var low: CGFloat = 0, high = laneHeight + artSide
-        if clear(high) >= gap { return high }
+        // Nothing under the count to rest on: it stays at the top of its lane, not below the panel.
+        if clear(high) >= gap { return 0 }
         for _ in 0..<30 {
             let mid = (low + high) / 2
             if clear(mid) >= gap { low = mid } else { high = mid }

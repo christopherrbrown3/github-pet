@@ -324,7 +324,7 @@ final class AppModel: ObservableObject {
     /// above the art canvas, since the placeholder's hop isn't bounded).
     func layout(_ size: Double) -> MascotLayout {
         if let cached = layouts[size] { return cached }
-        let layout = MascotLayout(artSide: CGFloat(size), contours: pack?.allContours ?? [])
+        let layout = MascotLayout(artSide: CGFloat(size), pack: pack)
         layouts[size] = layout
         return layout
     }
