@@ -159,8 +159,8 @@ verified with its signature before it's installed. [How updates work](docs/updat
 - **In-app updates work from Beta 4 onward.** Beta 5 is the first update delivered that way, so the
   production update path is first exercised by it. Earlier betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
-- **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, and some behaviour on every
-  supported macOS version.
+- **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, Reduce Motion, hover, the
+  app icon in Finder and the Dock at small sizes, and some behaviour on every supported macOS version.
 
 Details and the rest of the known limits are in [Features](docs/features.md#known-limits).
 

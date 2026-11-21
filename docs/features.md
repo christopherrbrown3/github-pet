@@ -112,5 +112,6 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
   Changing coverage or the monitoring scope re-baselines quietly: items first seen then aren't
   announced. Actions items aren't remembered across a relaunch.
 - **Not verified by hand yet:** refresh after a real sleep and wake, keyboard and VoiceOver use of the
-  new Inbox, and every supported macOS version. The floating pet isn't keyboard focusable; use the
+  new Inbox, Reduce Motion, hover, the app icon in Finder and the Dock at small sizes, and every
+  supported macOS version. The floating pet isn't keyboard focusable; use the
   menu-bar icon.
