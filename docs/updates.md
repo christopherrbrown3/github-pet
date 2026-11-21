@@ -108,7 +108,7 @@ signer.
 ## Known limits
 
 - Ad-hoc signatures change with every build, so macOS may treat an updated app as a new item for approvals. If you added GitHub Pet to Login Items
-  yourself, check that entry after an update; these builds can't register a login item on their own.
+  yourself, check that entry after an update; in our tests these builds couldn't register a login item on their own.
 - First install still needs Open Anyway; automatic update does not replace that.
 - Anyone holding the production key can ship an update that installs without a Gatekeeper prompt.
 - Builds before this feature (beta 1-3) have no updater: update them by hand once.
