@@ -99,7 +99,7 @@ window that size shows it before scrolling). Open at login shows what ad-hoc-sig
 (unavailable, with the Login Items button). Offscreen windows are never key, so switches that are
 on draw grey rather than in the accent colour.
 
-- Data source: Demo (offline fixtures, `--fixtures`); no GitHub account or network.
+- Data source: Demo (offline fixtures, \`--fixtures\`); no GitHub account or network.
 - Source revision of the rendered app: \`$revision\`
 - Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 - Command: \`scripts/readme-screenshots.sh <GitHubPet.app> $out${notes:+ <build notes>}\`

@@ -7,14 +7,13 @@ read-only: every item opens on github.com, and nothing is approved, merged or ch
 
 Open it from the menu-bar icon or by clicking the pet.
 
-- **Header.** Your chosen pet with a blue count badge, the source status and when the list last
+- **Header.** Your chosen pet with a blue badge counting the items that need you, the source status and when the list last
   updated. Refresh and Settings sit on the right.
 - **Tiles.** **Assigned to you** counts what's waiting on you, **Waiting on others** counts your pull
   requests that are waiting on someone else, and **GitHub status** shows the githubstatus.com status.
 - **Grouped rows.** Items are grouped by what they ask of you. Click a row to open it on GitHub.
-- **Dismiss, Undo and Restore.** **×** removes an item from your Inbox on this Mac only; GitHub still
-  has it. **Undo** reverses the last dismissal. **View dismissed** lists saved dismissals, each with
-  **Restore**. See [Using the Inbox](inbox.md).
+- **Dismiss and Restore.** **×** removes an item from your Inbox on this Mac only; GitHub still
+  has it. **View dismissed** lists saved dismissals, each with **Restore**. See [Using the Inbox](inbox.md).
 
 ### What appears
 
@@ -46,7 +45,7 @@ Error text from `gh` or GitHub is classified rather than shown, so it can't leak
   saved.
 - **Calm by default.** A short animation plays once for a genuinely new item, not on every refresh or
   after a reconnect. **Reduce motion** (or macOS's own setting) keeps the pet still.
-- **Count badge and hover summary.** The badge shows how many items are unread; hover for the newest.
+- **Count badge and hover summary.** The badge shows how many items need you; hover for the newest.
 - **Optional.** Hide the pet in Settings; monitoring, the Inbox and the menu-bar icon keep working.
 - **Remembers across restarts.** Items you've seen don't come back as new after a relaunch. Items that
   arrived while the app was quit are announced once (within 24 hours).
@@ -74,7 +73,8 @@ DEMO, and appears only if you choose it under Settings → GitHub → Source.
 ## Updates
 
 Beta 4 is installed by hand once. Later versions are delivered by
-[Sparkle](https://sparkle-project.org): GitHub Pet checks at most once a day, shows a quiet "Version X
+[Sparkle](https://sparkle-project.org). GitHub Pet first asks once whether to check automatically
+(Sparkle's prompt). With checks on, it checks at most once a day, shows a quiet "Version X
 available" line in the menu and asks before installing, unless you turn on automatic installs. Updates
 are verified with an EdDSA signature before they're unpacked. See [Updates](updates.md).
 
@@ -83,11 +83,16 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 - No tokens are requested, read or stored; all GitHub access goes through your installed `gh`.
 - No backend and no analytics. Settings, entitlement repositories, seen items and dismissals stay on
   your Mac.
-- Network use: `gh` talking to github.com, the public githubstatus.com API and the update feed.
+- Network use: `gh` talking to github.com, the public githubstatus.com API, the update feed
+  (raw.githubusercontent.com) and update downloads from GitHub Releases.
 - Only validated links open: github.com, and githubstatus.com for incidents.
 
 ## Known limits
 
+- **Updates start after Beta 4.** In-app updates begin with the first release after Beta 4; earlier
+  betas must install Beta 4 by hand.
+- **Intel.** The app is universal (Apple Silicon and Intel). The Intel half is checked in CI under
+  Rosetta, not on Intel hardware.
 - **Not notarized.** Ad-hoc signed builds need **Open Anyway** on first launch
   ([installation guide](install.md)).
 - **Open at login** isn't available on ad-hoc signed builds. A button in Settings → Mascot opens

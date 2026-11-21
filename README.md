@@ -10,7 +10,7 @@ Reviews, assigned issues and your pull requests in one calm Inbox, with a small 
 Read-only, local and built on the GitHub CLI you already use.
 
 [**Download Beta 4**](https://github.com/christopherrbrown3/github-pet/releases) ·
-macOS 13 or later · Apple Silicon and Intel · Free
+macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 
 <br>
 
@@ -53,7 +53,7 @@ grouped by what they ask of you. Three tiles sum it up: **Assigned to you**, **W
 **GitHub status**.
 
 Click a row and it opens on GitHub. Done with something? Dismiss it with **×**. It stays dismissed on this
-Mac, **Undo** brings it straight back, and **View dismissed** lets you restore it later.
+Mac, and **View dismissed** lets you **Restore** it later.
 
 <br clear="right">
 
@@ -78,7 +78,7 @@ Mac, **Undo** brings it straight back, and **View dismissed** lets you restore i
   </tr>
 </table>
 
-An optional pet sits on your desktop with a count badge. It plays a short animation once for something
+An optional pet sits on your desktop with a badge counting the items that need you. It plays a short animation once for something
 genuinely new, never on every refresh. Pick **Mona** or **Little Chris** in Settings, resize it, or hide
 it: the Inbox and menu-bar icon keep working either way.
 
@@ -137,8 +137,9 @@ More detail on every feature: [Features](docs/features.md).
 
 ## Updates
 
-Install Beta 4 by hand once. From then on, GitHub Pet checks for updates in the background and asks
-before installing one; choose **Check for Updates…** from the menu-bar menu any time. Each update is
+Install Beta 4 by hand once. GitHub Pet then asks once whether to check for updates automatically. If
+you agree, it checks in the background and asks before installing one; choose **Check for Updates…**
+from the menu-bar menu any time. Each update is
 verified with its signature before it's installed. [How updates work](docs/updates.md).
 
 ## Limits during the beta
@@ -151,6 +152,9 @@ verified with its signature before it's installed. [How updates work](docs/updat
   earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
 - **Search limits.** At most 30 items per category; reaching that marks the result as partial.
+- **Updates start after Beta 4.** In-app updates begin with the first release after Beta 4; earlier
+  betas must install Beta 4 by hand.
+- **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
 - **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, and some behaviour on every
   supported macOS version.
 
