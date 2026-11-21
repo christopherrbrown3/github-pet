@@ -14,7 +14,7 @@ import Testing
     private func cancels(_ change: (inout PetSettings) -> Void, from start: PetSettings = PetSettings()) -> Bool {
         var new = start
         change(&new)
-        return GestureCancellation.shouldCancel(from: start, to: new, at: noon, calendar: utc)
+        return GestureCancellation.shouldCancel(from: start, to: new, at: noon, calendar: utc, features: .allOn)
     }
 
     @Test func snoozeAndReduceMotionCancelAtOnce() {

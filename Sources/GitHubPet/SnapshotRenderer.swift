@@ -12,6 +12,9 @@ enum SnapshotRenderer {
     static func run(model: AppModel, directory: URL) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var report: [String] = []
+        // Hideable features (#94, #95, #107): render-check's expectations follow this line.
+        report.append("features: privacyMode=\(model.features.privacyMode) snooze=\(model.features.snooze) "
+                      + "quietHours=\(model.features.quietHours) panes=\(model.features.settingsPanes.map(\.rawValue).joined(separator: ","))")
 
         func capture(_ name: String) async {
             // Let polls, ticks and SwiftUI updates settle.
@@ -25,6 +28,7 @@ enum SnapshotRenderer {
                           + "hover-top=\(model.hoverLines(compact: false).first ?? "") "
                           + "compact-hover=\(model.hoverLines(compact: true).joined(separator: " | "))")
             report.append("source=\(model.settings.dataSource.rawValue) privacy=\(model.settings.privacyMode) "
+                          + "effective-privacy=\(model.privacyMode) "
                           + "details=\(model.detailsRevealed) inbox-privacy=\(model.inboxPrivacy)")
             report.append("menu-bar AX: \(model.statusAccessibilityLabel)")
             report.append(mascotAccessibility(model))
@@ -175,7 +179,11 @@ enum SnapshotRenderer {
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model), name: "settings\(suffix)", directory: directory,
                                    appearance: appearance, asWindow: true)
-            for pane in SettingsPane.allCases {
+            // The whole GitHub pane unscrolled, so the review filter it holds while the Alerts
+            // tab is hidden (#107) is visible in one image.
+            report += await render(GitHubPane(model: model).frame(width: 520, height: Self.githubPaneFullHeight),
+                                   name: "settings-github-full\(suffix)", directory: directory, appearance: appearance)
+            for pane in model.features.settingsPanes {
                 report += await render(SettingsView(model: model, pane: pane), name: "settings-\(pane.rawValue)\(suffix)",
                                        directory: directory, appearance: appearance, asWindow: true)
             }
@@ -187,6 +195,14 @@ enum SnapshotRenderer {
         model.settings.privacyMode = true
         model.snooze(.fourHours)
         model.settings.quietHours.enabled = true
+        model.settings.quietHours.startMinute = 0
+        model.settings.quietHours.endMinute = 24 * 60 - 1
+        // As after upgrading from a build where all three were on: hidden ones are effectively off.
+        report.append("stored privacy=\(model.settings.privacyMode) snoozed=\(model.settings.snoozeUntil != nil) "
+                      + "quiet-hours=\(model.settings.quietHours.enabled) → effective privacy=\(model.privacyMode) "
+                      + "snoozed=\(model.settings.isSnoozed(at: model.now, features: model.features)) "
+                      + "quiet-now=\(model.settings.quietHoursActive(at: model.clock(), features: model.features)) "
+                      + "alerts-allowed=\(model.settings.alertsAllowed(at: model.clock(), features: model.features))")
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
             report += await render(SettingsView(model: model, pane: .alerts), name: "settings-alerts-snoozed-privacy\(suffix)",
                                    directory: directory, appearance: appearance, asWindow: true)
@@ -271,6 +287,7 @@ enum SnapshotRenderer {
         model.settings = saved
         return report
     }
+    static let githubPaneFullHeight: CGFloat = 1500
     static let readmeScopeHeight: CGFloat = 540
     static let readmeGeneralHeight: CGFloat = 690
 
@@ -768,6 +785,8 @@ enum SnapshotRenderer {
         let playing = model.activeClip != nil
         model.snooze(.oneHour)
         let stoppedAtOnce = playing && model.activeClip == nil
+        // #95: while snooze is hidden, a stored snooze (as from an earlier build) silences nothing.
+        let keptPlaying = playing && model.activeClip != nil
         model.cancelSnooze()
         try? await Task.sleep(nanoseconds: 400_000_000)
         let replayed = model.activeClip != nil
@@ -784,7 +803,11 @@ enum SnapshotRenderer {
         lines.append("gesture: started=\(first != nil) state=\(first?.state.rawValue ?? "none") "
                      + "duration=\(format(first.map { CGFloat($0.endsAt.timeIntervalSince($0.startedAt)) })) "
                      + "second-event-merged=\(merged) ended=\(ended) reduced-motion-plays=\(reducedPlays)")
-        lines.append("gesture cancel: snooze-stops-at-once=\(stoppedAtOnce) replayed-after-unsnooze=\(replayed)")
+        if model.features.snooze {
+            lines.append("gesture cancel: snooze-stops-at-once=\(stoppedAtOnce) replayed-after-unsnooze=\(replayed)")
+        } else {
+            lines.append("gesture cancel: snooze hidden, stored-snooze-keeps-playing=\(keptPlaying)")
+        }
 
         guard let pack = model.pack, let gesture = pack.attentionGesture else { return lines + ["gesture: no pack gesture"] }
         var queue = EventClipQueue()

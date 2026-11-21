@@ -141,15 +141,26 @@ public struct PetSettings: Codable, Equatable, Sendable {
         return copy
     }
 
-    public func isSnoozed(at now: Date) -> Bool {
-        guard let snoozeUntil else { return false }
+    /// Effective snooze: never while snooze is hidden (#95), whatever `snoozeUntil` holds.
+    public func isSnoozed(at now: Date, features: FeatureSet = .current) -> Bool {
+        guard features.snooze, let snoozeUntil else { return false }
         return snoozeUntil > now
+    }
+
+    /// Effective quiet hours: never while quiet hours are hidden (#107), whatever is stored.
+    public func quietHoursActive(at now: Date, calendar: Calendar = .current, features: FeatureSet = .current) -> Bool {
+        features.quietHours && quietHours.contains(now, calendar: calendar)
+    }
+
+    /// Effective privacy: off while privacy mode is hidden (#94), whatever `privacyMode` holds.
+    public func effectivePrivacyMode(features: FeatureSet = .current) -> Bool {
+        features.privacyMode && privacyMode
     }
 
     /// Whether the mascot and menu-bar icon may draw attention to new events right now.
     /// The inbox itself always updates regardless.
-    public func alertsAllowed(at now: Date, calendar: Calendar = .current) -> Bool {
-        !isSnoozed(at: now) && !quietHours.contains(now, calendar: calendar)
+    public func alertsAllowed(at now: Date, calendar: Calendar = .current, features: FeatureSet = .current) -> Bool {
+        !isSnoozed(at: now, features: features) && !quietHoursActive(at: now, calendar: calendar, features: features)
     }
 }
 

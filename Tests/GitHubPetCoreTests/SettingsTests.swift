@@ -99,11 +99,11 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
         var settings = PetSettings()
         let now = utc(10, 0)
         settings.snoozeUntil = SnoozeOption.oneHour.until(from: now)
-        #expect(settings.isSnoozed(at: now))
-        #expect(!settings.alertsAllowed(at: now, calendar: utcCalendar()))
-        #expect(settings.isSnoozed(at: utc(10, 59)))
-        #expect(!settings.isSnoozed(at: utc(11, 0)))
-        #expect(settings.alertsAllowed(at: utc(11, 0), calendar: utcCalendar()))
+        #expect(settings.isSnoozed(at: now, features: .allOn))
+        #expect(!settings.alertsAllowed(at: now, calendar: utcCalendar(), features: .allOn))
+        #expect(settings.isSnoozed(at: utc(10, 59), features: .allOn))
+        #expect(!settings.isSnoozed(at: utc(11, 0), features: .allOn))
+        #expect(settings.alertsAllowed(at: utc(11, 0), calendar: utcCalendar(), features: .allOn))
     }
 
     @Test func untilTomorrowMorning() {
@@ -114,8 +114,8 @@ private func utc(_ hour: Int, _ minute: Int, day: Int = 12) -> Date {
     @Test func quietHoursAlsoBlockAlerts() {
         var settings = PetSettings()
         settings.quietHours = QuietHours(enabled: true, startMinute: 22 * 60, endMinute: 7 * 60)
-        #expect(!settings.alertsAllowed(at: utc(23, 0), calendar: utcCalendar()))
-        #expect(settings.alertsAllowed(at: utc(12, 0), calendar: utcCalendar()))
+        #expect(!settings.alertsAllowed(at: utc(23, 0), calendar: utcCalendar(), features: .allOn))
+        #expect(settings.alertsAllowed(at: utc(12, 0), calendar: utcCalendar(), features: .allOn))
     }
 }
 

@@ -40,9 +40,9 @@ A quiet macOS desktop companion that tells you when GitHub work is waiting for y
   see are reported as a number.
 - **GitHub service incidents.** Active incidents from the public githubstatus.com feed, kept separate
   from your own items.
-- **Privacy, quiet hours and snooze.** Privacy mode (on by default) hides repository names and titles until
-  you choose to show them. Quiet hours and snooze stop new-item animations and alerts; Reduce Motion
-  keeps the mascot still. The inbox keeps updating either way.
+- **Calm motion.** Reduce Motion (in Settings or macOS) keeps the mascot still; the inbox keeps updating.
+  Privacy mode, snooze and quiet hours are hidden in this beta to keep things simple; settings saved by
+  an earlier beta are kept but have no effect until those features return.
 - **Workflow failures (opt-in).** Failing GitHub Actions runs on the default branch of the repositories you
   select. Failures you triggered are urgent; others need attention. A row opens the run on GitHub.
 - **Deployment approvals (opt-in).** Runs in the repositories you select that wait for a deployment you can
@@ -67,7 +67,7 @@ The red light beside the mascot marks an active GitHub service incident (a Demo 
 
 <p>
   <img src="docs/screenshots/beta/settings-scope.png" alt="Settings: monitoring scope and an Entitlement approvals list with one Demo repository" width="400">
-  <img src="docs/screenshots/beta/settings-general.png" alt="Settings: mascot, Open at login (off), privacy and motion, snooze and quiet hours" width="400">
+  <img src="docs/screenshots/beta/settings-general.png" alt="Settings: mascot, Open at login (off) and motion" width="400">
 </p>
 
 All images show invented Demo data (the app's offline fixtures). New installs use the GitHub CLI

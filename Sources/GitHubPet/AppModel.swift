@@ -32,6 +32,8 @@ final class AppModel: ObservableObject {
         /// #90: tests inject a fake updater. nil: Sparkle for a normal launch of a configured app bundle only.
         var updaterBackend: (any UpdaterBackend)?
         var mascotPackDirectory: (MascotSkin) -> URL? = { LaunchOptions.builtInPackDirectory(for: $0) }
+        /// Hideable features (#94, #95, #107): the build's switches; tests exercise both states.
+        var features: FeatureSet = .current
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -94,7 +96,7 @@ final class AppModel: ObservableObject {
                     || settings.watchDeploymentApprovals != oldValue.watchDeploymentApprovals) { requestRefresh() }
             // Snooze, quiet hours or Reduce Motion turned on: stop a playing gesture now, not at
             // the next tick. Nothing is re-queued, so turning them off later replays nothing.
-            if GestureCancellation.shouldCancel(from: oldValue, to: settings, at: clock()) { cancelGesture() }
+            if GestureCancellation.shouldCancel(from: oldValue, to: settings, at: clock(), features: features) { cancelGesture() }
         }
     }
 
@@ -256,12 +258,18 @@ final class AppModel: ObservableObject {
         settings.reducedMotion || runtime.systemReducedMotion()
     }
 
-    var alertsAllowed: Bool { settings.alertsAllowed(at: now) }
+    /// Which hideable features this build shows. Hidden ones are effectively off everywhere.
+    var features: FeatureSet { runtime.features }
+
+    var alertsAllowed: Bool { settings.alertsAllowed(at: now, features: features) }
+
+    /// Privacy for the hover, mascot and menu-bar text: the setting only while privacy mode is shown.
+    var privacyMode: Bool { settings.effectivePrivacyMode(features: features) }
 
     var unseenCount: Int { items.filter { unseen.contains($0.id) }.count }
 
     /// Privacy for the Inbox rows: the setting, unless details were revealed this session.
-    var inboxPrivacy: Bool { settings.privacyMode && !detailsRevealed }
+    var inboxPrivacy: Bool { privacyMode && !detailsRevealed }
 
     var mascotState: MascotState {
         let base = MascotPolicy.state(dataState: dataState, items: items, unseenCount: unseenCount,
@@ -299,7 +307,7 @@ final class AppModel: ObservableObject {
 
     var summaryLines: [String] {
         PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount,
-                            privacy: settings.privacyMode, demo: isDemo, demoSource: demoSource,
+                            privacy: privacyMode, demo: isDemo, demoSource: demoSource,
                             emptyInboxMessage: dismissedInboxMessage)
     }
 
@@ -343,7 +351,7 @@ final class AppModel: ObservableObject {
     /// The hover keeps its height with an incident line on top: it previews one item fewer
     /// (the Inbox lists them all), so placement beside the character is unchanged (#27).
     private var fullHoverSummary: [String] {
-        PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount, privacy: settings.privacyMode,
+        PrivacyText.summary(dataState: dataState, items: items, unseenCount: unseenCount, privacy: privacyMode,
                             demo: isDemo, demoSource: demoSource, maxLines: incidentMarker == nil ? 3 : 2,
                             emptyInboxMessage: dismissedInboxMessage)
     }
@@ -362,7 +370,7 @@ final class AppModel: ObservableObject {
     /// What the marker draws at `date`: static, or a point in its burst.
     func markerPhase(at date: Date, reduced: Bool) -> IncidentMarker.Phase {
         incidentMarker?.phase(now: date, burst: markerBurst, reducedMotion: reduced,
-                              alertsAllowed: settings.alertsAllowed(at: date)) ?? .still
+                              alertsAllowed: settings.alertsAllowed(at: date, features: features)) ?? .still
     }
 
     var showsAlertIcon: Bool {
@@ -609,7 +617,7 @@ final class AppModel: ObservableObject {
             let shown = events.map { event in
                 var event = event; event.item = classified(event.item); return event
             }
-            clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
+            clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features))
             actionsQuality = result.complete ? nil : ActionsWatch.qualityLine(for: result.issues, watched: repositories.count)
             deploymentsWaitingCount = result.waitingOnOthers
         }
@@ -722,7 +730,7 @@ final class AppModel: ObservableObject {
         let shown = events.map { event in
             var event = event; event.item = classified(event.item); return event
         }
-        clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date))
+        clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features))
         sync(now: date)
     }
 
@@ -768,7 +776,7 @@ final class AppModel: ObservableObject {
         if case .incidents = outcome {
             unseenIncidents.formIntersection(serviceMonitor.incidents.map(\.inboxItem.id))
         }
-        let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date)
+        let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features)
         clips.enqueue(events, now: date, playable: playable, origin: .serviceIncident)
         // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
         if playable && !events.isEmpty { markerBurst = IncidentMarker.Burst(start: date, fromTier: shownBefore) }
@@ -788,7 +796,7 @@ final class AppModel: ObservableObject {
         let date = clock()
         if engine.refreshFreshness(now: date) { persistBaseline() }
         serviceMonitor.refreshFreshness(now: date)
-        if effectiveReducedMotion || !settings.alertsAllowed(at: date) {
+        if effectiveReducedMotion || !settings.alertsAllowed(at: date, features: features) {
             clips.clear()
             markerBurst = nil
         }
