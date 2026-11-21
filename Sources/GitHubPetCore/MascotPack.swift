@@ -114,6 +114,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case undecodable(String)
     case notRegularFile(String)
     case clipTooLong(String, Int, Int)
+    case packTooLarge(Int)
+    case tooManyFrames(Int)
 
     public var description: String {
         func q(_ value: String) -> String { PackLabel.sanitize(value, fallback: "(invalid)") }
@@ -140,6 +142,10 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .notRegularFile(let p): return "'\(path(p))' is not a regular file"
         case .clipTooLong(let s, let total, let limit):
             return "state '\(q(s))' plays \(total)ms once, longer than its \(limit)ms event clip"
+        case .tooManyFrames(let total):
+            return "pack has \(total) frames; at most \(MascotPack.maxPackFrames) in total (\(MascotPack.maxFrames) per state)"
+        case .packTooLarge(let limit):
+            return "pack images total more than \(limit / (1024 * 1024)) MiB (each image at most \(MascotPack.maxImageBytes / (1024 * 1024)) MiB, 256×256, up to \(MascotPack.maxFrames) frames per state)"
         }
     }
 }
@@ -159,10 +165,17 @@ public struct MascotPack: Equatable, Sendable {
     /// The only supported ground anchor (schema v1), in canvas pixels.
     public static let anchor = [128, 232]
     public static let maxFrames = 12
+    /// Frames across all states (bundled packs use 9 and 12). Checked before any file is opened.
+    public static let maxPackFrames = 24
     public static let durationRange = 125...2000
     /// Read limits, enforced before decoding or hashing.
     public static let maxManifestBytes = 256 * 1024
     public static let maxImageBytes = 4 * 1024 * 1024
+    /// All distinct images of one pack together (the bundled packs' referenced images are about
+    /// 0.5 MiB). Reading stops once the running total passes it, so a pack of many large images
+    /// can't stall or exhaust memory. An image over `maxImageBytes` is rejected on its own
+    /// (`tooLarge`) and is not added to the total: it is already an error and is never retained.
+    public static let maxPackBytes = 16 * 1024 * 1024
     /// Largest attention lean (design storyboard #29), about the ground anchor.
     public static let attentionLeanDegrees = 5.0
 
@@ -317,7 +330,11 @@ public struct MascotPack: Equatable, Sendable {
         // Rendering, the attention lean and ground-preserving resizes all use the v1 ground point;
         // a pack declaring another one would be drawn and resized wrongly, so it is rejected.
         if manifest.anchor != anchor { errors.append(.badAnchor) }
+        let totalFrames = manifest.states.values.reduce(0) { $0 + $1.frames.count }
+        // A state over its own limit gets that state's more specific error below.
+        if totalFrames > maxPackFrames, manifest.states.values.allSatisfy({ $0.frames.count <= maxFrames }) { return (errors + [.tooManyFrames(totalFrames)], [:]) }
         var checked: Set<String> = []
+        var totalBytes = 0
         for state in MascotState.allCases {
             guard let spec = manifest.states[state.rawValue] else {
                 errors.append(.missingState(state.rawValue))
@@ -346,6 +363,8 @@ public struct MascotPack: Equatable, Sendable {
                 let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:])
                 errors += fileErrors
                 if fileErrors.isEmpty, let data { validated[path] = data }
+                totalBytes += data?.count ?? 0
+                if totalBytes > maxPackBytes { return (errors + [.packTooLarge(maxPackBytes)], [:]) }
             }
         }
         return (errors, validated)

@@ -922,7 +922,9 @@ enum SnapshotRenderer {
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.layoutSubtreeIfNeeded()
         hosting.window?.displayIfNeeded()
-        try? await Task.sleep(nanoseconds: 15_000_000)
+        // A yield lets SwiftUI commit; a fixed sleep here cost ~15 ms x thousands of bitmaps (render-check
+        // headroom, #104) and measured identical.
+        await Task.yield()
         guard let layer = hosting.layer else { return nil }
         layer.contentsScale = scale
         let width = Int((size.width * scale).rounded(.up)), height = Int((size.height * scale).rounded(.up))
@@ -1055,8 +1057,8 @@ enum SnapshotRenderer {
         MascotWindowController.show(popover, placement: placement, panelFrame: panel.frame, anchor: anchor)
         defer { popover.close(); panel.orderOut(nil); anchor.orderOut(nil) }
         var shown: NSWindow?
-        for _ in 0..<8 where shown == nil {
-            try? await Task.sleep(nanoseconds: 200_000_000)
+        for _ in 0..<32 where shown == nil {
+            try? await Task.sleep(nanoseconds: 50_000_000)
             shown = popover.contentViewController?.view.window.flatMap { $0.isVisible ? $0 : nil }
         }
         try? await Task.sleep(nanoseconds: 200_000_000)
