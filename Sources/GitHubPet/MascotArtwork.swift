@@ -59,21 +59,36 @@ struct MascotArtworkLoader {
             }
         }
 
-        switch loadBuiltIn(skin) {
+        return resolveBuiltIn(skin, cacheOnly: false) ?? MascotArtwork(source: .placeholder, pack: nil)
+    }
+
+    /// What a built-in skin shows if it has already been verified, or nil: never reads the disk.
+    /// Settings skin cards use it so opening Settings can't block on a pack load (#41).
+    mutating func cachedBuiltInArtwork(_ skin: MascotSkin) -> MascotArtwork? {
+        resolveBuiltIn(skin, cacheOnly: true)
+    }
+
+    private mutating func resolveBuiltIn(_ skin: MascotSkin, cacheOnly: Bool) -> MascotArtwork? {
+        guard let result = loadBuiltIn(skin, cacheOnly: cacheOnly) else { return nil }
+        switch result {
         case .success(let pack):
             return MascotArtwork(source: .builtIn(skin), pack: pack)
         case .failure(let failure):
-            if skin == .littleChris, case .success(let mona) = loadBuiltIn(.mona) {
-                return MascotArtwork(source: .builtIn(.mona), pack: mona,
-                                     notice: "Little Chris is unavailable. Showing Mona.", errors: failure.errors)
+            if skin == .littleChris {
+                guard let fallback = loadBuiltIn(.mona, cacheOnly: cacheOnly) else { return nil }
+                if case .success(let mona) = fallback {
+                    return MascotArtwork(source: .builtIn(.mona), pack: mona,
+                                         notice: "Little Chris is unavailable. Showing Mona.", errors: failure.errors)
+                }
             }
             return MascotArtwork(source: .placeholder, pack: nil,
                                  notice: "\(skin.name) is unavailable. Showing the placeholder.", errors: failure.errors)
         }
     }
 
-    private mutating func loadBuiltIn(_ skin: MascotSkin) -> Result<MascotPack, MascotPackErrors> {
+    private mutating func loadBuiltIn(_ skin: MascotSkin, cacheOnly: Bool = false) -> Result<MascotPack, MascotPackErrors>? {
         if let cached = builtIns[skin] { return cached }
+        if cacheOnly { return nil }
         let result: Result<MascotPack, MascotPackErrors>
         if let directory = builtInDirectory(skin) {
             result = MascotPack.load(from: directory, expectedID: skin.rawValue)

@@ -6,11 +6,12 @@ import Testing
 @testable import GitHubPetCore
 
 /// A pack directory lookup that can be held on the background thread until the test releases it.
-private final class Gate: @unchecked Sendable {
+final class Gate: @unchecked Sendable {
     private let semaphore = DispatchSemaphore(value: 0)
     private(set) var entered = DispatchSemaphore(value: 0)
     func wait() { entered.signal(); semaphore.wait() }
-    func open() { semaphore.signal() }
+    /// Releases every waiter, now and later (the background prewarm may ask for the same pack too).
+    func open() { for _ in 0..<16 { semaphore.signal() } }
 }
 
 /// #41: packs load off the main thread; a stale load never overwrites a newer choice.
@@ -36,6 +37,13 @@ private final class Gate: @unchecked Sendable {
         try JSONSerialization.data(withJSONObject: manifest).write(to: folder.appendingPathComponent("manifest.json"))
     }
 
+    func root() throws -> URL { try newRoot() }
+
+    /// The requested load, not the background prewarm (which a test may have parked on a gate).
+    func requestedLoadFinished(_ app: AppModel) async {
+        while app.mascotArtworkLoading { try? await Task.sleep(nanoseconds: 5_000_000) }
+    }
+
     private func newRoot() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("async-pack-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
@@ -44,7 +52,7 @@ private final class Gate: @unchecked Sendable {
         return root
     }
 
-    private func model(_ root: URL, gates: [MascotSkin: Gate] = [:], override: URL? = nil,
+    func model(_ root: URL, gates: [MascotSkin: Gate] = [:], override: URL? = nil,
                        skin: MascotSkin = .mona) -> AppModel {
         let environment = override.map { ["GITHUB_PET_PACK_DIR": $0.path] } ?? [:]
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures", "--defaults-suite", "async-pack-tests"],
@@ -80,7 +88,7 @@ private final class Gate: @unchecked Sendable {
         defer { try? FileManager.default.removeItem(at: root) }
         let slow = Gate()
         let app = model(root, gates: [.littleChris: slow])
-        await app.mascotArtworkSettled()
+        await requestedLoadFinished(app)
         #expect(app.mascotArtwork.source == .builtIn(.mona))
         app.settings.mascotSkin = .littleChris        // parked on the background thread
         app.settings.mascotSkin = .mona               // newer choice
@@ -97,7 +105,7 @@ private final class Gate: @unchecked Sendable {
         defer { try? FileManager.default.removeItem(at: root) }
         let gate = Gate()
         let app = model(root, gates: [.littleChris: gate])
-        await app.mascotArtworkSettled()
+        await requestedLoadFinished(app)
         let before = app.layout(128)
         app.settings.mascotSkin = .littleChris
         #expect(app.mascotArtworkLoading)
@@ -129,5 +137,41 @@ private final class Gate: @unchecked Sendable {
         app.settings.mascotSkin = .mona
         await app.mascotArtworkSettled()
         #expect(app.mascotArtwork.source == .builtIn(.mona), "served from the cache, not reread from disk")
+    }
+}
+
+@Suite @MainActor struct MascotSkinCardPrewarmTests {
+    private let helper = MascotArtworkAsyncLoadTests()
+
+    @Test func skinCardsNeverReadAPackOnTheMainThreadAndFillInAfterThePrewarm() async throws {
+        let root = try helper.root()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gate = Gate()
+        let app = helper.model(root, gates: [.littleChris: gate])
+        await Task.yield()
+        // Mona is current (or loading); Little Chris is parked on the background thread. Asking for
+        // its card returns at once with a placeholder instead of reading the pack here.
+        let early = app.artwork(for: .littleChris)
+        #expect(early.source == .placeholder && early.notice == "Loading…")
+        gate.open()
+        await app.mascotArtworkSettled()
+        #expect(app.artwork(for: .littleChris).source == .builtIn(.littleChris))
+        #expect(app.artwork(for: .mona).source == .builtIn(.mona))
+        #expect(app.mascotArtworkCacheRevision == 1)
+        // Reusing the same cache: removing the pack from disk changes nothing.
+        try FileManager.default.removeItem(at: root.appendingPathComponent(MascotSkin.littleChris.rawValue))
+        #expect(app.artwork(for: .littleChris).source == .builtIn(.littleChris))
+    }
+
+    @Test func aLockedLaunchShowsItsOwnArtworkOnEveryCard() async throws {
+        let root = try helper.root()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let app = helper.model(root, override: root.appendingPathComponent("no-such-pack"))
+        await app.mascotArtworkSettled()
+        for skin in MascotSkin.allCases {
+            #expect(app.artwork(for: skin).source == app.mascotArtwork.source
+                    && app.artwork(for: skin).errors == app.mascotArtwork.errors)
+        }
+        #expect(app.mascotArtworkCacheRevision == 0)
     }
 }

@@ -115,6 +115,9 @@ final class AppModel: ObservableObject {
     /// load of an earlier choice can never overwrite a newer one.
     private var mascotArtworkGeneration = 0
     private var mascotArtworkLoadsInFlight = 0
+    private var mascotArtworkPrewarmed = false
+    /// Bumps when the prewarm adds verified packs, so Settings skin cards redraw.
+    @Published private(set) var mascotArtworkCacheRevision = 0
 
     private let store: SettingsStore
     let clockOffset: TimeInterval
@@ -972,7 +975,14 @@ final class AppModel: ObservableObject {
     }
 
     /// Settings skin cards: the real bundled frames for `skin`, through the same loader as the pet.
-    func artwork(for skin: MascotSkin) -> MascotArtwork { mascotArtworkLoader.resolve(skin) }
+    /// What a Settings skin card shows. A live launch never reads packs here: a card whose pack
+    /// is not verified yet shows a placeholder until the background prewarm lands (#41).
+    func artwork(for skin: MascotSkin) -> MascotArtwork {
+        guard runtime.loadsMascotArtworkAsync else { return mascotArtworkLoader.resolve(skin) }
+        if mascotArtworkLoader.locksPicker { return mascotArtwork }
+        return mascotArtworkLoader.cachedBuiltInArtwork(skin)
+            ?? MascotArtwork(source: .placeholder, pack: nil, notice: "Loading…")
+    }
 
     private func applyMascotArtwork(_ next: MascotArtwork) {
         if next.source != mascotArtwork.source { layouts.removeAll() }
@@ -1000,6 +1010,27 @@ final class AppModel: ObservableObject {
             self.mascotArtworkLoading = false
             self.applyMascotArtwork(artwork)
             FileHandle.standardError.write(Data("GitHubPet: \(artwork.logDescription)\n".utf8))
+            self.prewarmBuiltInPacks()
+        }
+    }
+
+    /// Verifies the other built-in packs in the background, once, with the same loader and cache,
+    /// so Settings skin cards and later skin switches find them ready.
+    private func prewarmBuiltInPacks() {
+        guard !mascotArtworkPrewarmed, !mascotArtworkLoader.locksPicker else { return }
+        mascotArtworkPrewarmed = true
+        mascotArtworkLoadsInFlight += 1
+        let seed = UncheckedSendable(value: mascotArtworkLoader)
+        Task { [weak self] in
+            let loader = await Task.detached(priority: .utility) { () -> UncheckedSendable<MascotArtworkLoader> in
+                var loader = seed.value
+                for skin in MascotSkin.allCases { _ = loader.resolve(skin) }
+                return UncheckedSendable(value: loader)
+            }.value
+            guard let self else { return }
+            defer { self.mascotArtworkLoadsInFlight -= 1 }
+            self.mascotArtworkLoader.adoptCache(from: loader.value)
+            self.mascotArtworkCacheRevision += 1
         }
     }
 
