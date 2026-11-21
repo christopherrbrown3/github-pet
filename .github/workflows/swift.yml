@@ -132,7 +132,7 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
       - name: GUI render check
-        timeout-minutes: 9
+        timeout-minutes: 7
         run: scripts/render-check.sh
       - name: Intel slice smoke (Rosetta)
         timeout-minutes: 2

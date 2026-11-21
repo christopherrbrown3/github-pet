@@ -42,7 +42,7 @@ chmod +x "$scratch/gh"
 # A one-day app-clock offset: everything time-based must follow the app clock, not the wall clock.
 GITHUB_PET_GH_PATH="$scratch/gh" GITHUB_PET_SNAPSHOT_GH_TRAP="$scratch/gh-called" "$binary" --defaults-suite "$suite" --gh --clock-offset 86400 --render-snapshots "$out" &
 pid=$!
-limit=420
+limit=300
 started=$SECONDS
 for _ in {1..$limit}; do kill -0 $pid 2>/dev/null || break; sleep 1; done
 if kill -0 $pid 2>/dev/null; then kill $pid; echo "render-check: timed out" >&2; exit 1; fi
