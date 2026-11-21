@@ -48,7 +48,35 @@ extension SnapshotRenderer {
                 await cleanUp(name, model: model)
             }
         }
+        report += await inboxLegibilityRenders(model: model, directory: directory)
         model.settings = saved
+        return report
+    }
+
+    /// #104: last-known (stale) rows, light and dark, plus the dimmed contrast ratios. Large text is
+    /// not rendered here (an offscreen render ignores the Dynamic Type environment); it is covered
+    /// only by the InboxRowMetrics unit tests.
+    private static func inboxLegibilityRenders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## inbox legibility (#104)"]
+        model.settings.mascotSkin = MascotSkin.allCases[0]
+        var selection = InboxViewSelection()
+        await prepare("stale", model: model, selection: &selection)
+        for name in ["default"] {
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                                   showsSimulator: false, initialSelection: selection),
+                                         name: "inbox104-stale-\(name)\(suffix)", directory: directory,
+                                         appearance: appearance, asWindow: true)
+                if let first = lines.first { report.append("inbox104 \(name)\(suffix): \(first)") }
+            }
+        }
+        for (mode, labelGray, backgrounds) in [("light", 0.0, [236.0, 255]), ("dark", 255.0, [30.0, 50])] {
+            for role in [InboxDimming.Role.title, .context] {
+                let worst = backgrounds.map { InboxDimming.textRatio(role, labelGray: labelGray, backgroundGray: $0) }.min() ?? 0
+                report.append("inbox104 dimmed-\(role) \(mode): ratio>=\(String(format: "%.2f", worst)) (AA \(WCAGContrast.normalTextAA))")
+            }
+        }
+        await cleanUp("stale", model: model)
         return report
     }
 
