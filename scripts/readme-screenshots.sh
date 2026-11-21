@@ -1,17 +1,18 @@
 #!/bin/zsh
 # Regenerate the README images from a built app with the offscreen --render-snapshots renderer.
 # Demo fixtures only: throwaway preferences, an executable gh trap, no network, and the app is
-# never launched normally (it renders offscreen and quits).
+# never launched normally (it renders offscreen and quits). Each render is then framed
+# (scripts/readme-frame.swift) and losslessly recompressed (scripts/png-optimize.py).
 #
 #   scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir] [build notes file]
 #
-# Output defaults to docs/screenshots/beta. A build notes file (for example the CI run, artifact and
-# ZIP checksum the app came from) is copied into the provenance README.
+# Output defaults to docs/screenshots/beta-4. A build notes file (for example the CI run, artifact
+# and ZIP checksum the app came from) is copied into the provenance README.
 set -euo pipefail
 cd "${0:A:h}/.."
 
 app=${1:?usage: scripts/readme-screenshots.sh path/to/GitHubPet.app [output dir]}
-out=${2:-docs/screenshots/beta}
+out=${2:-docs/screenshots/beta-4}
 notes=${3:-}
 [[ -z $notes || -f $notes ]] || { echo "readme-screenshots: no build notes file at $notes" >&2; exit 1; }
 binary=$app/Contents/MacOS/GitHubPet
@@ -42,38 +43,63 @@ wait $pid || true
 [[ ! -e $scratch/gh-called ]] || { echo "readme-screenshots: the renderer launched gh" >&2; exit 1; }
 grep -q 'source=fixtures' "$renders/report.txt" || { echo "readme-screenshots: not a Demo fixture render" >&2; exit 1; }
 
-# README name <- renderer name. Each gets a light and a -dark variant.
+# README name <- renderer name, frame. Each gets a light and a -dark variant.
+#   window: rounded corners, hairline and shadow; "+footer" also crops the Inbox's update/quit
+#           footer, which offscreen reads "Updates not configured" (snapshot mode never starts
+#           the updater). plain: the transparent mascot panel, unchanged.
 selection=(
-  mascot-idle      01-baseline-mascot
-  mascot-attention 09-attention-static-mascot
-  hover            readme-hover
-  inbox            readme-inbox
-  settings-scope   readme-settings-scope
-  settings-general readme-settings-general
+  hero-inbox          inbox87-mona-pet-v1-four        window+footer
+  inbox-dismissed     inbox87-little-chris-v1-dismissed window+footer
+  inbox-stale         inbox87-mona-pet-v1-stale       window+footer
+  mascot-mona         readme-mascot-mona-pet-v1       plain
+  mascot-little-chris readme-mascot-little-chris-v1   plain
+  settings-mascot     readme-settings-mascot          window
+  settings-github     readme-settings-github          window
 )
-mkdir -p "$out"
+mkdir -p "${out:?}"
+# Replace only this set's own files, by explicit name; nothing else in $out is touched.
+for (( i = 1; i <= ${#selection}; i += 3 )); do
+  rm -f -- "$out/${selection[i]}.png" "$out/${selection[i]}-dark.png"
+done
 rows=()
 missing=0
-for (( i = 1; i <= ${#selection}; i += 2 )); do
-  name=${selection[i]} source=${selection[i+1]}
+for (( i = 1; i <= ${#selection}; i += 3 )); do
+  name=${selection[i]} source=${selection[i+1]} frame=${selection[i+2]}
   for suffix in "" -dark; do
     from=$renders/$source$suffix.png
     if [[ ! -f $from ]]; then echo "readme-screenshots: missing $source$suffix.png" >&2; missing=$((missing + 1)); continue; fi
-    cp "$from" "$out/$name$suffix.png"
-    width=$(sips -g pixelWidth "$from" | awk '/pixelWidth/ {print $2}')
-    height=$(sips -g pixelHeight "$from" | awk '/pixelHeight/ {print $2}')
+    to=$out/$name$suffix.png
+    crop_arg=()
+    [[ $frame == *+footer ]] && crop_arg=(footer)
+    crop=$(swift scripts/readme-frame.swift "$from" "$to" ${frame%+footer} "${crop_arg[@]}")
+    python3 -I scripts/png-optimize.py "$to" > /dev/null
+    width=$(sips -g pixelWidth "$to" | awk '/pixelWidth/ {print $2}')
+    height=$(sips -g pixelHeight "$to" | awk '/pixelHeight/ {print $2}')
     sha=$(shasum -a 256 "$from" | awk '{print $1}')
-    rows+=("| $name$suffix.png | $source$suffix.png | ${width}×${height} | \`$sha\` |")
+    rows+=("| $name$suffix.png | $source$suffix.png | ${frame} ${crop:+($crop)} | ${width}×${height} | \`$sha\` |")
   done
 done
 (( missing == 0 )) || exit 1
 
 cat > "$out/README.md" <<MD
-# Beta README image provenance
+# Beta 4 README image provenance
 
-Unmodified native offscreen renders (\`--render-snapshots\`), not live desktop screenshots or
-mockups. Every inbox value is an invented Demo fixture; nothing came from GitHub.
+Native offscreen renders (\`--render-snapshots\`) of the real SwiftUI views, not live desktop
+screenshots or mockups. Every Inbox value is an invented Demo fixture; nothing came from GitHub.
+Rendered at @2x (144 dpi). Framing only adds rounded corners, a hairline and a shadow outside the
+rendered pixels; \`+footer\` crops the Inbox below its last divider, removing the update and quit
+row (offscreen it reads "Updates not configured" because snapshot mode never starts the updater;
+the shipped app shows Check for Updates… there). Kept pixels are unchanged and the PNGs are
+recompressed losslessly.
 
+The Settings images are the Mascot and GitHub panes' content: the Mascot | GitHub tab strip
+doesn't draw offscreen, so it is left out rather than painted in. Each pane is rendered at a height
+that ends between sections (the whole Mascot pane; the GitHub pane through Monitoring scope, as a
+window that size shows it before scrolling). Open at login shows what ad-hoc-signed builds read
+(unavailable, with the Login Items button). Offscreen windows are never key, so switches that are
+on draw grey rather than in the accent colour.
+
+- Data source: Demo (offline fixtures, \`--fixtures\`); no GitHub account or network.
 - Source revision of the rendered app: \`$revision\`
 - Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 - Command: \`scripts/readme-screenshots.sh <GitHubPet.app> $out${notes:+ <build notes>}\`
@@ -84,8 +110,8 @@ $( [[ -n $notes ]] && { printf '## Build\n\n'; cat "$notes"; } )
 
 ## Images
 
-| Image | Renderer output | Pixels | SHA-256 |
-|---|---|---|---|
+| Image | Renderer output | Frame | Pixels | Renderer output SHA-256 |
+|---|---|---|---|---|
 $(printf '%s\n' "${rows[@]}")
 
 Stills only: they do not show live pointer interaction, desktop placement, popover arrows or
