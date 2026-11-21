@@ -7,7 +7,7 @@ Exact commands, commit tested, pass/fail and relevant GUI evidence. Identify unv
 ## Handoff
 Owner Agent:
 QA report:
-Copilot review:
+Independent QA source/diff review (no Copilot):
 Remaining limitations:
 
 Bootstrap: user authorization is required before merge. Do not enable auto-merge.
