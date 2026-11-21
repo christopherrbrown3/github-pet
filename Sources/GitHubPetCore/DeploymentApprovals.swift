@@ -189,10 +189,7 @@ public struct DeploymentGhClient: DeploymentPolling {
         self.locator = locator; self.runner = runner
     }
 
-    private static func authFailure(_ result: CommandResult) -> Bool {
-        let message = result.stderrText.lowercased()
-        return GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
-    }
+    private static func authFailure(_ result: CommandResult) -> Bool { GhFailure.isSignedOut(result) }
 
     /// `successfulSources` counts readable repositories. With no waiting run anywhere there is no
     /// GraphQL request, so `viewer` is nil; the caller binds that result to the inbox's viewer.
@@ -210,7 +207,7 @@ public struct DeploymentGhClient: DeploymentPolling {
                 let message = result.stderrText.lowercased()
                 guard result.outputComplete else { issues.append(.malformedSource(DeploymentApprovals.alias(index))); continue }
                 if result.exitCode != 0 {
-                    if message.contains("rate limit") { issues.append(.rateLimited) }
+                    if GhFailure.isRateLimited(message) { issues.append(.rateLimited) }
                     else if ScopedGhClient.deniesAccess(result.stderrText) { issues.append(.accessDenied) }
                     issues.append(.targetUnavailable(index)); continue
                 }
@@ -226,7 +223,7 @@ public struct DeploymentGhClient: DeploymentPolling {
             let result = try runner.run(executable: gh, arguments: plan.arguments, budget: budget)
             if Self.authFailure(result) { return .failure(.signedOut) }
             guard result.outputComplete else { return .failure(.incompleteOutput) }
-            if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .failure(.rateLimited) }
+            if result.exitCode != 0 && GhFailure.isRateLimited(result.stderrText) { return .failure(.rateLimited) }
             let parsed = PendingRequestsParser.parse(result.stdout, plan: plan)
             try budget.check()
             if parsed.issues.contains(.identityMismatch) { return parsed }
