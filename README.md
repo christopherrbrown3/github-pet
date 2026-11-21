@@ -9,7 +9,7 @@
 Reviews, assigned issues and your pull requests in one calm Inbox, with a small pet on your desktop.
 Read-only, local and built on the GitHub CLI you already use.
 
-[**Download Beta 4**](https://github.com/christopherrbrown3/github-pet/releases) ·
+[**Download Beta 5**](https://github.com/christopherrbrown3/github-pet/releases) ·
 macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 
 <br>
@@ -141,7 +141,7 @@ More detail on every feature: [Features](docs/features.md).
 
 ## Updates
 
-Install Beta 4 by hand once. GitHub Pet then asks once whether to check for updates automatically. If
+If you're on Beta 3 or earlier, install by hand once; Beta 4 and later get updates in the app. GitHub Pet asks once whether to check for updates automatically. If
 you agree, it checks in the background and asks before installing one; choose **Check for Updates…**
 from the menu-bar menu any time. Each update is
 verified with its signature before it's installed. [How updates work](docs/updates.md).
@@ -156,11 +156,11 @@ verified with its signature before it's installed. [How updates work](docs/updat
   earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
 - **Search limits.** At most 30 items per category; reaching that marks the result as partial.
-- **Updates start after Beta 4.** In-app updates begin with the first release after Beta 4; earlier
-  betas must install Beta 4 by hand.
+- **In-app updates work from Beta 4 onward.** Beta 5 is the first update delivered that way, so the
+  production update path is first exercised by it. Earlier betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
-- **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, and some behaviour on every
-  supported macOS version.
+- **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, Reduce Motion, hover, the
+  app icon in Finder and the Dock at small sizes, and some behaviour on every supported macOS version.
 
 Details and the rest of the known limits are in [Features](docs/features.md#known-limits).
 

@@ -91,10 +91,10 @@ a second build from the tag. A tag push does not build or upload anything.
    `.sha256`). The job summary records the commit, build number and SHA-256. A run from any other branch is marked
    TEST ONLY in the summary and must not be published.
 2. **QA verifies** that artifact (its SHA-256 matches the summary).
-3. **GitHub pre-release.** Create the release `v0.1.0-beta.4` targeting **the commit in the summary** (mark betas as
+3. **GitHub pre-release.** Create the release for the tag `v<release_version>` (the `release_version` from step 1, with a `v` in front) targeting **the commit in the summary** (mark betas as
    pre-release), which creates the tag there, and upload that artifact's ZIP and `.sha256` unchanged.
 4. **Sign and publish the feed.** Chris downloads the same ZIP from the release and runs
-   `scripts/release-appcast.sh v0.1.0-beta.4 <that zip>`. It refuses a ZIP whose app disagrees with the tag or the
+   `scripts/release-appcast.sh v<release_version> <that zip>`. It refuses a ZIP whose app disagrees with the tag or the
    committed key, signs the ZIP with `sign_update` from the login Keychain (the script never reads the private key),
    and adds or replaces the item in `updates/appcast.xml`: enclosure = the GitHub Release asset URL,
    `sparkle:version` = `CFBundleVersion`, `sparkle:shortVersionString` = the release version, `sparkle:channel` =
