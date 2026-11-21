@@ -141,8 +141,8 @@ that is unverified until such a build exists.
 
 1. Quit GitHub Pet from the inbox's power button.
 2. If you added GitHub Pet yourself under **System Settings → General → Login Items**, remove it
-   there. These builds can't register themselves as a login item, so an entry exists only if you
-   added one.
+   there. In our tests these builds couldn't register themselves as a login item (see
+   [Open at login](#open-at-login)), so an entry should exist only if you added one.
 3. Delete **GitHubPet.app** from Applications (move it to the Bin).
 4. Optional: remove its saved settings. This command is for you to run in Terminal; nothing in the
    app or the ZIP runs it for you:

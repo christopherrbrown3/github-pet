@@ -340,16 +340,8 @@ public struct ScopedGhClient: ScopedPolling {
     /// Scope, SAML/SSO and 403 wording from gh or GitHub. Checked after rate limits, which are 403s too.
     /// Multi-word phrases only: a target login can't contain a space, so a name such as
     /// "saml-team" in a "Could not resolve" message never reads as a denial.
-    static func deniesAccess(_ text: String) -> Bool {
-        let message = text.lowercased()
-        return ["http 403", "saml enforcement", "saml sso", "saml single sign-on", "single sign-on (sso)",
-                "required scopes", "insufficient_scopes", "not been granted"]
-            .contains(where: message.contains)
-    }
-    private static func authFailure(_ result: CommandResult) -> Bool {
-        let message = result.stderrText.lowercased()
-        return GhAuth.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401")
-    }
+    static func deniesAccess(_ text: String) -> Bool { GhFailure.deniesAccess(text) }
+    private static func authFailure(_ result: CommandResult) -> Bool { GhFailure.isSignedOut(result) }
     public func fetch(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil,
                       assignmentMode: AssignmentMode = .all) -> ScopedPollResult {
         fetch(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
@@ -368,21 +360,20 @@ public struct ScopedGhClient: ScopedPolling {
     private func run(_ plan: ScopeQueryPlan, budget: CommandBudget) -> ScopedPollResult {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
         do {
-            let auth = try runner.run(executable: gh, arguments: GhAuth.authStatusArguments, budget: budget)
+            let auth = try runner.run(executable: gh, arguments: GhFailure.authStatusArguments, budget: budget)
             guard auth.outputComplete else { return .failure(.incompleteOutput) }
             if auth.exitCode != 0 && !auth.stderrText.lowercased().contains("unknown flag") {
-                let message = auth.stderrText.lowercased()
-                if message.contains("rate limit") { return .failure(.rateLimited) }
-                if Self.deniesAccess(message) { return .failure(.accessDenied) }
-                if ["network", "could not resolve", "connection", "timed out", "dial tcp"].contains(where: message.contains) {
-                    return .failure(.transport)
+                switch GhFailure.classifyPreflight(auth) {
+                case .rateLimited: return .failure(.rateLimited)
+                case .accessDenied: return .failure(.accessDenied)
+                case .signedOut: return .failure(.signedOut)
+                case .transport, .ghMissing: return .failure(.transport)
                 }
-                return .failure(auth.exitCode == 1 || Self.authFailure(auth) ? .signedOut : .transport)
             }
             let result = try runner.run(executable: gh, arguments: plan.arguments, budget: budget)
             if Self.authFailure(result) { return .failure(.signedOut) }
             guard result.outputComplete else { return .failure(.incompleteOutput) }
-            if result.exitCode != 0 && result.stderrText.lowercased().contains("rate limit") { return .failure(.rateLimited) }
+            if result.exitCode != 0 && GhFailure.isRateLimited(result.stderrText) { return .failure(.rateLimited) }
             let parsed = ScopedResponseParser.parse(result.stdout, plan: plan)
             try budget.check()
             // Another account answered: identity takes precedence over any denial or exit status, so

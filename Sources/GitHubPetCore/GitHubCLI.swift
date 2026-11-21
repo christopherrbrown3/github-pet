@@ -59,19 +59,3 @@ public struct GhLocator: Sendable {
         candidates.first(where: isExecutable).map { URL(fileURLWithPath: $0) }
     }
 }
-
-/// `gh` conventions shared by the scoped clients: what counts as signed out, and the auth preflight.
-/// (The legacy two-search GraphQL client and its parser had no callers and no pagination; removed in #60.)
-enum GhAuth {
-    /// `gh` exits 4 when authentication is required; `auth status` exits 1 when logged out.
-    static func isAuthFailure(_ result: CommandResult) -> Bool {
-        if result.exitCode == 4 { return true }
-        let text = result.stderrText.lowercased()
-        return text.contains("not logged in") || text.contains("gh auth login")
-            || text.contains("authentication required")
-    }
-
-    /// Only the active account matters: without `--active`, `gh auth status` fails when any stored
-    /// account on the host (e.g. an expired inactive one) is invalid.
-    static let authStatusArguments = ["auth", "status", "--active", "--hostname", "github.com"]
-}

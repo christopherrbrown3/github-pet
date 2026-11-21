@@ -573,7 +573,7 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         let failure = client.fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct, budget: budget)
         #expect(failure.issues == [.incompleteOutput])
         guard case .failure = failure.outcome else { Issue.record("truncated output must stay unknown"); return }
-        #expect(runner.calls == Array(repeating: [GhAuth.authStatusArguments, plan.arguments], count: 3).flatMap { $0 })
+        #expect(runner.calls == Array(repeating: [GhFailure.authStatusArguments, plan.arguments], count: 3).flatMap { $0 })
         #expect(budget.consumedBytes > limited.count && budget.remaining <= CommandBudget.maximumSeconds)
     }
     @Test func identityOnlyRequestRunsNoSearchesAndDetectsTheViewer() throws {

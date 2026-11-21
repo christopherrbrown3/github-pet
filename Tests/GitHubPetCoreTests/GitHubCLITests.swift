@@ -18,22 +18,6 @@ import Testing
     }
 }
 
-@Suite struct GhAuthTests {
-    @Test func exitCodeFourMeansAuthRequired() {
-        #expect(GhAuth.isAuthFailure(CommandResult(exitCode: 4)))
-        #expect(!GhAuth.isAuthFailure(CommandResult(exitCode: 2)))
-    }
-
-    @Test func signedOutStderrMeansAuthRequired() {
-        #expect(GhAuth.isAuthFailure(CommandResult(exitCode: 1, stderr: Data("You are not logged in".utf8))))
-        #expect(!GhAuth.isAuthFailure(CommandResult(exitCode: 1, stderr: Data("boom".utf8))))
-    }
-
-    @Test func onlyTheActiveAccountIsChecked() {
-        #expect(GhAuth.authStatusArguments == ["auth", "status", "--active", "--hostname", "github.com"])
-    }
-}
-
 @Suite(.serialized, .timeLimit(.minutes(1))) struct ProcessRunnerTests {
     @Test func argumentsAreNeverInterpretedByAShell() throws {
         let tricky = "a; echo injected $(whoami) `id` > /dev/null | cat"
