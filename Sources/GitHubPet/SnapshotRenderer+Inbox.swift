@@ -97,9 +97,9 @@ extension SnapshotRenderer {
     static func inbox87Items(_ count: Int, reference: Date = Date(timeIntervalSince1970: 1_793_000_000)) -> [InboxItem] {
         let rows: [(ItemKind, String, Int, String, String?)] = [
             (.reviewRequest, "example/pet-demo", 42, "Add hover summary to mascot", nil),
-            (.authoredPullRequest, "example/pet-demo", 51, "Snooze menu keeps the last choice", "Changes requested"),
+            (.authoredPullRequest, "example/pet-demo", 51, "Remember the Inbox window size", "Changes requested"),
             (.reviewRequest, "example/pet-tools", 7, "Tighten link validation", nil),
-            (.assignedIssue, "example/pet-demo", 18, "Quiet hours should wrap midnight", nil),
+            (.assignedIssue, "example/pet-demo", 18, "Mascot position resets after a display change", nil),
             (.workflowFailure, "example/pet-demo", 88, "CI · main · build-and-test", nil),
             (.deploymentApproval, "example/pet-site", 12, "Deploy to production", nil),
             (.entitlement, "example/pet-access", 3, "Request write access for a release branch", nil),

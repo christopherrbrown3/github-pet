@@ -31,10 +31,11 @@ public struct AlertSuppression: Equatable, Sendable {
     public var quietHoursActive: Bool
     public var quietWindow: String
 
-    public init(_ settings: PetSettings, at now: Date, calendar: Calendar = .current) {
-        snoozeUntil = settings.isSnoozed(at: now) ? settings.snoozeUntil : nil
-        quietHoursOn = settings.quietHours.enabled && settings.quietHours.startMinute != settings.quietHours.endMinute
-        quietHoursActive = settings.quietHours.contains(now, calendar: calendar)
+    public init(_ settings: PetSettings, at now: Date, calendar: Calendar = .current, features: FeatureSet = .current) {
+        snoozeUntil = settings.isSnoozed(at: now, features: features) ? settings.snoozeUntil : nil
+        quietHoursOn = features.quietHours && settings.quietHours.enabled
+            && settings.quietHours.startMinute != settings.quietHours.endMinute
+        quietHoursActive = settings.quietHoursActive(at: now, calendar: calendar, features: features)
         quietWindow = Self.label(settings.quietHours.startMinute, calendar) + " to "
             + Self.label(settings.quietHours.endMinute, calendar)
     }
@@ -118,11 +119,41 @@ public enum StatusSourceSummary {
     }
 }
 
-/// One switch per feature a later issue may hide from the UI (#94 privacy mode / Show details,
-/// #95 snooze). Every user-facing entry point for the feature checks its switch, so hiding it is a
-/// one-line flip here plus "effective value off while hidden" logic. Both are on: behavior is
-/// unchanged.
+/// One switch per feature hidden from the UI for the beta (#94 privacy mode / Show details,
+/// #95 snooze, #107 quiet hours). Flip one to `true` to bring the feature back: every entry point
+/// checks it through `FeatureSet`, and the implementation and tests stay in place.
 public enum FeatureFlags {
-    public static let privacyMode = true
-    public static let snooze = true
+    public static let privacyMode = false
+    public static let snooze = false
+    public static let quietHours = false
+}
+
+/// Which hideable features are available. While one is hidden its *effective* value is off
+/// (privacy off, snooze inactive, quiet hours disabled), whatever an earlier build stored, so no
+/// one is stuck in a state they can't see or undo. Stored preferences are never rewritten.
+public struct FeatureSet: Equatable, Sendable {
+    public var privacyMode: Bool
+    public var snooze: Bool
+    public var quietHours: Bool
+
+    public init(privacyMode: Bool, snooze: Bool, quietHours: Bool) {
+        self.privacyMode = privacyMode
+        self.snooze = snooze
+        self.quietHours = quietHours
+    }
+
+    /// The build's switches.
+    public static let current = FeatureSet(privacyMode: FeatureFlags.privacyMode, snooze: FeatureFlags.snooze,
+                                           quietHours: FeatureFlags.quietHours)
+    public static let allOn = FeatureSet(privacyMode: true, snooze: true, quietHours: true)
+    public static let allOff = FeatureSet(privacyMode: false, snooze: false, quietHours: false)
+
+    /// The Alerts pane has something besides the review filter only while one of these is shown.
+    public var showsAlertsPane: Bool { privacyMode || snooze || quietHours }
+
+    /// Settings panes in tab order. With every alert feature hidden, the review filter moves to
+    /// the GitHub pane and there is no Alerts tab.
+    public var settingsPanes: [SettingsPane] {
+        showsAlertsPane ? [.mascot, .alerts, .github] : [.mascot, .github]
+    }
 }

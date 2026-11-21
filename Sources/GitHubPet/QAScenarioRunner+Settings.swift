@@ -41,7 +41,8 @@ extension QAScenarioRunner {
     /// INV-02 evidence on every step record: interruptions may be suppressed while polling, the
     /// inbox rows, badge and unseen count keep following the source. Compare across steps.
     static func suppressionSnapshot(_ model: AppModel) -> [String: Any] {
-        let state = AlertSuppression(model.settings, at: model.now)
+        // Effective values: a hidden snooze or quiet hours (#95, #107) never suppresses anything.
+        let state = AlertSuppression(model.settings, at: model.now, features: model.features)
         return ["snoozed": state.isSnoozed,
                 "snoozeUntil": model.settings.snoozeUntil.map { ISO8601DateFormatter().string(from: $0) } ?? NSNull(),
                 "quietHoursEnabled": state.quietHoursOn, "quietHoursActive": state.quietHoursActive,
@@ -149,6 +150,19 @@ extension QAScenarioRunner {
           {"action": "inject-row", "label": "row-during-quiet-hours"},
           {"action": "refresh", "label": "poll-during-quiet-hours"},
           {"action": "quiet-hours", "on": false, "label": "quiet-hours-off"}]}
+        """#,
+        // #94, #95, #107: store privacy, an active snooze and quiet hours covering now, as an earlier
+        // beta could have, then record what a user sees. With the features hidden, each step's
+        // `settings` and `suppression` blocks show the stored values with effective ones off, rows
+        // keep their titles, the new row alerts, and Alerts opens the GitHub pane (review filter).
+        "hidden-features-upgrade": #"""
+        {"name": "hidden-features-upgrade", "steps": [
+          {"action": "privacy", "on": true, "label": "stored-privacy-on"},
+          {"action": "snooze", "duration": "4h", "label": "stored-snooze"},
+          {"action": "quiet-hours", "on": true, "coverNow": true, "label": "stored-quiet-hours"},
+          {"action": "inject-row", "label": "new-row-alerts"},
+          {"action": "open-settings", "pane": "alerts", "label": "alerts-pane-request"},
+          {"action": "open-settings", "pane": "mascot", "label": "mascot-pane"}]}
         """#,
         "settings-draft-apply-cancel": #"""
         {"name": "settings-draft-apply-cancel", "steps": [
