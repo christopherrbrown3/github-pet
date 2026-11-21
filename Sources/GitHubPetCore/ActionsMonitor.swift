@@ -211,11 +211,9 @@ public struct ActionsGhClient: ActionsPolling {
         do {
             let result = try runner.run(executable: gh, arguments: plan.arguments, budget: budget)
             let message = result.stderrText.lowercased()
-            if GhClient.isAuthFailure(result) || message.contains("bad credentials") || message.contains("http 401") {
-                return .failure(.signedOut)
-            }
+            if GhFailure.isSignedOut(result) { return .failure(.signedOut) }
             guard result.outputComplete else { return .failure(.incompleteOutput) }
-            if result.exitCode != 0 && message.contains("rate limit") { return .failure(.rateLimited) }
+            if result.exitCode != 0 && GhFailure.isRateLimited(message) { return .failure(.rateLimited) }
             let parsed = ActionsResponseParser.parse(result.stdout, plan: plan)
             try budget.check()
             guard result.exitCode != 0 else { return parsed }
