@@ -140,18 +140,16 @@ that is unverified until such a build exists.
 ## Uninstalling
 
 1. Quit GitHub Pet from the inbox's power button.
-2. Delete **GitHubPet.app** from Applications (move it to the Bin).
-3. Optional: remove its saved settings. This command is for you to run in Terminal; nothing in the
+2. If you added GitHub Pet yourself under **System Settings → General → Login Items**, remove it
+   there. These builds can't register themselves as a login item, so an entry exists only if you
+   added one.
+3. Delete **GitHubPet.app** from Applications (move it to the Bin).
+4. Optional: remove its saved settings. This command is for you to run in Terminal; nothing in the
    app or the ZIP runs it for you:
 
    ```sh
    defaults delete dev.github-pet.GitHubPet
    ```
-
-4. If you turned on **Open at login**, turn it off first: in GitHub Pet's **Settings → Mascot → Startup**,
-   or under **System Settings → General → Login Items**. Do this before step 2, while the app is
-   still installed. If you already deleted the app, check Login Items and remove GitHub Pet there
-   if it is still listed.
 
 Uninstalling does not touch the GitHub CLI or its sign-in. A Homebrew cask is planned but not
 available, so there is no `brew uninstall` path yet.

@@ -58,7 +58,8 @@ Error text from `gh` or GitHub is classified rather than shown, so it can't leak
 Two panes.
 
 - **Mascot.** Show or hide the pet, choose a skin, size, Reduce motion, reset position, and
-  **Open at login** (see [limits](#known-limits)).
+  a button that opens Login Items (**Open at login** can't be switched on in
+  these builds; see [limits](#known-limits)).
 - **GitHub.** The `gh` connection and setup help, the data source (GitHub CLI by default, or invented
   Demo data by choice), what to watch (everything you can access, or up to 10 organizations and
   repositories, access-checked before they apply), entitlement repositories, opt-in alerts for
