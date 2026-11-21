@@ -12,6 +12,8 @@ struct GitHubPane: View {
             GitHubConnectionSection(model: model)
             GitHubSourcesSection(model: model)
             MonitoringScopeSection(model: model, editor: model.scopeEditor)
+            // Without an Alerts tab (#107) the review filter belongs with what is monitored.
+            if !model.features.showsAlertsPane { AssignmentModeSection(model: model) }
             EntitlementRepositoriesSection(model: model)
             WorkflowFailuresSection(model: model)
             UpdateStatusSection(updates: model.updates)

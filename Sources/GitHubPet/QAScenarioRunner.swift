@@ -326,8 +326,8 @@ enum QAScenarioRunner {
         "repair": Action { c in c.model.simulateScopeRepair() },
         "privacy": Action(keys: ["on"], validate: { _ = try $0.bool("on") }) { c in c.model.settings.privacyMode = try c.bool("on") },
         "show-details": Action(keys: ["on"], validate: { _ = try $0.bool("on") }) { c in
-            // The Inbox "Show details" link exists only while privacy mode is on.
-            if c.model.settings.privacyMode { c.model.detailsRevealed = try c.bool("on") }
+            // The Inbox "Show details" button exists only while privacy mode is shown and on.
+            if c.model.privacyMode { c.model.detailsRevealed = try c.bool("on") }
         },
         "reduce-motion": Action(keys: ["on"], validate: { _ = try $0.bool("on") }) { c in c.model.settings.reducedMotion = try c.bool("on") },
         "mascot-skin": Action(keys: ["skin"], validate: {
@@ -462,7 +462,10 @@ enum QAScenarioRunner {
             "simulatedVisibility": optional(model.simulatedVisibility?.rawValue),
             "settings": ["dataSource": model.settings.dataSource == .githubCLI ? "gh" : "fixtures",
                          "assignmentMode": model.settings.assignmentMode.rawValue,
-                         "privacyMode": model.settings.privacyMode, "detailsRevealed": model.detailsRevealed,
+                         "privacyMode": model.settings.privacyMode, "effectivePrivacyMode": model.privacyMode,
+                         "inboxPrivacy": model.inboxPrivacy, "detailsRevealed": model.detailsRevealed,
+                         "features": ["privacyMode": model.features.privacyMode, "snooze": model.features.snooze,
+                                      "quietHours": model.features.quietHours],
                          "reducedMotion": model.settings.reducedMotion, "effectiveReducedMotion": model.effectiveReducedMotion,
                          "alertsAllowed": model.alertsAllowed],
             "mascot": ["selectedSkin": model.settings.mascotSkin.rawValue,

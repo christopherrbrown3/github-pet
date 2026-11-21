@@ -29,7 +29,7 @@ appear quietly. Your unread assigned issues and authored pull requests keep thei
    appear if GitHub returns it later.
 
 Dismissals stay on this Mac across normal app restarts. GitHub accounts and Demo data keep
-separate lists. Privacy mode hides names and titles in both views. Dismissing an item changes only
+separate lists. Dismissing an item changes only
 your local Inbox. GitHub still has the original item and assignment.
 
 The list holds up to 512 dismissals per account or Demo. Restore an entry to make room if it is full.

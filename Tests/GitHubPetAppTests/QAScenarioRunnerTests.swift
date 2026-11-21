@@ -29,7 +29,7 @@ private final class FrozenBudgetClock: @unchecked Sendable {
     }
     /// Executes a plan on a model whose budget clock is frozen and whose held replies have no
     /// real-time bound; the runner's settle limit is a generous harness bound.
-    private func execute(_ plan: QAScenarioRunner.Plan) async throws -> (AppModel, [String: Any]) {
+    private func execute(_ plan: QAScenarioRunner.Plan, features: FeatureSet = .current) async throws -> (AppModel, [String: Any]) {
         var plan = plan
         plan.rendersPNGs = false
         plan.settleLimit = .seconds(600)
@@ -38,7 +38,8 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         launch.forcePlaceholder = true
         let model = AppModel(options: launch, runtime: AppModel.Runtime(
             now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false,
-            repositoryBudget: { CommandBudget(timeout: 20, now: { budgetClock.now() }) }, scopeSimulationHoldLimit: nil))
+            repositoryBudget: { CommandBudget(timeout: 20, now: { budgetClock.now() }) }, scopeSimulationHoldLimit: nil,
+            features: features))
         return (model, try await QAScenarioRunner.execute(plan, model: model))
     }
     private func records(_ directory: URL) throws -> [[String: Any]] {
@@ -339,7 +340,8 @@ private final class FrozenBudgetClock: @unchecked Sendable {
         let arguments = ["--qa-scenario", "inbox-dismissal", "--qa-output", output.path]
         #expect(refusal(arguments)?.contains("require --simulate-monitoring-scope") == true)
         let plan = try QAScenarioRunner.makePlan(options(["--simulate-monitoring-scope"] + arguments))
-        let (_, summary) = try await execute(plan)
+        // Flag-on path: the scenario's private/revealed steps need privacy mode shown (#94).
+        let (_, summary) = try await execute(plan, features: .allOn)
         let allSteps = try records(output)
         let labels = allSteps.compactMap { $0["label"] as? String }
         try #require(Set(labels).count == allSteps.count)
