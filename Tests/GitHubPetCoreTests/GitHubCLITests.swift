@@ -478,6 +478,8 @@ private func graphQLWithErrors(_ rawErrors: String, reviews: [String] = []) -> D
         #expect(lines.filter { $0.hasPrefix("GH_HOST=") } == ["GH_HOST=github.com"])
     }
 
+    /// /dev/fd is process-wide, so this must run alone in its process: scripts/test.sh (no
+    /// arguments) and CI both do that. In a shared parallel run it can flake (#102).
     @Test func descendantHoldingThePipeDoesNotLeakReadsOrDescriptors() throws {
         func openDescriptors() -> Int {
             (try? FileManager.default.contentsOfDirectory(atPath: "/dev/fd").count) ?? 0
