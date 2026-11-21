@@ -222,7 +222,7 @@ struct UpdateStatusSection: View {
                     Spacer()
                     Button("Check for Updates…") { updates.checkForUpdates() }
                         .disabled(!updates.canCheck)
-                        .accessibilityHint(updates.canCheck ? "" : "Unavailable while an update check is running.")
+                        .accessibilityHint(updates.canCheck ? "" : "Unavailable while an update check or install is in progress.")
                         .accessibilityIdentifier("settings.updateCheck")
                 }
                 Toggle("Check for updates automatically", isOn: Binding(get: { updates.automaticChecks }, set: updates.setAutomaticChecks))
@@ -259,7 +259,7 @@ struct UpdateMenuRow: View {
             Button("Check for Updates…") { updates.checkForUpdates() }
                 .disabled(!updates.canCheck)
                 .accessibilityHint(updates.canCheck ? ""
-                                   : updates.isAvailable ? "Unavailable while an update check is running." : "Updates are not configured in this build.")
+                                   : updates.isAvailable ? "Unavailable while an update check or install is in progress." : "Updates are not configured in this build.")
                 .accessibilityIdentifier("menu.checkForUpdates")
             Spacer()
             if let version = updates.readyVersion {
