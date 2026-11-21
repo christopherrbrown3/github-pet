@@ -81,12 +81,7 @@ public struct GhClient: Sendable {
     }
 
     /// `gh` exits 4 when authentication is required; `auth status` exits 1 when logged out.
-    static func isAuthFailure(_ result: CommandResult) -> Bool {
-        if result.exitCode == 4 { return true }
-        let text = result.stderrText.lowercased()
-        return text.contains("not logged in") || text.contains("gh auth login")
-            || text.contains("authentication required")
-    }
+    static func isAuthFailure(_ result: CommandResult) -> Bool { GhFailure.isAuthFailure(result) }
 
     /// Only the active account matters: without `--active`, `gh auth status` fails when any stored
     /// account on the host (e.g. an expired inactive one) is invalid.
