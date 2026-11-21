@@ -92,6 +92,9 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
   ([installation guide](install.md)).
 - **Open at login** isn't available on ad-hoc signed builds. A button in Settings → Mascot opens
   Login Items in System Settings so you can add GitHub Pet yourself.
+- **Hidden in Beta 4.** Privacy mode, snooze and quiet hours are hidden to keep things simple.
+  Settings saved by an earlier beta are kept but have no effect until those features return, so
+  repository names and titles are shown.
 - **github.com only.** GitHub Enterprise Server isn't supported.
 - **Search caps.** Each search returns at most 30 items per category; reaching that marks the result
   partial. Deployment approvals read up to 10 waiting runs per repository.

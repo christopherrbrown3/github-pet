@@ -129,6 +129,8 @@ verified with its signature before it's installed. [How updates work](docs/updat
   off Gatekeeper; the guide never asks you to.
 - **Open at login** can't be switched on by these builds. Settings has a button that opens Login Items,
   where you can add GitHub Pet yourself.
+- **Simpler for now.** Privacy mode, snooze and quiet hours are hidden in this beta. Settings saved by an
+  earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
 - **Search limits.** At most 30 items per category; reaching that marks the result as partial.
 - **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, and some behaviour on every

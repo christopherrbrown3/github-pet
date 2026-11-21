@@ -1,9 +1,11 @@
 import GitHubPetCore
 import SwiftUI
 
-/// Settings (#87): three compact native panes. Every control from the former long scroll lives in
+/// Settings (#87): compact native panes. Every control from the former long scroll lives in
 /// exactly one pane: Mascot (pet, skin, size, motion, startup), Alerts (snooze, quiet hours,
-/// privacy, review filter) and GitHub (CLI connection, sources, scope, Actions).
+/// privacy, review filter) and GitHub (CLI connection, sources, scope, Actions). While snooze,
+/// quiet hours and privacy are all hidden (#94, #95, #107) there is no Alerts tab, and the review
+/// filter, its only remaining control, sits in the GitHub pane.
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     @State private var pane: SettingsPane
@@ -14,7 +16,13 @@ struct SettingsView: View {
     init(model: AppModel, pane: SettingsPane = .mascot, loginItem: LoginItemSettings? = nil) {
         self.model = model
         self.loginItem = loginItem ?? model.loginItem
-        _pane = State(initialValue: pane)
+        _pane = State(initialValue: Self.visiblePane(pane, features: model.features))
+    }
+
+    /// A hidden pane can't be selected: Alerts opens the GitHub pane, which then holds its review filter.
+    static func visiblePane(_ pane: SettingsPane, features: FeatureSet) -> SettingsPane {
+        guard !features.settingsPanes.contains(pane) else { return pane }
+        return pane == .alerts ? .github : .mascot
     }
 
     var body: some View {
@@ -22,9 +30,11 @@ struct SettingsView: View {
             MascotPane(model: model, loginItem: loginItem)
                 .tabItem { Label(SettingsPane.mascot.title, systemImage: SettingsPane.mascot.symbol) }
                 .tag(SettingsPane.mascot)
-            AlertsPane(model: model)
-                .tabItem { Label(SettingsPane.alerts.title, systemImage: SettingsPane.alerts.symbol) }
-                .tag(SettingsPane.alerts)
+            if model.features.showsAlertsPane {
+                AlertsPane(model: model)
+                    .tabItem { Label(SettingsPane.alerts.title, systemImage: SettingsPane.alerts.symbol) }
+                    .tag(SettingsPane.alerts)
+            }
             GitHubPane(model: model)
                 .tabItem { Label(SettingsPane.github.title, systemImage: SettingsPane.github.symbol) }
                 .tag(SettingsPane.github)
@@ -206,9 +216,10 @@ struct AlertsPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        let state = AlertSuppression(model.settings, at: model.now)
+        let features = model.features
+        let state = AlertSuppression(model.settings, at: model.now, features: features)
         Form {
-            if FeatureFlags.snooze { // #95: the one switch for snooze entry points
+            if features.snooze { // #95: the one switch for snooze entry points
             Section("Snooze") {
                 HStack {
                     Image(systemName: state.isSnoozed ? "bell.slash.fill" : "bell")
@@ -230,6 +241,7 @@ struct AlertsPane: View {
                 }
             }
             }
+            if features.quietHours { // #107: the one switch for quiet-hours entry points
             Section("Quiet hours") {
                 Toggle("Quiet hours", isOn: $model.settings.quietHours.enabled)
                 HStack {
@@ -240,12 +252,15 @@ struct AlertsPane: View {
                 Text(state.quietHoursLine).font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings.quietHoursState")
             }
+            }
+            if features.snooze || features.quietHours {
             Section {
                 Label(AlertSuppression.explanation, systemImage: "info.circle")
                     .font(.callout).foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings.suppressionNote")
             }
-            if FeatureFlags.privacyMode { // #94: the one switch for privacy-mode entry points
+            }
+            if features.privacyMode { // #94: the one switch for privacy-mode entry points
                 Section("Privacy") {
                     Toggle("Privacy mode (hide repository names and titles)", isOn: $model.settings.privacyMode)
                         .accessibilityIdentifier("settings.privacyMode")
