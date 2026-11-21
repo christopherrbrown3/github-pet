@@ -120,7 +120,7 @@ struct MascotSkinSection: View {
                 Text(PackLabel.joined(model.mascotArtwork.errors, separator: "\n"))
                     .font(.caption)
             }
-            Text("The count badge is a preview. It shows your real unread count on the desktop pet.")
+            Text("The count badge is a preview. It shows how many items need you on the desktop pet.")
                 .font(.caption).foregroundStyle(.secondary)
         }
     }

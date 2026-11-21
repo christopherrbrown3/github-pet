@@ -14,6 +14,7 @@ struct InboxView: View {
     @State private var selection: InboxViewSelection
     /// The last local dismissal, offered back as Undo until it expires or something else happens.
     @State private var undo: UndoDismissal?
+    @ScaledMetric(relativeTo: .body) private var textScale = 1.0
 
     init(model: AppModel, showsWindowButton: Bool = true, marksSeenOnClose: Bool = true,
          showsSimulator: Bool = true, initialSelection: InboxViewSelection = InboxViewSelection()) {
@@ -287,7 +288,7 @@ struct InboxView: View {
             let list = VStack(alignment: .leading, spacing: 8) {
                 ForEach(sections) { section in
                     InboxSectionView(section: section) { item in
-                        InboxRow(item: item, privacy: model.inboxPrivacy, unseen: model.isUnseen(item),
+                        InboxRow(item: item, privacy: model.inboxPrivacy, unseen: model.isUnseen(item), dimmed: dimmed,
                                  open: { model.open(item) }, dismiss: dismissAction(item))
                     }
                 }
@@ -297,7 +298,7 @@ struct InboxView: View {
                 // Short queues size to their rows (no blank region); long ones scroll in a fixed
                 // height. A ScrollView with only a max height collapses inside auto-sized windows
                 // and popovers (#20), so the scrolling case gets a real height.
-                if Self.scrolls(rows: model.items.count, sections: sections.count) {
+                if Self.scrolls(rows: model.items.count, sections: sections.count, textScale: textScale) {
                     ScrollView { list }
                         .frame(height: Self.maxListHeight)
                 } else {
@@ -306,7 +307,6 @@ struct InboxView: View {
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Inbox items")
-            .opacity(dimmed ? 0.55 : 1)
         }
     }
 
@@ -319,22 +319,17 @@ struct InboxView: View {
         }
     }
 
-    static let rowHeight: CGFloat = 40
-    static let sectionHeaderHeight: CGFloat = 26
-    static let maxListHeight: CGFloat = 340
+    static let maxListHeight = CGFloat(InboxRowMetrics.maxListHeight)
 
-    /// Natural height of `rows` grouped into `sections`, before any cap.
-    static func naturalListHeight(rows: Int, sections: Int) -> CGFloat {
-        CGFloat(rows) * rowHeight + CGFloat(sections) * sectionHeaderHeight
-    }
-
-    static func scrolls(rows: Int, sections: Int) -> Bool {
-        naturalListHeight(rows: rows, sections: sections) > maxListHeight
+    /// `textScale` is 1 at the default text size and grows with Dynamic Type, so larger text
+    /// scrolls the list instead of growing the window past the screen.
+    static func scrolls(rows: Int, sections: Int, textScale: CGFloat = 1) -> Bool {
+        InboxRowMetrics.scrolls(rows: rows, sections: sections, textScale: Double(textScale))
     }
 
     /// Height reserved for a flat list such as the dismissed items.
-    static func listHeight(rows: Int) -> CGFloat {
-        min(CGFloat(rows) * 52, maxListHeight)
+    static func listHeight(rows: Int, textScale: CGFloat = 1) -> CGFloat {
+        min(CGFloat(rows) * 52 * max(1, textScale), maxListHeight)
     }
 
     // MARK: Footer
@@ -525,11 +520,23 @@ struct InboxRow: View {
     let item: InboxItem
     let privacy: Bool
     let unseen: Bool
+    /// Last-known data (stale, partial, error). See `InboxDimming` for the contrast rules.
+    var dimmed = false
     let open: () -> Void
     var dismiss: (() -> Void)?
     @State private var hovering = false
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .body) private var glyphWidth = 16.0
+    @ScaledMetric(relativeTo: .body) private var verticalPadding = 5.0
+
+    private func alpha(_ role: InboxDimming.Role) -> Double {
+        InboxDimming.alpha(role, dimmed: dimmed, increasedContrast: contrast == .increased)
+    }
 
     var body: some View {
+        // Large text wraps instead of truncating, and the row grows with it.
+        let largeText = typeSize.isAccessibilitySize
         HStack(spacing: 4) {
             Button(action: open) {
                 HStack(alignment: .center, spacing: 8) {
@@ -538,11 +545,16 @@ struct InboxRow: View {
                         .frame(width: 6, height: 6)
                     Image(systemName: item.kind.symbolName)
                         .foregroundStyle(item.kind.severity == .critical ? Color.red : Color.secondary)
-                        .frame(width: 16)
+                        .opacity(alpha(.glyph))
+                        .frame(width: glyphWidth)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(title).lineLimit(1).truncationMode(.tail)
-                        Text(context).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text(title).lineLimit(largeText ? 4 : 1).truncationMode(.tail)
+                            .foregroundStyle(Color.primary.opacity(alpha(.title)))
+                        Text(context).font(.caption).lineLimit(largeText ? 3 : 1)
+                            .foregroundStyle(alpha(.context) == 1 ? AnyShapeStyle(.secondary)
+                                                                  : AnyShapeStyle(Color.primary.opacity(alpha(.context))))
+                            .fixedSize(horizontal: false, vertical: largeText)
                     }
                     Spacer(minLength: 4)
                     Image(systemName: "arrow.up.right.square")
@@ -568,7 +580,7 @@ struct InboxRow: View {
                 .accessibilityIdentifier("inbox.dismiss")
             }
         }
-        .padding(.leading, 6).padding(.trailing, 8).padding(.vertical, 5)
+        .padding(.leading, 6).padding(.trailing, 8).padding(.vertical, verticalPadding)
         .background(RoundedRectangle(cornerRadius: 6).fill(hovering ? Color.primary.opacity(0.06) : Color.clear))
         .onHover { hovering = $0 }
         .contextMenu {
@@ -646,7 +658,7 @@ struct ServiceIncidentsSection: View {
                     // Most severe first; the rest are counted so the inbox stays compact.
                     ForEach(model.serviceIncidents.prefix(Self.maxRows)) { incident in
                         IncidentRow(incident: incident, privacy: model.inboxPrivacy,
-                                    unseen: model.isUnseen(incident)) { model.open(incident) }
+                                    unseen: model.isUnseen(incident), dimmed: dimmed) { model.open(incident) }
                     }
                     if model.serviceIncidents.count > Self.maxRows {
                         Text("and \(model.serviceIncidents.count - Self.maxRows) more")
@@ -655,7 +667,6 @@ struct ServiceIncidentsSection: View {
                     }
                 }
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.035)))
-                .opacity(dimmed ? 0.55 : 1)
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("GitHub service incidents")
@@ -667,10 +678,20 @@ struct IncidentRow: View {
     let incident: ServiceIncident
     let privacy: Bool
     let unseen: Bool
+    var dimmed = false
     let action: () -> Void
     @State private var hovering = false
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .body) private var glyphWidth = 16.0
+    @ScaledMetric(relativeTo: .body) private var verticalPadding = 5.0
+
+    private func alpha(_ role: InboxDimming.Role) -> Double {
+        InboxDimming.alpha(role, dimmed: dimmed, increasedContrast: contrast == .increased)
+    }
 
     var body: some View {
+        let largeText = typeSize.isAccessibilitySize
         Button(action: action) {
             HStack(alignment: .center, spacing: 8) {
                 Circle()
@@ -678,11 +699,16 @@ struct IncidentRow: View {
                     .frame(width: 6, height: 6)
                 Image(systemName: ItemKind.serviceIncident.symbolName)
                     .foregroundStyle(incident.severity == .critical ? Color.red : Color.secondary)
-                    .frame(width: 16)
+                    .opacity(alpha(.glyph))
+                    .frame(width: glyphWidth)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(PrivacyText.title(item, privacy: privacy)).lineLimit(1)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(PrivacyText.title(item, privacy: privacy)).lineLimit(largeText ? 4 : 1)
+                        .foregroundStyle(Color.primary.opacity(alpha(.title)))
+                    Text(subtitle).font(.caption).lineLimit(largeText ? 3 : 1)
+                        .foregroundStyle(alpha(.context) == 1 ? AnyShapeStyle(.secondary)
+                                                              : AnyShapeStyle(Color.primary.opacity(alpha(.context))))
+                        .fixedSize(horizontal: false, vertical: largeText)
                 }
                 Spacer(minLength: 4)
                 if !incident.isDemo {
@@ -697,7 +723,7 @@ struct IncidentRow: View {
         .buttonStyle(.plain)
         // Demo incidents have no status page: shown, but they open nothing.
         .disabled(incident.isDemo)
-        .padding(.leading, 6).padding(.trailing, 8).padding(.vertical, 5)
+        .padding(.leading, 6).padding(.trailing, 8).padding(.vertical, verticalPadding)
         .background(RoundedRectangle(cornerRadius: 6).fill(hovering && !incident.isDemo ? Color.primary.opacity(0.06) : Color.clear))
         .onHover { hovering = $0 }
         .help(incident.isDemo ? "Demo incident: no status page" : "Open on githubstatus.com")
