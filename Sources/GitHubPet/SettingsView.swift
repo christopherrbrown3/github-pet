@@ -192,12 +192,16 @@ struct LoginItemSection: View {
     var body: some View {
         Section("Startup") {
             Toggle("Open at login", isOn: Binding(get: { settings.isOn }, set: { settings.setEnabled($0) }))
-                .disabled(!settings.isAvailable || settings.status == nil)
+                .disabled(!settings.canToggle)
                 .accessibilityValue(Text(verbatim: settings.summary))
                 .accessibilityIdentifier("settings.openAtLogin")
             Text(settings.summary)
                 .font(.caption).foregroundStyle(settings.failure == nil ? .secondary : Color.orange)
                 .accessibilityIdentifier("settings.openAtLoginStatus")
+            if settings.offersSystemSettings {
+                Button("Open Login Items Settings") { settings.openLoginItemsSettings() }
+                    .accessibilityIdentifier("settings.openLoginItemsSettings")
+            }
         }
         .onAppear { settings.refresh() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
