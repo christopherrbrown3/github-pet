@@ -122,8 +122,8 @@ hover_lines=$(grep -E '^hover [a-z]+-[0-9]+-' "$report" || true)
 hover_count=$(printf '%s\n' "$hover_lines" | grep -c . || true)
 if (( hover_count >= 11 )); then echo "ok   $hover_count hover placements measured"
 else echo "FAIL only $hover_count hover placements measured"; failures=$((failures + 1)); fi
-while IFS= read -r line; do
-  [[ -n $line ]] || continue
+check_hover() {
+  local line=$1 name worst arrow
   name=${${line#hover }%%:*}
   worst=$(sed -E 's/.* window-gap-max=([0-9.]+|none) .*/\1/' <<< "$line")
   arrow=$(sed -E 's/.* arrow-anchor-to-static-art=([0-9.]+|none) .*/\1/' <<< "$line")
@@ -135,7 +135,8 @@ while IFS= read -r line; do
   else
     echo "FAIL hover $name: $line"; failures=$((failures + 1))
   fi
-done <<< "$hover_lines"
+}
+while IFS= read -r line; do [[ -n $line ]] && check_hover "$line"; done <<< "$hover_lines"
 for size in 64 128 256; do
   check "labels fit at $size" "^tags @$size: .* fits=true"
 done
@@ -162,14 +163,45 @@ done
 # never an overlapping pixel, and the nearest gap (to any pixel with alpha > 0, antialiased
 # fringe included) between 0.5 and 4 pt. Upright poses target about 1 pt; while the attention art
 # leans it keeps extra room for resampling (0.5 pt at 2x, 1.5 pt at 1x), reported separately.
-for size in 64 128 256; do
-  for scale in 1x 2x; do
-    line=$(grep -E "^near-touch @$size $scale: " "$report" || true)
-    low=$(sed -E 's/.* gap-min=([0-9.]+) .*/\1/' <<< "$line"); high=$(sed -E 's/.* gap-max=([0-9.]+) .*/\1/' <<< "$line")
-    if [[ $line == *" empty-renders=0 "* && $line == *" overlapping-pixels=0 "* && $low != none ]] \
-        && (( low >= 0.5 && high <= 4.0 )); then
-      echo "ok   near-touch $size $scale: gap $low-$high pt, no overlap"
-    else echo "FAIL near-touch $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
+# Little Chris (#116) runs the same probe with his own pack selected.
+for skin in '' 'little-chris-v1 '; do
+  for size in 64 128 256; do
+    for scale in 1x 2x; do
+      line=$(grep -E "^near-touch $skin@$size $scale: " "$report" || true)
+      low=$(sed -E 's/.* gap-min=([0-9.]+) .*/\1/' <<< "$line"); high=$(sed -E 's/.* gap-max=([0-9.]+) .*/\1/' <<< "$line")
+      if [[ $line == *" empty-renders=0 "* && $line == *" overlapping-pixels=0 "* && $low != none ]] \
+          && (( low >= 0.5 && high <= 4.0 )); then
+        echo "ok   near-touch $skin$size $scale: gap $low-$high pt, no overlap"
+      else echo "FAIL near-touch $skin$size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
+    done
+  done
+done
+for png in near-touch-little-chris-v1-64-1x near-touch-little-chris-v1-128-2x near-touch-little-chris-v1-256-2x; do
+  [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+done
+# Little Chris placement (#116): his pack really is selected; hover placement meets the same
+# targets as Mona's.
+check_in 'little chris placement (#116)' "probes run with the Little Chris pack" '^little chris placement: pack=little-chris-v1'
+chris_hover=$(grep -E '^hover little-chris-v1 [a-z]+-[0-9]+-' "$report" || true)
+if (( $(printf '%s\n' "$chris_hover" | grep -c .) == 5 )); then echo "ok   5 Little Chris hover placements measured"
+else echo "FAIL Little Chris hover placements: $(printf '%s\n' "$chris_hover" | grep -c .) of 5"; failures=$((failures + 1)); fi
+while IFS= read -r line; do [[ -n $line ]] && check_hover "$line"; done <<< "$chris_hover"
+# Badge fit (#116): for both skins, at every size and scale and in every upright pose, the
+# count's leading edge is over the head and a one-digit count's centre is at most a quarter of
+# its height past the head's right edge (plus one 1x pixel for rasterisation), near-touching.
+for skin in mona-pet-v1 little-chris-v1; do
+  for size in 64 128 256; do
+    for scale in 1x 2x; do
+      line=$(grep -E "^badge fit $skin @$size $scale: " "$report" || true)
+      past=$(sed -E 's/.* centre-past-head=-?[0-9.]+\.\.(-?[0-9.]+) .*/\1/' <<< "$line")
+      limit=$(sed -E 's/.* limit=([0-9.]+) .*/\1/' <<< "$line")
+      lead=$(sed -E 's/.* lead-inside-head-min=(-?[0-9.]+) .*/\1/' <<< "$line")
+      gap=$(sed -E 's/.* gap=[0-9.]+-([0-9.]+) .*/\1/' <<< "$line")
+      if [[ $line == *" empty-renders=0 "* && $past == (-|)[0-9]* && $lead == (-|)[0-9]* && $gap == [0-9]* ]] \
+          && (( past <= limit + 1 && lead > 0 && gap <= 4.0 )); then
+        echo "ok   badge fit $skin $size $scale: centre ${past} pt past the head (limit $limit), leading edge $lead pt inside, gap <= $gap pt"
+      else echo "FAIL badge fit $skin $size $scale: ${line:-missing}"; failures=$((failures + 1)); fi
+    done
   done
 done
 for case_name in transparent no-candidate; do
@@ -222,6 +254,9 @@ check_in 10d-incidents-resolved "marker leaves on resolve" '^incident-marker=non
 marker_lines=$(grep -E '^incident marker @' "$report" || true)
 if (( $(printf '%s\n' "$marker_lines" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   incident marker clear of labels and keep-out at 64/128/256, 1x/2x"
 else echo "FAIL incident marker vs labels:"; printf '%s\n' "$marker_lines"; failures=$((failures + 1)); fi
+chris_marker=$(grep -E '^incident marker little-chris-v1 @' "$report" || true)
+if (( $(printf '%s\n' "$chris_marker" | grep -c 'overlapping-pixels=0 keep-out-pixels=0 ') == 6 )); then echo "ok   Little Chris incident marker clear of labels and keep-out at 64/128/256, 1x/2x"
+else echo "FAIL Little Chris incident marker vs labels:"; printf '%s\n' "$chris_marker"; failures=$((failures + 1)); fi
 # D1 (#37 review): at 64 pt the outer tongues reach into the panel gutters instead of being cut at the art square.
 if (( $(grep -cE '^incident marker @64 [12]x: .* gutter-pixels=[1-9]' "$report") == 2 )); then echo "ok   incident marker uses the 64 pt gutters (no hard clip at the art edge)"
 else echo "FAIL incident marker clipped to the 64 pt art square"; failures=$((failures + 1)); fi

@@ -194,6 +194,9 @@ public struct MascotLayout: Equatable, Sendable {
     /// Furthest the count moves down for any pose (any count width).
     public private(set) var maxCountOffset: CGFloat = 0
 
+    /// Canvas rows (of 256) below a pose's highest pixel that count as its head: the count sits
+    /// over the head's upper-right region (#116).
+    public static let headDepth = 24
     /// Design's capsule-to-art target clearance.
     public static let nearTouchTarget: CGFloat = 1
     /// Extra room for antialiased edges at 1× and 2× backing. Design asked for 0.25 pt, enlarged
