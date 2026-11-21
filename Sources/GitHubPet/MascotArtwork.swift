@@ -33,6 +33,14 @@ struct MascotArtworkLoader {
         self.builtInDirectory = builtInDirectory
     }
 
+    /// True when the launch fixes the artwork (placeholder or custom pack), so the picker is locked.
+    var locksPicker: Bool { forcePlaceholder || overrideDirectory != nil }
+
+    /// Keeps what an off-main load verified, so later switches to the same built-in don't reload it.
+    mutating func adoptCache(from other: MascotArtworkLoader) {
+        builtIns.merge(other.builtIns) { current, _ in current }
+    }
+
     mutating func resolve(_ skin: MascotSkin) -> MascotArtwork {
         if forcePlaceholder {
             return MascotArtwork(source: .placeholder, pack: nil, notice: "This launch uses the placeholder.",
@@ -75,4 +83,10 @@ struct MascotArtworkLoader {
         builtIns[skin] = result
         return result
     }
+}
+
+/// Carries a value across the detached load. The loader holds a directory-lookup closure and the
+/// result holds only value types; neither is touched by another task while the load runs.
+struct UncheckedSendable<Value>: @unchecked Sendable {
+    let value: Value
 }

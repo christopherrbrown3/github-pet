@@ -32,6 +32,9 @@ final class AppModel: ObservableObject {
         /// #90: tests inject a fake updater. nil: Sparkle for a normal launch of a configured app bundle only.
         var updaterBackend: (any UpdaterBackend)?
         var mascotPackDirectory: (MascotSkin) -> URL? = { LaunchOptions.builtInPackDirectory(for: $0) }
+        /// #41: load and validate mascot packs off the main thread (a normal launch). Snapshot, QA
+        /// and unit launches read them synchronously so their first frame is the real pack.
+        var loadsMascotArtworkAsync = false
         /// Hideable features (#94, #95, #107): the build's switches; tests exercise both states.
         var features: FeatureSet = .current
     }
@@ -82,9 +85,12 @@ final class AppModel: ObservableObject {
             }
             store.save(settings)
             if settings.mascotSkin != oldValue.mascotSkin && !mascotArtwork.locksPicker {
-                let next = mascotArtworkLoader.resolve(settings.mascotSkin)
-                if next.source != mascotArtwork.source { layouts.removeAll() }
-                mascotArtwork = next
+                if runtime.loadsMascotArtworkAsync {
+                    // The last pack stays on screen until the new one is verified.
+                    startMascotArtworkLoad(for: settings.mascotSkin)
+                } else {
+                    applyMascotArtwork(mascotArtworkLoader.resolve(settings.mascotSkin))
+                }
             }
             if settings.dataSource != oldValue.dataSource { switchSource() }
             else if assignmentChanged { switchAssignmentMode() }
@@ -103,6 +109,12 @@ final class AppModel: ObservableObject {
     @Published private(set) var mascotArtwork: MascotArtwork
     var pack: MascotPack? { mascotArtwork.pack }
     private var mascotArtworkLoader: MascotArtworkLoader
+    /// #41: a pack load is running off the main thread.
+    @Published private(set) var mascotArtworkLoading = false
+    /// Each request bumps it; a finished load applies only if it is still the latest, so a slow
+    /// load of an earlier choice can never overwrite a newer one.
+    private var mascotArtworkGeneration = 0
+    private var mascotArtworkLoadsInFlight = 0
 
     private let store: SettingsStore
     let clockOffset: TimeInterval
@@ -217,10 +229,19 @@ final class AppModel: ObservableObject {
             ? ServiceStatusClient() : ServiceStatusClient(transport: OfflineStatusTransport())
 
         var artworkLoader = MascotArtworkLoader(options: options, builtInDirectory: runtime.mascotPackDirectory)
-        mascotArtwork = artworkLoader.resolve(loaded.mascotSkin)
-        mascotArtworkLoader = artworkLoader
-        // One launch line on stderr so QA can confirm which mascot is in use.
-        FileHandle.standardError.write(Data("GitHubPet: \(mascotArtwork.logDescription)\n".utf8))
+        if runtime.loadsMascotArtworkAsync {
+            // Placeholder until the first load lands; the launch's own lock (custom pack or
+            // placeholder) applies from the start.
+            mascotArtwork = MascotArtwork(source: .placeholder, pack: nil, notice: "Loading the mascot…",
+                                          locksPicker: artworkLoader.locksPicker)
+            mascotArtworkLoader = artworkLoader
+            mascotArtworkLoading = true
+        } else {
+            mascotArtwork = artworkLoader.resolve(loaded.mascotSkin)
+            mascotArtworkLoader = artworkLoader
+            // One launch line on stderr so QA can confirm which mascot is in use.
+            FileHandle.standardError.write(Data("GitHubPet: \(mascotArtwork.logDescription)\n".utf8))
+        }
 
         if runtime.schedulesTimers {
             tickTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
@@ -243,6 +264,7 @@ final class AppModel: ObservableObject {
                 Task { @MainActor in self?.handleWake() }
             }
         }
+        startInitialMascotArtworkLoad()
         switchSource()
         if let delay = options.injectEventAfter {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.injectEntitlementEvent() }
@@ -951,6 +973,46 @@ final class AppModel: ObservableObject {
 
     /// Settings skin cards: the real bundled frames for `skin`, through the same loader as the pet.
     func artwork(for skin: MascotSkin) -> MascotArtwork { mascotArtworkLoader.resolve(skin) }
+
+    private func applyMascotArtwork(_ next: MascotArtwork) {
+        if next.source != mascotArtwork.source { layouts.removeAll() }
+        mascotArtwork = next
+    }
+
+    /// Resolves `skin` on a background thread and applies it if no newer request was made.
+    private func startMascotArtworkLoad(for skin: MascotSkin) {
+        mascotArtworkGeneration += 1
+        let generation = mascotArtworkGeneration
+        mascotArtworkLoading = true
+        let seed = UncheckedSendable(value: mascotArtworkLoader)
+        mascotArtworkLoadsInFlight += 1
+        Task { [weak self] in
+            let finished = await Task.detached(priority: .userInitiated) { () -> UncheckedSendable<(MascotArtwork, MascotArtworkLoader)> in
+                var loader = seed.value
+                let artwork = loader.resolve(skin)
+                return UncheckedSendable(value: (artwork, loader))
+            }.value
+            guard let self else { return }
+            defer { self.mascotArtworkLoadsInFlight -= 1 }
+            let (artwork, loader) = finished.value
+            self.mascotArtworkLoader.adoptCache(from: loader)
+            guard generation == self.mascotArtworkGeneration else { return }
+            self.mascotArtworkLoading = false
+            self.applyMascotArtwork(artwork)
+            FileHandle.standardError.write(Data("GitHubPet: \(artwork.logDescription)\n".utf8))
+        }
+    }
+
+    /// Starts the launch load for a normal launch (called once the model is fully built).
+    func startInitialMascotArtworkLoad() {
+        guard runtime.loadsMascotArtworkAsync else { return }
+        startMascotArtworkLoad(for: settings.mascotSkin)
+    }
+
+    /// Tests: waits until every started load, including superseded ones, has finished.
+    func mascotArtworkSettled() async {
+        while mascotArtworkLoadsInFlight > 0 { try? await Task.sleep(nanoseconds: 5_000_000) }
+    }
 
     func snooze(_ option: SnoozeOption) {
         settings.snoozeUntil = option.until(from: clock())

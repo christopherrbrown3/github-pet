@@ -45,7 +45,12 @@ struct MenuBarLabel: View {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let options = LaunchOptions.parse()
-    lazy var model = AppModel(options: options, runtime: QAScenarioRunner.plan?.runtime ?? AppModel.Runtime())
+    lazy var model = AppModel(options: options, runtime: QAScenarioRunner.plan?.runtime ?? {
+        var runtime = AppModel.Runtime()
+        // Snapshots render the real pack immediately; only a live launch loads it in the background.
+        runtime.loadsMascotArtworkAsync = options.snapshotDirectory == nil
+        return runtime
+    }())
     private var mascot: MascotWindowController?
 
     func applicationWillTerminate(_ notification: Notification) {
