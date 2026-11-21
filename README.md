@@ -105,14 +105,14 @@ Active GitHub incidents from githubstatus.com appear on their own, apart from yo
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/settings-mascot-dark.png">
         <img src="docs/screenshots/beta-4/settings-mascot.png" alt="The Mascot settings pane: Show desktop pet, a choice between Mona (selected) and Little Chris with badge previews, a size slider at 128 pt, Reset position, Reduce motion, and a Startup section explaining that Open at login isn't available in this beta, with an Open Login Items Settings button." width="380">
       </picture>
-      <br><sub><b>Mascot</b></sub>
+      <br><sub>Settings → <b>Mascot</b></sub>
     </td>
     <td align="center" valign="top" width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/settings-github-dark.png">
         <img src="docs/screenshots/beta-4/settings-github.png" alt="The GitHub settings pane in Demo mode: the GitHub CLI section with the data source set to Fixtures (offline) and a Recheck button, source health for reviews and issues and for GitHub status incidents, and the Monitoring scope set to Everything accessible." width="380">
       </picture>
-      <br><sub><b>GitHub</b> (top of the pane, Demo mode)</sub>
+      <br><sub>Settings → <b>GitHub</b> (shown with Demo data)</sub>
     </td>
   </tr>
 </table>
