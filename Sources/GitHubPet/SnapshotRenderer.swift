@@ -310,6 +310,10 @@ enum SnapshotRenderer {
             content.layoutSubtreeIfNeeded()
         }
         var lines = ["\(name): \(Int(content.bounds.width))x\(Int(content.bounds.height)) pt"]
+        if content.bounds.width <= 1 || content.bounds.height <= 1 {
+            // Never a silent empty capture: render-check fails on any "FAIL" line in the report.
+            lines.append("FAIL \(name): no real layout size after waiting (fitting \(Int(content.fittingSize.width))x\(Int(content.fittingSize.height)))")
+        }
         if let png = renderPNG(content) {
             try? png.write(to: directory.appendingPathComponent("\(name).png"))
         }

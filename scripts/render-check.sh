@@ -53,6 +53,9 @@ report=$out/report.txt
 failures=0
 if [[ ! -e $scratch/gh-called ]]; then echo "ok   snapshot CLI never launched gh"
 else echo "FAIL snapshot CLI launched gh"; failures=$((failures + 1)); fi
+if grep -qE '^FAIL ' "$report"; then
+  echo "FAIL snapshot render reported a failure:"; grep -E '^FAIL ' "$report"; failures=$((failures + 1))
+else echo "ok   snapshot render reported no layout failures"; fi
 check() {
   if grep -qE -- "$2" "$report"; then echo "ok   $1"; else echo "FAIL $1 (expected /$2/)"; failures=$((failures + 1)); fi
 }
