@@ -7,6 +7,10 @@ import Foundation
 public enum GhFailure: Equatable, Sendable {
     case ghMissing, signedOut, rateLimited, accessDenied, transport
 
+    /// Only the active account matters: without `--active`, `gh auth status` fails when any stored
+    /// account on the host (e.g. an expired inactive one) is invalid.
+    static let authStatusArguments = ["auth", "status", "--active", "--hostname", "github.com"]
+
     /// gh's own sign-in signals: exit 4, or text such as "gh auth login".
     static func isAuthFailure(_ result: CommandResult) -> Bool {
         if result.exitCode == 4 { return true }

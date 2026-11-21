@@ -13,25 +13,39 @@ import Testing
     ]
     static let flags: Set<String> = ["--hostname", "-X", "-f"]
 
-    /// The shape every plan must have: `api`, known flags only, each `-f` followed by `key=value`.
+    /// The shape every plan must have: `api`, then known flags with their one value each (`-f` takes
+    /// `key=value`, `--hostname` github.com, `-X` a method), and exactly one positional endpoint, which is
+    /// `graphql` or a `repos/.../actions/runs` path. Every element is accounted for: a stray bare
+    /// positional fails, so a hostile value cannot ride along as an extra argv element.
     static func assertWellFormed(_ arguments: [String], hostileValues: [String] = [], sourceLocation: SourceLocation = #_sourceLocation) {
         #expect(arguments.first == "api", sourceLocation: sourceLocation)
+        var positionals: [String] = []
         var index = 1
         while index < arguments.count {
             let element = arguments[index]
-            if element.hasPrefix("-") {
-                #expect(flags.contains(element), "unexpected flag \(element)", sourceLocation: sourceLocation)
-                if element == "-f" {
-                    index += 1
-                    let pair = index < arguments.count ? arguments[index] : ""
-                    let key = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? ""
-                    #expect(!key.isEmpty && key.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_") },
-                            "-f must be followed by key=value, got \(pair)", sourceLocation: sourceLocation)
-                } else if element == "--hostname" || element == "-X" {
-                    index += 1
-                }
+            switch element {
+            case "-f":
+                index += 1
+                let pair = index < arguments.count ? arguments[index] : ""
+                let key = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? ""
+                #expect(!key.isEmpty && key.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_") },
+                        "-f must be followed by key=value, got \(pair)", sourceLocation: sourceLocation)
+            case "--hostname":
+                index += 1
+                #expect(index < arguments.count && arguments[index] == "github.com", "--hostname must be github.com", sourceLocation: sourceLocation)
+            case "-X":
+                index += 1
+                #expect(index < arguments.count && ["GET", "POST"].contains(arguments[index]), "-X must take a method", sourceLocation: sourceLocation)
+            default:
+                #expect(!element.hasPrefix("-"), "unexpected flag \(element)", sourceLocation: sourceLocation)
+                positionals.append(element)
             }
             index += 1
+        }
+        #expect(positionals.count == 1, "exactly one positional endpoint, got \(positionals)", sourceLocation: sourceLocation)
+        if let endpoint = positionals.first {
+            #expect(endpoint == "graphql" || (endpoint.hasPrefix("repos/") && endpoint.hasSuffix("/actions/runs")),
+                    "stray positional element \(endpoint.debugDescription)", sourceLocation: sourceLocation)
         }
         for value in hostileValues where !value.isEmpty && !flags.contains(value) {
             // A hostile value may only appear inside a `key=value` element, never as its own element.

@@ -554,6 +554,23 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
                        runner: runner, timeout: timeout)
     }
 
+    /// An old gh without `auth status --active` fails the preflight with "unknown flag". That is only
+    /// advisory: the request runs and its own result decides. Any other preflight failure stops first.
+    @Test func oldGhWithoutActiveFlagLetsTheRequestDecide() throws {
+        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA, assignmentMode: .direct)
+        let oldGh = CommandResult(exitCode: 1, stderr: Data("unknown flag: --active".utf8))
+        let runner = ScopeRunner([oldGh, CommandResult(exitCode: 0, stdout: try response(envelope(plan)))])
+        let result = client(runner).fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct)
+        #expect(runner.calls == [GhFailure.authStatusArguments, plan.arguments], "the request ran after the advisory preflight")
+        #expect(result.issues.isEmpty)
+        if case .failure = result.outcome { Issue.record("an old-gh preflight must not fail a good response") }
+
+        let signedOut = ScopeRunner([CommandResult(exitCode: 1, stderr: Data("You are not logged in".utf8))])
+        let blocked = client(signedOut).fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct)
+        #expect(signedOut.calls == [GhFailure.authStatusArguments], "a real sign-in failure never reaches the request")
+        #expect(blocked.issues == [.signedOut] && blocked.items.isEmpty)
+    }
+
     @Test func directAssignmentBindsViewerAndNeverFallsBackOnSearchFailure() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA, assignmentMode: .direct)
         var differentViewer = envelope(plan)
@@ -573,7 +590,7 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         let failure = client.fetch(scope: plan.scope, expectedAccount: accountA, assignmentMode: .direct, budget: budget)
         #expect(failure.issues == [.incompleteOutput])
         guard case .failure = failure.outcome else { Issue.record("truncated output must stay unknown"); return }
-        #expect(runner.calls == Array(repeating: [GhClient.authStatusArguments, plan.arguments], count: 3).flatMap { $0 })
+        #expect(runner.calls == Array(repeating: [GhFailure.authStatusArguments, plan.arguments], count: 3).flatMap { $0 })
         #expect(budget.consumedBytes > limited.count && budget.remaining <= CommandBudget.maximumSeconds)
     }
     @Test func identityOnlyRequestRunsNoSearchesAndDetectsTheViewer() throws {

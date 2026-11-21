@@ -1,8 +1,9 @@
 # Monitoring scope core (first slice, #30)
 
 This is an opt-in core API. Settings, AppModel, attention queues and discovery/live UI wiring
-are intentionally not part of this slice. Existing `GhClient` callers retain their Everything
-query and result contract; their transport now enforces the shared request/output budget.
+are intentionally not part of this slice. The scoped client (`ScopedGhClient`) keeps the Everything
+query and result contract; its transport enforces the shared request/output budget. (The earlier
+`GhClient` was removed in #60; failure and sign-in classification lives in `GhFailure`.)
 
 ## Scope and account ownership
 

@@ -41,6 +41,12 @@ public enum PackLabel {
     static let pathHeadGraphemes = 24
     /// Scalar cap for paths: well above any real path, still bounded.
     public static let maxPathScalars = 2048
+    /// Hex digits of the path digest shown when a path is elided (#60): two paths that differ only
+    /// in the cut part stay distinguishable.
+    static let pathDigestDigits = 8
+    /// Errors listed in a joined caption before "+N more", and the cap on the whole caption.
+    public static let maxListedErrors = 5
+    public static let maxJoinedGraphemes = 600
 
     /// Control characters (C0, DEL, C1, line/paragraph separators) become a space, invisible format
     /// characters (zero-width, bidi overrides/isolates and marks, BOM, soft hyphen) are dropped,
@@ -59,11 +65,25 @@ public enum PackLabel {
         let (text, truncated) = clean(raw, scalarCap: maxPathScalars)
         guard !text.isEmpty else { return fallback }
         let characters = Array(text)
-        guard characters.count > maxPathGraphemes else { return truncated ? text + "…" : text }
+        // A path cut at the scalar cap also loses its tail, so it is tagged like a middle cut.
+        guard characters.count > maxPathGraphemes || truncated else { return text }
+        let digest = SHA256.hash(data: Data(raw.utf8)).prefix(pathDigestDigits / 2)
+            .map { String(format: "%02x", $0) }.joined()
+        let marker = "…#\(digest)…"
         let head = String(characters.prefix(pathHeadGraphemes))
-        var tail = Array(characters.suffix(maxPathGraphemes - pathHeadGraphemes - 1))
+        let room = max(0, maxPathGraphemes - pathHeadGraphemes - marker.count)
+        var tail = Array(characters.suffix(room))
         if let slash = tail.prefix(32).firstIndex(of: "/") { tail.removeFirst(slash) }
-        return head + "…" + String(tail) + (truncated ? "…" : "")
+        return head + marker + String(tail)
+    }
+
+    /// Rejection errors as one caption: at most `maxListedErrors` entries, then "+N more", and never
+    /// longer than `maxJoinedGraphemes` however long the entries are.
+    public static func joined(_ errors: [MascotPackError], separator: String) -> String {
+        var text = errors.prefix(maxListedErrors).map(\.description).joined(separator: separator)
+        if errors.count > maxListedErrors { text += "\(separator)+\(errors.count - maxListedErrors) more" }
+        guard text.count > maxJoinedGraphemes else { return text }
+        return String(text.prefix(maxJoinedGraphemes - 1)) + "…"
     }
 
     private static func clean(_ raw: String, scalarCap maxScalars: Int) -> (text: String, truncated: Bool) {

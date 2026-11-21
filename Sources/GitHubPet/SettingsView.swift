@@ -117,7 +117,7 @@ struct MascotSkinSection: View {
                 Text(notice).font(.caption).foregroundStyle(.secondary)
             }
             if !model.mascotArtwork.errors.isEmpty {
-                Text(model.mascotArtwork.errors.map(\.description).joined(separator: "\n"))
+                Text(PackLabel.joined(model.mascotArtwork.errors, separator: "\n"))
                     .font(.caption)
             }
             Text("The count badge is a preview. It shows how many items need you on the desktop pet.")
