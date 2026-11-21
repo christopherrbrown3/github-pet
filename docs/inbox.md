@@ -4,7 +4,7 @@ Open the Inbox from the menu-bar icon or the mascot. Select a row to open the it
 
 ## Choose which review requests appear
 
-Open **Settings → Notifications** and choose an **Assignment filter**:
+Open **Settings → GitHub → Review requests** and choose an **Assignment filter**:
 
 - **Show all notifications** includes pull request reviews requested from you or your GitHub teams.
   This is the default.
