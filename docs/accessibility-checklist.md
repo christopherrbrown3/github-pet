@@ -29,6 +29,11 @@ afterwards. Nothing is written to disk.
   and gh missing. The desktop pet is one button with the same status and its summary, the hint
   "Opens the inbox", no unlabelled child elements, and a press that opens the Inbox.
 - **Headings.** "Needs you" and each section ("Review requests, 2") are headings.
+- **Choose Repositories sheet (#137).** No unnamed controls, light and dark. The search field is
+  named "Search repositories and organizations". Each repository row is one checkbox whose name is
+  the whole sentence ("lantern-api, demo-lumen-labs, public, pushed now"), and its visible name is
+  not read again. Rows that can't be monitored say why. Sidebar rows read their state
+  ("demo-tidewater, organization, repositories hidden by GitHub"). A disabled Apply says why.
 - **Keyboard, as far as offscreen allows.** Every text field in Settings › GitHub is in the
   window's key-view loop. Every SwiftUI button supports the accessibility press action. Refresh
   keeps ⌘R.
@@ -88,10 +93,20 @@ with ⌘F5.
 7. **Settings › Mascot (1 min).** Expect "Show desktop pet, switch", the skin cards with
    Selected/Not selected (and the reason when locked), "Mascot size, slider" read once, and Open at
    login with its status as the hint.
-8. **Settings › GitHub (1 min).** Expect Recheck, the Source pop-up, scope radio buttons,
-   Cancel/Apply with a reason when dimmed, and the entitlement field named "New entitlement
-   repository".
-9. **Desktop pet (1 min).** Find the pet (VO-F5 / window rotor). Expect one button with the status
+8. **Settings › GitHub (1 min).** Expect Recheck, the Source pop-up, scope radio buttons, the
+   Selected summary (each entry read once, then "N more entries below"), Choose Repositories… and
+   Add by Name… with hints, and the entitlement field named "New entitlement repository".
+9. **Choose Repositories sheet (2 min, #137).** Press Choose Repositories…. Focus should start in
+   the search field ("Search repositories and organizations"). ⌘F returns there from anywhere; ↓
+   from search moves into the list. Tab order: search, Filter, Sort, sidebar, list, footer. In the
+   sidebar, ↑/↓ changes owner and the list follows. In the list, ↑/↓ moves between rows and Space
+   toggles the focused checkbox; each row reads its full sentence once, checked or unchecked, and
+   covered rows read "included by All repositories in …" and are dimmed. Selection changes are
+   announced ("2 selected"). With text in search, Return runs the GitHub search for the current
+   owner (it never applies); with search empty and unfocused, Return applies. Esc clears the search
+   first, then cancels and restores the earlier selection. Banners (incomplete, rate limit,
+   withheld) read as one element with their buttons separate.
+10. **Desktop pet (1 min).** Find the pet (VO-F5 / window rotor). Expect one button with the status
    and "Opens the inbox". VO-Space should open the Inbox.
 
 Report anything that reads differently from the expectations above on #13.

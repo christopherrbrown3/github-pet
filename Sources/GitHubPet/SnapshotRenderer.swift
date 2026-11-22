@@ -57,6 +57,8 @@ enum SnapshotRenderer {
         model.detailsRevealed = true
         await capture("01b-details")
         report += await readmeRenders(model: model, directory: directory)
+        // On Demo fixtures, so the sheet browses the offline fixture owners.
+        report += await scopeBrowserRenders(model: model, directory: directory)
         report.append("## lane labels (native text, widest count)")
         for side in [CGFloat(64), 128, 256] {
             report.append(tagFit(model: model, side: side))
@@ -251,6 +253,7 @@ enum SnapshotRenderer {
             }
         }
 
+        report += await scopeBrowserCheckingAccountRender(model: model, directory: directory)
         report += await inboxRedesignRenders(model: model, directory: directory)
         report += await readmeBeta4Renders(model: model, directory: directory)
 

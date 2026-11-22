@@ -1,13 +1,24 @@
 import GitHubPetCore
 import SwiftUI
 
-/// Settings › Monitoring scope: native grouped-Form controls only. Target names appear here
-/// because opening Settings is explicit; every other surface shows counts.
+/// Settings › Monitoring scope: the account, the Monitor choice and a read-only summary of the
+/// selection. Choosing and Apply happen in the Choose Repositories sheet (#137), the one place
+/// that commits a selection; "Everything accessible" applies at once, since it has nothing to
+/// check. Target names appear here because opening Settings is explicit; every other surface
+/// shows counts.
 struct MonitoringScopeSection: View {
     @ObservedObject var model: AppModel
     @ObservedObject var editor: ScopeEditor
+    @State private var browser: ScopeBrowser?
+    @State private var browserOpensAddByName = false
+    @State private var browserSnapshot: ScopeEditor.DraftSnapshot?
+
+    static let visibleRows = 6
+    /// Room for a name plus a two-line problem message.
+    static let rowHeight: CGFloat = 44
 
     var body: some View {
+        let entries = ScopeEntry.entries(editor)
         Section {
             LabeledContent("Account") {
                 Text(editor.accountDescription).lineLimit(2).truncationMode(.middle).multilineTextAlignment(.trailing)
@@ -21,37 +32,47 @@ struct MonitoringScopeSection: View {
             if let quality = model.scopeQuality {
                 Text(quality).font(.caption).foregroundStyle(.orange)
             }
-            Picker("Monitor", selection: Binding(get: { editor.draft.mode }, set: { editor.setMode($0) })) {
+            Picker("Monitor", selection: Binding(get: { editor.draft.mode }, set: setMode)) {
                 Text("Everything accessible").tag(MonitoringScope.Mode.everything)
                 Text("Selected organizations and repositories").tag(MonitoringScope.Mode.selected)
             }
             .pickerStyle(.radioGroup)
             .accessibilityIdentifier("settings.scope.mode")
             if editor.draft.mode == .selected {
-                TargetListEditor(editor: editor, kind: .organization)
-                TargetListEditor(editor: editor, kind: .repository)
-                suggestions
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Selected · \(entries.count)").font(.headline).monospacedDigit()
+                        .accessibilityAddTraits(.isHeader)
+                    if entries.isEmpty {
+                        Text("Nothing selected yet. Choose repositories or add one by name.").foregroundStyle(.secondary)
+                    } else {
+                        ScrollingEntryList(entries: entries, rowHeight: Self.rowHeight, maximumVisibleRows: Self.visibleRows) {
+                            ScopeEntryRow(entry: $0)
+                        }
+                        .accessibilityIdentifier("settings.scope.selected")
+                    }
+                }
+                HStack {
+                    Button("Choose Repositories…") { openBrowser() }
+                        .accessibilityHint("Opens a window to browse your organizations and repositories, then Apply.")
+                        .accessibilityIdentifier("settings.scope.choose")
+                    Button("Add by Name…") { openBrowser(addByName: true) }
+                        .accessibilityHint("For organizations or repositories GitHub doesn't list.")
+                }
             }
-            if let reason = editor.applyBlockedReason, editor.hasChanges || editor.identity == nil {
-                Text(reason).font(.caption).foregroundStyle(.secondary)
+            if editor.hasChanges && browser == nil {
+                HStack {
+                    Label(editor.applyBlockedReason.map { "Not applied. \($0)" } ?? "Changes not applied yet.",
+                          systemImage: "exclamationmark.circle").font(.caption).foregroundStyle(.orange)
+                    Spacer()
+                    Button("Review…") { openBrowser() }
+                    Button("Discard") { editor.cancel() }
+                        .accessibilityHint("Discards the draft and keeps the active monitoring scope.")
+                }
             }
-            if let status = editor.status {
+            // One status line: the unapplied notice above wins while there are unapplied changes.
+            if let status = editor.status, !(editor.hasChanges && browser == nil) {
                 Text(status).font(.caption).foregroundStyle(.secondary)
                     .accessibilityLabel("Monitoring scope status: \(status)")
-            }
-            HStack {
-                if editor.phase == .validating { ProgressView().controlSize(.small).accessibilityLabel("Checking access") }
-                Spacer()
-                Button("Cancel") { editor.cancel() }
-                    .disabled(!editor.hasChanges && editor.phase == .idle)
-                    .accessibilityHint((!editor.hasChanges && editor.phase == .idle ? "No changes to discard. " : "")
-                                       + "Discards the draft and keeps the active monitoring scope.")
-                Button("Apply") { editor.apply() }
-                    .disabled(!editor.canApply)
-                    .accessibilityHint((editor.canApply ? "" : (editor.hasChanges ? editor.applyBlockedReason.map { $0 + " " } ?? ""
-                                                                : "No changes to apply. "))
-                                       + "Checks access to every entry, then applies the scope.")
-                    .accessibilityIdentifier("settings.scope.apply")
             }
         } header: {
             Text("Monitoring scope")
@@ -66,91 +87,32 @@ struct MonitoringScopeSection: View {
             }
             .font(.caption).foregroundStyle(.secondary)
         }
-    }
-
-    @ViewBuilder private var suggestions: some View {
-        let lists = editor.suggestions
-        HStack {
-            Button("Find suggestions") { editor.loadSuggestions() }
-                .disabled(!editor.canLoadSuggestions)
-                .accessibilityHint("Asks the GitHub CLI for organizations and repositories you belong to. Typed entries work without it.")
-            Menu("Organizations") {
-                ForEach(lists.organizations, id: \.self) { value in
-                    Button(value) { editor.useSuggestion(value, kind: .organization) }
-                }
-            }
-            .disabled(lists.organizations.isEmpty)
-            .accessibilityLabel("Organization suggestions, \(lists.organizations.count)")
-            .accessibilityHint(lists.organizations.isEmpty ? editor.discoveryText : "")
-            Menu("Repositories") {
-                ForEach(lists.repositories, id: \.self) { value in
-                    Button(value) { editor.useSuggestion(value, kind: .repository) }
-                }
-            }
-            .disabled(lists.repositories.isEmpty)
-            .accessibilityLabel("Repository suggestions, \(lists.repositories.count)")
-            .accessibilityHint(lists.repositories.isEmpty ? editor.discoveryText : "")
-            .fixedSize()
-        }
-        Text(editor.discoveryText).font(.caption).foregroundStyle(.secondary)
-    }
-}
-
-/// One bounded list (at most 10 combined entries) with editable rows, inline errors and typed Add.
-private struct TargetListEditor: View {
-    @ObservedObject var editor: ScopeEditor
-    let kind: MonitoringTarget.Kind
-
-    private var noun: String { kind == .organization ? "Organization" : "Repository" }
-    private var prompt: String { kind == .organization ? "login" : "owner/name" }
-
-    var body: some View {
-        let rows = editor.draft.rows(kind)
-        VStack(alignment: .leading, spacing: 6) {
-            Text(kind == .organization ? "Organizations" : "Repositories").font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            if rows.isEmpty {
-                Text("None").foregroundStyle(.secondary)
-            }
-            ForEach(Array(rows.enumerated()), id: \.element.id) { position, row in
-                let problem = editor.problem(row)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        TextField("\(noun) \(position + 1)", text: Binding(get: { row.text }, set: { editor.update(row.id, text: $0) }),
-                                  prompt: Text(prompt))
-                            .labelsHidden()
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityLabel("\(noun) \(position + 1)")
-                            .accessibilityHint(problem?.message(for: kind) ?? "")
-                        Button("Remove") { editor.remove(row.id) }
-                            .accessibilityLabel("Remove \(noun.lowercased()) \(row.text)")
-                    }
-                    if let problem {
-                        Label(problem.message(for: kind), systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption).foregroundStyle(.red)
-                            .accessibilityLabel("\(noun) \(position + 1) error: \(problem.message(for: kind))")
-                    }
-                }
-            }
-            let input = kind == .organization ? $editor.organizationInput : $editor.repositoryInput
-            let inputProblem = kind == .organization ? editor.organizationInputProblem : editor.repositoryInputProblem
-            HStack {
-                // The hidden title is the spoken name; an accessibilityLabel as well was read
-                // after it ("Add organization, New organization, login").
-                TextField("New \(noun.lowercased()), \(prompt)", text: input, prompt: Text(prompt))
-                    .labelsHidden()
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { kind == .organization ? editor.addOrganization() : editor.addRepository() }
-                    .accessibilityHint(inputProblem?.message(for: kind) ?? "Press Return or Add to put it in the draft.")
-                Button("Add") { kind == .organization ? editor.addOrganization() : editor.addRepository() }
-                    .accessibilityLabel("Add \(noun.lowercased())")
-            }
-            if let inputProblem {
-                Label(inputProblem.message(for: kind), systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption).foregroundStyle(.red)
-                    .accessibilityLabel("New \(noun.lowercased()) error: \(inputProblem.message(for: kind))")
+        .sheet(item: $browser) { browser in
+            ScopeBrowserSheet(model: model, browser: browser, addByName: browserOpensAddByName,
+                              initialSnapshot: browserSnapshot) {
+                self.browser = nil; browserSnapshot = nil
             }
         }
+    }
+
+    /// Everything has nothing to verify and applies at once. Selected opens the sheet, whose
+    /// Cancel returns to the previous choice.
+    private func setMode(_ mode: MonitoringScope.Mode) {
+        guard mode != editor.draft.mode else { return }
+        if mode == .everything {
+            editor.setMode(.everything)
+            editor.apply()
+        } else {
+            let before = editor.snapshotDraft()
+            editor.setMode(.selected)
+            openBrowser(snapshot: before)
+        }
+    }
+
+    private func openBrowser(addByName: Bool = false, snapshot: ScopeEditor.DraftSnapshot? = nil) {
+        browserOpensAddByName = addByName
+        browserSnapshot = snapshot
+        browser = model.makeScopeBrowser()
     }
 }
 
@@ -162,6 +124,10 @@ struct ScopeSettingsSimulationMenu: View {
             if let simulation = model.scopeAccessSimulation { Text(simulation.status) }
             ForEach(ScopeAccessSimulation.DiscoveryMode.allCases, id: \.self) { mode in
                 Button("Discovery: \(mode.rawValue)") { model.simulateScopeDiscovery(mode) }
+            }
+            Divider()
+            ForEach(ScopeBrowseFixture.Mode.allCases, id: \.self) { mode in
+                Button("Browse: \(mode.rawValue)") { model.scopeAccessSimulation?.setBrowse(mode) }
             }
             Divider()
             Button("Validation: normal") { model.simulateScopeValidation(.normal) }
