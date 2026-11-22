@@ -8,6 +8,10 @@ private let lineTerminators = ["\n", "\r", "\r\n", "\u{85}", "\u{2028}", "\u{202
 private func mixedScope() throws -> MonitoringScope {
     try MonitoringScope(selected: [MonitoringTarget(organization: "Example"), MonitoringTarget(repository: "example/pet")])
 }
+/// An organization and a repository outside it: two qualifiers in one batched search.
+private func crossScope() throws -> MonitoringScope {
+    try MonitoringScope(selected: [MonitoringTarget(organization: "example"), MonitoringTarget(repository: "other/pet")])
+}
 private func row(_ id: String = "PR_fixture_1", repo: String = "example/pet") -> [String: Any] {
     ["__typename": "PullRequest", "id": id, "number": 1, "title": "Fixture review",
      "url": "https://github.com/\(repo)/pull/1", "updatedAt": "2026-11-14T10:00:00Z", "repository": ["nameWithOwner": repo]]
@@ -107,11 +111,29 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(scope.includes(repository: "example/pet"))
         #expect(!scope.includes(repository: "outsider/pet"))
         #expect(throws: ScopeValidationError.emptySelection) { try MonitoringScope(selected: []) }
-        let ten = try (0..<10).map { try MonitoringTarget(organization: "fixture\($0)") }
-        #expect(try MonitoringScope(selected: ten).targets.count == 10)
+        // No product cap; GitHub's per-request limits set a ceiling of 500 (#137).
+        let many = try (0..<MonitoringScope.maximumTargets).map { try MonitoringTarget(repository: "fixture\($0)/pet") }
+        #expect(try MonitoringScope(selected: many).targets.count == 500)
         #expect(throws: ScopeValidationError.tooManyTargets) {
-            try MonitoringScope(selected: ten + [MonitoringTarget(organization: "extra")])
+            try MonitoringScope(selected: many + [MonitoringTarget(organization: "extra")])
         }
+    }
+
+    /// Saved selections decode unchanged, and a large selection fits the record guard (#137).
+    @Test func savedSelectionsOfAnySizeRoundTrip() throws {
+        let defaults = EphemeralDefaults(name: "scope.size.tests.\(UUID().uuidString)")
+        let store = ScopeSelectionStore(defaults: defaults)
+        let legacy = #"{"mode":"selected","targets":[{"kind":"organization","owner":"example"},{"kind":"repository","owner":"example","name":"pet"}]}"#
+        defaults.set(Data(legacy.utf8), forKey: ScopeSelectionStore.key(.demo))
+        #expect(store.load(for: .demo) == .scope(try mixedScope()))
+        let longest = try (0..<MonitoringScope.maximumTargets).map { index -> MonitoringTarget in
+            let owner = String(repeating: "o", count: 35) + String(format: "%04d", index)
+            return try MonitoringTarget(repository: owner + "/" + String(repeating: "n", count: 100))
+        }
+        let scope = try MonitoringScope(selected: longest)
+        try store.save(scope, for: .github(accountA))
+        #expect(store.load(for: .github(accountA)) == .scope(scope))
+        #expect(try JSONEncoder().encode(scope).count * 2 < ScopeSelectionStore.maximumRecordBytes, "the ceiling fits with room")
     }
 
     @Test func rejectsQualifierGraphQLAndHostInjectionIncludingDecodedValues() throws {
@@ -181,7 +203,7 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         for scope in try [.everything, mixedScope(), ten] {
             let all = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
             let direct = try ScopeQueryPlan(scope: scope, expectedAccount: accountA, assignmentMode: .direct)
-            let inclusions = max(1, scope.targets.count)
+            let inclusions = max(1, ScopeQueryPlan.batches(scope.targets).count)
             #expect(direct.searches.map(\.alias) == all.searches.map(\.alias))
             #expect(direct.searches.count == inclusions * 3)
             #expect(direct.arguments == all.arguments.map { argument in
@@ -214,25 +236,180 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
             }
         }
     }
-    @Test func oneOperationBindsViewerMetadataAndPerInclusionSearches() throws {
-        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
-        #expect(plan.searches.count == 6)
+    @Test func oneOperationBindsViewerMetadataAndBatchedSearches() throws {
+        let plan = try ScopeQueryPlan(scope: crossScope(), expectedAccount: accountA)
+        #expect(plan.searches.count == 3 && plan.searches.allSatisfy { $0.targetIndices == [0, 1] })
         let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
         #expect(query.contains("viewer { id login }"))
         #expect(query.contains("organization(login: $owner0)"))
         #expect(query.contains("repository(owner: $owner1, name: $name1)"))
-        #expect(!query.contains("example"), "all target values are GraphQL variables")
-        #expect(plan.arguments.contains("reviews0=is:pr is:open review-requested:@me org:example"))
-        #expect(plan.arguments.contains("reviews1=is:pr is:open review-requested:@me repo:example/pet"))
+        #expect(!query.contains("example") && !query.contains("other"), "all target values are GraphQL variables")
+        #expect(plan.arguments.contains("reviews0=is:pr is:open review-requested:@me org:example repo:other/pet"))
         #expect(plan.arguments.prefix(4) == ["api", "graphql", "--hostname", "github.com"])
         #expect(try ScopeQueryPlan().searches.count == 3)
         let ten = try MonitoringScope(selected: (0..<10).map { try MonitoringTarget(organization: "fixture\($0)") })
-        #expect(try ScopeQueryPlan(scope: ten, expectedAccount: accountA).searches.count == 30)
+        #expect(try ScopeQueryPlan(scope: ten, expectedAccount: accountA).searches.count == 3)
         #expect(throws: ScopeValidationError.invalidIdentity) { try ScopeQueryPlan(scope: mixedScope()) }
     }
 
+    /// #137: qualifiers share searches within GitHub's documented limits, every target is searched
+    /// exactly once (or through its organization), and a target's metadata is always looked up.
+    @Test func batchesRespectSearchLimitsAndCoverEveryTargetOnce() throws {
+        func repositories(_ count: Int, owner: (Int) -> String = { "owner\($0)" }) throws -> [MonitoringTarget] {
+            try (0..<count).map { try MonitoringTarget(repository: owner($0) + "/project-\($0)") }
+        }
+        let longestName = try MonitoringTarget(repository: String(repeating: "o", count: 39) + "/" + String(repeating: "n", count: 100))
+        // Two-character logins: short qualifiers, so the 50-qualifier bound applies before the length.
+        let characters = Array("0123456789abcdefghijklmnopqrstuvwxyz")
+        let maximal = try (0..<250).map { try MonitoringTarget(organization: String([characters[$0 / 36], characters[$0 % 36]])) }
+        let scopes: [(String, [MonitoringTarget])] = try [
+            ("1", repositories(1)), ("10", repositories(10)), ("11", repositories(11)), ("100", repositories(100)),
+            ("500", repositories(500)), ("longest", [longestName] + repositories(5)), ("short orgs", maximal),
+        ]
+        for (label, targets) in scopes {
+            let scope = try MonitoringScope(selected: targets)
+            for mode in [AssignmentMode.all, .direct] {
+                let plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA, assignmentMode: mode)
+                for search in plan.searches {
+                    #expect(search.query.utf8.count <= ScopeQueryPlan.maximumSearchLength, "\(label): \(search.query.utf8.count)")
+                    #expect(!search.targetIndices.isEmpty && search.targetIndices.count <= ScopeQueryPlan.maximumQualifiersPerSearch)
+                    #expect(plan.arguments.contains("\(search.alias)=\(search.query)"), "one variable per search")
+                    let words = search.query.split(separator: " ")
+                    #expect(!words.contains { ["AND", "OR", "NOT"].contains($0) } && !search.query.contains("("))
+                    #expect(words.filter { $0.hasPrefix("org:") || $0.hasPrefix("repo:") }
+                        == search.targetIndices.map { Substring(scope.targets[$0].qualifier) })
+                }
+                for kind in [ItemKind.reviewRequest, .assignedIssue, .authoredPullRequest] {
+                    let covered = plan.searches.filter { $0.kind == kind }.flatMap(\.targetIndices)
+                    #expect(covered == Array(scope.targets.indices), "\(label) \(kind): each target once, in order")
+                }
+                let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
+                #expect(query.components(separatedBy: ": repository(").count + query.components(separatedBy: ": organization(").count - 2
+                    == scope.targets.count, "every target's metadata is looked up")
+            }
+        }
+        // Boundaries: the longest qualifiers (146 characters with the space) split at 27 per search
+        // (39 + 27 × 146 = 3,981; one more is 4,127 > 4,096), and short ones at 50 qualifiers.
+        let lengthBound = try MonitoringScope(selected: (0..<30).map { index in
+            try MonitoringTarget(repository: String(repeating: "o", count: 37) + String(format: "%02d", index) + "/" + String(repeating: "n", count: 100))
+        })
+        #expect(ScopeQueryPlan.batches(lengthBound.targets).map(\.count) == [27, 3])
+        #expect(ScopeQueryPlan.batches(maximal).map(\.count) == [50, 50, 50, 50, 50])
+        // Search counts the cost note relies on (#137): 3 searches per 50 typical repositories.
+        let counts = try [1, 10, 11, 100, 101, 500].map { count in
+            try ScopeQueryPlan.requests(scope: MonitoringScope(selected: repositories(count)), expectedAccount: accountA)
+                .reduce(0) { $0 + $1.searches.count }
+        }
+        #expect(counts == [3, 3, 3, 6, 9, 30], "\(counts)")
+    }
+
+    /// #137: a poll is one request per 50 targets. Each request looks up its own targets and
+    /// carries exactly their batches; together they look up and search every target once.
+    @Test func largeScopesSplitIntoRequestsOfAtMost50Targets() throws {
+        let repositories = try (0..<500).map { try MonitoringTarget(repository: "owner-\($0)/project-\($0)") }
+        let organizations = try (0..<20).map { try MonitoringTarget(organization: "org-\($0)") }
+        let covered = try (0..<30).map { try MonitoringTarget(repository: "org-\($0 % 20)/covered-\($0)") }
+        let cases: [([MonitoringTarget], Int)] = [
+            (Array(repositories.prefix(1)), 1), (Array(repositories.prefix(50)), 1), (Array(repositories.prefix(51)), 2),
+            (Array(repositories.prefix(500)), 10), (organizations + covered + Array(repositories.prefix(450)), 10),
+        ]
+        for (targets, expected) in cases {
+            let scope = try MonitoringScope(selected: targets)
+            let plans = try ScopeQueryPlan.requests(scope: scope, expectedAccount: accountA)
+            #expect(plans.count == expected, "\(targets.count) targets")
+            #expect(plans.allSatisfy { $0.lookups.count <= ScopeQueryPlan.maximumTargetsPerRequest })
+            #expect(plans.flatMap(\.lookups).sorted() == Array(scope.targets.indices), "every target looked up once")
+            let all = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+            #expect(plans.flatMap(\.searches).map(\.query) == all.searches.map(\.query), "the same searches, split")
+            #expect(Set(plans.flatMap(\.searches).map(\.alias)).count == all.searches.count, "aliases unique across requests")
+            for plan in plans {
+                #expect(plan.searches.allSatisfy { Set($0.targetIndices).isSubset(of: plan.lookups) }, "a batch travels with its lookups")
+                HostileArgvTests.assertWellFormed(plan.arguments)
+                let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
+                #expect(plan.lookups.allSatisfy { query.contains("target\($0):") })
+                #expect(!scope.targets.indices.contains { !plan.lookups.contains($0) && query.contains("target\($0):") })
+            }
+        }
+        #expect(try ScopeQueryPlan.requests(scope: .everything, expectedAccount: nil).map(\.searches.count) == [3])
+        let big = try MonitoringScope(selected: Array(repositories.prefix(51)))
+        #expect(throws: ScopeValidationError.invalidIdentity) { try ScopeQueryPlan.requests(scope: big, expectedAccount: nil) }
+        #expect(ScopeQueryPlan.longestCategoryQuery <= ScopeQueryPlan.maximumUnqualifiedLength)
+    }
+
+    /// A repository under a selected organization adds no qualifier: the organization's search
+    /// already covers it, so hidden counts never double count. Its metadata is still checked.
+    @Test func coveredRepositoriesAreSearchedThroughTheirOrganization() throws {
+        let org = try MonitoringTarget(organization: "ExAmPlE")
+        let covered = try [MonitoringTarget(repository: "EXAMPLE/Pet"), MonitoringTarget(repository: "example/tools")]
+        let outside = try MonitoringTarget(repository: "other/pet")
+        for targets in [[org] + covered + [outside], [outside] + covered.reversed() + [org]] {
+            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+            #expect(plan.searches.count == 3)
+            #expect(plan.searches.allSatisfy { $0.query.hasSuffix(" org:example repo:other/pet") }, "\(plan.searches.map(\.query))")
+            for kind in [ItemKind.reviewRequest, .assignedIssue] {
+                var body = envelope(plan)
+                for search in plan.searches where search.kind == kind { body[search.alias] = page([], total: 1) }
+                let result = ScopedResponseParser.parse(try response(body), plan: plan)
+                #expect(result.complete && result.items.isEmpty && result.hidden == 1)
+                let engine = InboxEngine()
+                #expect(engine.apply(result.outcome, now: Date()).isEmpty)
+                #expect(engine.state == .hiddenOnly(1), "Hidden-only must never become All clear or double-count")
+            }
+            // A covered repository that no longer resolves still keeps the poll Partial.
+            var body = envelope(plan)
+            body["target\(plan.scope.targets.firstIndex(of: covered[1])!)"] = NSNull()
+            let unresolved = ScopedResponseParser.parse(try response(body), plan: plan)
+            #expect(!unresolved.complete && unresolved.issues.contains(.targetUnavailable(plan.scope.targets.firstIndex(of: covered[1])!)))
+        }
+    }
+
+    /// Batches are disjoint, so hidden counts add across them; a batch that fills its page is
+    /// capped (Partial) on its own, whatever the other batches report.
+    @Test func hiddenCountsAddAcrossBatchesAndAFullBatchIsPartial() throws {
+        // Longest valid names: about 27 fill one 4096-character search, so 30 make two batches.
+        let targets = try (0..<30).map { index in
+            try MonitoringTarget(repository: String(repeating: "o", count: 37) + String(format: "%02d", index) + "/" + String(repeating: "n", count: 100))
+        }
+        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
+        let reviews = plan.searches.filter { $0.kind == .reviewRequest }
+        #expect(reviews.count == 2)
+        var body = envelope(plan)
+        body[reviews[0].alias] = page([], total: 2); body[reviews[1].alias] = page([], total: 3)
+        let summed = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(summed.complete && summed.hidden == 5)
+        let repository = { (index: Int) in plan.scope.targets[index].owner + "/" + plan.scope.targets[index].name! }
+        let full = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)", repo: repository(reviews[1].targetIndices[0])) as Any }
+        for capped in [page(full, total: 31), page(full, total: 30, more: true)] {
+            body[reviews[1].alias] = capped
+            let result = ScopedResponseParser.parse(try response(body), plan: plan)
+            #expect(!result.complete && result.hidden == 0 && result.items.count == 30)
+            #expect(result.issues.contains(.capped(reviews[1].alias)) && result.issues.contains(.capped(reviews[0].alias)),
+                    "the capped batch, and the hidden one reverts to capped")
+        }
+        body[reviews[1].alias] = page(full, total: 30)
+        let exact = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(exact.complete && exact.items.count == 30 && exact.hidden == 2, "a full page with nothing more is complete")
+    }
+
+    /// One unverified target in a batch drops only its own rows; the batch's other targets keep theirs.
+    @Test func unverifiedTargetInABatchDropsOnlyItsOwnRows() throws {
+        let plan = try ScopeQueryPlan(scope: crossScope(), expectedAccount: accountA)
+        var body = envelope(plan)
+        body["reviews0"] = page([row("PR_fixture_1", repo: "example/pet"), row("PR_fixture_2", repo: "other/pet")])
+        body["target0"] = NSNull()
+        let result = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(!result.complete && result.issues == [.targetUnavailable(0)])
+        #expect(result.items.map(\.repository) == ["other/pet"])
+        body["target1"] = NSNull()
+        let none = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(none.successfulSources == 0 && none.items.isEmpty)
+        // A row from outside every target in the batch is malformed, as before.
+        body = envelope(plan); body["reviews0"] = page([row(repo: "outside/pet")])
+        #expect(ScopedResponseParser.parse(try response(body), plan: plan).issues == [.malformedRow("reviews0")])
+    }
+
     @Test func verifiedEmptyDiffersFromUnavailableTarget() throws {
-        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+        let plan = try ScopeQueryPlan(scope: crossScope(), expectedAccount: accountA)
         var body = envelope(plan)
         let empty = ScopedResponseParser.parse(try response(body), plan: plan)
         #expect(empty.complete && empty.items.isEmpty)
@@ -243,20 +420,24 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(ScopedResponseParser.parse(try response(body), plan: plan).successfulSources == 0)
     }
 
-    @Test func overlapProducesOneStableItemAndOneEvent() throws {
+    @Test func duplicateRowsProduceOneStableItemAndOneEvent() throws {
         let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
         var body = envelope(plan)
-        body["reviews0"] = page([row()]); body["reviews1"] = page([row()])
+        body["reviews0"] = page([row()])
         let result = ScopedResponseParser.parse(try response(body), plan: plan)
         #expect(result.complete && result.items.count == 1)
         #expect(result.items.first?.id == "reviewRequest:PR_fixture_1")
         let engine = InboxEngine(), now = Date(timeIntervalSince1970: 1000)
         #expect(engine.apply(result.outcome, now: now).isEmpty)
-        body["reviews0"] = page([row(), row("PR_fixture_2")]); body["reviews1"] = page([row(), row("PR_fixture_2")])
+        body["reviews0"] = page([row(), row("PR_fixture_2")])
         let changed = ScopedResponseParser.parse(try response(body), plan: plan)
         #expect(changed.complete && changed.items.count == 2)
         #expect(engine.apply(changed.outcome, now: now + 1).map(\.item.id) == ["reviewRequest:PR_fixture_2"])
         #expect(engine.apply(changed.outcome, now: now + 2).isEmpty)
+        // The same row twice in one source is malformed, never two rows.
+        body["reviews0"] = page([row(), row()])
+        let repeated = ScopedResponseParser.parse(try response(body), plan: plan)
+        #expect(!repeated.complete && repeated.items.count == 1 && repeated.issues.contains(.malformedRow("reviews0")))
     }
 
     /// #35 decision table, per alias: capped -> Partial; fewer than a page with a larger count and no
@@ -297,157 +478,35 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         #expect(exact.complete && exact.hidden == 0)
     }
 
-    @Test func verifiedOrganizationCoverageCountsHiddenMatchesOncePerCategory() throws {
-        let org = try MonitoringTarget(organization: "ExAmPlE")
-        let repo = try MonitoringTarget(repository: "EXAMPLE/Pet")
-        for targets in [[org, repo], [repo, org]] {
-            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
-            for kind in [ItemKind.reviewRequest, .assignedIssue] {
-                var body = envelope(plan)
-                for (index, target) in plan.scope.targets.enumerated() {
-                    var metadata = body["target\(index)"] as! [String: Any]
-                    metadata[target.kind == .organization ? "login" : "nameWithOwner"] =
-                        target.kind == .organization ? "EXAMPLE" : "Example/PET"
-                    body["target\(index)"] = metadata
-                }
-                for search in plan.searches where search.kind == kind { body[search.alias] = page([], total: 1) }
-                let result = ScopedResponseParser.parse(try response(body), plan: plan)
-                #expect(result.complete && result.items.isEmpty && result.hidden == 1)
-                let engine = InboxEngine()
-                #expect(engine.apply(result.outcome, now: Date()).isEmpty)
-                #expect(engine.state == .hiddenOnly(1), "Hidden-only overlap must never become All clear or double-count")
-            }
-        }
-
-        // Multiple covered repositories add no duplicate count; unrelated owners and the
-        // disjoint issue/review categories still contribute independently. Visible IDs dedupe.
-        // Covered repositories' hidden matches sum to at most their org's (#60 LOW-A).
-        let targets = try [org, repo, MonitoringTarget(repository: "example/tools"),
-                           MonitoringTarget(repository: "other/pet")]
-        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
-        var body = envelope(plan)
-        for search in plan.searches {
-            let target = plan.scope.targets[search.targetIndex!]
-            if search.kind == .authoredPullRequest {
-                body[search.alias] = page()
-            } else if target.owner == "other" {
-                body[search.alias] = page([], total: search.kind == .reviewRequest ? 2 : 0)
-            } else if search.kind == .reviewRequest {
-                // org: 4 hidden; pet 3 + tools 1 = 4 covered.
-                body[search.alias] = page([row(repo: "example/pet")], total: target.kind == .organization ? 5 : 4)
-                if target.name == "tools" { body[search.alias] = page([], total: 1) }
-            } else {
-                // org: 5 hidden; pet 2 + tools 2 = 4 covered.
-                body[search.alias] = page([], total: target.kind == .organization ? 5 : 2)
-            }
-        }
-        let result = ScopedResponseParser.parse(try response(body), plan: plan)
-        #expect(result.complete && result.items.count == 1 && result.hidden == 11, "org reviews 4 + other reviews 2 + org issues 5")
-    }
-
-    /// #35 MED-1: a covered repository reporting more hidden matches than its organization in the
-    /// same category is a contradiction, so it must not be dropped into an All clear.
-    @Test func coveredRepositoryHiddenAboveItsOrganizationIsPartialNeverAllClear() throws {
-        let org = try MonitoringTarget(organization: "example")
-        let repo = try MonitoringTarget(repository: "example/pet")
-        for targets in [[org, repo], [repo, org]] {
-            let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: targets), expectedAccount: accountA)
-            let orgIndex = plan.scope.targets.firstIndex(of: org)!, repoIndex = plan.scope.targets.firstIndex(of: repo)!
-            for kind in [ItemKind.reviewRequest, .assignedIssue] {
-                let prefix = kind == .reviewRequest ? "reviews" : "assigned"
-                for (orgHidden, repoHidden, contradiction) in [(0, 3, true), (2, 3, true), (3, 3, false), (5, 3, false)] {
-                    var body = envelope(plan)
-                    for search in plan.searches { body[search.alias] = page([], total: 0) }
-                    body[prefix + String(orgIndex)] = page([], total: orgHidden)
-                    body[prefix + String(repoIndex)] = page([], total: repoHidden)
-                    let result = ScopedResponseParser.parse(try response(body), plan: plan)
-                    let engine = InboxEngine()
-                    _ = engine.apply(result.outcome, now: Date())
-                    if contradiction {
-                        #expect(!result.complete && result.hidden == 0, "\(prefix) org \(orgHidden) < repo \(repoHidden)")
-                        #expect(result.issues.contains(.capped(prefix + String(repoIndex))))
-                        #expect(engine.state == .partial, "never All clear or a trusted hidden count")
-                    } else {
-                        #expect(result.complete && result.hidden == orgHidden, "\(prefix) org \(orgHidden) covers repo \(repoHidden)")
-                        #expect(engine.state == .hiddenOnly(orgHidden))
-                    }
-                }
-            }
-        }
-    }
-
-    /// #60 (PR59 LOW-A): covered repositories' hidden matches are a subset of their org's, so their
-    /// per-owner SUM above the org's count is a contradiction too, even when no single repository is.
-    /// FAIL before: each repository was compared alone, so the org's undercount read complete.
-    @Test func coveredRepositoriesSummingAboveTheirOrganizationArePartial() throws {
-        let org = try MonitoringTarget(organization: "example")
-        let pet = try MonitoringTarget(repository: "example/pet"), tools = try MonitoringTarget(repository: "example/tools")
-        let other = try MonitoringTarget(repository: "other/pet")
-        let plan = try ScopeQueryPlan(scope: MonitoringScope(selected: [org, pet, tools, other]), expectedAccount: accountA)
-        func index(_ target: MonitoringTarget) -> Int { plan.scope.targets.firstIndex(of: target)! }
-        for kind in [ItemKind.reviewRequest, .assignedIssue] {
-            let prefix = kind == .reviewRequest ? "reviews" : "assigned"
-            // (org, pet, tools, other): other/pet is not covered by example and never counts toward its sum.
-            for (orgHidden, petHidden, toolsHidden, otherHidden, contradiction) in
-                    [(3, 2, 2, 0, true), (4, 2, 2, 0, false), (5, 2, 2, 9, false), (1, 1, 1, 0, true), (0, 0, 0, 4, false)] {
-                var body = envelope(plan)
-                for search in plan.searches { body[search.alias] = page([], total: 0) }
-                body[prefix + String(index(org))] = page([], total: orgHidden)
-                body[prefix + String(index(pet))] = page([], total: petHidden)
-                body[prefix + String(index(tools))] = page([], total: toolsHidden)
-                body[prefix + String(index(other))] = page([], total: otherHidden)
-                let result = ScopedResponseParser.parse(try response(body), plan: plan)
-                let label = "\(prefix) org \(orgHidden) vs repos \(petHidden)+\(toolsHidden)"
-                if contradiction {
-                    #expect(!result.complete && result.hidden == 0, "\(label)")
-                    #expect(result.issues.contains(.capped(prefix + String(index(pet))))
-                            && result.issues.contains(.capped(prefix + String(index(tools)))), "\(label)")
-                    let engine = InboxEngine(); _ = engine.apply(result.outcome, now: Date())
-                    #expect(engine.state == .partial, "\(label): never All clear or a trusted hidden count")
-                } else {
-                    #expect(result.complete && result.hidden == orgHidden + otherHidden, "\(label)")
-                }
-            }
-        }
-    }
-
-    @Test func overlappingAliasesStillFailClosedForEveryQualityAndIdentityGuard() throws {
-        let plan = try ScopeQueryPlan(scope: mixedScope(), expectedAccount: accountA)
+    @Test func batchedAliasesStillFailClosedForEveryQualityAndIdentityGuard() throws {
+        let plan = try ScopeQueryPlan(scope: crossScope(), expectedAccount: accountA)
         let org = plan.scope.targets.firstIndex { $0.kind == .organization }!
         let repo = plan.scope.targets.firstIndex { $0.kind == .repository }!
-        let full = (1...ScopeQueryPlan.rowsPerCategory).map { row("PR_fixture_\($0)") as Any }
         for kind in [ItemKind.reviewRequest, .assignedIssue] {
-            let prefix = kind == .reviewRequest ? "reviews" : "assigned"
+            let alias = (kind == .reviewRequest ? "reviews" : "assigned") + "0"
             for defect in ["missing", "cap", "contradiction", "row", "metadata", "unverified-org", "error", "account"] {
                 var body = envelope(plan)
-                body[prefix + String(org)] = page([], total: 1)
-                body[prefix + String(repo)] = page([], total: 1)
+                body[alias] = page([], total: 1)
                 var errors: [[String: Any]]?
-                var validRow = row()
+                var validRow = row(repo: "other/pet")
                 if kind == .assignedIssue {
                     validRow["__typename"] = "Issue"
-                    validRow["url"] = "https://github.com/example/pet/issues/1"
+                    validRow["url"] = "https://github.com/other/pet/issues/1"
                 }
                 switch defect {
-                case "missing": body.removeValue(forKey: prefix + String(repo))
-                case "cap": body[prefix + String(repo)] = page([], total: 1, more: true)
-                case "contradiction": body[prefix + String(repo)] = page([validRow], total: 0)
-                case "row": body[prefix + String(repo)] = page([NSNull()], total: 2)
+                case "missing": body.removeValue(forKey: alias)
+                case "cap": body[alias] = page([], total: 1, more: true)
+                case "contradiction": body[alias] = page([validRow], total: 0)
+                case "row": body[alias] = page([NSNull()], total: 2)
                 case "metadata": body["target\(repo)"] = ["__typename": "Repository", "id": "R_fixture", "nameWithOwner": "different/pet"]
                 case "unverified-org": body.removeValue(forKey: "target\(org)")
                 case "error": errors = [["message": "fixture failure"]]
                 default: body["viewer"] = ["id": accountB.viewerID, "login": "other-user"]
                 }
                 let result = ScopedResponseParser.parse(try response(body, errors: errors), plan: plan)
-                #expect(!result.complete && result.hidden == 0, "\(prefix) \(defect) must remain unverified")
+                #expect(!result.complete && result.hidden == 0, "\(alias) \(defect) must remain unverified")
             }
         }
-        // A full-page cap must also survive exclusion of the repository's hidden contribution.
-        var body = envelope(plan)
-        body["reviews\(org)"] = page([], total: 1)
-        body["reviews\(repo)"] = page(full, total: 40)
-        let capped = ScopedResponseParser.parse(try response(body), plan: plan)
-        #expect(!capped.complete && capped.hidden == 0 && capped.issues.contains(.capped("reviews\(repo)")))
     }
 
     @Test func malformedRowsCapsAndGraphQLErrorsCannotLookComplete() throws {
@@ -552,6 +611,48 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     private func client(_ runner: ScopeRunner, timeout: TimeInterval = 20) -> ScopedGhClient {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
+    }
+
+    /// #137: a large scope runs one preflight, then its requests in order, and merges them.
+    @Test func chunkedPollsMergeRequestsAndAnyFailureStaysPartial() throws {
+        let targets = try (0..<80).map { try MonitoringTarget(repository: "owner-\($0)/project-\($0)") }
+        let scope = try MonitoringScope(selected: targets)
+        let plans = try ScopeQueryPlan.requests(scope: scope, expectedAccount: accountA)
+        #expect(plans.count == 2)
+        func repository(_ plan: ScopeQueryPlan) -> String { let target = scope.targets[plan.lookups[0]]; return "\(target.owner)/\(target.name!)" }
+        func answer(_ plan: ScopeQueryPlan, hidden: Int = 0, viewer: ScopeAccount = accountA) throws -> CommandResult {
+            var body = envelope(plan)
+            body["viewer"] = ["id": viewer.viewerID, "login": "fixture-user"]
+            let reviews = plan.searches.first { $0.kind == .reviewRequest }!.alias
+            body[reviews] = page([row("PR_\(reviews)", repo: repository(plan))], total: 1 + hidden)
+            return CommandResult(exitCode: 0, stdout: try response(body))
+        }
+        let preflight = CommandResult(exitCode: 0)
+        let runner = ScopeRunner([preflight, try answer(plans[0], hidden: 2), try answer(plans[1], hidden: 3)])
+        let clean = client(runner).fetch(scope: scope, expectedAccount: accountA)
+        #expect(clean.complete && clean.items.count == 2 && clean.hidden == 5 && clean.successfulSources == plans.flatMap(\.searches).count)
+        #expect(runner.calls == [GhFailure.authStatusArguments] + plans.map(\.arguments), "one preflight, then each request in order")
+        // A later request that fails keeps the earlier rows, as Partial, with no hidden count.
+        let transport = CommandResult(exitCode: 1, stderr: Data("dial tcp: lookup failed".utf8))
+        let failedLater = client(ScopeRunner([preflight, try answer(plans[0], hidden: 2), transport])).fetch(scope: scope, expectedAccount: accountA)
+        #expect(!failedLater.complete && failedLater.items.count == 1 && failedLater.hidden == 0 && failedLater.issues.contains(.transport))
+        if case .snapshot(_, false, 0) = failedLater.outcome {} else { Issue.record("Partial expected: \(failedLater.outcome)") }
+        var capped = try answer(plans[1]); capped = CommandResult(exitCode: 0, stdout: try {
+            var body = envelope(plans[1]); body[plans[1].searches[0].alias] = page([], total: 1, more: true); return try response(body)
+        }())
+        let cappedLater = client(ScopeRunner([preflight, try answer(plans[0], hidden: 2), capped])).fetch(scope: scope, expectedAccount: accountA)
+        #expect(!cappedLater.complete && cappedLater.hidden == 0 && cappedLater.issues.contains(.capped(plans[1].searches[0].alias)))
+        // Another account answering any request wins at once: the session restores that account.
+        let switched = client(ScopeRunner([preflight, try answer(plans[0]), try answer(plans[1], viewer: accountB)]))
+            .fetch(scope: scope, expectedAccount: accountA)
+        #expect(switched.issues == [.identityMismatch] && switched.viewer?.account == accountB && switched.items.isEmpty)
+        // A first request with nothing usable ends the poll before the next one starts.
+        let stopped = ScopeRunner([preflight, transport, try answer(plans[1])])
+        let first = client(stopped).fetch(scope: scope, expectedAccount: accountA)
+        #expect(first.issues == [.transport] && stopped.calls.count == 2)
+        let signedOut = client(ScopeRunner([preflight, try answer(plans[0]), CommandResult(exitCode: 4, stderr: Data("gh auth login".utf8))]))
+            .fetch(scope: scope, expectedAccount: accountA)
+        #expect(signedOut.outcome == .failure(.unauthenticated))
     }
 
     /// An old gh without `auth status --active` fails the preflight with "unknown flag". That is only
@@ -727,13 +828,11 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     /// message on stderr AND the other targets' data on stdout. That is Partial with the readable
     /// rows and the denial quality line, not a whole-poll failure.
     @Test func samlDenialWithReadablePartialDataStaysPartialWithRows() throws {
-        let scope = try mixedScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        let scope = try crossScope(), plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
         let org = plan.scope.targets.firstIndex { $0.kind == .organization }!
         var body = envelope(plan)
         body["target\(org)"] = NSNull()
-        for search in plan.searches where search.targetIndex == org { body[search.alias] = NSNull() }
-        let repo = plan.scope.targets.firstIndex { $0.kind == .repository }!
-        body["reviews\(repo)"] = page([row()])
+        body["reviews0"] = page([row(repo: "other/pet")])
         let stderr = Data("GraphQL: Resource protected by organization SAML enforcement. You must grant your Personal Access token access to this organization. (target0)".utf8)
         for errors in [[["type": "FORBIDDEN", "path": ["target\(org)"], "message": "Resource protected by organization SAML enforcement."]], nil] as [[[String: Any]]?] {
             let stdout = try response(body, errors: errors)

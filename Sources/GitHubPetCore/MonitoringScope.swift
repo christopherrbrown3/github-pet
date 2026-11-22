@@ -71,7 +71,12 @@ public struct MonitoringTarget: Hashable, Sendable, Codable {
 
 public struct MonitoringScope: Equatable, Sendable, Codable {
     public enum Mode: String, Codable, Sendable { case everything, selected }
-    public static let maximumTargets = 10
+    /// A technical ceiling, not a product limit (#137). Every poll looks up each target's metadata
+    /// (see `ScopeQueryPlan`), and GitHub's per-query resource limits refuse one query with too
+    /// many (RESOURCE_LIMITS_EXCEEDED), so a poll runs one request per 50 targets, one after another,
+    /// each about 3-5 s on github.com. 500 targets is 10 requests per 120 s poll. An organization
+    /// counts once however many repositories it has.
+    public static let maximumTargets = 500
     public let mode: Mode
     public let targets: [MonitoringTarget]
     public static let everything = MonitoringScope()
@@ -142,7 +147,9 @@ public enum ScopeLoadResult: Equatable, Sendable {
 /// Separate records prevent one corrupt account selection from silently broadening another.
 /// Missing legacy/account records start at Everything; present-but-invalid records never do.
 public final class ScopeSelectionStore {
-    public static let maximumRecordBytes = 16 * 1024
+    /// A corruption guard, not a selection limit: `MonitoringScope.maximumTargets` targets of the
+    /// longest valid names (39-character owner, 100-character name) take about 95 KB (#137).
+    public static let maximumRecordBytes = 256 * 1024
     private let defaults: UserDefaults
     public init(defaults: UserDefaults) { self.defaults = defaults }
     static func key(_ identity: ScopeIdentity) -> String { "GitHubPet.monitoring-scope.v1." + identity.storageSuffix }

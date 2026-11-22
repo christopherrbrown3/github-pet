@@ -71,16 +71,22 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         #expect(draft.add("org:demo", kind: .organization) == .malformed)
     }
 
-    @Test func combinedLimitIsTenAcrossBothLists() {
+    /// #137: no product cap. The only ceiling is GitHub's per-request limits (500 targets), and its
+    /// message says so and points to choosing the whole organization.
+    @Test func onlyTheTechnicalCeilingLimitsBothLists() {
         var draft = ScopeDraft(scope: nil)
-        for index in 0..<6 { #expect(draft.add("demo-\(index)", kind: .organization) == nil) }
-        for index in 0..<4 { #expect(draft.add("demo-x/repo\(index)", kind: .repository) == nil) }
+        for index in 0..<250 { #expect(draft.add("demo-\(index)", kind: .organization) == nil) }
+        for index in 0..<250 { #expect(draft.add("demo-x/repo\(index)", kind: .repository) == nil) }
+        #expect(draft.add("demo-0", kind: .organization) == .duplicate, "duplicates are reported before the ceiling")
         #expect(draft.add("demo-extra", kind: .organization) == .overLimit)
         #expect(draft.add("demo-x/extra", kind: .repository) == .overLimit)
-        #expect(draft.add("demo-0", kind: .organization) == .duplicate, "duplicates are reported before the limit")
-        #expect(draft.candidate?.targets.count == 10)
+        #expect(draft.candidate?.targets.count == MonitoringScope.maximumTargets && draft.blockingMessage == nil)
         draft.remove(draft.rows[0].id)
         #expect(draft.add("demo-extra", kind: .organization) == nil)
+        for kind in [MonitoringTarget.Kind.organization, .repository] {
+            let message = ScopeRowProblem.overLimit.message(for: kind)
+            #expect(message.contains("GitHub limits") && message.contains("500") && message.contains("whole organization"))
+        }
     }
 
     @Test func editedRowsAreRevalidatedInline() throws {
@@ -212,6 +218,61 @@ private func repo(_ name: String) -> MonitoringTarget { try! MonitoringTarget(re
         let tiny = CommandBudget(timeout: 20, maximumBytes: 10, now: { clock.now() })
         #expect(ScopeGhAccess(locator: locator, runner: ScriptedRunner([ok(["data": body()])]))
             .validate(scope: scope, expectedAccount: accountA, budget: tiny) == .failed(.outputLimit))
+    }
+}
+
+/// #137: a large selection is validated in requests of at most 50 lookups each.
+@Suite struct ChunkedScopeValidationTests {
+    private let scope = try! MonitoringScope(selected: (0..<75).map { org("demo-\($0)") })
+    private func answer(_ plan: ScopeAccessPlan, account: ScopeAccount = accountA, missing: Int? = nil) -> CommandResult {
+        var data: [String: Any] = ["viewer": viewer(account)]
+        for index in plan.lookups { data["target\(index)"] = ["__typename": "Organization", "id": "O_\(index)", "login": plan.scope.targets[index].owner] }
+        guard let missing else { return ok(["data": data]) }
+        data["target\(missing)"] = NSNull()
+        return ok(["data": data, "errors": [["type": "NOT_FOUND", "path": ["target\(missing)"]]]], exit: 1)
+    }
+
+    @Test func requestsSplitLookupsAndEveryRequestMustVerify() {
+        let plans = ScopeAccessPlan.requests(scope: scope, expectedAccount: accountA)
+        #expect(plans.map(\.lookups.count) == [50, 25] && plans.flatMap(\.lookups) == Array(scope.targets.indices))
+        for plan in plans { HostileArgvTests.assertWellFormed(plan.arguments) }
+        #expect(ScopeAccessPlan.requests(scope: try! MonitoringScope(selected: [org("demo")]), expectedAccount: accountA).count == 1)
+        func validate(_ replies: [CommandResult]) -> (ScopeAccessOutcome, ScriptedRunner) {
+            let runner = ScriptedRunner(replies)
+            return (ScopeGhAccess(locator: locator, runner: runner).validate(scope: scope, expectedAccount: accountA,
+                                                                             budget: CommandBudget(timeout: 20)), runner)
+        }
+        let (verified, runner) = validate(plans.map { answer($0) })
+        #expect(verified == .verified(ScopeViewer(account: accountA, login: "fixture-user")))
+        #expect(runner.calls == plans.map(\.arguments))
+        let (rejected, _) = validate([answer(plans[0]), answer(plans[1], missing: 60)])
+        #expect(rejected == .rejected(ScopeViewer(account: accountA, login: "fixture-user"), [scope.targets[60]: .unavailable]))
+        #expect(validate([answer(plans[0]), answer(plans[1], account: accountB)]).0 == .failed(.identityMismatch))
+        let (failed, stopped) = validate([CommandResult(exitCode: 1, stderr: Data("dial tcp: lookup failed".utf8)), answer(plans[1])])
+        #expect(failed == .failed(.transport) && stopped.calls.count == 1, "a failed request ends the check")
+        #expect(validate([answer(plans[0]), CommandResult(exitCode: 1, stderr: Data("dial tcp".utf8))]).0 == .failed(.transport),
+                "a later failure is never verified")
+    }
+
+    @Test func renewedBudgetIsFreshButSharesCancellation() throws {
+        let clock = FixedClock()
+        let cycle = CommandBudget(timeout: 20, maximumBytes: 100, now: { clock.now() })
+        #expect(cycle.reserve(90))
+        clock.advance(15)
+        let renewed = cycle.renewed()
+        #expect(cycle.remaining == 5 && renewed.remaining == 20)
+        #expect(renewed.reserve(100) && !cycle.reserve(20), "each budget has its own byte allowance")
+        let sibling = cycle.renewed()
+        renewed.cancel()
+        #expect(!cycle.isCancelled && !sibling.isCancelled, "cancelling a renewal does not cancel the operation")
+        cycle.cancel()
+        #expect(sibling.isCancelled && sibling.renewed().isCancelled)
+        #expect(throws: CommandError.cancelled) { try sibling.check() }
+        let other = CommandBudget(timeout: 20, now: { clock.now() }), early = other.renewed()
+        clock.advance(21)
+        #expect(throws: CommandError.timedOut) { try early.check() }
+        #expect(throws: CommandError.timedOut) { try other.check() }
+        try other.renewed().check()
     }
 }
 
