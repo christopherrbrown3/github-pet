@@ -158,7 +158,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                     // #77: 0 is requested both ways, 1000 is team-only, and injected rows are personal.
                     if index == 1000 && assignmentMode == .direct { continue }
                     let repo = index == 1000 ? "demo-outside/pet" : index == 0 ? "\(owner)/pet" : "\(owner)/new-pet"
-                    if let target = search.targetIndex, !scope.targets[target].includes(repo) { continue }
+                    if !plan.includes(search, repository: repo) { continue }
                     nodes.append(["__typename": "PullRequest", "id": "PR_\(account.viewerID)_\(index)", "number": index + 1,
                                   "title": "Simulated review \(index)", "url": "https://github.com/\(repo)/pull/\(index + 1)",
                                   "updatedAt": "2026-11-15T12:00:00Z", "repository": ["nameWithOwner": repo]])
@@ -166,7 +166,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
             }
             if search.kind == .assignedIssue && assignedCount > 0 {
                 let repo = "\(owner)/pet"
-                if search.targetIndex.map({ scope.targets[$0].includes(repo) }) ?? true {
+                if plan.includes(search, repository: repo) {
                     for offset in 0..<assignedCount {
                         let number = 300 + offset
                         nodes.append(["__typename": "Issue", "id": "I_\(account.viewerID)_\(number)", "number": number,
@@ -177,7 +177,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
             }
             if search.kind == .authoredPullRequest && authored != .off {
                 let repo = "\(owner)/pet"
-                if search.targetIndex.map({ scope.targets[$0].includes(repo) }) ?? true {
+                if plan.includes(search, repository: repo) {
                     let failing = authored == .checksFailing
                     let rows: [(String, Any, String, Bool, String, String)] = [
                         ("needs", "CHANGES_REQUESTED", "MERGEABLE", false, failing ? "FAILURE" : "SUCCESS", failing ? "b" : "a"),

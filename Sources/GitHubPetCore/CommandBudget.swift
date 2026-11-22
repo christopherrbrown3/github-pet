@@ -8,6 +8,9 @@ public final class CommandBudget: @unchecked Sendable {
     let deadline: ContinuousClock.Instant
     private let now: @Sendable () -> ContinuousClock.Instant
     let usesSystemClock: Bool
+    private let seconds: TimeInterval
+    /// The budget this one renews: its cancellation also cancels this one.
+    private let parent: CommandBudget?
     private let lock = NSLock()
     private let limit: Int
     private var used = 0
@@ -24,11 +27,19 @@ public final class CommandBudget: @unchecked Sendable {
         self.init(timeout: timeout, maximumBytes: maximumBytes, now: now, usesSystemClock: false)
     }
     private init(timeout: TimeInterval, maximumBytes: Int,
-                 now: @escaping @Sendable () -> ContinuousClock.Instant, usesSystemClock: Bool) {
-        self.now = now; self.usesSystemClock = usesSystemClock
+                 now: @escaping @Sendable () -> ContinuousClock.Instant, usesSystemClock: Bool, parent: CommandBudget? = nil) {
+        self.now = now; self.usesSystemClock = usesSystemClock; self.parent = parent
         let seconds = timeout.isFinite ? min(Self.maximumSeconds, max(0, timeout)) : 0
+        self.seconds = seconds
         deadline = now().advanced(by: .seconds(seconds))
         limit = min(Self.maximumBytes, max(0, maximumBytes))
+    }
+
+    /// A fresh budget of the same length, clock and byte allowance for one more request in the
+    /// same operation (#137: each chunk of a large monitoring scope). Cancelling this budget, or
+    /// any it was renewed from, cancels the renewal too.
+    public func renewed() -> CommandBudget {
+        CommandBudget(timeout: seconds, maximumBytes: limit, now: now, usesSystemClock: usesSystemClock, parent: self)
     }
 
     public var remaining: TimeInterval {
@@ -56,14 +67,17 @@ public final class CommandBudget: @unchecked Sendable {
     /// Latch cancellation for every command sharing this budget. Work on Dispatch threads has no
     /// Task to observe, so the owner bridges its Task cancellation here; it is never cleared.
     public func cancel() { lock.lock(); cancelled = true; lock.unlock() }
-    public var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+    public var isCancelled: Bool {
+        lock.lock(); let own = cancelled; lock.unlock()
+        return own || parent?.isCancelled == true
+    }
 
     /// Check the latched byte error, latched or current-Task cancellation and monotonic deadline.
     /// Real-I/O implementations call this while collecting and waiting, not only on exit.
     public func check() throws {
-        lock.lock(); let exceeded = overflow, cancelled = cancelled; lock.unlock()
+        lock.lock(); let exceeded = overflow; lock.unlock()
         if exceeded { throw CommandError.outputLimitExceeded }
-        if cancelled || Task.isCancelled { throw CommandError.cancelled }
+        if isCancelled || Task.isCancelled { throw CommandError.cancelled }
         if remaining <= 0 { throw CommandError.timedOut }
     }
 }

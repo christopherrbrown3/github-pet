@@ -4,7 +4,9 @@ import Foundation
 
 /// Why a draft row (or the typed Add field) cannot be applied. Messages contain no target names.
 public enum ScopeRowProblem: Equatable, Sendable {
-    case empty, malformed, duplicate, overLimit
+    case empty, malformed, duplicate
+    /// Past `MonitoringScope.maximumTargets`: GitHub's per-request limits, not a product cap (#137).
+    case overLimit
     /// Metadata validation: not found, or not readable by the validating account.
     case unavailable
     /// GitHub resolved the input to a different name (renamed/moved).
@@ -17,7 +19,8 @@ public enum ScopeRowProblem: Equatable, Sendable {
         case (.malformed, .organization): return "Use an organization login: letters, digits and hyphens, at most 39 characters."
         case (.malformed, .repository): return "Use owner/name: letters, digits and hyphens for the owner; letters, digits, '.', '-' and '_' for the name."
         case (.duplicate, _): return "Already in the selection."
-        case (.overLimit, _): return "At most \(MonitoringScope.maximumTargets) organizations and repositories in total."
+        case (.overLimit, _):
+            return "GitHub limits how much each check can look up, so GitHub Pet watches at most \(MonitoringScope.maximumTargets) organizations and repositories. To watch more repositories, choose their whole organization: it counts once and covers every repository in it."
         case (.unavailable, .organization): return "Not found, or this account cannot read this organization."
         case (.unavailable, .repository): return "Not found, or this account cannot read this repository."
         case (.renamed, _): return "GitHub reports a different current name. Enter the current name."
@@ -157,12 +160,28 @@ public enum ScopeAccessOutcome: Equatable, Sendable {
 public struct ScopeAccessPlan: Sendable {
     public let scope: MonitoringScope
     public let expectedAccount: ScopeAccount
+    /// Indices of the targets this request looks up (all of them unless chunked).
+    public let lookups: [Int]
     public let arguments: [String]
 
+    /// GitHub's per-query resource limits; see `ScopeQueryPlan.maximumTargetsPerRequest` (#137).
+    public static func requests(scope: MonitoringScope, expectedAccount: ScopeAccount) -> [ScopeAccessPlan] {
+        let size = ScopeQueryPlan.maximumTargetsPerRequest
+        return stride(from: 0, to: max(1, scope.targets.count), by: size).map { start in
+            ScopeAccessPlan(scope: scope, expectedAccount: expectedAccount,
+                            lookups: Array(start..<min(start + size, scope.targets.count)))
+        }
+    }
+
     public init(scope: MonitoringScope, expectedAccount: ScopeAccount) {
-        self.scope = scope; self.expectedAccount = expectedAccount
+        self.init(scope: scope, expectedAccount: expectedAccount, lookups: Array(scope.targets.indices))
+    }
+
+    init(scope: MonitoringScope, expectedAccount: ScopeAccount, lookups: [Int]) {
+        self.scope = scope; self.expectedAccount = expectedAccount; self.lookups = lookups
         var definitions: [String] = [], variables: [String] = [], fields = ["viewer { id login }"]
-        for (index, target) in scope.targets.enumerated() {
+        for index in lookups {
+            let target = scope.targets[index]
             definitions.append("$owner\(index): String!"); variables += ["-f", "owner\(index)=\(target.owner)"]
             if let name = target.name {
                 definitions.append("$name\(index): String!"); variables += ["-f", "name\(index)=\(name)"]
@@ -221,7 +240,7 @@ public enum ScopeAccessParser {
             for error in errors {
                 let type = error["type"] as? String
                 guard type == "NOT_FOUND" || type == "FORBIDDEN", let path = error["path"] as? [Any], path.count == 1,
-                      let alias = path.first as? String, plan.scope.targets.indices.contains(where: { "target\($0)" == alias }) else {
+                      let alias = path.first as? String, plan.lookups.contains(where: { "target\($0)" == alias }) else {
                     return .failed(.graphQLError)
                 }
                 deniedAliases.insert(alias)
@@ -231,7 +250,8 @@ public enum ScopeAccessParser {
         guard let viewer = ScopeGraphQL.viewer(body) else { return .failed(.viewerUnavailable) }
         guard viewer.account == plan.expectedAccount else { return .failed(.identityMismatch) }
         var problems: [MonitoringTarget: ScopeRowProblem] = [:]
-        for (index, target) in plan.scope.targets.enumerated() {
+        for index in plan.lookups {
+            let target = plan.scope.targets[index]
             let alias = "target\(index)"
             guard let value = body?[alias] else { return .failed(.malformedResponse) }
             if value is NSNull { problems[target] = .unavailable; continue }
@@ -418,7 +438,21 @@ public struct ScopeGhAccess: ScopeAccessChecking {
     public func validate(scope: MonitoringScope, expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeAccessOutcome {
         guard scope.mode == .selected else { return .failed(.malformedResponse) }
         guard let gh = locator.locate() else { return .failed(.ghMissing) }
-        let plan = ScopeAccessPlan(scope: scope, expectedAccount: expectedAccount)
+        // A large selection is checked in several requests (#137): the first on `budget`, each later
+        // one on a renewal of it. Any failure fails the check; findings from every request combine.
+        var viewer: ScopeViewer?, problems: [MonitoringTarget: ScopeRowProblem] = [:]
+        for (index, plan) in ScopeAccessPlan.requests(scope: scope, expectedAccount: expectedAccount).enumerated() {
+            switch validate(plan, gh: gh, budget: index == 0 ? budget : budget.renewed()) {
+            case .failed(let failure): return .failed(failure)
+            case .verified(let answered): viewer = answered
+            case .rejected(let answered, let found): viewer = answered; problems.merge(found) { first, _ in first }
+            }
+        }
+        guard let viewer else { return .failed(.viewerUnavailable) }
+        return problems.isEmpty ? .verified(viewer) : .rejected(viewer, problems)
+    }
+
+    private func validate(_ plan: ScopeAccessPlan, gh: URL, budget: CommandBudget) -> ScopeAccessOutcome {
         do {
             let result = try runner.run(executable: gh, arguments: plan.arguments, budget: budget)
             if let failure = ScopeGraphQL.transportFailure(result) { return .failed(failure) }

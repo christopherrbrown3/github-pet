@@ -96,9 +96,36 @@ import Testing
                                                    try MonitoringTarget(organization: "acme")])
         let arguments = try ScopeQueryPlan(scope: scope, expectedAccount: ScopeAccount(viewerID: "u1")).arguments
         Self.assertWellFormed(arguments)
-        #expect(arguments.contains { $0.hasSuffix("=is:pr is:open review-requested:@me repo:octo/.hidden") })
+        #expect(arguments.contains { $0.hasSuffix("=is:pr is:open review-requested:@me org:acme repo:octo/.hidden") })
         let query = try #require(arguments.first { $0.hasPrefix("query=") })
         #expect(!query.contains("repo:octo") && !query.contains("org:acme"))
+    }
+
+    /// #137: batched search strings are built client-side, one `-f key=value` element each, and
+    /// option-like names never become their own element or leave their qualifier.
+    @Test func batchedSearchPlansStayWellFormedAtAnySize() throws {
+        let optionLike = ["--version", "-f", "-x", "--", ".hidden", "-X", "--hostname"]
+        let account = try ScopeAccount(viewerID: "u1")
+        for count in [1, 10, 11, 100, 500] {
+            let targets = try (0..<count).map { index -> MonitoringTarget in
+                index % 5 == 4 ? try MonitoringTarget(organization: "acme-\(index)")
+                    : try MonitoringTarget(repository: "octo-\(index)/" + optionLike[index % optionLike.count])
+            }
+            let scope = try MonitoringScope(selected: targets)
+            for mode in [AssignmentMode.all, .direct] {
+                for plan in try ScopeQueryPlan.requests(scope: scope, expectedAccount: account, assignmentMode: mode) {
+                Self.assertWellFormed(plan.arguments, hostileValues: optionLike)
+                for search in plan.searches {
+                    let element = "\(search.alias)=\(search.query)"
+                    #expect(plan.arguments.filter { $0 == element }.count == 1)
+                    #expect(plan.arguments[plan.arguments.firstIndex(of: element)! - 1] == "-f")
+                    #expect(!search.query.contains { $0.isNewline || $0 == "\"" || $0 == "(" || $0 == ")" })
+                }
+                let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
+                #expect(!query.contains("octo") && !query.contains("acme") && !query.contains("repo:") && !query.contains("org:"))
+                }
+            }
+        }
     }
 
     /// Cursors and node IDs come from GitHub's answers, not from the user, but must be literal too.

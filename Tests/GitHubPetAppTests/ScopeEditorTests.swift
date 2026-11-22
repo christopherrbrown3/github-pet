@@ -203,8 +203,8 @@ private func readChildPID(_ fd: Int32) -> Int32? {
         editor.organizationInput = "demo-b"; editor.addOrganization()
         editor.update(editor.draft.rows[0].id, text: "demo b")
         #expect(!editor.canApply && editor.applyBlockedReason == "Correct the highlighted entries before applying.")
-        for index in 0..<10 { editor.repositoryInput = "demo-x/r\(index)"; editor.addRepository() }
-        #expect(editor.draft.rows.count == 10 && editor.repositoryInputProblem == .overLimit)
+        for index in 0..<12 { editor.repositoryInput = "demo-x/r\(index)"; editor.addRepository() }
+        #expect(editor.draft.rows.count == 13 && editor.repositoryInputProblem == nil, "no target cap (#137)")
         #expect(app.activeMonitoringScope == ScopeSimulation.selectedA)
     }
 

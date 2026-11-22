@@ -44,7 +44,7 @@ private final class FrozenClock: @unchecked Sendable {
     }
 
     @Test func everySettingsScenarioIsBuiltInAndParses() throws {
-        for name in ["settings-draft-apply-cancel", "settings-invalid-input", "settings-max-10", "settings-discovery-capped",
+        for name in ["settings-draft-apply-cancel", "settings-invalid-input", "settings-many-targets", "settings-discovery-capped",
                      "settings-discovery-partial", "settings-discovery-denied", "settings-discovery-identity-mismatch",
                      "settings-validation-failure-keeps-active", "settings-min-size-long-lists",
                      "hidden-features-upgrade"] {
@@ -95,11 +95,12 @@ private final class FrozenClock: @unchecked Sendable {
         #expect(blocked["applyBlockedReason"] as? String == "Correct the highlighted entries before applying.")
     }
 
-    @Test func maxTenRejectsTheEleventhAndAppliesTen() async throws {
-        let records = try await run("settings-max-10")
-        #expect(settings(try step(records, "add-11-rejected"))["repositoryInputError"] as? String == ScopeRowProblem.overLimit.message(for: .repository))
-        let applied = try step(records, "apply-ten")
-        #expect((applied["inbox"] as? [String: Any])?["scopeHeader"] as? String == "Monitoring scope · Selected · 5 organizations, 5 repositories")
+    /// #137: no cap. The eleventh and twelfth entries add, and all twelve apply.
+    @Test func manyTargetsAddAndApplyWithoutACap() async throws {
+        let records = try await run("settings-many-targets")
+        for label in ["add-11", "add-12"] { #expect(settings(try step(records, label))["repositoryInputError"] == nil, "\(label)") }
+        let applied = try step(records, "apply-twelve")
+        #expect((applied["inbox"] as? [String: Any])?["scopeHeader"] as? String == "Monitoring scope · Selected · 5 organizations, 7 repositories")
     }
 
     @Test func discoveryStatesAreRecorded() async throws {

@@ -1,10 +1,21 @@
 import Foundation
 import CoreFoundation
 
-/// One operation, one request-bound viewer. Every search has exactly one safe inclusion qualifier.
+/// One operation, one request-bound viewer. Target qualifiers are batched into a bounded number
+/// of searches per category (#137); every search string is built here and sent as one variable.
 public struct ScopeQueryPlan: Sendable {
     public static let rowsPerCategory = 30
-    /// One search per category and inclusion. Additive: a new category is one more entry here
+    /// GitHub rejects searches over 256 characters "not including operators or qualifiers" (REST
+    /// search docs) and with more than five AND/OR/NOT operators. Several `org:`/`repo:` qualifiers
+    /// in one search are ORed with no operator. Checked against github.com (#137): the issueCount
+    /// of a 100-qualifier search equalled the sum of its 100 single-repository counts, and a
+    /// 5,536-character, 200-qualifier search was accepted. Both bounds below stay inside that, and
+    /// a batch never holds more targets than one request looks up.
+    public static let maximumQualifiersPerSearch = maximumTargetsPerRequest
+    public static let maximumSearchLength = 4096
+    /// Category text without qualifiers, which GitHub limits to 256 characters.
+    static let maximumUnqualifiedLength = 256
+    /// One search per category and batch. Additive: a new category is one more entry here
     /// (and its row handling in `ScopedResponseParser`).
     public struct Category: Sendable {
         public let kind: ItemKind
@@ -25,6 +36,9 @@ public struct ScopeQueryPlan: Sendable {
                  fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"
                     + " reviews(last: 1, states: [CHANGES_REQUESTED]) { nodes { id submittedAt } }"),
     ]
+    static let directReviewQuery = "is:pr is:open user-review-requested:@me"
+    /// The longest category query: batches are shared by every category, so each one fits.
+    static let longestCategoryQuery = (categories.map(\.query) + [directReviewQuery]).map(\.utf8.count).max()!
     /// Changes whenever the category set changes, so a persisted baseline from an older set
     /// re-baselines silently instead of announcing a new category's existing items (#12).
     /// 4: authored changes-requested reasons use a stable key with chronological review evidence.
@@ -32,10 +46,20 @@ public struct ScopeQueryPlan: Sendable {
     public struct Search: Sendable {
         public let alias: String
         public let kind: ItemKind
-        public let targetIndex: Int?
+        /// Targets whose qualifiers this search ORs; empty for Everything.
+        public let targetIndices: [Int]
+        public let query: String
     }
+    /// Metadata lookups per request. GitHub's per-query resource limit (RESOURCE_LIMITS_EXCEEDED)
+    /// behaves like a server-time budget (#137): 190 lookups alone failed, and one set of 100 public
+    /// repositories took 5.5 s to look up and failed with its 3 searches on every attempt, while
+    /// 50 of them with the same searches took 4.9 s. 50 keeps each request well inside it and
+    /// GitHub's 10 s request timeout.
+    public static let maximumTargetsPerRequest = 50
     public let scope: MonitoringScope
     public let expectedAccount: ScopeAccount?
+    /// Indices of the targets whose metadata this request looks up (all of them unless chunked).
+    public let lookups: [Int]
     public let searches: [Search]
     public let arguments: [String]
     /// Viewer only: no search aliases and no target lookups, so no rows and no search cost.
@@ -43,20 +67,83 @@ public struct ScopeQueryPlan: Sendable {
 
     /// Identity-only request: resolves (or verifies) the viewer while no valid selection is known.
     public init(identityFor expectedAccount: ScopeAccount?) {
-        scope = .everything; self.expectedAccount = expectedAccount; searches = []; identityOnly = true
+        scope = .everything; self.expectedAccount = expectedAccount; lookups = []; searches = []; identityOnly = true
         arguments = ["api", "graphql", "--hostname", "github.com", "-f", "query=query {\nviewer { id login }\n}"]
     }
 
+    /// Target indices per search, in scope order. A repository whose owner is also a selected
+    /// organization is left out: the organization's searches already cover it, which keeps the
+    /// batches disjoint so per-search hidden counts add up without double counting.
+    /// Its metadata is still verified.
+    static func batches(_ targets: [MonitoringTarget]) -> [[Int]] {
+        let organizations = Set(targets.filter { $0.kind == .organization }.map(\.owner))
+        var batches: [[Int]] = [], current: [Int] = [], length = longestCategoryQuery
+        for (index, target) in targets.enumerated() {
+            if target.kind == .repository && organizations.contains(target.owner) { continue }
+            let added = 1 + target.qualifier.utf8.count
+            if !current.isEmpty && (length + added > maximumSearchLength || current.count == maximumQualifiersPerSearch) {
+                batches.append(current); current = []; length = longestCategoryQuery
+            }
+            current.append(index); length += added
+        }
+        if !current.isEmpty { batches.append(current) }
+        return batches
+    }
+
+    /// One request for the whole scope. Polls use `requests`, which splits a large scope.
     public init(scope: MonitoringScope = .everything, expectedAccount: ScopeAccount? = nil,
                 assignmentMode: AssignmentMode = .all) throws {
         guard scope.mode == .everything || expectedAccount != nil else { throw ScopeValidationError.invalidIdentity }
-        self.scope = scope; self.expectedAccount = expectedAccount
+        let batches = scope.mode == .everything ? [[]] : Self.batches(scope.targets)
+        self.init(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
+                  lookups: Array(scope.targets.indices), batches: Array(batches.enumerated()))
+    }
+
+    /// The poll's requests, run one after another: each looks up at most
+    /// `maximumTargetsPerRequest` targets and carries the searches of those targets' batches.
+    /// Batch numbers stay global, so every alias is unique across the poll. Repositories covered
+    /// by a selected organization have no batch; their lookups fill the remaining room.
+    public static func requests(scope: MonitoringScope, expectedAccount: ScopeAccount?,
+                                assignmentMode: AssignmentMode = .all) throws -> [ScopeQueryPlan] {
+        guard scope.mode == .selected, scope.targets.count > maximumTargetsPerRequest else {
+            return [try ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode)]
+        }
+        guard expectedAccount != nil else { throw ScopeValidationError.invalidIdentity }
+        var chunks: [(lookups: [Int], batches: [(offset: Int, element: [Int])])] = []
+        for batch in batches(scope.targets).enumerated() {
+            if chunks.isEmpty || chunks[chunks.count - 1].lookups.count + batch.element.count > maximumTargetsPerRequest {
+                chunks.append(([], []))
+            }
+            chunks[chunks.count - 1].lookups += batch.element; chunks[chunks.count - 1].batches.append(batch)
+        }
+        let searched = Set(chunks.flatMap(\.lookups))
+        for index in scope.targets.indices where !searched.contains(index) {
+            if let open = chunks.firstIndex(where: { $0.lookups.count < maximumTargetsPerRequest }) {
+                chunks[open].lookups.append(index)
+            } else { chunks.append(([index], [])) }
+        }
+        return chunks.map { chunk in
+            ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
+                           lookups: chunk.lookups.sorted(), batches: chunk.batches)
+        }
+    }
+
+    private init(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode,
+                 lookups: [Int], batches: [(offset: Int, element: [Int])]) {
+        self.scope = scope; self.expectedAccount = expectedAccount; self.lookups = lookups
         var definitions: [String] = [], variables: [(String, String)] = [], fields = ["viewer { id login }"]
         var searches: [Search] = []
         func variable(_ key: String, _ value: String) {
             definitions.append("$\(key): String!"); variables.append((key, value))
         }
-        for (index, target) in scope.targets.enumerated() {
+        // Keep these lookups on every poll. A search silently drops a qualifier it can't use: on
+        // github.com (#137) `repo:` with a renamed repository's old name, and with a repository that
+        // doesn't exist, each gave issueCount 0 with no error, alone or among other qualifiers
+        // (GitHub shows a repository you can't read as not existing). Only this metadata turns such a
+        // target into Partial instead of an empty, complete-looking result, so it can't be cached
+        // between polls. Re-checking cached node IDs with nodes(ids:) was no faster.
+        for index in lookups {
+            let target = scope.targets[index]
             variable("owner\(index)", target.owner)
             if let name = target.name {
                 variable("name\(index)", name)
@@ -65,20 +152,20 @@ public struct ScopeQueryPlan: Sendable {
                 fields.append("target\(index): organization(login: $owner\(index)) { __typename id login }")
             }
         }
-        let inclusions: [MonitoringTarget?] = scope.mode == .everything ? [nil] : scope.targets.map(Optional.some)
-        for (index, target) in inclusions.enumerated() {
+        for (index, batch) in batches {
+            let qualifiers = batch.map { " " + scope.targets[$0].qualifier }.joined()
             for category in Self.categories {
                 let alias = category.aliasPrefix + String(index)
-                let searchQuery = category.kind == .reviewRequest && assignmentMode == .direct
-                    ? "is:pr is:open user-review-requested:@me" : category.query
-                variable(alias, searchQuery + (target.map { " " + $0.qualifier } ?? ""))
+                let searchQuery = (category.kind == .reviewRequest && assignmentMode == .direct
+                    ? Self.directReviewQuery : category.query) + qualifiers
+                variable(alias, searchQuery)
                 fields.append("""
                     \(alias): search(query: $\(alias), type: ISSUE, first: \(Self.rowsPerCategory)) {
                       issueCount pageInfo { hasNextPage }
                       nodes { __typename ... on \(category.type) { id number title url updatedAt repository { nameWithOwner }\(category.fields) } }
                     }
                     """)
-                searches.append(Search(alias: alias, kind: category.kind, targetIndex: target == nil ? nil : index))
+                searches.append(Search(alias: alias, kind: category.kind, targetIndices: batch, query: searchQuery))
             }
         }
         self.searches = searches
@@ -86,6 +173,11 @@ public struct ScopeQueryPlan: Sendable {
         let query = "query(\(definitions.joined(separator: ", "))) {\n\(fields.joined(separator: "\n"))\n}"
         self.arguments = ["api", "graphql", "--hostname", "github.com", "-f", "query=\(query)"]
             + variables.flatMap { ["-f", "\($0.0)=\($0.1)"] }
+    }
+
+    /// Whether `repository` belongs to one of the search's targets (always, for Everything).
+    public func includes(_ search: Search, repository: String) -> Bool {
+        search.targetIndices.isEmpty || search.targetIndices.contains { scope.targets[$0].includes(repository) }
     }
 }
 
@@ -190,8 +282,8 @@ public enum ScopedResponseParser {
         let viewer = ScopeViewer(account: account, login: login)
         if let expected = plan.expectedAccount, expected != account { return .failure(.identityMismatch, viewer: viewer) }
         var verified = Set<Int>()
-        var verifiedOwners: [Int: String] = [:]
-        for (index, target) in plan.scope.targets.enumerated() {
+        for index in plan.lookups {
+            let target = plan.scope.targets[index]
             guard let metadata = body["target\(index)"] as? [String: Any] else {
                 issues.append(.targetUnavailable(index)); continue
             }
@@ -205,12 +297,7 @@ public enum ScopedResponseParser {
             } else {
                 matches = type == "Repository" && (metadata["nameWithOwner"] as? String)?.lowercased() == "\(target.owner)/\(target.name!)"
             }
-            if matches {
-                verified.insert(index)
-                // Use the canonical response name only after metadata has verified this target.
-                let canonicalName = metadata[target.kind == .organization ? "login" : "nameWithOwner"] as? String
-                verifiedOwners[index] = canonicalName?.split(separator: "/").first.map { String($0).lowercased() }
-            } else { issues.append(.malformedTarget(index)) }
+            if matches { verified.insert(index) } else { issues.append(.malformedTarget(index)) }
         }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
@@ -218,7 +305,10 @@ public enum ScopedResponseParser {
         var authoredStates: [String: AuthoredAttention] = [:]
         var hiddenByAlias: [String: Int] = [:]
         for search in plan.searches {
-            if let index = search.targetIndex, !verified.contains(index) { continue }
+            // A batch runs once any of its targets is verified. Rows of its unverified targets are
+            // dropped below, and that target's own issue already keeps the poll Partial.
+            let verifiedTargets = search.targetIndices.filter(verified.contains)
+            if !search.targetIndices.isEmpty && verifiedTargets.isEmpty { continue }
             guard let page = body[search.alias] as? [String: Any] else { issues.append(.missingSource(search.alias)); continue }
             guard let count = integer(page["issueCount"]), let nodes = page["nodes"] as? [Any],
                   nodes.count <= ScopeQueryPlan.rowsPerCategory,
@@ -243,9 +333,11 @@ public enum ScopedResponseParser {
                       let repository = try? MonitoringTarget(repository: row.repository.nameWithOwner),
                       let url = SafeLink.validated(row.url),
                       url.path.lowercased() == "/\(repository.owner)/\(repository.name!)/\(search.kind == .assignedIssue ? "issues" : "pull")/\(row.number)",
-                      search.targetIndex.map({ plan.scope.targets[$0].includes(row.repository.nameWithOwner) }) ?? true else {
+                      plan.includes(search, repository: row.repository.nameWithOwner) else {
                     issues.append(.malformedRow(search.alias)); continue
                 }
+                if !search.targetIndices.isEmpty
+                    && !verifiedTargets.contains(where: { plan.scope.targets[$0].includes(row.repository.nameWithOwner) }) { continue }
                 let key = "\(search.kind.rawValue):\(row.id)"
                 guard sourceIDs.insert(key).inserted else { issues.append(.malformedRow(search.alias)); continue }
                 var attention: String?, attentionKeys: [String] = []
@@ -273,43 +365,11 @@ public enum ScopedResponseParser {
         }
         // Hidden counts are trusted only in a clean response. With any error, malformed or missing
         // source/row, those aliases stay capped (Partial) exactly as before: when in doubt, Partial.
-        // An org search already counts its repositories for the same category, so a covered
-        // repository's hidden count is excluded. No containment is inferred for unverified owners.
-        var organizationHidden: [ItemKind: [String: Int]] = [:]
-        for search in plan.searches {
-            guard let index = search.targetIndex, plan.scope.targets[index].kind == .organization,
-                  let owner = verifiedOwners[index] else { continue }
-            organizationHidden[search.kind, default: [:]][owner] = max(organizationHidden[search.kind]?[owner] ?? 0,
-                                                                      hiddenByAlias[search.alias] ?? 0)
-        }
-        /// The verified owner of a repository search whose org is also searched for the same kind.
-        func coveringOwner(_ search: ScopeQueryPlan.Search) -> String? {
-            guard let index = search.targetIndex, plan.scope.targets[index].kind == .repository,
-                  let owner = verifiedOwners[index], organizationHidden[search.kind]?[owner] != nil else { return nil }
-            return owner
-        }
-        func coveringHidden(_ search: ScopeQueryPlan.Search) -> Int? {
-            coveringOwner(search).flatMap { organizationHidden[search.kind]?[$0] }
-        }
-        // Covered repositories' hidden matches are a subset of their org's, so their per-owner sum
-        // above the org's count contradicts that coverage (#35 MED-1, #60 LOW-A): never drop it into
-        // All clear; treat the response as capped (Partial).
-        if issues.isEmpty {
-            var coveredHidden: [ItemKind: [String: Int]] = [:]
-            for search in plan.searches {
-                guard let owner = coveringOwner(search) else { continue }
-                coveredHidden[search.kind, default: [:]][owner, default: 0] += hiddenByAlias[search.alias] ?? 0
-            }
-            issues += plan.searches.filter { search in
-                guard let owner = coveringOwner(search), let org = organizationHidden[search.kind]?[owner] else { return false }
-                return (coveredHidden[search.kind]?[owner] ?? 0) > org
-            }.map { ScopedFetchIssue.capped($0.alias) }
-        }
+        // A category's batches never overlap (a repository under a selected organization is left to
+        // that organization's search), so their hidden counts add up without double counting.
         var hidden = 0
         if issues.isEmpty {
-            for search in plan.searches where coveringHidden(search) == nil {
-                hidden += hiddenByAlias[search.alias] ?? 0
-            }
+            hidden = hiddenByAlias.values.reduce(0, +)
         } else {
             let capped = Set(issues.compactMap { issue -> String? in if case .capped(let alias) = issue { return alias }; return nil })
             issues += hiddenByAlias.keys.sorted().filter { !capped.contains($0) }.map { ScopedFetchIssue.capped($0) }
@@ -347,18 +407,41 @@ public struct ScopedGhClient: ScopedPolling {
         fetch(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
               budget: CommandBudget(timeout: timeout))
     }
+    /// A large scope is several requests, one after another (#137). The first uses `budget` (the
+    /// cycle's, shared with the preflight); each later one gets a renewed budget of its own, which
+    /// still stops when `budget` is cancelled. Results merge into one poll; any request's issue
+    /// keeps the whole poll Partial, and a different account answering ends the poll at once.
     public func fetch(scope: MonitoringScope, expectedAccount: ScopeAccount?, assignmentMode: AssignmentMode = .all,
                       budget: CommandBudget) -> ScopedPollResult {
-        guard let plan = try? ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode) else {
+        guard let plans = try? ScopeQueryPlan.requests(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode) else {
             return .failure(.identityRequired)
         }
-        return run(plan, budget: budget)
+        guard let gh = locator.locate() else { return .failure(.ghMissing) }
+        if let failure = preflight(gh, budget: budget) { return failure }
+        var merged = run(plans[0], gh: gh, budget: budget)
+        for plan in plans.dropFirst() {
+            guard merged.viewer != nil, !merged.issues.contains(.identityMismatch), !budget.isCancelled else { break }
+            let next = run(plan, gh: gh, budget: budget.renewed())
+            if next.issues.contains(.identityMismatch) { return next }
+            merged = Self.merge(merged, next)
+        }
+        return merged
     }
     public func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
-        run(ScopeQueryPlan(identityFor: expectedAccount), budget: budget)
-    }
-    private func run(_ plan: ScopeQueryPlan, budget: CommandBudget) -> ScopedPollResult {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
+        if let failure = preflight(gh, budget: budget) { return failure }
+        return run(ScopeQueryPlan(identityFor: expectedAccount), gh: gh, budget: budget)
+    }
+    /// Requests cover disjoint targets and searches, so rows, sources and waiting counts add up.
+    /// Hidden counts are trusted only when every request was clean.
+    static func merge(_ first: ScopedPollResult, _ next: ScopedPollResult) -> ScopedPollResult {
+        let issues = first.issues + next.issues
+        return ScopedPollResult(viewer: first.viewer, items: InboxEngine.dedupe(first.items + next.items), issues: issues,
+                                successfulSources: first.successfulSources + next.successfulSources,
+                                hidden: issues.isEmpty ? first.hidden + next.hidden : 0,
+                                waitingOnOthers: first.waitingOnOthers + next.waitingOnOthers)
+    }
+    private func preflight(_ gh: URL, budget: CommandBudget) -> ScopedPollResult? {
         do {
             let auth = try runner.run(executable: gh, arguments: GhFailure.authStatusArguments, budget: budget)
             guard auth.outputComplete else { return .failure(.incompleteOutput) }
@@ -370,6 +453,19 @@ public struct ScopedGhClient: ScopedPolling {
                 case .transport, .ghMissing: return .failure(.transport)
                 }
             }
+            return nil
+        } catch { return Self.failure(error) }
+    }
+    private static func failure(_ error: Error) -> ScopedPollResult {
+        switch error {
+        case CommandError.outputLimitExceeded: return .failure(.outputLimit)
+        case CommandError.timedOut: return .failure(.deadline)
+        case CommandError.cancelled: return .failure(.cancelled)
+        default: return .failure(.transport)
+        }
+    }
+    private func run(_ plan: ScopeQueryPlan, gh: URL, budget: CommandBudget) -> ScopedPollResult {
+        do {
             let result = try runner.run(executable: gh, arguments: plan.arguments, budget: budget)
             if Self.authFailure(result) { return .failure(.signedOut) }
             guard result.outputComplete else { return .failure(.incompleteOutput) }
@@ -395,9 +491,6 @@ public struct ScopedGhClient: ScopedPolling {
                                         successfulSources: parsed.successfulSources)
             }
             return parsed
-        } catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
-        catch CommandError.timedOut { return .failure(.deadline) }
-        catch CommandError.cancelled { return .failure(.cancelled) }
-        catch { return .failure(.transport) }
+        } catch { return Self.failure(error) }
     }
 }
