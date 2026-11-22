@@ -61,6 +61,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     func setAuthored(_ mode: Authored) { lock.lock(); authored = mode; lock.unlock() }
     func setVisibility(_ mode: Visibility) { lock.lock(); visibility = mode; lock.unlock() }
     var currentVisibility: Visibility { lock.lock(); defer { lock.unlock() }; return visibility }
+    private var afterReply: (@Sendable () -> Void)?
+    func afterNextReply(_ action: @escaping @Sendable () -> Void) { lock.lock(); afterReply = action; lock.unlock() }
     func holdNextReply(_ count: Int = 1) { lock.lock(); holdNext += max(0, count); lock.unlock() }
     func releaseReplies() {
         lock.lock(); let replies = held; held = []; lock.unlock()
@@ -235,6 +237,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
             catch { return .failure(.cancelled) }
         }
         let parsed = ScopedResponseParser.parse(bytes, plan: plan)
+        lock.lock(); let after = afterReply; afterReply = nil; lock.unlock()
+        after?()
         return ScopedPollResult(viewer: parsed.viewer, items: parsed.items.map {
             var item = $0; item.isDemo = true; return item
         }, issues: parsed.issues, successfulSources: parsed.successfulSources, hidden: parsed.hidden,

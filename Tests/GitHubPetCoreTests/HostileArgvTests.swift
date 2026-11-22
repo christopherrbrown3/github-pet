@@ -126,6 +126,29 @@ import Testing
                 }
             }
         }
+        // #142: the fallback for an organization that failed its lookup searches its covered,
+        // option-like repositories the same way, at any size up to the ceiling.
+        for count in [1, 49, 50, 51, 499] {
+            let covered = try (0..<count).map { try MonitoringTarget(repository: "acme/" + optionLike[$0 % optionLike.count] + "\($0)") }
+            let scope = try MonitoringScope(selected: [try MonitoringTarget(organization: "acme")] + covered)
+            let org = try #require(scope.targets.firstIndex { $0.kind == .organization })
+            for mode in [AssignmentMode.all, .direct] {
+                let plans = ScopeQueryPlan.fallbackRequests(scope: scope, expectedAccount: account, assignmentMode: mode,
+                                                            issues: [.targetUnavailable(org)])
+                #expect(plans.flatMap(\.lookups).count == count && !plans.isEmpty)
+                for plan in plans {
+                    Self.assertWellFormed(plan.arguments, hostileValues: optionLike)
+                    for search in plan.searches {
+                        let element = "\(search.alias)=\(search.query)"
+                        #expect(plan.arguments.filter { $0 == element }.count == 1)
+                        #expect(plan.arguments[plan.arguments.firstIndex(of: element)! - 1] == "-f")
+                        #expect(!search.query.contains("org:"), "a failed organization is never searched again")
+                    }
+                    let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
+                    #expect(!query.contains("acme") && !query.contains("repo:"))
+                }
+            }
+        }
     }
 
     /// Cursors and node IDs come from GitHub's answers, not from the user, but must be literal too.

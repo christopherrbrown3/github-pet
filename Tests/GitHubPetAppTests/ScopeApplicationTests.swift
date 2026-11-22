@@ -8,6 +8,7 @@ private final class FixtureBudgetClock: @unchecked Sendable {
     private let lock = NSLock()
     private var instant = ContinuousClock.now
     func now() -> ContinuousClock.Instant { lock.lock(); defer { lock.unlock() }; return instant }
+    func advance(_ duration: Duration) { lock.lock(); instant = instant.advanced(by: duration); lock.unlock() }
 }
 
 // Hang guard only: every wait below is an explicit handshake, so passing never depends on
@@ -214,6 +215,18 @@ private final class FixtureBudgetClock: @unchecked Sendable {
         app.simulateScopeAccount(false); try await settled(app)
         #expect(app.items.count == 1 && app.items.allSatisfy { $0.repository == "demo-a/pet" })
         #expect(app.activeMonitoringScope == ScopeSimulation.selectedA && app.unseenCount == 0 && app.activeClip == nil)
+    }
+    /// #142 LOW: an identity mismatch found after the cycle's budget is spent (as in a late chunk
+    /// of a long poll) still refetches the other account's scope, with a renewed budget.
+    @Test func identityRefetchAfterTheCycleBudgetIsSpentStillRestoresTheAccount() async throws {
+        let inputs = Inputs(), app = model(inputs: inputs); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        let clock = inputs.budgetClock
+        app.simulateScopeAfterNextReply { clock.advance(.seconds(25)) }
+        app.simulateScopeAccount(true); try await settled(app)
+        #expect(app.simulatedRequests.suffix(2).map(\.expected) == [ScopeSimulation.accountA, ScopeSimulation.accountB])
+        #expect(app.items.count == 1 && app.items.allSatisfy { $0.repository == "demo-b/pet" }, "not a .deadline failure")
+        #expect(app.activeMonitoringScope == ScopeSimulation.selectedB && app.dataState == .ready)
     }
     @Test func lateReplyAfterApplyCannotReplaceNewRowsOrAttention() async throws {
         let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)

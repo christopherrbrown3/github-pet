@@ -363,6 +363,59 @@ private func checkViewerDisplayLogins(_ fetch: (Data, ScopeQueryPlan) -> ScopedP
         }
     }
 
+    /// #142: only an organization whose lookup failed brings its covered repositories back as
+    /// `repo:` searches, and only those whose own lookup didn't fail. Within every batch limit.
+    @Test func fallbackSearchesOnlyCoveredRepositoriesOfAFailedOrganization() throws {
+        let targets = try [MonitoringTarget(organization: "example"), MonitoringTarget(repository: "example/pet"),
+                           MonitoringTarget(repository: "example/tools"), MonitoringTarget(organization: "acme"),
+                           MonitoringTarget(repository: "acme/app"), MonitoringTarget(repository: "other/pet")]
+        let scope = try MonitoringScope(selected: targets)
+        func index(_ qualifier: String) -> Int { scope.targets.firstIndex { $0.qualifier == qualifier }! }
+        func fallback(_ issues: [ScopedFetchIssue], expected: ScopeAccount? = accountA) -> [ScopeQueryPlan] {
+            ScopeQueryPlan.fallbackRequests(scope: scope, expectedAccount: expected, issues: issues)
+        }
+        let main = try ScopeQueryPlan.requests(scope: scope, expectedAccount: accountA)
+        #expect(fallback([]).isEmpty, "every organization readable: nothing is searched twice")
+        #expect(fallback([.graphQLError, .capped("reviews0"), .targetUnavailable(index("repo:other/pet"))]).isEmpty)
+        #expect(fallback([.targetUnavailable(index("org:example"))], expected: nil).isEmpty)
+        #expect(ScopeQueryPlan.fallbackRequests(scope: .everything, expectedAccount: accountA, issues: [.targetUnavailable(0)]).isEmpty)
+        for issue in [ScopedFetchIssue.targetUnavailable(index("org:example")), .malformedTarget(index("org:example"))] {
+            let plans = fallback([.graphQLError, issue])
+            #expect(plans.count == 1)
+            let plan = try #require(plans.first)
+            #expect(plan.lookups == [index("repo:example/pet"), index("repo:example/tools")], "acme is readable: acme/app is not searched again")
+            #expect(plan.searches.count == 3 && plan.searches.allSatisfy { $0.query.hasSuffix(" repo:example/pet repo:example/tools") })
+            #expect(plan.searches.allSatisfy { !$0.query.contains("org:") })
+            #expect(Set(plan.searches.map(\.alias)).isDisjoint(with: main.flatMap(\.searches).map(\.alias)), "aliases stay unique in the poll")
+            HostileArgvTests.assertWellFormed(plan.arguments)
+        }
+        // A covered repository whose own lookup failed is not searched: it is already Partial.
+        let one = fallback([.targetUnavailable(index("org:example")), .targetUnavailable(index("repo:example/tools"))])
+        #expect(one.map(\.lookups) == [[index("repo:example/pet")]])
+        #expect(fallback([.targetUnavailable(index("org:example")), .targetUnavailable(index("repo:example/pet")),
+                          .malformedTarget(index("repo:example/tools"))]).isEmpty)
+        // Both organizations failed: both covered sets, still one request.
+        let both = fallback([.targetUnavailable(index("org:example")), .targetUnavailable(index("org:acme"))])
+        #expect(both.map(\.lookups) == [[index("repo:acme/app"), index("repo:example/pet"), index("repo:example/tools")]])
+
+        // At the ceiling: one organization and 499 covered repositories with the longest names.
+        let long = String(repeating: "r", count: 90)
+        let big = try MonitoringScope(selected: [MonitoringTarget(organization: "big")]
+            + (0..<499).map { try MonitoringTarget(repository: "big/\(long)\($0)") })
+        let bigMain = try ScopeQueryPlan.requests(scope: big, expectedAccount: accountA)
+        let plans = ScopeQueryPlan.fallbackRequests(scope: big, expectedAccount: accountA, issues: [.targetUnavailable(0)])
+        #expect(plans.flatMap(\.lookups).sorted() == Array(1..<500), "every covered repository looked up and searched once")
+        #expect(plans.count == 10 && plans.allSatisfy { $0.lookups.count <= ScopeQueryPlan.maximumTargetsPerRequest })
+        for plan in plans {
+            #expect(plan.searches.allSatisfy { Set($0.targetIndices).isSubset(of: plan.lookups) }, "a batch travels with its lookups")
+            #expect(plan.searches.allSatisfy { $0.targetIndices.count <= ScopeQueryPlan.maximumQualifiersPerSearch })
+            #expect(plan.searches.allSatisfy { $0.query.utf8.count <= ScopeQueryPlan.maximumSearchLength })
+            HostileArgvTests.assertWellFormed(plan.arguments)
+        }
+        let aliases = (bigMain + plans).flatMap(\.searches).map(\.alias)
+        #expect(Set(aliases).count == aliases.count)
+    }
+
     /// Batches are disjoint, so hidden counts add across them; a batch that fills its page is
     /// capped (Partial) on its own, whatever the other batches report.
     @Test func hiddenCountsAddAcrossBatchesAndAFullBatchIsPartial() throws {
@@ -600,10 +653,17 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     var calls: [[String]] = []
     var timeouts: [TimeInterval] = []
     var delay: TimeInterval = 0
+    /// Called with the number of calls so far, after each one.
+    var afterCall: ((Int) -> Void)?
     init(_ replies: [CommandResult]) { self.replies = replies }
     func run(executable: URL, arguments: [String], timeout: TimeInterval) throws -> CommandResult {
         calls.append(arguments); timeouts.append(timeout)
         if delay > 0 { Thread.sleep(forTimeInterval: delay) }
+        defer { afterCall?(calls.count) }
+        guard !replies.isEmpty else {
+            Issue.record("unexpected extra request")
+            return CommandResult(exitCode: 1, stderr: Data("fixture: no reply left".utf8))
+        }
         return replies.removeFirst()
     }
 }
@@ -611,6 +671,133 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
     private func client(_ runner: ScopeRunner, timeout: TimeInterval = 20) -> ScopedGhClient {
         ScopedGhClient(locator: GhLocator(environment: [GhLocator.overrideVariable: "/fixture/gh"], isExecutable: { _ in true }),
                        runner: runner, timeout: timeout)
+    }
+
+    /// One answer for any plan: `unavailable` lookups resolve to nothing (GitHub's NOT_FOUND, as for
+    /// a renamed organization or a user login saved as one), and every search returns one review
+    /// row per target (an organization's in a sample repository).
+    private func answer(_ plan: ScopeQueryPlan, unavailable: Set<Int> = [], viewer: ScopeAccount = accountA) throws -> CommandResult {
+        var body = envelope(plan)
+        body["viewer"] = ["id": viewer.viewerID, "login": "fixture-user"]
+        var errors: [[String: Any]] = []
+        for index in plan.lookups where unavailable.contains(index) {
+            body["target\(index)"] = NSNull()
+            errors.append(["type": "NOT_FOUND", "path": ["target\(index)"], "message": "Could not resolve to an Organization with the login of 'fixture'."])
+        }
+        for search in plan.searches where search.kind == .reviewRequest {
+            body[search.alias] = page(search.targetIndices.prefix(ScopeQueryPlan.rowsPerCategory).map { index in
+                let target = plan.scope.targets[index]
+                return row("PR_\(search.alias)_\(index)", repo: "\(target.owner)/\(target.name ?? "sample")")
+            })
+        }
+        guard !errors.isEmpty else { return CommandResult(exitCode: 0, stdout: try response(body)) }
+        return CommandResult(exitCode: 1, stdout: try response(body, errors: errors),
+                             stderr: Data("GraphQL: Could not resolve to an Organization with the login of 'fixture'.".utf8))
+    }
+
+    /// #142: an organization that no longer resolves no longer hides its covered repositories:
+    /// their rows come from a fallback request in the same poll, which stays Partial.
+    @Test func failedOrganizationLookupFallsBackToItsCoveredRepositories() throws {
+        let scope = try MonitoringScope(selected: [MonitoringTarget(organization: "example"),
+                                                   MonitoringTarget(repository: "example/pet"),
+                                                   MonitoringTarget(repository: "other/pet")])
+        let org = scope.targets.firstIndex { $0.kind == .organization }!
+        let plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        let fallback = ScopeQueryPlan.fallbackRequests(scope: scope, expectedAccount: accountA, issues: [.targetUnavailable(org)])
+        #expect(fallback.count == 1)
+        let runner = ScopeRunner([CommandResult(exitCode: 0), try answer(plan, unavailable: [org]), try answer(fallback[0])])
+        let result = client(runner).fetch(scope: scope, expectedAccount: accountA)
+        #expect(runner.calls == [GhFailure.authStatusArguments, plan.arguments, fallback[0].arguments], "the fallback runs in the same poll")
+        #expect(Set(result.items.map(\.repository)) == ["example/pet", "other/pet"], "\(result.items.map(\.repository))")
+        #expect(result.issues.contains(.targetUnavailable(org)) && !result.complete && result.hidden == 0, "the failure is still reported")
+        guard case .snapshot(let rows, false, 0) = result.outcome else { Issue.record("Partial expected: \(result.outcome)"); return }
+        #expect(rows.count == 2)
+
+        // Only the organization and one covered repository: without the fallback nothing at all
+        // would show. With it the covered row shows, as Partial, never as an empty inbox.
+        let small = try MonitoringScope(selected: [MonitoringTarget(organization: "example"), MonitoringTarget(repository: "example/pet")])
+        let smallPlan = try ScopeQueryPlan(scope: small, expectedAccount: accountA)
+        let smallFallback = ScopeQueryPlan.fallbackRequests(scope: small, expectedAccount: accountA, issues: [.targetUnavailable(0)])
+        let alone = client(ScopeRunner([CommandResult(exitCode: 0), try answer(smallPlan, unavailable: [0]), try answer(smallFallback[0])]))
+            .fetch(scope: small, expectedAccount: accountA)
+        #expect(alone.items.map(\.repository) == ["example/pet"] && alone.issues.contains(.targetUnavailable(0)))
+        guard case .snapshot(_, false, 0) = alone.outcome else { Issue.record("Partial expected: \(alone.outcome)"); return }
+        // A fallback that also finds nothing readable still reports Partial, never empty and complete.
+        let none = client(ScopeRunner([CommandResult(exitCode: 0), try answer(smallPlan, unavailable: [0]),
+                                       try answer(smallFallback[0], unavailable: [1])])).fetch(scope: small, expectedAccount: accountA)
+        #expect(none.items.isEmpty && none.issues.contains(.targetUnavailable(0)) && none.issues.contains(.targetUnavailable(1)))
+        if case .snapshot(_, true, _) = none.outcome { Issue.record("must never look complete") }
+        // A fallback that fails keeps the poll's rows and adds its own issue.
+        let transport = CommandResult(exitCode: 1, stderr: Data("dial tcp: lookup failed".utf8))
+        let failed = client(ScopeRunner([CommandResult(exitCode: 0), try answer(plan, unavailable: [org]), transport]))
+            .fetch(scope: scope, expectedAccount: accountA)
+        #expect(failed.items.map(\.repository) == ["other/pet"] && failed.issues.contains(.transport) && failed.issues.contains(.targetUnavailable(org)))
+        // Another account answering the fallback wins at once, as in any chunk.
+        let switched = client(ScopeRunner([CommandResult(exitCode: 0), try answer(plan, unavailable: [org]), try answer(fallback[0], viewer: accountB)]))
+            .fetch(scope: scope, expectedAccount: accountA)
+        #expect(switched.issues == [.identityMismatch] && switched.viewer?.account == accountB && switched.items.isEmpty)
+        // A rate limit reported beside the failed lookup runs no fallback; nor does a cancelled poll.
+        var body = envelope(plan)
+        body["target\(org)"] = NSNull()
+        let limited = CommandResult(exitCode: 0, stdout: try response(body, errors: [["type": "RATE_LIMITED"]]))
+        let limitedRunner = ScopeRunner([CommandResult(exitCode: 0), limited, try answer(fallback[0])])
+        let limitedResult = client(limitedRunner).fetch(scope: scope, expectedAccount: accountA)
+        #expect(limitedRunner.calls.count == 2 && limitedResult.issues.contains(.rateLimited) && limitedResult.issues.contains(.targetUnavailable(org)))
+        let cancelledRunner = ScopeRunner([CommandResult(exitCode: 0), try answer(plan, unavailable: [org]), try answer(fallback[0])])
+        let budget = CommandBudget()
+        cancelledRunner.afterCall = { if $0 == 2 { budget.cancel() } }
+        _ = client(cancelledRunner).fetch(scope: scope, expectedAccount: accountA, budget: budget)
+        #expect(cancelledRunner.calls.count == 2)
+    }
+
+    /// #142: a readable organization is never searched twice, so a clean poll runs no extra request.
+    @Test func readableOrganizationRunsNoFallbackRequest() throws {
+        let scope = try MonitoringScope(selected: [MonitoringTarget(organization: "example"),
+                                                   MonitoringTarget(repository: "example/pet"),
+                                                   MonitoringTarget(repository: "other/pet")])
+        let plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
+        let runner = ScopeRunner([CommandResult(exitCode: 0), try answer(plan), CommandResult(exitCode: 0)])
+        let result = client(runner).fetch(scope: scope, expectedAccount: accountA)
+        #expect(runner.calls == [GhFailure.authStatusArguments, plan.arguments])
+        #expect(result.complete && Set(result.items.map(\.repository)) == ["example/sample", "other/pet"])
+        // A failed covered repository alone (its organization readable) runs no fallback either.
+        let pet = scope.targets.firstIndex { $0.qualifier == "repo:example/pet" }!
+        let repoOnly = ScopeRunner([CommandResult(exitCode: 0), try answer(plan, unavailable: [pet]), CommandResult(exitCode: 0)])
+        let partial = client(repoOnly).fetch(scope: scope, expectedAccount: accountA)
+        #expect(repoOnly.calls.count == 2 && partial.issues.contains(.targetUnavailable(pet)) && !partial.complete)
+    }
+
+    /// #142 across a chunked poll: the failed organization's covered repositories, wherever their
+    /// lookups ran, are searched after every chunk, in requests of at most 50 targets. A readable
+    /// organization's covered repository is not.
+    @Test func chunkedPollFallsBackOnlyForTheFailedOrganization() throws {
+        let targets = try [MonitoringTarget(organization: "example"), MonitoringTarget(organization: "acme"),
+                           MonitoringTarget(repository: "acme/app")]
+            + (0..<60).map { try MonitoringTarget(repository: "example/covered-\($0)") }
+            + (0..<20).map { try MonitoringTarget(repository: "owner-\($0)/project") }
+        let scope = try MonitoringScope(selected: targets)
+        let org = scope.targets.firstIndex { $0.qualifier == "org:example" }!
+        let plans = try ScopeQueryPlan.requests(scope: scope, expectedAccount: accountA)
+        let fallback = ScopeQueryPlan.fallbackRequests(scope: scope, expectedAccount: accountA, issues: [.targetUnavailable(org)])
+        #expect(plans.count == 2 && fallback.count == 2 && fallback.map(\.lookups.count) == [50, 10])
+        let covered = scope.targets.indices.filter { scope.targets[$0].qualifier.hasPrefix("repo:example/") }
+        #expect(fallback.flatMap(\.lookups) == covered)
+        let runner = ScopeRunner([CommandResult(exitCode: 0)] + (try plans.map { try answer($0, unavailable: [org]) })
+                                 + (try fallback.map { try answer($0) }))
+        let result = client(runner).fetch(scope: scope, expectedAccount: accountA)
+        #expect(runner.calls == [GhFailure.authStatusArguments] + plans.map(\.arguments) + fallback.map(\.arguments))
+        let repositories = Set(result.items.map(\.repository))
+        #expect(repositories.isSuperset(of: (0..<20).map { "owner-\($0)/project" }) && repositories.contains("acme/sample"))
+        // Each fallback search returns up to a page of rows: 30 of the first 50, then all 10.
+        #expect(repositories.filter { $0.hasPrefix("example/covered-") }.count == 40)
+        #expect(!repositories.contains("example/sample"), "the failed organization's own rows stay hidden")
+        #expect(result.issues.filter { if case .targetUnavailable = $0 { return true }; return false } == [.targetUnavailable(org)])
+        #expect(!result.complete && result.hidden == 0)
+        // A later chunk signed out: no fallback request, which couldn't succeed either.
+        let signedOut = ScopeRunner([CommandResult(exitCode: 0), try answer(plans[0], unavailable: [org]),
+                                     CommandResult(exitCode: 4, stderr: Data("gh auth login".utf8))])
+        let stopped = client(signedOut).fetch(scope: scope, expectedAccount: accountA)
+        #expect(signedOut.calls.count == 3 && stopped.outcome == .failure(.unauthenticated))
     }
 
     /// #137: a large scope runs one preflight, then its requests in order, and merges them.
