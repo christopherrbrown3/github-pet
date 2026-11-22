@@ -75,6 +75,8 @@ extension SnapshotRenderer {
         if let example = owner(nudge, "demo-example-org") {
             nudge.visibleRows(example).rows.prefix(3).forEach { nudge.toggle($0, true) }
         }
+        // A badge beside a four-digit count: the count stays on one line, the name truncates.
+        if let harbor = owner(nudge, "demo-harbor"), let row = nudge.visibleRows(harbor).rows.first { nudge.toggle(row, true) }
         await shoot("nudge", nudge)
         editor.cancel()
 

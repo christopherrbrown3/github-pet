@@ -347,7 +347,8 @@ struct ScopeBrowserSidebar: View {
         // offscreen renders; a plain list keeps the same keyboard selection behaviour.
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
-        .background(Color(nsColor: .underPageBackgroundColor))
+        // The window's own fill: lighter than under-page in light mode; the Divider separates it.
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private func row(_ owner: ScopeBrowseOwner) -> some View {
@@ -372,9 +373,12 @@ struct ScopeBrowserSidebar: View {
                 Text("\(selected)").font(.caption2.weight(.semibold).monospacedDigit())
                     .padding(.horizontal, 5).padding(.vertical, 1)
                     .background(Capsule().fill(Color.accentColor.opacity(0.2)))
+                    .lineLimit(1).fixedSize()
             }
+            // Counts and badges never wrap; the name truncates instead.
             Text(denied ? "—" : owner.repositoryCount.map { $0.formatted() } ?? "")
                 .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                .lineLimit(1).fixedSize()
         }
         .tag(ScopeBrowser.Pane.owner(owner.id))
         .listRowSeparator(.hidden)

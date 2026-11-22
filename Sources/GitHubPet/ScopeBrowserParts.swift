@@ -46,7 +46,8 @@ struct ScopeEntry: Identifiable, Equatable {
         if fix > 0 { parts.append("\(fix) \(fix == 1 ? "entry needs" : "entries need") fixing.") }
         if unverified > 0 { parts.append("\(unverified) \(unverified == 1 ? "entry" : "entries") could not be verified.") }
         guard !parts.isEmpty else { return nil }
-        return parts.joined(separator: " ") + " Remove or correct \(fix + unverified == 1 ? "it" : "them"), then Apply. They're listed first."
+        let one = fix + unverified == 1
+        return parts.joined(separator: " ") + " Remove or correct \(one ? "it" : "them"), then Apply. \(one ? "It's" : "They're") listed first."
     }
 }
 
@@ -105,23 +106,48 @@ struct ScopeBanner: View {
     private var color: Color { tone == .error ? .red : tone == .warning ? .orange : .accentColor }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Label { Text(text).fixedSize(horizontal: false, vertical: true) } icon: {
-                Image(systemName: symbol).foregroundStyle(color)
+        // With two actions the buttons get their own trailing row, so the text keeps its width.
+        if secondary != nil {
+            VStack(alignment: .leading, spacing: 6) {
+                message
+                HStack(spacing: 8) { Spacer(minLength: 0); buttons }
             }
-            .accessibilityElement(children: .combine)
-            Spacer(minLength: 4)
-            if let secondary {
-                Button(secondary.title, action: secondary.action).controlSize(.small)
+            .modifier(BannerChrome(color: color))
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                message
+                Spacer(minLength: 4)
+                buttons
             }
-            if let actionTitle {
-                Button(actionTitle, action: action).disabled(!actionEnabled).controlSize(.small)
-            }
+            .modifier(BannerChrome(color: color))
         }
-        .font(.callout)
-        .padding(8)
-        .background(RoundedRectangle(cornerRadius: 6).fill(color.opacity(0.12)))
-        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(color.opacity(0.35)))
+    }
+
+    private var message: some View {
+        Label { Text(text).fixedSize(horizontal: false, vertical: true) } icon: {
+            Image(systemName: symbol).foregroundStyle(color)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private var buttons: some View {
+        if let secondary {
+            Button(secondary.title, action: secondary.action).controlSize(.small)
+        }
+        if let actionTitle {
+            Button(actionTitle, action: action).disabled(!actionEnabled).controlSize(.small)
+        }
+    }
+}
+
+private struct BannerChrome: ViewModifier {
+    let color: Color
+    func body(content: Content) -> some View {
+        content
+            .font(.callout)
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 6).fill(color.opacity(0.12)))
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(color.opacity(0.35)))
     }
 }
 
