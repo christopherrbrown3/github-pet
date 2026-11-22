@@ -35,17 +35,17 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
 }
 
 @Suite struct AuthoredQueryPlanTests {
-    @Test func everyInclusionAddsOneAuthoredSearchWithAttentionFields() throws {
-        let scope = try MonitoringScope(selected: [MonitoringTarget(organization: "Example"), MonitoringTarget(repository: "example/pet")])
+    @Test func everyBatchAddsOneAuthoredSearchWithAttentionFields() throws {
+        let scope = try MonitoringScope(selected: [MonitoringTarget(organization: "Example"), MonitoringTarget(repository: "example/pet"),
+                                                   MonitoringTarget(repository: "other/pet")])
         let plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
-        #expect(plan.searches.filter { $0.kind == .authoredPullRequest }.map(\.alias) == ["authored0", "authored1"])
-        #expect(plan.arguments.contains("authored0=is:pr is:open author:@me archived:false org:example"))
-        #expect(plan.arguments.contains("authored1=is:pr is:open author:@me archived:false repo:example/pet"))
+        #expect(plan.searches.filter { $0.kind == .authoredPullRequest }.map(\.alias) == ["authored0"])
+        #expect(plan.arguments.contains("authored0=is:pr is:open author:@me archived:false org:example repo:other/pet"))
         let query = try #require(plan.arguments.first { $0.hasPrefix("query=") })
         for field in ["isDraft", "reviewDecision", "mergeable", "commits(last: 1)", "oid", "statusCheckRollup { state }"] {
             #expect(query.contains(field))
         }
-        #expect(!query.contains("example"), "target values stay GraphQL variables")
+        #expect(!query.contains("example") && !query.contains("other"), "target values stay GraphQL variables")
         #expect(try ScopeQueryPlan().searches.map(\.alias) == ["reviews0", "assigned0", "authored0"])
     }
 }

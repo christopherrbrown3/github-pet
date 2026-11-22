@@ -170,15 +170,16 @@ private func result(_ plan: ScopeQueryPlan, _ authoredByAlias: (ScopeQueryPlan.S
         #expect(marks[EventBaseline.digest(items[limit].id)]?.submittedAt == t0)
     }
 
-    @Test func overlappingInclusionsGiveOneRowAndDisagreementIsPartial() throws {
+    /// #137: a repository under a selected organization is searched only through it: one row, and
+    /// the same PR twice in one source is malformed (Partial), never two rows.
+    @Test func coveredRepositoryGivesOneAuthoredRowAndDuplicatesArePartial() throws {
         let scope = try MonitoringScope(selected: [MonitoringTarget(organization: "example"), MonitoringTarget(repository: "example/pet")])
         let plan = try ScopeQueryPlan(scope: scope, expectedAccount: viewerA)
+        #expect(plan.searches.filter { $0.kind == .authoredPullRequest }.count == 1)
         let same = try result(plan) { _ in [pr(changes: true)] }
         #expect(same.complete && same.items.filter { $0.kind == .authoredPullRequest }.count == 1)
-        let raced = try result(plan) { $0.targetIndex == 0 ? [pr(changes: true)] : [pr(changes: true, checks: "FAILURE")] }
+        let raced = try result(plan) { _ in [pr(changes: true), pr(changes: true, checks: "FAILURE")] }
         #expect(raced.items.filter { $0.kind == .authoredPullRequest }.count == 1, "one row per PR")
-        #expect(!raced.complete && raced.issues.contains(.inconsistentDuplicate), "disagreeing inclusions are Partial")
-        let waitingVsAction = try result(plan) { $0.targetIndex == 0 ? [pr()] : [pr(changes: true)] }
-        #expect(!waitingVsAction.complete && waitingVsAction.issues.contains(.inconsistentDuplicate))
+        #expect(!raced.complete && raced.issues.contains(.malformedRow("authored0")))
     }
 }

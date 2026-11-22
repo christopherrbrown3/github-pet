@@ -61,8 +61,8 @@ Two panes.
   a button that opens Login Items (**Open at login** can't be switched on in
   these builds; see [limits](#known-limits)).
 - **GitHub.** The `gh` connection and setup help, the data source (GitHub CLI by default, or invented
-  Demo data by choice), what to watch (everything you can access, or up to 10 organizations and
-  repositories, access-checked before they apply), entitlement repositories, opt-in alerts for
+  Demo data by choice), what to watch (everything you can access, or the organizations and
+  repositories you choose, access-checked before they apply), entitlement repositories, opt-in alerts for
   failing Actions runs and deployment approvals, and software updates.
 
 ## Data source

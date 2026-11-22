@@ -190,8 +190,8 @@ extension QAScenarioRunner {
           {"action": "settings-remove", "kind": "organization", "index": 2, "label": "remove-invalid-row"},
           {"action": "open-scope-settings", "label": "settings-clean-draft"}]}
         """#,
-        "settings-max-10": #"""
-        {"name": "settings-max-10", "steps": [
+        "settings-many-targets": #"""
+        {"name": "settings-many-targets", "steps": [
           {"action": "settings-add", "kind": "organization", "text": "demo-b", "label": "add-2"},
           {"action": "settings-add", "kind": "organization", "text": "demo-c", "label": "add-3"},
           {"action": "settings-add", "kind": "organization", "text": "demo-d", "label": "add-4"},
@@ -201,9 +201,10 @@ extension QAScenarioRunner {
           {"action": "settings-add", "kind": "repository", "text": "demo-x/three", "label": "add-8"},
           {"action": "settings-add", "kind": "repository", "text": "demo-x/four", "label": "add-9"},
           {"action": "settings-add", "kind": "repository", "text": "demo-x/five", "label": "add-10"},
-          {"action": "settings-add", "kind": "repository", "text": "demo-x/six", "label": "add-11-rejected"},
-          {"action": "settings-apply", "label": "apply-ten"},
-          {"action": "open-scope-settings", "label": "settings-ten"}]}
+          {"action": "settings-add", "kind": "repository", "text": "demo-x/six", "label": "add-11"},
+          {"action": "settings-add", "kind": "repository", "text": "demo-x/seven", "label": "add-12"},
+          {"action": "settings-apply", "label": "apply-twelve"},
+          {"action": "open-scope-settings", "label": "settings-twelve"}]}
         """#,
         "settings-discovery-capped": #"""
         {"name": "settings-discovery-capped", "steps": [
