@@ -172,8 +172,9 @@ struct ScopeBrowseFixture: ScopeBrowsing {
     /// Deterministic rows, newest push first: every 7th archived, every 5th a fork, odd private.
     func all(_ owner: ScopeBrowseOwner, sort: ScopeBrowseSort) -> [[String: Any]] {
         let total = count(owner)
-        let ownerLogin = owner.kind == .viewer ? login : owner.kind == .shared ? "demo-partner" : owner.login
         let rows: [[String: Any]] = (0..<total).map { (index: Int) -> [String: Any] in
+            // Shared row 2 belongs to a managed-user login ('_'): listed, but not a target.
+            let ownerLogin = owner.kind == .viewer ? login : owner.kind == .shared ? (index == 2 ? "demo_managed" : "demo-partner") : owner.login
             let word: String = Self.words[index % Self.words.count]
             let suffix: String = Self.suffixes[(index / Self.words.count) % Self.suffixes.count]
             let unique: String = index >= Self.words.count * Self.suffixes.count ? "-\(index)" : ""

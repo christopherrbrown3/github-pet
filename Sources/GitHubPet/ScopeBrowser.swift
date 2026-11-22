@@ -40,6 +40,9 @@ final class ScopeBrowser: ObservableObject, Identifiable {
     @Published private(set) var owners: [ScopeBrowseOwner] = []
     @Published private(set) var ownersPhase = OwnersPhase.idle
     @Published private(set) var moreOrganizations = false
+    /// The owners list arrived with an error (missing or malformed organizations, another GraphQL
+    /// error): what loaded is shown, flagged as possibly incomplete. Never "no organizations".
+    @Published private(set) var ownersWarning: ScopeBrowseFailure?
     @Published private(set) var states: [String: OwnerState] = [:]
     @Published var pane = Pane.browse
     @Published var searchText = ""
@@ -51,6 +54,8 @@ final class ScopeBrowser: ObservableObject, Identifiable {
     @Published private(set) var rateLimitReset: Date?
     /// Shown above the panes after the account changed mid-browse.
     @Published private(set) var notice: String?
+    /// The new account's login while reloading after a change, when known.
+    @Published private(set) var reloadingFor: String?
 
     let editor: ScopeEditor
     private let sourceFor: @MainActor (ScopeIdentity) -> any ScopeBrowsing
@@ -88,7 +93,7 @@ final class ScopeBrowser: ObservableObject, Identifiable {
         guard loadedIdentity != .some(identity) else { return }
         let hadData = loadedIdentity != nil && !owners.isEmpty
         epoch += 1
-        owners = []; states = [:]; moreOrganizations = false; rateLimitReset = nil
+        owners = []; states = [:]; moreOrganizations = false; rateLimitReset = nil; ownersWarning = nil
         if case .owner = pane { pane = .browse }
         loadedIdentity = .some(identity)
         switch identity {
@@ -100,7 +105,11 @@ final class ScopeBrowser: ObservableObject, Identifiable {
         case .demo: account = Self.demoAccount; source = sourceFor(.demo)
         case .github(let value): account = value; source = sourceFor(.github(value))
         }
-        if hadData { notice = "The GitHub CLI account changed. Reloading for \(editor.accountDescription)."; say(notice!) }
+        if hadData || notice != nil {
+            reloadingFor = editor.accountDescription
+            notice = "The GitHub CLI account changed. Reloading for \(editor.accountDescription)."
+            say(notice!)
+        }
         loadOwners()
     }
 
@@ -113,6 +122,7 @@ final class ScopeBrowser: ObservableObject, Identifiable {
     func loadOwners() {
         guard let account else { return }
         ownersPhase = .loading
+        ownersWarning = nil
         let plan = ScopeOwnersPlan(expectedAccount: account), source = source, epoch = epoch
         run({ budget in source.owners(plan, budget: budget) }) { [weak self] result in
             self?.receiveOwners(result, epoch: epoch)
@@ -130,9 +140,15 @@ final class ScopeBrowser: ObservableObject, Identifiable {
             return
         }
         owners = result.owners; moreOrganizations = result.moreOrganizations
+        ownersWarning = result.failure
+        reloadingFor = nil
         ownersPhase = .loaded
         if pane == .browse, let first = owners.first(where: { $0.kind == .viewer }) ?? organizations.first { open(first) }
-        say("Loaded \(organizations.count) \(organizations.count == 1 ? "organization" : "organizations").")
+        if let warning = result.failure {
+            say("\(warning.message) Your organizations may be incomplete.")
+        } else {
+            say("Loaded \(organizations.count) \(organizations.count == 1 ? "organization" : "organizations").")
+        }
         // Your own repositories plus the three largest readable organizations, ahead of a click.
         if let viewer = owners.first(where: { $0.kind == .viewer }) { loadPage(viewer) }
         organizations.filter { !$0.denied }.sorted { ($0.repositoryCount ?? 0) > ($1.repositoryCount ?? 0) }
@@ -143,7 +159,8 @@ final class ScopeBrowser: ObservableObject, Identifiable {
         epoch += 1
         owners = []; states = [:]
         if case .owner = pane { pane = .browse }
-        notice = "The GitHub CLI account changed. Loaded repositories were discarded; reloading."
+        reloadingFor = nil
+        notice = "The GitHub CLI account changed. Loaded repositories were discarded."
         say(notice!)
         loadedIdentity = nil
         ownersPhase = .checkingAccount
@@ -318,7 +335,7 @@ final class ScopeBrowser: ObservableObject, Identifiable {
         let needle = searchText.trimmingCharacters(in: .whitespaces).lowercased()
         guard !needle.isEmpty else { return true }
         return displayName(owner).lowercased().contains(needle) || !visibleRows(owner).rows.isEmpty
-            || !visibleRows(owner).fromSearch.isEmpty || owner.id == currentOwner?.id
+            || !visibleRows(owner).fromSearch.isEmpty
     }
 
     // MARK: Selection (the editor's draft)

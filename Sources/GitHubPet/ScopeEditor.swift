@@ -242,7 +242,7 @@ final class ScopeEditor: ObservableObject {
     func addByName(_ text: String) -> ScopeRowProblem? {
         let kind = Self.nameKind(text)
         if draft.mode != .selected { draft.mode = .selected }
-        if let problem = draft.add(text, kind: kind) { report(problem.message(for: kind)); return problem }
+        if let problem = draft.add(text, kind: kind) { report(ScopeEntry.message(problem, kind: kind)); return problem }
         if let target = draft.rows.last?.target { namedTargets.insert(target) }
         edited()
         report("\(kind == .organization ? "Organization" : "Repository") added by name. \(selectionCount)")

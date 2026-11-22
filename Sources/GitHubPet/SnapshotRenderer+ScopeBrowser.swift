@@ -86,6 +86,12 @@ extension SnapshotRenderer {
         await shoot("rate-limited", await opened(.rateLimited, "demo-example-org"))
         await shoot("denied", await opened(.complete, "demo-tidewater"))
         await shoot("empty", await opened(.complete, "demo-quiet-meadow"))
+        // Shared with you, including a managed-user owner's repository that can't be a target.
+        let managed = await opened(.complete, nil)
+        if let shared = managed.owners.first(where: { $0.kind == .shared }) { managed.open(shared); await managed.settle() }
+        let unsupported = managed.currentOwner.map { managed.visibleRows($0).rows.filter { $0.target == nil }.count } ?? 0
+        report.append("scope-browser managed-rows: unsupported=\(unsupported)")
+        await shoot("managed", managed)
         await shoot("signed-out", await opened(.signedOut, nil))
         await shoot("gh-missing", await opened(.ghMissing, nil))
         // Identity changed mid-browse: the page names another account; everything is discarded.

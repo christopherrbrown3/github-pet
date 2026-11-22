@@ -83,17 +83,22 @@ struct ScopeBrowserSheet: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Choose Repositories to Monitor").font(.headline).accessibilityAddTraits(.isHeader)
                 Spacer()
-                Label(editor.accountDescription, systemImage: "person.crop.circle")
+                Label(accountLine, systemImage: "person.crop.circle")
                     .font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                    .accessibilityLabel("GitHub CLI account: \(editor.accountDescription)")
+                    .accessibilityLabel("GitHub CLI account: \(accountLine)")
             }
-            if model.simulatesScope {
-                Text("Simulated/Demo: invented organizations, checked offline.").font(.caption).foregroundStyle(.secondary)
-            } else if browser.isDemo {
-                Text("Demo: invented organizations, checked offline.").font(.caption).foregroundStyle(.secondary)
-            }
+            // Always one caption line, so the search field never moves between states.
+            Text(model.simulatesScope ? "Simulated/Demo: invented organizations, checked offline."
+                 : browser.isDemo ? "Demo: invented organizations, checked offline." : " ")
+                .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                .accessibilityHidden(!model.simulatesScope && !browser.isDemo)
         }
         .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 8)
+    }
+
+    /// While the sheet is identifying the account, say so rather than "Refresh the Inbox".
+    private var accountLine: String {
+        browser.ownersPhase == .checkingAccount || editor.identity == nil ? "Checking account…" : editor.accountDescription
     }
 
     private var toolbar: some View {
@@ -199,12 +204,22 @@ struct ScopeBrowserSheet: View {
                 Button("Add by Name…") { addingByName = true }
             }
             .padding(12).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(Color(nsColor: .textBackgroundColor))
+        case .checkingAccount where browser.notice != nil:
+            // After an account change with no new account known yet: Reload, not a spinner.
+            VStack(spacing: 8) {
+                Text("Waiting for the GitHub CLI account.").foregroundStyle(.secondary)
+                Button("Reload") { browser.reload() }
+            }
+            .accessibilityElement(children: .contain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(nsColor: .textBackgroundColor))
         default:
             VStack(spacing: 8) {
                 ProgressView().accessibilityHidden(true)
-                Text(browser.ownersPhase == .checkingAccount ? "Checking your GitHub CLI account…" : "Loading your organizations…")
+                Text(browser.ownersPhase == .checkingAccount ? "Checking your GitHub CLI account…"
+                     : browser.reloadingFor.map { "Reloading for \($0)…" } ?? "Loading your organizations…")
                     .foregroundStyle(.secondary)
-                if browser.notice != nil { Button("Reload") { browser.reload() } }
             }
             .accessibilityElement(children: .contain)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -281,8 +296,13 @@ struct ScopeBrowserSidebar: View {
             })) {
             Label { Text("Selected · \(selectedCount)").monospacedDigit() } icon: { Image(systemName: "checklist") }
                 .tag(ScopeBrowser.Pane.selected)
+                .listRowSeparator(.hidden)
                 .accessibilityLabel("Selected, \(selectedCount) \(selectedCount == 1 ? "entry" : "entries")")
             switch browser.ownersPhase {
+            case .checkingAccount where browser.notice != nil:
+                // The detail pane offers Reload; no spinner while nothing is in flight.
+                Text("Organizations aren't listed yet.").font(.caption).foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
             case .idle, .loading, .checkingAccount:
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small).accessibilityHidden(true)
@@ -290,10 +310,10 @@ struct ScopeBrowserSidebar: View {
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 .accessibilityElement(children: .combine)
-            case .failed(let failure):
-                Label(failure.message, systemImage: failure == .accessDenied ? "lock.trianglebadge.exclamationmark" : "exclamationmark.triangle.fill")
-                    .font(.caption).foregroundStyle(failure == .accessDenied ? .red : .orange)
-                    .fixedSize(horizontal: false, vertical: true)
+            case .failed:
+                // The detail pane explains the failure; the sidebar only says nothing is listed.
+                Text("Organizations aren't listed yet.").font(.caption).foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
             case .loaded:
                 let mine = browser.owners.filter { $0.kind != .organization && browser.sidebarMatches($0) }
                 if !mine.isEmpty {
@@ -301,8 +321,18 @@ struct ScopeBrowserSidebar: View {
                 }
                 Section("Organizations") {
                     let organizations = browser.organizations.filter(browser.sidebarMatches)
+                    if let warning = browser.ownersWarning {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label("\(warning.message) Your organizations may be incomplete.", systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                            Button("Retry") { browser.loadOwners() }.controlSize(.small)
+                        }
+                        .listRowSeparator(.hidden)
+                    }
                     ForEach(organizations) { row($0) }
-                    if browser.organizations.isEmpty {
+                    if browser.ownersWarning != nil {
+                        EmptyView()
+                    } else if browser.organizations.isEmpty {
                         Text("You're not a member of any organization.").font(.caption).foregroundStyle(.secondary)
                     } else if organizations.isEmpty {
                         Text("No organization matches.").font(.caption).foregroundStyle(.secondary)
@@ -317,7 +347,7 @@ struct ScopeBrowserSidebar: View {
         // offscreen renders; a plain list keeps the same keyboard selection behaviour.
         .listStyle(.inset)
         .scrollContentBackground(.hidden)
-        .background(Color(nsColor: .underPageBackgroundColor).opacity(0.5))
+        .background(Color(nsColor: .underPageBackgroundColor))
     }
 
     private func row(_ owner: ScopeBrowseOwner) -> some View {
@@ -330,7 +360,7 @@ struct ScopeBrowserSidebar: View {
             } else {
                 Monogram(login: owner.login)
             }
-            Text(browser.displayName(owner)).lineLimit(1).truncationMode(.middle)
+            Text(browser.displayName(owner)).lineLimit(1).truncationMode(.tail).layoutPriority(1)
             Spacer(minLength: 4)
             if state.loading || state.searching {
                 ProgressView().controlSize(.mini)
@@ -347,6 +377,7 @@ struct ScopeBrowserSidebar: View {
                 .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
         }
         .tag(ScopeBrowser.Pane.owner(owner.id))
+        .listRowSeparator(.hidden)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spoken(owner, denied: denied, selected: selected, all: all, loading: state.loading))
     }
@@ -399,7 +430,7 @@ struct OwnerDetail: View {
             case .rateLimited where state.repositories.isEmpty:
                 EmptyView()
             case .rows, .capped, .partial, .rateLimited:
-                repositoriesCaption(visible.hiddenArchived, visible.hiddenForks).listRowSeparator(.hidden)
+                repositoriesCaption(visible.hiddenArchived, visible.hiddenForks, state).listRowSeparator(.hidden)
                 ForEach(visible.rows) { RepositoryRow(browser: browser, editor: editor, repository: $0, now: browser.now) }
                 if !visible.fromSearch.isEmpty {
                     Text("FROM SEARCH").font(.caption.weight(.semibold)).foregroundStyle(.secondary).listRowSeparator(.hidden)
@@ -408,7 +439,7 @@ struct OwnerDetail: View {
                 if !browser.searchText.isEmpty {
                     ScopeServerSearchRow(browser: browser, owner: owner, addByName: addByName, noLocalMatches: visible.rows.isEmpty && visible.fromSearch.isEmpty)
                 }
-                pageFooter(state, presentation).listRowSeparator(.hidden)
+                if browser.searchText.isEmpty { pageFooter(state, presentation).listRowSeparator(.hidden) }
             }
         }
         .listStyle(.inset)
@@ -481,14 +512,17 @@ struct OwnerDetail: View {
                                actionTitle: "Retry", action: retry)
         case .rateLimited:
             let reset = browser.rateLimitReset.map { " Resumes after \(ScopeDates.time($0))." } ?? " Try again later."
+            let usable = state.repositories.isEmpty
+                ? (owner.kind == .organization ? " All repositories and Add by Name still work." : " Add by Name still works.")
+                : " Loaded repositories stay usable, and Add by Name still works."
             return ScopeBanner(tone: .warning, symbol: "clock.badge.exclamationmark",
-                               text: "GitHub rate limit reached.\(reset) Loaded repositories stay usable, and Add by Name still works.",
+                               text: "GitHub rate limit reached.\(reset)\(usable)",
                                actionTitle: "Retry", actionEnabled: !browser.retryBlocked, action: retry)
         case .denied:
             return ScopeBanner(tone: .error, symbol: "lock.trianglebadge.exclamationmark",
                                text: ScopeBrowseFailure.accessDenied.message
                                 + (owner.kind == .organization ? " “All repositories” can still be selected; Apply checks access." : ""),
-                               actionTitle: "Retry", action: retry)
+                               actionTitle: "Retry", secondary: ("Add a Repository by Name…", addByName), action: retry)
         case .failed:
             return ScopeBanner(tone: .error, symbol: "xmark.octagon.fill",
                                text: (state.failure?.message ?? "GitHub returned no usable answer.") + " Nothing here means there are no repositories.",
@@ -506,14 +540,17 @@ struct OwnerDetail: View {
         }
     }
 
-    private func repositoriesCaption(_ archived: Int, _ forks: Int) -> some View {
+    private func repositoriesCaption(_ archived: Int, _ forks: Int, _ state: ScopeBrowser.OwnerState) -> some View {
         HStack {
             Text("REPOSITORIES").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             Spacer()
             let hidden = [archived > 0 ? "\(archived) archived" : nil, forks > 0 ? "\(forks) \(forks == 1 ? "fork" : "forks")" : nil]
                 .compactMap { $0 }
-            if !hidden.isEmpty {
-                Text("\(hidden.joined(separator: ", ")) hidden").font(.caption).foregroundStyle(.secondary).monospacedDigit()
+            let loaded = state.repositories.count, total = state.total ?? loaded
+            let parts = (total > loaded ? ["\(loaded.formatted()) of \(total.formatted()) loaded"] : [])
+                + (hidden.isEmpty ? [] : ["\(hidden.joined(separator: ", ")) hidden"])
+            if !parts.isEmpty {
+                Text(parts.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
         }
     }
@@ -548,24 +585,26 @@ struct RepositoryRow: View {
         let covered = browser.isCovered(repository)
         let checked = covered || browser.isSelected(repository)
         let pushed = ScopeDates.relative(repository.pushedAt, now: now())
+        let unsupported = repository.target == nil
         HStack(spacing: 6) {
             Toggle(isOn: Binding(get: { checked }, set: { browser.toggle(repository, $0) })) {
                 Text(sentence(pushed: pushed, covered: covered))
             }
             .toggleStyle(.checkbox)
             .labelsHidden()
-            .disabled(covered || repository.target == nil)
-            .help(repository.target == nil ? "This owner's name can't be used as a monitoring target." : "")
+            .disabled(covered || unsupported)
+            .help(unsupported ? Self.unsupportedReason : "")
             Group {
                 Image(systemName: repository.isFork ? "tuningfork" : repository.isPrivate ? "lock" : "book.closed")
                     .foregroundStyle(.secondary).frame(width: 14)
-                Text(repository.name)
-                    .foregroundStyle(repository.isArchived || covered ? .secondary : .primary)
+                // Shared and search-across-owners rows show their owner; an owner's own pane doesn't.
+                Text(repository.owner.lowercased() == browser.currentOwner?.login.lowercased() ? repository.name : repository.nameWithOwner)
+                    .foregroundStyle(repository.isArchived || covered || unsupported ? .secondary : .primary)
                     .lineLimit(1).truncationMode(.middle)
                 if repository.isArchived { RowTag(text: "Archived") }
                 if repository.isFork { RowTag(text: "Fork") }
                 Spacer(minLength: 4)
-                Text(covered ? "Included by All repositories" : pushed)
+                Text(unsupported ? "Can't be monitored" : covered ? "Included by All repositories" : pushed)
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit().lineLimit(1)
             }
             .accessibilityHidden(true)
@@ -573,7 +612,11 @@ struct RepositoryRow: View {
         .frame(height: 22)
         .contentShape(Rectangle())
         .onTapGesture { if !covered && repository.target != nil { browser.toggle(repository, !checked) } }
+        .help(repository.target == nil ? Self.unsupportedReason : "")
     }
+
+    /// Managed-user owners (logins with '_') can't be monitoring targets.
+    static let unsupportedReason = "Can't be monitored: GitHub Pet can't watch repositories of this owner's account type."
 
     private func sentence(pushed: String, covered: Bool) -> String {
         var parts = [repository.name, repository.owner, repository.isPrivate ? "private" : "public"]
@@ -581,6 +624,7 @@ struct RepositoryRow: View {
         if repository.isArchived { parts.append("archived") }
         parts.append("pushed \(pushed)")
         if covered { parts.append("included by All repositories in \(repository.owner)") }
+        if repository.target == nil { parts.append(Self.unsupportedReason) }
         return parts.joined(separator: ", ")
     }
 }
@@ -610,9 +654,13 @@ struct ScopeServerSearchRow: View {
                 Text(state.complete ? "No repository in \(browser.displayName(owner)) matches “\(browser.searchText)”."
                      : "No loaded repository in \(browser.displayName(owner)) matches “\(browser.searchText)”.")
                     .font(.callout)
-                if !state.complete, let total, total > loaded {
-                    Text("\((total - loaded).formatted()) repositories aren't loaded yet.").font(.caption).foregroundStyle(.secondary)
-                }
+                let visible = browser.visibleRows(owner)
+                let searched = loaded - visible.hiddenArchived - visible.hiddenForks
+                let filtered = visible.hiddenArchived + visible.hiddenForks
+                let scope = state.complete ? "Searched all \(searched.formatted()) loaded repositories" : "Searched \(searched.formatted()) loaded repositories"
+                let rest = !state.complete && (total ?? 0) > loaded ? "; \(((total ?? 0) - loaded).formatted()) aren't loaded yet" : ""
+                Text(scope + rest + (filtered > 0 ? " (\(filtered) hidden by filters)." : "."))
+                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
             }
             if let term = state.searchedTerm, !state.searching {
                 if let failure = state.searchFailure {
@@ -711,18 +759,17 @@ struct SelectedReview: View {
                     Button("Add by Name…", action: addByName)
                 }
             } else {
-                let problems = entries.filter { $0.problem != nil }.count
-                if problems > 0 {
-                    ScopeBanner(tone: .error, symbol: "exclamationmark.triangle.fill",
-                                text: "\(problems) \(problems == 1 ? "entry" : "entries") could not be verified. Remove or correct \(problems == 1 ? "it" : "them"), then Apply.")
+                if let summary = ScopeEntry.problemSummary(entries) {
+                    ScopeBanner(tone: .error, symbol: "exclamationmark.triangle.fill", text: summary)
                 }
-                ScrollingEntryList(entries: entries, rowHeight: 40) { entry in
+                ScrollingEntryList(entries: entries, rowHeight: MonitoringScopeSection.rowHeight) { entry in
                     ScopeEntryRow(entry: entry) { remove(entry) }
                 }
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color(nsColor: .textBackgroundColor))
     }
 
     private func remove(_ entry: ScopeEntry) {
@@ -749,6 +796,7 @@ struct AccountProblemView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .textBackgroundColor))
         .accessibilityElement(children: .contain)
     }
 }

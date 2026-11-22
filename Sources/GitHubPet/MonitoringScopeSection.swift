@@ -14,7 +14,8 @@ struct MonitoringScopeSection: View {
     @State private var browserSnapshot: ScopeEditor.DraftSnapshot?
 
     static let visibleRows = 6
-    static let rowHeight: CGFloat = 36
+    /// Room for a name plus a two-line problem message.
+    static let rowHeight: CGFloat = 44
 
     var body: some View {
         let entries = ScopeEntry.entries(editor)
@@ -68,7 +69,8 @@ struct MonitoringScopeSection: View {
                         .accessibilityHint("Discards the draft and keeps the active monitoring scope.")
                 }
             }
-            if let status = editor.status {
+            // One status line: the unapplied notice above wins while there are unapplied changes.
+            if let status = editor.status, !(editor.hasChanges && browser == nil) {
                 Text(status).font(.caption).foregroundStyle(.secondary)
                     .accessibilityLabel("Monitoring scope status: \(status)")
             }

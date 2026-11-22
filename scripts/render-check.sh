@@ -331,6 +331,8 @@ for state presentation in browse rows all-repositories rows nudge capped loading
                           rate-limited rateLimited denied denied empty empty search capped no-matches rows search-all-owners rows; do
   check_in 'scope browser (#137)' "$state shows $presentation" "^scope-browser $state: pane=owner:.* presentation=$presentation "
 done
+check_in 'scope browser (#137)' "managed-user rows listed, not selectable" '^scope-browser managed-rows: unsupported=1$'
+check_in 'scope browser (#137)' "shared pane shows rows" '^scope-browser managed: pane=owner: owners=.* presentation=rows '
 check_in 'scope browser (#137)' "all repositories replaces the picks" '^scope-browser all-repositories: .* selected=1 '
 check_in 'scope browser (#137)' "signed out replaces the owner pane" '^scope-browser signed-out: pane=browse owners=0 phase=failed:signedOut '
 check_in 'scope browser (#137)' "gh missing replaces the owner pane" '^scope-browser gh-missing: pane=browse owners=0 phase=failed:ghMissing '
@@ -341,7 +343,7 @@ check_in 'scope browser account check (#137)' "unverified account is checked, no
 if grep -E '^scope-browser [a-z-]+: ' <<< "$scope" | grep -v '^scope-browser empty: ' | grep -q 'empty-claim=true'; then
   echo "FAIL a scope browser state other than the empty owner claims no repositories"; failures=$((failures + 1))
 else echo "ok   only the complete, empty owner claims no repositories"; fi
-for state in browse all-repositories nudge loading capped partial rate-limited denied empty signed-out gh-missing \
+for state in browse all-repositories nudge loading capped partial rate-limited denied empty managed signed-out gh-missing \
              identity-changed search no-matches search-all-owners selected-long checking-account; do
   for theme in '' '-dark'; do
     png="scope-browser-$state$theme"

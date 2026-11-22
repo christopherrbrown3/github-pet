@@ -156,6 +156,47 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         #expect(browser.presentation(try await open(browser, "demo-quiet-meadow")) == .empty)
     }
 
+    /// QA (#141): an owners answer that names the viewer but carries an error (organizations
+    /// missing or malformed, or another GraphQL error) keeps what loaded and warns; it never
+    /// reads as "not a member of any organization".
+    private struct PartialOwners: ScopeBrowsing {
+        let failure: ScopeBrowseFailure
+        let account: ScopeAccount
+        func owners(_ plan: ScopeOwnersPlan, budget: CommandBudget) -> ScopeOwnersResult {
+            ScopeOwnersResult(viewer: ScopeViewer(account: account, login: "demo-user"),
+                              owners: [ScopeBrowseOwner(kind: .viewer, login: "demo-user", repositoryCount: 1),
+                                       ScopeBrowseOwner(kind: .shared, login: "", repositoryCount: 0)],
+                              failure: failure)
+        }
+        func repositories(_ plan: ScopeRepositoryPagePlan, budget: CommandBudget) -> ScopeRepositoryPage { .failed(failure) }
+        func search(_ plan: ScopeRepositorySearchPlan, budget: CommandBudget) -> ScopeRepositoryPage { .failed(failure) }
+    }
+
+    @Test(arguments: [ScopeBrowseFailure.malformedResponse, .graphQLError])
+    func partialOwnersAnswerWarnsInsteadOfLookingEmpty(_ failure: ScopeBrowseFailure) async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        let spoken = Spoken()
+        let browser = ScopeBrowser(editor: app.scopeEditor, now: { app.clock() }) { identity in
+            guard case .github(let account) = identity else { return PartialOwners(failure: failure, account: ScopeBrowser.demoAccount) }
+            return PartialOwners(failure: failure, account: account)
+        }
+        browser.announce = { spoken.messages.append($0) }
+        browser.sync()
+        await browser.settle()
+        #expect(browser.ownersPhase == .loaded && browser.organizations.isEmpty)
+        #expect(browser.ownersWarning == failure, "the failure is kept, not dropped")
+        #expect(spoken.messages.contains { $0.hasSuffix("Your organizations may be incomplete.") })
+        #expect(!spoken.messages.contains { $0.hasPrefix("Loaded 0 organizations") })
+        // Your own account's page failed too: that owner is a failure, never empty.
+        let viewer = try #require(browser.owners.first)
+        #expect(browser.presentation(viewer) != .empty)
+        browser.loadOwners()
+        #expect(browser.ownersWarning == nil, "Retry clears the warning until the answer arrives")
+        await browser.settle()
+        #expect(browser.ownersWarning == failure)
+    }
+
     @Test func loadMoreAppendsThePageAndKeepsCursorOrder() async throws {
         let app = model(); defer { app.cleanupScopeSimulation() }
         let browser = try await browser(app)
