@@ -78,6 +78,12 @@ struct AXNode {
         return object.perform(sel)?.takeUnretainedValue()
     }
 
+    private static func legacy(_ object: NSObject, _ attribute: NSAccessibility.Attribute) -> Any? {
+        let sel = NSSelectorFromString("accessibilityAttributeValue:")
+        guard object.responds(to: sel) else { return nil }
+        return object.perform(sel, with: attribute.rawValue)?.takeUnretainedValue()
+    }
+
     static func read(_ element: Any, depth: Int = 0) -> AXNode? {
         guard depth < 40, let object = element as? NSObject else { return nil }
         var node = AXNode(type: String(describing: type(of: object)))
@@ -95,7 +101,13 @@ struct AXNode {
                 .first { !$0.isEmpty } ?? ""
         }
         node.customActions = reference(object, "accessibilityCustomActions") as? [NSAccessibilityCustomAction] ?? []
-        let children = reference(object, "accessibilityChildren") as? [Any] ?? []
+        var children = reference(object, "accessibilityChildren") as? [Any] ?? []
+        // List rows (NSOutlineRow) answer only the legacy attribute API, as the system's
+        // accessibility server also asks it.
+        if node.role.isEmpty, let legacyRole = legacy(object, .role) as? String {
+            node.role = legacyRole
+            children = legacy(object, .children) as? [Any] ?? children
+        }
         node.children = children.compactMap { read($0, depth: depth + 1) }
         return node
     }
@@ -358,13 +370,13 @@ private struct StubLoginBackend: LoginItemBackend {
             #expect(tree.first(id: "settings.entitlementInput")?.name == "New entitlement repository, owner/name")
             #expect(tree.all.contains { $0.name == "Add entitlement repository" && $0.enabled == false && !$0.help.isEmpty })
             #expect(tree.first(id: "settings.recheck")?.name == "Recheck")
-            let apply = try #require(tree.first(id: "settings.scope.apply"))
-            let reason = setting == .github ? "No changes to apply." : try #require(app.scopeEditor.applyBlockedReason)
-            #expect(apply.enabled == false && apply.help.hasPrefix(reason), "\(apply.line)")
+            // #137: Apply lives in the Choose Repositories sheet; Settings only summarizes.
+            #expect(tree.first(id: "settings.scope.apply") == nil, "\(dump)")
+            #expect(tree.first(id: "settings.scope.mode") != nil, "\(dump)")
             if setting == .githubSelectedScope {
-                #expect(tree.all.contains { $0.name == "New organization, login" && $0.role == "AXTextField" }, "\(dump)")
-                #expect(tree.all.contains { $0.name == "New repository, owner/name" && $0.role == "AXTextField" }, "\(dump)")
-                #expect(tree.all.contains { $0.name == "Add repository" })
+                let choose = try #require(tree.first(id: "settings.scope.choose"), "\(dump)")
+                #expect(choose.role == "AXButton" && choose.name == "Choose Repositories…" && !choose.help.isEmpty, "\(choose.line)")
+                #expect(tree.all.contains { $0.role == "AXButton" && $0.name == "Add by Name…" && !$0.help.isEmpty }, "\(dump)")
             }
         case .githubSignedOut:
             let link = try #require(tree.first(id: "ghsetup.signin"), "\(dump)")
@@ -452,7 +464,7 @@ private struct StubLoginBackend: LoginItemBackend {
         }
         let fields = reached.filter { $0 is NSTextField || String(describing: type(of: $0)).contains("TextField") }
         let textFieldNodes = tree.all.filter { $0.role == "AXTextField" }
-        #expect(textFieldNodes.count >= 3, "entitlement, organization and repository inputs")
+        #expect(textFieldNodes.count >= 1, "the entitlement input (scope entries are added in the sheet, #137)")
         #expect(fields.count >= textFieldNodes.count, "every text field is in the key view loop: \(reached.map { type(of: $0) })")
 
         // ⌘R refreshes from the popover or Inbox window. There are no dialogs, so no default or
@@ -468,5 +480,41 @@ private struct StubLoginBackend: LoginItemBackend {
             let object = try #require(node.object)
             #expect(object.responds(to: NSSelectorFromString("accessibilityPerformPress")), "\(node.line) can be pressed")
         }
+    }
+
+    // MARK: Scope browser (#137)
+
+    /// The Choose Repositories sheet on Demo fixtures: named controls, the search field's label,
+    /// one checkbox element per repository carrying the whole sentence, and sidebar rows that say
+    /// their state. Light and dark.
+    @Test(arguments: appearances)
+    func scopeBrowserSheetReadsOnceAndNamesEveryControl(_ appearance: NSAppearance.Name) async throws {
+        let app = model()
+        app.showFixtureItemsForSnapshot(SnapshotRenderer.inbox87Items(4))
+        defer { app.scopeEditor.cancel() }
+        let browser = app.makeScopeBrowser()
+        browser.announce = { _ in }
+        browser.sync()
+        await browser.settle()
+        let lumen = try #require(browser.owners.first { $0.login == "demo-lumen-labs" })
+        browser.open(lumen)
+        await browser.settle()
+        let host = AXHost(ScopeBrowserSheet(model: app, browser: browser) {}.frame(width: 780, height: 540), appearance: appearance)
+        defer { host.close() }
+        let tree = try await host.tree(until: "scopeBrowser.apply")
+        let dump = tree.all.map(\.line).joined(separator: "\n")
+        #expect(tree.problems().isEmpty, "\(tree.problems())\n\(dump)")
+        #expect(tree.all.contains { $0.role == "AXTextField" && $0.name == "Search repositories and organizations" }, "\(dump)")
+        let row = try #require(tree.all.first { $0.role == "AXCheckBox" && $0.name.hasPrefix("lantern-api, demo-lumen-labs, ") },
+                               "\(dump)")
+        #expect(row.name.contains("pushed "), "\(row.line)")
+        #expect(!tree.all.contains { $0.role == "AXStaticText" && ($0.value == "lantern-api" || $0.name == "lantern-api") },
+                "the row's visible name is not read a second time")
+        let all = try #require(tree.all.first { $0.role == "AXCheckBox" && $0.name.hasPrefix("All repositories in demo-lumen-labs") }, "\(dump)")
+        #expect(!all.help.isEmpty)
+        #expect(tree.all.contains { $0.name.hasPrefix("demo-tidewater, organization, repositories hidden by GitHub") }, "\(dump)")
+        #expect(tree.all.contains { $0.role == "AXButton" && $0.name == "Add by Name…" })
+        let apply = try #require(tree.first(id: "scopeBrowser.apply"))
+        #expect(apply.enabled == false && apply.help.hasPrefix("No changes to apply."), "\(apply.line)")
     }
 }

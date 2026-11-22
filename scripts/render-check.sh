@@ -323,6 +323,37 @@ if grep -E '^inbox87 ' <<< "$inbox87" | grep -v ' empty: ' | grep -q 'empty=allC
   echo "FAIL a non-empty or degraded inbox claims all clear"; failures=$((failures + 1))
 else echo "ok   only the verified empty inbox is all clear"; fi
 
+# Scope browser (#137): every sheet state, light and dark, on the offline Demo fixture. Each
+# failure state has its own presentation; only the truly empty owner claims "no repositories".
+scope=$(section 'scope browser (#137)')
+check_in 'scope browser (#137)' "browses Demo fixtures" '^scope-browser identity=demo$'
+for state presentation in browse rows all-repositories rows nudge capped loading loading capped capped partial partial \
+                          rate-limited rateLimited denied denied empty empty search capped no-matches rows search-all-owners rows; do
+  check_in 'scope browser (#137)' "$state shows $presentation" "^scope-browser $state: pane=owner:.* presentation=$presentation "
+done
+check_in 'scope browser (#137)' "all repositories replaces the picks" '^scope-browser all-repositories: .* selected=1 '
+check_in 'scope browser (#137)' "signed out replaces the owner pane" '^scope-browser signed-out: pane=browse owners=0 phase=failed:signedOut '
+check_in 'scope browser (#137)' "gh missing replaces the owner pane" '^scope-browser gh-missing: pane=browse owners=0 phase=failed:ghMissing '
+check_in 'scope browser (#137)' "account change discards everything" '^scope-browser identity-changed: pane=browse owners=0 phase=checkingAccount .* notice=shown$'
+check_in 'scope browser (#137)' "long selection is not capped" "^scope-browser selected-long: pane=selected .* selected=120 "
+check_in 'scope browser (#137)' "long Settings list says how many more" '^scope-settings-long: entries=120 visible-rows=6 more-cue=114$'
+check_in 'scope browser account check (#137)' "unverified account is checked, not empty" '^scope-browser checking-account: identity=none phase=checkingAccount$'
+if grep -E '^scope-browser [a-z-]+: ' <<< "$scope" | grep -v '^scope-browser empty: ' | grep -q 'empty-claim=true'; then
+  echo "FAIL a scope browser state other than the empty owner claims no repositories"; failures=$((failures + 1))
+else echo "ok   only the complete, empty owner claims no repositories"; fi
+for state in browse all-repositories nudge loading capped partial rate-limited denied empty signed-out gh-missing \
+             identity-changed search no-matches search-all-owners selected-long checking-account; do
+  for theme in '' '-dark'; do
+    png="scope-browser-$state$theme"
+    [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+  done
+done
+for png in scope-settings-long scope-add-by-name scope-add-by-name-invalid; do
+  for theme in '' '-dark'; do
+    [[ -s $out/$png$theme.png ]] && echo "ok   $png$theme.png rendered" || { echo "FAIL $png$theme.png missing"; failures=$((failures + 1)); }
+  done
+done
+
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do

@@ -149,6 +149,19 @@ final class AppModel: ObservableObject {
     let loginItem: LoginItemSettings
     /// Settings › Monitoring scope draft controller (PR B).
     lazy var scopeEditor = ScopeEditor(model: self, access: scopeAccess)
+
+    /// A fresh browser per Choose Repositories sheet (#137): its loaded pages die with the sheet.
+    /// Demo browses offline fixtures; the simulated launch uses its own offline answers.
+    func makeScopeBrowser() -> ScopeBrowser {
+        let simulation = scopeAccessSimulation, clock = clock
+        return ScopeBrowser(editor: scopeEditor, now: { clock() }, identify: { [weak self] in self?.refresh() }) { identity in
+            if let simulation { return simulation }
+            if identity == .demo {
+                return ScopeBrowseFixture(mode: .complete, account: ScopeBrowser.demoAccount, login: "demo-user", now: clock())
+            }
+            return ScopeGhAccess()
+        }
+    }
     private let scopeDefaults: UserDefaults
     private let simulationDefaultsSuite: String?
     private var repositoryTask: Task<Void, Never>? {

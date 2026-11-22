@@ -25,6 +25,15 @@ final class ScopeEditor: ObservableObject {
     @Published private(set) var discovery = Discovery.idle
     /// Validation/discovery replies rejected by the revision/identity/generation guards.
     @Published private(set) var discardedReplies = 0
+    /// Entries put in the draft through Add by Name (#137): the browser labels them.
+    @Published private(set) var namedTargets: Set<MonitoringTarget> = []
+    /// The latest Apply outcome, numbered so a sheet can react to each one exactly once.
+    @Published private(set) var applyEvent: ApplyEvent?
+    struct ApplyEvent: Equatable {
+        enum Outcome: Equatable { case applied, rejected, failed, superseded }
+        let sequence: Int
+        let outcome: Outcome
+    }
     /// Every validation/discovery started vs. returned (applied or discarded): a handshake for
     /// tests and the QA runner, independent of timing.
     private(set) var launchedChecks = 0
@@ -118,6 +127,7 @@ final class ScopeEditor: ObservableObject {
     private func resetDraft() {
         revision += 1
         draft = ScopeDraft(scope: activeScope)
+        namedTargets = []
         organizationInput = ""; repositoryInput = ""
         organizationInputProblem = nil; repositoryInputProblem = nil
     }
@@ -165,6 +175,82 @@ final class ScopeEditor: ObservableObject {
         report(row.kind == .organization ? "Organization removed from the draft." : "Repository removed from the draft.")
     }
 
+    // MARK: Browser selection (#137)
+
+    /// What the sheet restores on Cancel: the draft and its Add by Name labels.
+    struct DraftSnapshot: Equatable {
+        fileprivate let draft: ScopeDraft
+        fileprivate let named: Set<MonitoringTarget>
+    }
+
+    func snapshotDraft() -> DraftSnapshot { DraftSnapshot(draft: draft, named: namedTargets) }
+
+    /// Sheet Cancel: the draft returns to how it was when the sheet opened; an access check in
+    /// flight is cancelled like any other draft change.
+    func restoreDraft(_ snapshot: DraftSnapshot) {
+        guard snapshot.draft != draft || snapshot.named != namedTargets else { return }
+        draft = snapshot.draft; namedTargets = snapshot.named
+        edited()
+    }
+
+    func isSelected(_ target: MonitoringTarget) -> Bool { draft.rows.contains { $0.target == target } }
+
+    var selectedTargets: [MonitoringTarget] { draft.rows.compactMap(\.target) }
+
+    /// Checks or unchecks one browser row. The text keeps GitHub's casing for display; the
+    /// target normalizes it. Nothing here counts entries: the draft decides what it accepts.
+    func setSelected(_ target: MonitoringTarget, display: String? = nil, _ selected: Bool) {
+        if selected {
+            guard !isSelected(target) else { return }
+            if draft.mode != .selected { draft.mode = .selected }
+            let text = display ?? target.name.map { "\(target.owner)/\($0)" } ?? target.owner
+            if let problem = draft.add(text, kind: target.kind) { report(problem.message(for: target.kind)); return }
+            edited()
+            report("\(target.kind == .organization ? "All repositories in \(target.owner)" : text) added. \(selectionCount)")
+        } else {
+            let ids = draft.rows.filter { $0.target == target }.map(\.id)
+            guard !ids.isEmpty else { return }
+            ids.forEach { draft.remove($0) }
+            namedTargets.remove(target)
+            edited()
+            report("\(target.kind == .organization ? "All repositories in \(target.owner)" : "\(target.owner)/\(target.name ?? "")") removed. \(selectionCount)")
+        }
+    }
+
+    /// "All repositories" in an organization: the organization target replaces that owner's
+    /// individually checked repositories, which it covers. Unchecking does not restore them.
+    func setAllRepositories(_ organization: MonitoringTarget, _ selected: Bool) {
+        guard organization.kind == .organization else { return }
+        guard selected else { setSelected(organization, false); return }
+        guard !isSelected(organization) else { return }
+        let covered = draft.rows.filter { $0.target.map { $0.kind == .repository && $0.owner == organization.owner } ?? false }
+        if draft.mode != .selected { draft.mode = .selected }
+        if let problem = draft.add(organization.owner, kind: .organization) { report(problem.message(for: .organization)); return }
+        covered.forEach { draft.remove($0.id); if let target = $0.target { namedTargets.remove(target) } }
+        edited()
+        let removed = covered.isEmpty ? "" : " \(covered.count) individually checked \(covered.count == 1 ? "repository is" : "repositories are") now covered and removed."
+        report("All repositories in \(organization.owner) added.\(removed) \(selectionCount)")
+    }
+
+    /// Add by Name: `owner/name` is a repository, anything else an organization login.
+    static func nameKind(_ text: String) -> MonitoringTarget.Kind { text.contains("/") ? .repository : .organization }
+
+    func addByNameProblem(_ text: String) -> ScopeRowProblem? { draft.addProblem(text, kind: Self.nameKind(text)) }
+
+    /// No network call: Apply still checks access to the entry.
+    @discardableResult
+    func addByName(_ text: String) -> ScopeRowProblem? {
+        let kind = Self.nameKind(text)
+        if draft.mode != .selected { draft.mode = .selected }
+        if let problem = draft.add(text, kind: kind) { report(problem.message(for: kind)); return problem }
+        if let target = draft.rows.last?.target { namedTargets.insert(target) }
+        edited()
+        report("\(kind == .organization ? "Organization" : "Repository") added by name. \(selectionCount)")
+        return nil
+    }
+
+    var selectionCount: String { "\(draft.rows.count) selected." }
+
     func cancel() {
         cancelValidation()
         resetDraft()
@@ -206,15 +292,18 @@ final class ScopeEditor: ObservableObject {
         switch outcome {
         case .verified(let viewer):
             guard ScopeIdentity.github(viewer.account) == identity else {
+                recordApply(.failed)
                 report(ScopeAccessFailure.identityMismatch.message); return
             }
             draft.recordAccessProblems([:])
             commit(scope, identity: identity, generation: generation)
         case .rejected(_, let problems):
             draft.recordAccessProblems(problems)
+            recordApply(.rejected)
             let count = problems.count
             report("\(count) \(count == 1 ? "entry" : "entries") could not be verified. Nothing was applied; the active scope is unchanged.")
         case .failed(let failure):
+            recordApply(.failed)
             report(failure.message)
         }
     }
@@ -228,10 +317,16 @@ final class ScopeEditor: ObservableObject {
         baseScope = model.activeMonitoringScope
         if applied {
             resetDraft()
+            recordApply(.applied)
             report("Monitoring scope applied: \(Self.counts(scope))\(identity == .demo ? " (Demo)" : "").")
         } else {
+            recordApply(.superseded)
             report("Monitoring changed before Apply finished. Nothing was applied; review and Apply again.")
         }
+    }
+
+    private func recordApply(_ outcome: ApplyEvent.Outcome) {
+        applyEvent = ApplyEvent(sequence: (applyEvent?.sequence ?? 0) + 1, outcome: outcome)
     }
 
     private func cancelValidation() {
