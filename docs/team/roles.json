@@ -33,7 +33,8 @@
       "reasoningEffort": null,
       "assignment": "Beta 5: #104 (PR121), #41 (PR123, PR126) merged; now #127 test timing",
       "verification": "hc launch argv --model and live TUI on 2026-11-20",
-      "previousCodexTerminal": "t69"
+      "previousCodexTerminal": "t69",
+      "status": "ended 2026-11-21 (work merged)"
     },
     {
       "name": "developer-3",
@@ -43,7 +44,8 @@
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
       "assignment": "#7 (PR118) merged; on call for Beta 4 appcast PR (release/appcast-beta4) after Chris signs",
-      "verification": "hc launch argv --model and live TUI on 2026-11-20"
+      "verification": "hc launch argv --model and live TUI on 2026-11-20",
+      "status": "ended 2026-11-21 (work merged)"
     },
     {
       "name": "qa-engineer",
@@ -65,7 +67,8 @@
       "observedModel": "claude-sonnet-5-5",
       "reasoningEffort": null,
       "assignment": "#88 icon packaging, feat/88-app-icon-packaging (stacked on PR91 4892eda), developer-icon-88",
-      "verification": "hc launch argv on 2026-11-20"
+      "verification": "hc launch argv on 2026-11-20",
+      "status": "ended 2026-11-21 (work merged)"
     },
     {
       "name": "developer-5",
@@ -108,6 +111,61 @@
       "reasoningEffort": null,
       "assignment": "#13 offscreen accessibility-tree tests, fixes and hand-check checklist, developer-a11y-13",
       "verification": "hc launch argv --model on 2026-11-21"
+    },
+    {
+      "name": "designer-scope",
+      "terminal": "t6v",
+      "runtime": "claude",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "reasoningEffort": null,
+      "assignment": "#137 scope browser design, PR139 (squash-merged)",
+      "verification": "hc launch argv --model on 2026-11-22",
+      "status": "ended 2026-11-22 (work merged; worktree removed)"
+    },
+    {
+      "name": "developer-scope-engine",
+      "terminal": "t6w",
+      "runtime": "claude",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "reasoningEffort": null,
+      "assignment": "#137 uncapped scope engine, PR140 merged",
+      "verification": "hc launch argv --model on 2026-11-22",
+      "status": "ended 2026-11-22 (work merged; worktree removed)"
+    },
+    {
+      "name": "developer-scope-browser",
+      "terminal": "t6x",
+      "runtime": "claude",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "reasoningEffort": null,
+      "assignment": "#137 scope browser sheet, PR141 merged",
+      "verification": "hc launch argv --model on 2026-11-22",
+      "status": "ended 2026-11-22 (work merged; worktree removed)"
+    },
+    {
+      "name": "designer-137",
+      "terminal": "t6y",
+      "runtime": "claude",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "reasoningEffort": null,
+      "assignment": "#137 design sign-off of PR141 (review only)",
+      "verification": "hc launch argv --model on 2026-11-22",
+      "status": "ended 2026-11-22 (work merged; worktree removed)"
+    },
+    {
+      "name": "developer-142",
+      "terminal": "t6z",
+      "runtime": "claude",
+      "intendedModel": "claude-opus-5-5",
+      "observedModel": "claude-opus-5-5",
+      "reasoningEffort": null,
+      "assignment": "#142 org fallback search, PR143 merged",
+      "verification": "hc launch argv --model on 2026-11-22",
+      "status": "ended 2026-11-22 (work merged; worktree removed)"
     }
   ],
   "observedDate": "2026-11-20",
