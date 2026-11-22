@@ -77,10 +77,16 @@ public struct ScopeQueryPlan: Sendable {
     /// Its metadata is still verified.
     static func batches(_ targets: [MonitoringTarget]) -> [[Int]] {
         let organizations = Set(targets.filter { $0.kind == .organization }.map(\.owner))
+        return batches(targets, of: targets.indices.filter {
+            !(targets[$0].kind == .repository && organizations.contains(targets[$0].owner))
+        })
+    }
+
+    /// Packs `indices`, in order, into searches within the qualifier and length limits.
+    private static func batches(_ targets: [MonitoringTarget], of indices: [Int]) -> [[Int]] {
         var batches: [[Int]] = [], current: [Int] = [], length = longestCategoryQuery
-        for (index, target) in targets.enumerated() {
-            if target.kind == .repository && organizations.contains(target.owner) { continue }
-            let added = 1 + target.qualifier.utf8.count
+        for index in indices {
+            let added = 1 + targets[index].qualifier.utf8.count
             if !current.isEmpty && (length + added > maximumSearchLength || current.count == maximumQualifiersPerSearch) {
                 batches.append(current); current = []; length = longestCategoryQuery
             }
@@ -125,6 +131,42 @@ public struct ScopeQueryPlan: Sendable {
         return chunks.map { chunk in
             ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
                            lookups: chunk.lookups.sorted(), batches: chunk.batches)
+        }
+    }
+
+    /// #142: a covered repository has no search of its own, so an organization whose lookup failed
+    /// (SSO, lost access, renamed, or a user login saved as an organization) would hide its rows.
+    /// These requests search the covered repositories of every such organization with `repo:`
+    /// qualifiers, under the same batch and request limits. Each request looks its repositories up
+    /// again, so a row still needs metadata verified in the same response. A repository whose own
+    /// lookup already failed is left out, and batch numbers continue after the poll's, so every
+    /// alias stays unique. Empty when no organization failed: a readable one is never searched twice.
+    public static func fallbackRequests(scope: MonitoringScope, expectedAccount: ScopeAccount?,
+                                        assignmentMode: AssignmentMode = .all,
+                                        issues: [ScopedFetchIssue]) -> [ScopeQueryPlan] {
+        guard scope.mode == .selected, expectedAccount != nil else { return [] }
+        var failed = Set<Int>()
+        for issue in issues {
+            switch issue {
+            case .targetUnavailable(let index), .malformedTarget(let index):
+                if scope.targets.indices.contains(index) { failed.insert(index) }
+            default: break
+            }
+        }
+        let unreadable = Set(failed.filter { scope.targets[$0].kind == .organization }.map { scope.targets[$0].owner })
+        let covered = scope.targets.indices.filter {
+            scope.targets[$0].kind == .repository && unreadable.contains(scope.targets[$0].owner) && !failed.contains($0)
+        }
+        // Every lookup here is also searched, so fill each request with 50 lookups first, then batch
+        // them: at most 10 requests for the 500-target ceiling, however long the names.
+        var number = batches(scope.targets).count
+        return stride(from: 0, to: covered.count, by: maximumTargetsPerRequest).map { start in
+            let lookups = Array(covered[start..<min(start + maximumTargetsPerRequest, covered.count)])
+            let numbered = batches(scope.targets, of: lookups).map { batch in
+                defer { number += 1 }; return (offset: number, element: batch)
+            }
+            return ScopeQueryPlan(scope: scope, expectedAccount: expectedAccount, assignmentMode: assignmentMode,
+                                  lookups: lookups, batches: numbered)
         }
     }
 
@@ -419,20 +461,32 @@ public struct ScopedGhClient: ScopedPolling {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
         if let failure = preflight(gh, budget: budget) { return failure }
         var merged = run(plans[0], gh: gh, budget: budget)
-        for plan in plans.dropFirst() {
-            guard merged.viewer != nil, !merged.issues.contains(.identityMismatch), !budget.isCancelled else { break }
-            let next = run(plan, gh: gh, budget: budget.renewed())
-            if next.issues.contains(.identityMismatch) { return next }
-            merged = Self.merge(merged, next)
+        func runEach(_ plans: some Sequence<ScopeQueryPlan>) -> ScopedPollResult? {
+            for plan in plans {
+                guard merged.viewer != nil, !merged.issues.contains(.identityMismatch), !budget.isCancelled else { break }
+                let next = run(plan, gh: gh, budget: budget.renewed())
+                if next.issues.contains(.identityMismatch) { return next }
+                merged = Self.merge(merged, next)
+            }
+            return nil
         }
-        return merged
+        if let switched = runEach(plans.dropFirst()) { return switched }
+        // #142: covered repositories of an organization that failed its lookup, in the same cycle.
+        // Each is one more renewed-budget request, like a chunk, and only after every chunk ran.
+        // The organization's own issue stays, so the poll stays Partial. Not after a rate limit or
+        // sign-out, which another request can't fix.
+        guard !merged.issues.contains(.rateLimited), !merged.issues.contains(.signedOut) else { return merged }
+        let fallback = ScopeQueryPlan.fallbackRequests(scope: scope, expectedAccount: expectedAccount,
+                                                       assignmentMode: assignmentMode, issues: merged.issues)
+        return runEach(fallback) ?? merged
     }
     public func fetchIdentity(expectedAccount: ScopeAccount?, budget: CommandBudget) -> ScopedPollResult {
         guard let gh = locator.locate() else { return .failure(.ghMissing) }
         if let failure = preflight(gh, budget: budget) { return failure }
         return run(ScopeQueryPlan(identityFor: expectedAccount), gh: gh, budget: budget)
     }
-    /// Requests cover disjoint targets and searches, so rows, sources and waiting counts add up.
+    /// Requests cover disjoint searches, so rows, sources and waiting counts add up (a #142 fallback
+    /// request looks up targets again, but only after their organization failed, which is Partial).
     /// Hidden counts are trusted only when every request was clean.
     static func merge(_ first: ScopedPollResult, _ next: ScopedPollResult) -> ScopedPollResult {
         let issues = first.issues + next.issues

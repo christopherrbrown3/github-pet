@@ -709,12 +709,12 @@ final class AppModel: ObservableObject {
             guard refetches > 0 else {
                 apply(scopeSession.failCycle(.identityMismatch)); return
             }
-            guard budget.remaining > 0 else {
-                apply(scopeSession.failCycle(.deadline)); return
-            }
             sync(now: clock())
             guard let next = scopeSession.beginPoll(assignmentMode: request.assignmentMode) else { return }
-            launchRepositoryPoll(next, budget: budget, refetches: refetches - 1)
+            // #142: a mismatch found in a late chunk of a long poll arrives after the cycle's own
+            // budget is spent. The one refetch is one more request, so it gets a renewed budget like
+            // a chunk; cancelling the cycle's budget still cancels it, and `refetches` bounds it.
+            launchRepositoryPoll(next, budget: budget.renewed(), refetches: refetches - 1)
         }
         sync(now: clock())
     }
@@ -1157,6 +1157,8 @@ final class AppModel: ObservableObject {
         simulation.holdNextReply(count)
         if refresh { refreshRepositoriesOnly() }
     }
+    /// Runs `action` once, as the next simulated reply returns: e.g. advancing a fixture budget clock.
+    func simulateScopeAfterNextReply(_ action: @escaping @Sendable () -> Void) { scopeSimulation?.afterNextReply(action) }
     func simulateScopeDeliver() { scopeSimulation?.releaseReplies(); scopeAccessSimulation?.releaseValidations() }
     func simulateScopeDeliverOne(newest: Bool) { scopeSimulation?.releaseReply(newest: newest) }
     func simulateScopeDiscovery(_ mode: ScopeAccessSimulation.DiscoveryMode) { scopeAccessSimulation?.setDiscovery(mode); objectWillChange.send() }
