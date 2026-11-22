@@ -28,7 +28,7 @@ extension SnapshotRenderer {
             if case .failed(let failure) = value { return "failed:\(failure)" }
             return "\(value)"
         }
-        func line(_ name: String, _ browser: ScopeBrowser, entries: Int? = nil) -> String {
+        func line(_ name: String, _ browser: ScopeBrowser) -> String {
             let current = browser.currentOwner
             let presentation = current.map { "\(browser.presentation($0))" } ?? "none"
             let rows = current.map { browser.visibleRows($0).rows.count + browser.visibleRows($0).fromSearch.count } ?? 0
@@ -39,14 +39,14 @@ extension SnapshotRenderer {
             case .owner: pane = "owner:\(current?.login ?? "?")"
             }
             return "scope-browser \(name): pane=\(pane) owners=\(browser.owners.count) phase=\(phase(browser.ownersPhase)) "
-                + "presentation=\(presentation) rows=\(rows) selected=\(entries ?? editor.draft.rows.count) "
+                + "presentation=\(presentation) rows=\(rows) selected=\(editor.draft.rows.count) "
                 + "empty-claim=\(current.map { browser.presentation($0) == .empty } ?? false) "
                 + "notice=\(browser.notice == nil ? "none" : "shown")"
         }
-        func shoot(_ name: String, _ browser: ScopeBrowser, entries: [ScopeEntry]? = nil) async {
-            report.append(line(name, browser, entries: entries?.count))
+        func shoot(_ name: String, _ browser: ScopeBrowser) async {
+            report.append(line(name, browser))
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
-                report += await render(ScopeBrowserSheet(model: model, browser: browser, entriesOverride: entries) {}
+                report += await render(ScopeBrowserSheet(model: model, browser: browser) {}
                                         .frame(width: size.width, height: size.height),
                                        name: "scope-browser-\(name)\(suffix)", directory: directory, appearance: appearance,
                                        asWindow: true)
@@ -105,25 +105,31 @@ extension SnapshotRenderer {
         allOwners.searchText = "beacon"
         await shoot("search-all-owners", allOwners)
 
-        // A long selection: the review scrolls with an edge fade and an "N more" count.
-        let long = (0..<Self.longSelectionCount).map { index -> ScopeEntry in
-            index % 9 == 0 ? ScopeEntry(id: index, text: "demo-org-\(index)", kind: .organization, named: index % 18 == 0, problem: nil)
-                : ScopeEntry(id: index, text: "demo-owner-\(index % 7)/demo-repository-\(index)", kind: .repository, named: false,
-                             problem: index == 4 ? ScopeRowProblem.unavailable.message(for: .repository) : nil)
+        // A long selection through the real draft (no product cap since #140): the review and the
+        // Settings summary scroll with an edge fade and an "N more" count. One entry added by name,
+        // one with an inline format error.
+        editor.setMode(.selected)
+        for index in 0..<Self.longSelectionCount {
+            if index % 9 == 0 {
+                editor.setSelected(try! MonitoringTarget(organization: "demo-org-\(index)"), true)
+            } else {
+                editor.setSelected(try! MonitoringTarget(repository: "demo-owner-\(index % 7)/demo-repository-\(index)"), true)
+            }
         }
+        editor.addByName("demo-partner/private-tools")
+        if let row = editor.draft.rows.dropFirst(4).first { editor.update(row.id, text: "org:demo is:pr") }
         let review = await opened(.complete, nil)
-        editor.setMode(.selected)
         review.pane = .selected
-        await shoot("selected-long", review, entries: long)
-        let hidden = ScrollingEntryList<EmptyView>.hiddenBelow(count: long.count, rowHeight: MonitoringScopeSection.rowHeight, offset: 0,
+        await shoot("selected-long", review)
+        let count = editor.draft.rows.count
+        let hidden = ScrollingEntryList<EmptyView>.hiddenBelow(count: count, rowHeight: MonitoringScopeSection.rowHeight, offset: 0,
                                                              viewport: CGFloat(MonitoringScopeSection.visibleRows) * MonitoringScopeSection.rowHeight)
-        report.append("scope-settings-long: entries=\(long.count) visible-rows=\(MonitoringScopeSection.visibleRows) more-cue=\(hidden)")
-        editor.setMode(.selected)
+        report.append("scope-settings-long: entries=\(count) draft=real visible-rows=\(MonitoringScopeSection.visibleRows) more-cue=\(hidden)")
         for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
-            report += await render(Form { MonitoringScopeSection(model: model, editor: editor, entriesOverride: long) }
+            report += await render(Form { MonitoringScopeSection(model: model, editor: editor) }
                                     .formStyle(.grouped).frame(width: 520),
                                    name: "scope-settings-long\(suffix)", directory: directory, appearance: appearance)
-            report += await render(AddByNameSheet(editor: editor, text: "demo-partner/private-tools") {},
+            report += await render(AddByNameSheet(editor: editor, text: "demo-partner/more-tools") {},
                                    name: "scope-add-by-name\(suffix)", directory: directory, appearance: appearance)
             report += await render(AddByNameSheet(editor: editor, text: "org:demo is:pr") {},
                                    name: "scope-add-by-name-invalid\(suffix)", directory: directory, appearance: appearance)

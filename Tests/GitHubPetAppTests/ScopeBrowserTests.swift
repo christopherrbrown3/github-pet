@@ -200,6 +200,24 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         #expect(browser.visibleRows(owner).rows.count == all.count)
     }
 
+    @Test func aLongSelectionIsNeverCappedByTheSheetAndApplies() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }
+        let browser = try await browser(app)
+        let editor = app.scopeEditor
+        let owner = try await open(browser, "demo-example-org")
+        browser.loadPage(owner, more: true)
+        await browser.settle()
+        let rows = browser.visibleRows(owner).rows.prefix(150)
+        try #require(rows.count == 150)
+        rows.forEach { browser.toggle($0, true) }
+        #expect(editor.draft.rows.count == 150 && rows.allSatisfy(browser.isSelected))
+        #expect(ScopeEntry.entries(editor).count == 150 && editor.canApply)
+        editor.apply()
+        try await wait { editor.applyEvent != nil }
+        #expect(editor.applyEvent?.outcome == .applied)
+        #expect(app.activeMonitoringScope?.targets.count == 150)
+    }
+
     @Test func selectedListCountsEntriesHiddenBelowAtAnyLength() {
         for count in [0, 5, 6, 7, 150, 1_000] {
             let hidden = ScrollingEntryList<EmptyView>.hiddenBelow(count: count, rowHeight: 36, offset: 0, viewport: 216)

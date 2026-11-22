@@ -335,8 +335,8 @@ check_in 'scope browser (#137)' "all repositories replaces the picks" '^scope-br
 check_in 'scope browser (#137)' "signed out replaces the owner pane" '^scope-browser signed-out: pane=browse owners=0 phase=failed:signedOut '
 check_in 'scope browser (#137)' "gh missing replaces the owner pane" '^scope-browser gh-missing: pane=browse owners=0 phase=failed:ghMissing '
 check_in 'scope browser (#137)' "account change discards everything" '^scope-browser identity-changed: pane=browse owners=0 phase=checkingAccount .* notice=shown$'
-check_in 'scope browser (#137)' "long selection is not capped" "^scope-browser selected-long: pane=selected .* selected=120 "
-check_in 'scope browser (#137)' "long Settings list says how many more" '^scope-settings-long: entries=120 visible-rows=6 more-cue=114$'
+check_in 'scope browser (#137)' "long selection is not capped" "^scope-browser selected-long: pane=selected .* selected=121 "
+check_in 'scope browser (#137)' "long Settings list says how many more" '^scope-settings-long: entries=121 draft=real visible-rows=6 more-cue=115$'
 check_in 'scope browser account check (#137)' "unverified account is checked, not empty" '^scope-browser checking-account: identity=none phase=checkingAccount$'
 if grep -E '^scope-browser [a-z-]+: ' <<< "$scope" | grep -v '^scope-browser empty: ' | grep -q 'empty-claim=true'; then
   echo "FAIL a scope browser state other than the empty owner claims no repositories"; failures=$((failures + 1))

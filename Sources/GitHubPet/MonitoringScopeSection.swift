@@ -9,8 +9,6 @@ import SwiftUI
 struct MonitoringScopeSection: View {
     @ObservedObject var model: AppModel
     @ObservedObject var editor: ScopeEditor
-    /// Offscreen renders only: a generated selection longer than today's draft accepts.
-    var entriesOverride: [ScopeEntry]?
     @State private var browser: ScopeBrowser?
     @State private var browserOpensAddByName = false
     @State private var browserSnapshot: ScopeEditor.DraftSnapshot?
@@ -19,7 +17,7 @@ struct MonitoringScopeSection: View {
     static let rowHeight: CGFloat = 36
 
     var body: some View {
-        let entries = entriesOverride ?? ScopeEntry.entries(editor)
+        let entries = ScopeEntry.entries(editor)
         Section {
             LabeledContent("Account") {
                 Text(editor.accountDescription).lineLimit(2).truncationMode(.middle).multilineTextAlignment(.trailing)

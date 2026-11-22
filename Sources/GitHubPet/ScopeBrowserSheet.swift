@@ -10,8 +10,6 @@ struct ScopeBrowserSheet: View {
     @ObservedObject var browser: ScopeBrowser
     @ObservedObject var editor: ScopeEditor
     let close: () -> Void
-    /// Offscreen renders only: a generated selection longer than today's draft accepts.
-    var entriesOverride: [ScopeEntry]?
 
     @State private var snapshot: ScopeEditor.DraftSnapshot?
     @State private var addingByName: Bool
@@ -24,15 +22,14 @@ struct ScopeBrowserSheet: View {
     /// `initialSnapshot`: what Cancel restores when the opener already changed the draft
     /// (choosing Selected in Settings); otherwise the draft as the sheet appears.
     init(model: AppModel, browser: ScopeBrowser, addByName: Bool = false, initialSnapshot: ScopeEditor.DraftSnapshot? = nil,
-         entriesOverride: [ScopeEntry]? = nil, close: @escaping () -> Void) {
+         close: @escaping () -> Void) {
         self.model = model; self.browser = browser; self.editor = browser.editor; self.close = close
-        self.entriesOverride = entriesOverride
         _addingByName = State(initialValue: addByName)
         _snapshot = State(initialValue: initialSnapshot)
     }
 
     static let idealSize = CGSize(width: 780, height: 540)
-    private var entries: [ScopeEntry] { entriesOverride ?? ScopeEntry.entries(editor) }
+    private var entries: [ScopeEntry] { ScopeEntry.entries(editor) }
 
     var body: some View {
         VStack(spacing: 0) {

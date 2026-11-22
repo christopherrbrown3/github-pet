@@ -70,7 +70,7 @@ Candidates I looked at (SwiftPM, macOS 13+):
 
 **Recommendation: native SwiftUI, no new dependency.** Reasons:
 
-1. None of the libraries does the hard part: tri-state org/repo selection, the 10-entry cap,
+1. None of the libraries does the hard part: tri-state org/repo selection, a long scrolling selection,
    server search and our failure states. We would wrap a library and still write all of that.
 2. Native `List`, `Toggle(.checkbox)` and `.searchable` give the system keyboard, type-select,
    focus ring and VoiceOver behaviour for free. They also stay inside what `AccessibilityTreeTests`
@@ -89,7 +89,7 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
 
 - **Settings section stays, simplified** ([01](scope-browser/01-settings-section.png),
   [dark](scope-browser/01-settings-section-dark.png)): Account, the Monitor radio group, then for
-  *Selected* a read-only **Selected · N of 10** list. Each row has a monogram, the name, a kind
+  *Selected* a read-only **Selected · N** list that scrolls, with an edge fade and an "N more" count while entries are out of view. Each row has a monogram, the name, a kind
   label ("All repositories", "Repository", "added by name") and a remove (⊖) button. Below it are
   **Choose Repositories…** and **Add by Name…**, then one status line plus Cancel and Apply. The
   editable text-field rows and the suggestion menus are removed.
@@ -116,7 +116,7 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
 - **Detail pane** for the selected owner:
   - A header with monogram, name and "240 repositories · organization".
   - The **All repositories in {org}** card: a checkbox, with "Includes repositories added later.
-    Uses 1 of 10." Organizations only; your own account and Shared with you have no all option,
+    As one entry." Organizations only; your own account and Shared with you have no all option,
     because the model only supports organization targets.
   - A **REPOSITORIES** caption, with a trailing note such as "1 archived hidden".
   - Rows (26 pt): checkbox, a private (lock), public (book) or fork glyph, the name (archived names
@@ -124,7 +124,7 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
     pushed time ("2 hours ago").
   - A footer line: "Showing all 38", or "Showing the 100 most recently pushed of 240" with
     **Load 100 More**.
-- **Sheet footer**: a **N of 10 selected** capsule (orange at 10), **Add by Name…**, then
+- **Sheet footer**: an **N selected** capsule, **Add by Name…**, then
   **Cancel** and **Apply** (the default button).
 
 ### Selection rules
@@ -136,10 +136,15 @@ If profiling ever shows `List` struggling (it shouldn't below about 5,000 loaded
 - Unchecking **All repositories** returns the rows to unchecked. Previous individual picks aren't
   restored, which keeps the behaviour predictable.
 - **Nudge**: when three or more repositories of one organization are checked, show the tip
-  "Picking several here? 'All repositories' uses one slot and covers new ones." Never switch
+  "Picking several here? 'All repositories' covers every repository in {org}, including new ones." Never switch
   automatically.
-- **Cap**: at 10 of 10, unchecked boxes are disabled and an info banner explains how to free a slot
-  (state 9). Checked boxes stay enabled, so you can always uncheck.
+- **No product cap** (Chris, 2026-11-22). Checkboxes are never disabled for count. The Selected
+  lists scroll (lazy rows, smooth at hundreds of entries) with a bottom edge fade and an
+  **"N more"** count while entries are out of view. GitHub's per-request limits set a technical
+  ceiling of 500 entries (`MonitoringScope.maximumTargets`, engine #140); the 501st is refused
+  with the `ScopeRowProblem.overLimit` copy: "GitHub limits how much each check can look up, so
+  GitHub Pet watches at most 500 organizations and repositories. To watch more repositories,
+  choose their whole organization: it counts once and covers every repository in it."
 - **Commit**: the sheet edits the same `ScopeDraft` the Settings section shows. **Apply** runs
   `ScopeEditor.apply()` (the existing validation) with an inline "Checking access…" spinner in the
   footer. On `.verified`, the sheet closes and Settings shows "Monitoring scope applied: …". On
@@ -186,7 +191,7 @@ error.
 | 6 | Signed out / gh missing | `.signedOut` / `.ghMissing` | The whole detail pane is replaced by "Sign in to GitHub CLI to browse" (or "Install GitHub CLI"), with **Try Again** and **Add by Name…**. The Selected list is kept. |
 | 7 | Truly empty | `.exhausted` with 0 rows | "No repositories you can read. GitHub returned a complete answer for {owner}." |
 | 8 | No search matches | local filter | As described under Search. |
-| 9 | Limit reached | 10 targets | An info banner, with unchecked boxes disabled. |
+| 9 | Technical ceiling | 500 entries (`overLimit`) | No banner or disabled state; the refused add reports the `overLimit` copy in the footer status and is announced. |
 | — | Account not verified | `identity == nil` | The sheet opens to a "Checking your GitHub CLI account…" state and runs the identity check itself (`fetchIdentity`) instead of telling the user to refresh the Inbox. |
 | — | Identity changed mid-browse | `.identityMismatch` | All loaded rows are discarded and "The GitHub CLI account changed. Reloading for {new login}." is shown. Never mix accounts. |
 | — | Demo | `isDemo` | A "Demo: invented organizations, checked offline" caption under the title. It uses fixture owners. |
@@ -215,7 +220,7 @@ error.
 | ↑ ↓ in sidebar | Change owner; the detail list updates |
 | ↑ ↓ in detail | Move between rows; type-select jumps by name |
 | Space | Toggle the focused row's checkbox (the "All repositories" card is the first row) |
-| ⌘A | Not used: it would overflow the 10-entry cap |
+| ⌘A | Not used: selecting a whole page by accident is too easy to miss |
 | Return | Apply (default button); on a "Search GitHub" row, runs that search |
 | Esc / ⌘. | Cancel (clears the search field first if it has text) |
 
@@ -229,7 +234,7 @@ error.
 - Sidebar rows: "lumen-labs, organization, 38 repositories, 2 selected". For access denied:
   "tidewater-demo, organization, repositories hidden by GitHub".
 - Announce through `ScopeEditor.report` and `postAnnouncement`, once per change: page loaded ("Loaded
-  100 of 240 repositories for example-org"), the state banners, selection count changes ("5 of 10
+  100 of 240 repositories for example-org"), the state banners, selection count changes ("5
   selected"), redundant picks removed, and the Apply outcome.
 - Banners are a single combined element with their action button kept separate. The search field's
   label is "Search repositories and organizations".
@@ -263,12 +268,11 @@ error.
 
 ## Open questions for PM / Chris
 
-1. **The 10-entry cap.** With organization-level selection the cap is usually fine, and this design
-   makes it visible and nudges toward "All repositories". If Chris wants more individual
-   repositories, raising `maximumTargets` affects the size of each poll's GraphQL query (one search
-   alias per target and category), so it's a developer and performance decision rather than a UI one.
-2. **Apply in the sheet** (recommended) versus a "Done" button that only updates the draft. The
-   spec assumes Apply.
+1. **The 10-entry cap.** Decided (Chris, 2026-11-22): no product cap. The engine keeps a technical
+   ceiling of 500 for GitHub's per-request limits (#140); the UI shows a scrolling list with a
+   more-entries cue instead of a counter.
+2. **Apply in the sheet**: decided (Chris, 2026-11-22). Apply in the sheet saves and starts
+   monitoring; there is no second Apply in Settings.
 
 ## Reproducing the images
 
