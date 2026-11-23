@@ -234,14 +234,36 @@ extension MascotPack {
                 }
             }
         }
-        var lean = Self.attentionLeanDegrees
-        var contours = sweep(lean)
-        while lean > 0, contours.flatMap({ $0.compactMap { $0 } }).min().map({ $0 < baseTop }) == true {
-            lean -= 0.5
-            contours = sweep(lean)
+        // The largest 0.5° step whose whole ±range keeps every rotated point (with the sweep's 1 px
+        // margin) at or below the states' top: point math only, then one sweep at that limit.
+        let pivot = AttentionGesture.pivot
+        func highestRow(_ degrees: Double) -> Double {
+            let angle = degrees * .pi / 180, c = cos(angle), s = sin(angle)
+            var top = Double.infinity
+            for points in pointSets {
+                for point in points {
+                    top = min(top, (pivot.y + (point.x - pivot.x) * s + (point.y - pivot.y) * c).rounded(.down) - 1)
+                }
+            }
+            return max(top, 0)
+        }
+        var lean = 0.0
+        scan: for half in 1...Int(Self.attentionLeanDegrees * 2) {
+            let limit = Double(half) / 2
+            for step in stride(from: limit - 0.5, through: limit, by: 0.05) where step > 0 {
+                if highestRow(step) < Double(baseTop) || highestRow(-step) < Double(baseTop) { break scan }
+            }
+            lean = limit
         }
         clipLeanLimit = lean
-        extraLeaningContours = contours
+        let contours = sweep(lean)
+        // The sweep's own sampling can still reach a row the scan missed; never let it grow the lane.
+        if contours.flatMap({ $0.compactMap { $0 } }).min().map({ $0 < baseTop }) == true, lean > 0 {
+            clipLeanLimit = max(0, lean - 0.5)
+            extraLeaningContours = sweep(clipLeanLimit)
+        } else {
+            extraLeaningContours = contours
+        }
         // A custom pack drawing outside the states' art widens the hover outline instead (#138).
         if !enforcingBounds, !outside.isEmpty {
             for state in MascotState.allCases {
