@@ -25,5 +25,15 @@
             <sparkle:fullReleaseNotesLink>https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.6</sparkle:fullReleaseNotesLink>
             <enclosure url="https://github.com/christopherrbrown3/github-pet/releases/download/v0.1.0-beta.6/GitHubPet-0.1.0-49849ff-universal.zip" type="application/octet-stream" sparkle:edSignature="9u2W1/sz2dWy+h7mMkrewZ7fMKIPnOesv1deTA+EoLSJVS3c/IfHvgLAPXDeWwCwQ7fR0H8qdmI9MTIfOEMVAg==" length="6828548" />
         </item>
+        <item>
+            <title>GitHub Pet 0.1.0-beta.7</title>
+            <pubDate>Mon, 23 Nov 2026 21:14:58 GMT</pubDate>
+            <sparkle:version>518</sparkle:version>
+            <sparkle:shortVersionString>0.1.0-beta.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:fullReleaseNotesLink>https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.7</sparkle:fullReleaseNotesLink>
+            <enclosure url="https://github.com/christopherrbrown3/github-pet/releases/download/v0.1.0-beta.7/GitHubPet-0.1.0-01010db-universal.zip" type="application/octet-stream" sparkle:edSignature="scu4el/4xCEonJzBkg0bdIVMyeeD4fQb5LdIFvxT/ZQPwi/QcZHM/TZ6+mDaLWoLTnwtqA1yQgfibaF+lv5bBA==" length="7003777" />
+        </item>
     </channel>
 </rss>
