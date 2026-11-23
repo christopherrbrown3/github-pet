@@ -15,8 +15,8 @@ macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/hero-inbox-dark.png">
-  <img src="docs/screenshots/beta-5/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Assigned to you 4, Waiting on others 0, and GitHub status Operational. Below, under Needs you, rows are grouped into two review requests, one of your pull requests with changes requested (marked with a branch symbol), and one assigned issue, each with a dismiss button." width="420">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-6/hero-inbox-dark.png">
+  <img src="docs/screenshots/beta-6/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Needs you 4, Waiting on others 3 (2 pull requests, 1 deployment), and GitHub status Operational. Below, under Needs you, rows are grouped into two review requests, one of your pull requests with changes requested (marked with a branch symbol), and one assigned issue, each with a dismiss button, above a collapsed Waiting on others group of 3 items." width="420">
 </picture>
 
 </div>
