@@ -271,6 +271,53 @@ final class FakeUpdater: UpdaterBackend {
         #expect(ink(dotted) != ink(plain), "the dot changes the drawn image")
     }
 
+    @Test func menuBarCountKeepsOneCanvasAcrossCountsAndTheDot() {
+        let counts: [String?] = [nil, "1", "9", "99+", "?"]
+        for dot in [false, true] {
+            let sizes = counts.map { MenuBarIcon.image(symbol: "pawprint", dot: dot, count: $0, showsCount: true).size }
+            #expect(Set(sizes.map(\.width)).count == 1 && Set(sizes.map(\.height)).count == 1)
+        }
+        let bare = MenuBarIcon.image(symbol: "pawprint", dot: false)
+        let slot = MenuBarIcon.image(symbol: "pawprint", dot: false, count: nil, showsCount: true)
+        #expect(slot.size.width > bare.size.width && slot.size.height == bare.size.height)
+        #expect(MenuBarIcon.image(symbol: "pawprint", dot: true).size == bare.size)
+        #expect(slot.isTemplate)
+    }
+
+    @Test func menuBarCountDrawsOnlyWhenThereIsOne() {
+        func ink(_ image: NSImage) -> Int {
+            guard let rep = image.cgImage(forProposedRect: nil, context: nil, hints: nil).map(NSBitmapImageRep.init(cgImage:)) else { return 0 }
+            var count = 0
+            for x in 0..<rep.pixelsWide { for y in 0..<rep.pixelsHigh where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.5 { count += 1 } }
+            return count
+        }
+        for dot in [false, true] {
+            let empty = ink(MenuBarIcon.image(symbol: "pawprint", dot: dot, count: nil, showsCount: true))
+            for text in ["1", "9", "99+", "?"] {
+                #expect(ink(MenuBarIcon.image(symbol: "pawprint", dot: dot, count: text, showsCount: true)) > empty, "\(text) dot=\(dot)")
+            }
+            // A count without a reserved slot is never drawn.
+            #expect(ink(MenuBarIcon.image(symbol: "pawprint", dot: dot, count: "9")) == ink(MenuBarIcon.image(symbol: "pawprint", dot: dot)))
+        }
+    }
+
+    @Test func menuBarShowsThePetsBadgeOnlyWhileThePetIsHidden() {
+        var options = LaunchOptions.parse(arguments: ["GitHubPet", "--render-snapshots", "/tmp/unused-menubar", "--placeholder"],
+                                          environment: [:])
+        options.userDefaultsOverride = EphemeralDefaults(name: "dev.github-pet.tests.menubar-count.\(UUID().uuidString)")
+        let app = AppModel(options: options, runtime: AppModel.Runtime(systemReducedMotion: { true }, schedulesTimers: false))
+        app.showFixtureItemsForSnapshot(SnapshotRenderer.inbox87Items(4))
+        app.settings.mascotVisible = true
+        #expect(app.menuBarCount == nil && !app.showsMenuBarCount)
+        app.settings.mascotVisible = false
+        #expect(app.showsMenuBarCount && app.menuBarCount == app.mascotBadge && app.menuBarCount == "4")
+        #expect(MenuBarLabel.accessibilityLabel(model: app, updates: app.updates).contains("4 items"))
+        app.showFixtureItemsForSnapshot([])
+        #expect(app.showsMenuBarCount && app.menuBarCount == app.mascotBadge)
+        app.markStale()
+        #expect(app.menuBarCount == "?")
+    }
+
     private func waitUntil(_ condition: () -> Bool) async throws {
         for _ in 0..<100 where !condition() { try await Task.sleep(for: .milliseconds(20)) }
         #expect(condition())

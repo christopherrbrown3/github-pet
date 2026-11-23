@@ -87,7 +87,7 @@ Mac, and **View dismissed** lets you **Restore** it later.
 
 An optional pet sits on your desktop with a badge counting the items that need you. It plays a short animation once for something
 genuinely new, never on every refresh. Pick **Mona** or **Little Chris** in Settings, resize it, or hide
-it: the Inbox and menu-bar icon keep working either way.
+it: the Inbox keeps working either way, and with the pet hidden the menu-bar icon shows the same count.
 
 ### Honest about what it knows
 

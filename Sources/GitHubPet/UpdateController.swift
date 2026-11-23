@@ -407,18 +407,33 @@ struct UpdateAvailableBanner: View {
 }
 
 /// #149: the menu-bar symbol, with a small dot at its top-right corner while an update is available.
-/// A template image, so the menu bar tints symbol and dot together in light and dark. Both variants
-/// share one canvas, so the item keeps its width and baseline when the dot appears.
+/// #159: while the desktop pet is hidden, the pet's badge text follows the symbol. A template image, so
+/// the menu bar tints symbol, dot and count together in light and dark. Every variant with the count
+/// slot shares one canvas (the slot is as wide as "99+"), and every variant without it shares another,
+/// so the item keeps its width and baseline when the dot appears or the count changes.
 enum MenuBarIcon {
-    static func image(symbol: String, dot: Bool) -> NSImage {
+    static let countFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
+    static let countGap: CGFloat = 2
+
+    /// `count` is the pet's badge text (nil draws nothing); `showsCount` reserves its slot, so a hidden
+    /// pet's item does not resize between an empty inbox and "99+".
+    static func image(symbol: String, dot: Bool, count: String? = nil, showsCount: Bool = false) -> NSImage {
         let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)) ?? NSImage()
         let diameter: CGFloat = 4.5, gap: CGFloat = 0.75
-        let image = NSImage(size: base.size, flipped: false) { rect in
-            base.draw(in: rect)
+        let attributes: [NSAttributedString.Key: Any] = [.font: countFont, .foregroundColor: NSColor.black]
+        let slot = showsCount ? ceil(NSAttributedString(string: "99+", attributes: attributes).size().width) + countGap : 0
+        let size = NSSize(width: base.size.width + slot, height: base.size.height)
+        let image = NSImage(size: size, flipped: false) { rect in
+            base.draw(in: CGRect(x: 0, y: 0, width: base.size.width, height: base.size.height))
+            if showsCount, let count {
+                let text = NSAttributedString(string: count, attributes: attributes)
+                let textSize = text.size()
+                text.draw(at: CGPoint(x: base.size.width + countGap, y: (rect.height - textSize.height) / 2))
+            }
             guard dot else { return true }
-            // Inside the top-right corner; a cleared ring bites into the glyph so the dot reads apart.
-            let dotRect = CGRect(x: rect.maxX - diameter, y: rect.maxY - diameter, width: diameter, height: diameter)
+            // Inside the symbol's top-right corner; a cleared ring bites into the glyph so the dot reads apart.
+            let dotRect = CGRect(x: base.size.width - diameter, y: rect.maxY - diameter, width: diameter, height: diameter)
             NSGraphicsContext.current?.compositingOperation = .clear
             NSBezierPath(ovalIn: dotRect.insetBy(dx: -gap, dy: -gap)).fill()
             NSGraphicsContext.current?.compositingOperation = .sourceOver

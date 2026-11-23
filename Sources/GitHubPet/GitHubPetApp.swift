@@ -32,7 +32,8 @@ struct MenuBarLabel: View {
 
     var body: some View {
         let symbol = model.showsAlertIcon ? "pawprint.fill" : "pawprint"
-        let icon = Image(nsImage: MenuBarIcon.image(symbol: symbol, dot: updates.indicatorVersion != nil))
+        let icon = Image(nsImage: MenuBarIcon.image(symbol: symbol, dot: updates.indicatorVersion != nil,
+                                                       count: model.menuBarCount, showsCount: model.showsMenuBarCount))
         // Demo is spelled out in the menu bar itself, not only in accessibility text.
         Group {
             if model.isDemo {

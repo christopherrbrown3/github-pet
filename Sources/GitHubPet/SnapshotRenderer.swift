@@ -257,6 +257,7 @@ enum SnapshotRenderer {
         report += await inboxRedesignRenders(model: model, directory: directory)
         report += await readmeBeta4Renders(model: model, directory: directory)
         report += await updateIndicatorRenders(model: model, directory: directory)
+        report += await menuBarCountRenders(model: model, directory: directory)
 
         let text = report.joined(separator: "\n") + "\n"
         try? text.write(to: directory.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
