@@ -9,14 +9,14 @@
 Reviews, assigned issues and your pull requests in one calm Inbox, with a small pet on your desktop.
 Read-only, local and built on the GitHub CLI you already use.
 
-[**Download Beta 6**](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.6) ·
+[**Download Beta 7**](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.7) ·
 macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-6/hero-inbox-dark.png">
-  <img src="docs/screenshots/beta-6/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Needs you 4, Waiting on others 3 (2 pull requests, 1 deployment), and GitHub status Operational. Below, under Needs you, rows are grouped into two review requests, one of your pull requests with changes requested (marked with a branch symbol), and one assigned issue, each with a dismiss button, above a collapsed Waiting on others group of 3 items." width="420">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-7/hero-inbox-dark.png">
+  <img src="docs/screenshots/beta-7/hero-inbox.png" alt="The GitHub Pet Inbox showing Demo data. Mona sits in the header with a blue badge of 4, beside 'Up to date'. Three tiles read Needs you 4 (2 reviews, 1 authored PR), Waiting on others 3 (2 pull requests, 1 deployment), and GitHub status Operational. Below, under Needs you with a View dismissed link, rows are grouped into Review requests (2), Your pull requests (1, changes requested) and Assigned issues (1), each with a dismiss button, above a collapsed Waiting on others group of 3 items." width="420">
 </picture>
 
 </div>
@@ -48,8 +48,8 @@ created. Once it exists the command will be `brew install --cask christopherrbro
 ### One Inbox for what needs you
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/inbox-dismissed-dark.png">
-  <img src="docs/screenshots/beta-4/inbox-dismissed.png" alt="The Inbox with Little Chris in the header, showing the Dismissed here list: two dismissed Demo items, a pull request and a review request, each with its dismissal time and a Restore button, and a Back to Inbox link." width="380" align="right">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-7/inbox-dismissed-dark.png">
+  <img src="docs/screenshots/beta-7/inbox-dismissed.png" alt="The Inbox with Little Chris in the header and a badge of 2, showing the Dismissed here list under the tiles (Needs you 2, Waiting on others 3, GitHub status 1 incident): two dismissed Demo items, one of your pull requests and a review request, each with its dismissal time and a Restore button, and a Back to Inbox link." width="380" align="right">
 </picture>
 
 Review requests, issues assigned to you and your own pull requests that need a change or are approved and
@@ -92,8 +92,8 @@ it: the Inbox and menu-bar icon keep working either way.
 ### Honest about what it knows
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-5/inbox-stale-dark.png">
-  <img src="docs/screenshots/beta-5/inbox-stale.png" alt="The Inbox when its data is out of date: the header reads Stale with a warning symbol and the last update time, the badge and both counts show a question mark, the GitHub status tile reads Stale, and the last known Demo rows, still readable, are dimmed under 'Showing last known items'." width="380" align="right">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-7/inbox-stale-dark.png">
+  <img src="docs/screenshots/beta-7/inbox-stale.png" alt="The Inbox when its data is out of date: the header reads Stale with a warning symbol and the last update time, and the badge shows a question mark. The Needs you and Waiting on others tiles show a question mark with 'Last known' captions, the GitHub status tile reads Stale, and the Needs you heading reads 'Count unknown'. The last known Demo rows, still readable, are dimmed under 'Showing last known items', above a collapsed Waiting on others group that also reads 'Count unknown'." width="380" align="right">
 </picture>
 
 Loading, partial, out-of-date, signed-out and failed results are labelled for what they are. They never
@@ -179,7 +179,8 @@ verified with its signature before it's installed. [How updates work](docs/updat
 - **In-app updates work from Beta 4 onward.** Beta 5 and Beta 6 were delivered that way. Earlier
   betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
-- **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, Reduce Motion, hover, the
+- **Not yet checked by hand:** keyboard and VoiceOver use of the Inbox (including Waiting on others), the
+  update banner and the repository browser, Reduce Motion, hover, the
   app icon in Finder and the Dock at small sizes, and some behaviour on every supported macOS version.
 
 Details and the rest of the known limits are in [Features](docs/features.md#known-limits).
@@ -193,7 +194,7 @@ scripts/package-zip.sh          # universal, ad-hoc signed app + ZIP in .build/d
 ```
 
 See the [development guide](docs/development.md). README images are offscreen renders of Demo data;
-see their provenance ([Beta 5](docs/screenshots/beta-5/README.md), [Beta 6](docs/screenshots/beta-6/README.md)).
+see their provenance ([Beta 5](docs/screenshots/beta-5/README.md), [Beta 6](docs/screenshots/beta-6/README.md), [Beta 7](docs/screenshots/beta-7/README.md)).
 
 ---
 
