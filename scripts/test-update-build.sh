@@ -34,10 +34,12 @@ check_bundle() {
   codesign --verify --strict --deep "$app" 2>/dev/null || fail "deep verification failed"
   expect SUAutomaticallyUpdate false
   expect SUAllowsAutomaticUpdates true
-  expect SUScheduledCheckInterval 86400
+  # #149: automatic checks on for new installs (no consent prompt; a stored choice still wins),
+  # every 6 hours. Install still needs the user's OK unless they turn it on in Settings.
+  expect SUEnableAutomaticChecks true
+  expect SUScheduledCheckInterval 21600
   expect SUVerifyUpdateBeforeExtraction true
   absent SUEnableSystemProfiling
-  absent SUEnableAutomaticChecks
   absent SUPublicDSAKey
 }
 

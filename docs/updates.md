@@ -11,12 +11,26 @@ A **lost or leaked production key has no in-band recovery** on ad-hoc builds: us
 ## What users get
 
 - **Check for Updates…** in the menu-bar menu and in Settings › GitHub › Software updates (installed version and build,
-  last check, automatic-check and automatic-install toggles, beta opt-in). A scheduled check never opens a window
-  over your work: the menu shows a quiet "Version X available" line and Sparkle waits until you check.
-- Sparkle's consent prompt asks about automatic checks. Checks run at most every 24 hours. Installing needs your OK
-  unless you turn on "Install updates automatically" in Settings. Sparkle's first-run prompt has the same checkbox, but
-  the app treats silent install as on only when it was turned on in Settings: anything else is switched back off, so a
-  default keystroke in the prompt can never enable it. A staged silent update shows "installs when GitHub Pet quits".
+  last check, automatic-check and automatic-install toggles, beta opt-in).
+- **Automatic checks are on by default (#149).** A new install checks without Sparkle's consent prompt; anyone who
+  already chose in that prompt or in Settings keeps their choice (see "Existing installs" below), and Settings can
+  turn checks off. A check is a read-only download of the static appcast in this repository: no sign-in, token or
+  system profile is sent.
+- **How often:** Sparkle's schedule runs every 6 hours. The app also asks Sparkle for a background check about a
+  minute after launch and 30 seconds after the Mac wakes, but only when automatic checks are on, Sparkle is idle and
+  the last check is at least 6 hours old. Several wakes in a row make one check.
+- **No windows from background checks**, not even right after launch: Sparkle waits (gentle reminders). What a check
+  finds shows as a small **dot on the menu-bar icon** (VoiceOver: "…, update available: version X"), an
+  **"Update available: Version X" banner** in the Inbox header with **Update…** and **Later**, and the quiet
+  "Version X available" lines in the menu and Settings. The banner's Update… opens Sparkle's normal window, which
+  shows release notes and still asks before installing. **Later** hides the dot and banner for that version until a
+  newer one is found or 24 hours pass (stored as `update.indicatorLaterVersion`/`update.indicatorLaterDate`); the menu
+  and Settings lines stay. The indicator is announced to VoiceOver once when it appears. It is never part of the
+  desktop pet's count badge, the inbox count or the alert icon, which are for GitHub work.
+- Installing needs your OK unless you turn on "Install updates automatically" in Settings. Sparkle's first-run prompt
+  had the same checkbox (it no longer appears for new installs), but the app treats silent install as on only when it
+  was turned on in Settings: anything else is switched back off, so a default keystroke in the prompt can never
+  enable it. A staged silent update shows "installs when GitHub Pet quits" and no dot or banner.
 - **Channels:** Stable is the default. Beta items (`<sparkle:channel>beta</sparkle:channel>`) are offered only to an
   installed prerelease build or to a user who turned on "Include beta releases". Nobody is moved to beta by a check.
 - System profiling is off; no sign-in, `gh` or token is used.
@@ -34,10 +48,24 @@ that changes any of them.
 | `SUPublicEDKey` | contents of `updates/sparkle-public-ed-key.txt`; omitted while the file has no key |
 | `SUAutomaticallyUpdate` | `false` (install needs the user's OK) |
 | `SUAllowsAutomaticUpdates` | `true` (the user may opt in to silent install) |
-| `SUScheduledCheckInterval` | `86400` |
+| `SUEnableAutomaticChecks` | `true` (#149: checks on for new installs, no consent prompt; a choice stored in the user's defaults wins) |
+| `SUScheduledCheckInterval` | `21600` (6 hours; was `86400`) |
 | `SUVerifyUpdateBeforeExtraction` | `true` (the EdDSA signature is checked before the ZIP is unpacked; our ZIPs are plain `ditto` archives, which this supports) |
-| `SUEnableSystemProfiling`, `SUEnableAutomaticChecks` | absent (Sparkle asks the user) |
+| `SUEnableSystemProfiling` | absent (off; Sparkle never sends a system profile) |
 | `GitHubPetReleaseVersion`, `CFBundleShortVersionString` | with `RELEASE_VERSION=0.1.0-beta.4` both become the full release version (Sparkle's dialogs say "you have X" from the latter, and a prerelease build follows beta); without it the short version is `VERSION` |
+
+### Existing installs (#149)
+
+Sparkle reads `SUEnableAutomaticChecks` and `SUScheduledCheckInterval` from the app's user defaults first and the
+Info.plist second. After updating from Beta 6 or earlier:
+
+- Someone who answered Sparkle's consent prompt, or used the Settings toggle, has `SUEnableAutomaticChecks` stored in
+  `dev.github-pet.GitHubPet` defaults. That value still wins: **Yes stays on and No stays off.**
+- Someone who never saw the prompt (Sparkle asks on the second launch) has nothing stored, so the new Info.plist value
+  applies: checks turn on, and the prompt no longer appears.
+- Nothing in the app ever writes `SUScheduledCheckInterval`, so every install moves from 24 to 6 hours.
+- `SUAutomaticallyUpdate` (silent install) is unchanged: on only with `update.silentInstallOptIn` from Settings.
+  The last check time and any version skipped in Sparkle's window carry over.
 
 `Sparkle.framework` is copied into `Contents/Frameworks` with its symlinks, its XPC services are removed (they are
 for sandboxed apps), the binary gets the rpath `@executable_path/../Frameworks`, and the framework's `Autoupdate` and
