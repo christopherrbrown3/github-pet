@@ -24,19 +24,37 @@ import Testing
             try await Task.sleep(for: .milliseconds(10))
         }
     }
+    /// The first baseline has landed: settled, Ready with rows and a recorded success. Bounded and
+    /// state-based (#127): yields between checks, never sleeps for a fixed time.
+    private func baselined(_ model: AppModel, timeout: Duration = .seconds(60)) async throws {
+        let deadline = ContinuousClock.now + timeout
+        while true {
+            try await settled(model, timeout: timeout)
+            if model.dataState == .ready && !model.items.isEmpty && model.lastSuccess != nil { return }
+            try #require(ContinuousClock.now < deadline,
+                         "timed out waiting for the first baseline: state=\(model.dataState) items=\(model.items.map(\.id)) unseen=\(model.unseenCount)")
+            await Task.yield()
+        }
+    }
     private func authoredRows(_ app: AppModel) -> [InboxItem] { app.items.filter { $0.kind == .authoredPullRequest } }
 
     @Test func needsActionRowsAlertOnceAndWaitingStaysInformational() async throws {
         let app = simulated(); defer { app.cleanupScopeSimulation() }
-        try await settled(app)
-        let reviewRows = app.items.count
+        // QA (#127): capture the baseline only once it has landed, as row IDs rather than a count.
+        try await baselined(app)
+        let baseline = Set(app.items.map(\.id))
+        #expect(app.unseenCount == 0, "the first snapshot seeds silently: items=\(app.items.map(\.id))")
         #expect(app.authoredWaitingNote == nil)
 
         app.simulateScopeAuthored(.changesRequested); try await settled(app)
-        #expect(app.dataState == .ready, "a PR GitHub is still checking (UNKNOWN) never makes the inbox Partial")
-        #expect(authoredRows(app).map(\.attention) == ["Changes requested"])
-        #expect(app.items.count == reviewRows + 1 && app.badge == "\(reviewRows + 1)", "waiting PRs are not counted")
-        #expect(app.unseenCount == 1, "a genuinely new attention state announces once")
+        let state = "state=\(app.dataState) items=\(app.items.map(\.id)) unseen=\(app.unseenCount) baseline=\(baseline.sorted())"
+        #expect(app.dataState == .ready, "a PR GitHub is still checking (UNKNOWN) never makes the inbox Partial: \(state)")
+        #expect(authoredRows(app).map(\.attention) == ["Changes requested"], "\(state)")
+        let added = Set(app.items.map(\.id)).subtracting(baseline)
+        #expect(added == Set(authoredRows(app).map(\.id)) && added.count == 1 && baseline.isSubset(of: app.items.map(\.id)),
+                "only the authored row is added; waiting PRs are not rows: \(state)")
+        #expect(app.badge == "\(baseline.count + 1)", "waiting PRs are not counted: badge=\(app.badge ?? "none") \(state)")
+        #expect(app.unseenCount == 1, "a genuinely new attention state announces once: \(state)")
         #expect(app.authoredWaitingCount == 3)
         #expect(app.authoredWaitingNote == "3 of your pull requests are waiting on others or being checked by GitHub")
         let firstID = try #require(authoredRows(app).first?.id)
