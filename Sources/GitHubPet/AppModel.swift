@@ -775,7 +775,7 @@ final class AppModel: ObservableObject {
         }
         let sourceEvents = engine.apply(outcome, now: date)
         persistBaseline()
-        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + sourceWaiting)
+        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + waitingRows)
         let events = sourceEvents.filter { !dismissals.hiddenIDs.contains($0.item.id) }
         unseen.record(events)
         unseen.reconcile(after: outcome, items: engine.items + actionsEngine.items)
@@ -896,14 +896,12 @@ final class AppModel: ObservableObject {
         scopeSummary = scopeSession.summary
         scopeQuality = scopeSession.qualitySummary
         scopeSimulationStatus = scopeSimulation?.status ?? ""
-        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + sourceWaiting)
+        let waitingRows = waitingRows
+        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + waitingRows)
         let primary = engine.items.filter { !dismissals.hiddenIDs.contains($0.id) }
         let shown = InboxEngine.dedupe(primary + actionsEngine.items).map(classified)
         if items != shown { items = shown }
-        // Dismissals and the shown rows stay apart: a PR is never both Needs you and waiting.
-        let shownIDs = Set(shown.map(\.id))
-        let waiting = InboxEngine.dedupe(sourceWaiting + deploymentsWaiting)
-            .filter { !dismissals.hiddenIDs.contains($0.id) && !shownIDs.contains($0.id) }
+        let waiting = waitingRows.filter { !dismissals.hiddenIDs.contains($0.id) }
         if waitingItems != waiting { waitingItems = waiting }
         let onlyDismissed = shown.isEmpty && engine.items.contains { dismissals.hiddenIDs.contains($0.id) }
         let sourceState = displayedState
@@ -923,8 +921,14 @@ final class AppModel: ObservableObject {
         scopeEditor.observeActive()
     }
 
-    /// The inbox source's own waiting rows (#148): Demo fixtures or the live scope session.
-    private var sourceWaiting: [InboxItem] { settings.dataSource == .fixtures ? fixtureWaiting : scopeSession.waiting }
+    /// The Waiting on others rows (#148): the source's own (Demo fixtures or the live scope session)
+    /// and deployments, never an item that is also a Needs you row, under their waiting row IDs so
+    /// a dismissal made there never hides the item once it needs you.
+    private var waitingRows: [InboxItem] {
+        let source = settings.dataSource == .fixtures ? fixtureWaiting : scopeSession.waiting
+        let actionable = Set((engine.items + actionsEngine.items).map(\.id))
+        return InboxEngine.dedupe(source + deploymentsWaiting).filter { !actionable.contains($0.id) }.map(InboxWaitingGroup.row)
+    }
 
     // MARK: Actions
 
@@ -956,7 +960,7 @@ final class AppModel: ObservableObject {
 
     func dismissInboxItem(_ id: String, in context: InboxDismissalContext) {
         guard context == inboxDismissalContext, context.generation == scopeSession.generation,
-              let item = (engine.items + sourceWaiting).first(where: { $0.id == id }), canDismissInboxItem(item) else { return }
+              let item = (engine.items + waitingRows).first(where: { $0.id == id }), canDismissInboxItem(item) else { return }
         let date = clock()
         if dismissals.dismiss(classified(item), at: date) {
             // Drop only this row's pending attention. The raw snapshot and event ledger

@@ -56,7 +56,7 @@ private struct DismissalActionsFixture: ActionsPolling {
     /// inbox: never the badge or unseen, last known through a failure, and only PRs dismiss.
     @Test func demoWaitingRowsStayOutOfTheBadgeAndFollowTheSourceState() throws {
         let app = makeDemo(EphemeralDefaults(name: "dismissals.app.waiting"))
-        #expect(app.waitingItems == FixtureSimulator.defaultWaitingItems())
+        #expect(app.waitingItems == FixtureSimulator.defaultWaitingItems().map(InboxWaitingGroup.row))
         #expect(app.items.count == FixtureSimulator.defaultItems().count && app.badge == "\(app.items.count)")
         #expect(app.authoredWaitingCount == 2 && app.deploymentsWaitingCount == 1 && app.waitingGroup.count == "3")
         #expect(app.waitingItems.allSatisfy { !app.isUnseen($0) && $0.attention != nil })

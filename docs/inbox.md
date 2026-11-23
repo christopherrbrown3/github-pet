@@ -38,8 +38,10 @@ With VoiceOver, the group header reads its name, count and whether it is expande
 ## Dismiss or restore an item
 
 1. Select the **×** next to a review request, assigned issue, authored pull request (including one
-   under **Waiting on others**), or entitlement review to dismiss it from your Inbox. A dismissed pull
-   request stays dismissed if it later needs you.
+   under **Waiting on others**), or entitlement review to dismiss it from your Inbox. Dismissing a pull
+   request under **Waiting on others** hides it only while it waits: if it later needs you (for
+   example, changes are requested), it appears under **Your pull requests**, counts in the badge and
+   alerts as usual.
 2. Open **View dismissed** to see saved dismissals for the active account.
 3. Select **Restore**, then **Back to Inbox**. A restored item that still matches your current
    view returns without an alert. If it is unavailable in this view, restoring it allows it to

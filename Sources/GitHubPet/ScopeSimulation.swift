@@ -26,6 +26,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         /// A later changes-requested round (a new latest changes-requesting review): one new event.
         case newRound = "new-round"
         case reviewUnavailable = "review-unavailable"
+        /// #148: the waiting draft is marked ready; its conflict and failing checks now need you.
+        case draftReady = "draft-ready"
     }
     private var authored = Authored.off
     /// #35 fixtures, per review search: `hidden` adds 3 matches the viewer can't see, `hiddenOnly`
@@ -184,7 +186,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                     let rows: [(String, Any, String, Bool, String, String)] = [
                         ("needs", "CHANGES_REQUESTED", "MERGEABLE", false, failing ? "FAILURE" : "SUCCESS", failing ? "b" : "a"),
                         ("approved", "APPROVED", "MERGEABLE", false, "SUCCESS", "c"),
-                        ("draft", NSNull(), "CONFLICTING", true, "FAILURE", "d"),
+                        ("draft", NSNull(), "CONFLICTING", authored != .draftReady, "FAILURE", "d"),
                         ("checking", "REVIEW_REQUIRED", "UNKNOWN", false, "PENDING", "e"),
                     ]
                     for (offset, row) in rows.enumerated() {

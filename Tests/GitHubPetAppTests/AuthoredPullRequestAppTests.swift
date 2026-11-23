@@ -108,6 +108,39 @@ import Testing
         #expect(app.waitingItems.contains { $0.id == draft.id } && app.unseenCount == unseen, "restored quietly")
     }
 
+    /// #148 (PM): a dismissal made in the quiet Waiting on others group applies only while the PR
+    /// waits. Once it needs you it shows in Needs you, badges and announces as usual; a dismissal
+    /// made on the Needs you row still hides it exactly as before.
+    @Test func waitingDismissalNeverHidesThePROnceItNeedsYou() async throws {
+        let app = simulated(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        app.markAllSeen()
+        let badge = try #require(app.badge.flatMap(Int.init))
+        let draft = try #require(app.waitingItems.first { $0.attention == "Draft" })
+        let context = try #require(app.inboxDismissalContext)
+        app.dismissInboxItem(draft.id, in: context)
+        #expect(!app.waitingItems.contains { $0.id == draft.id } && app.badge == "\(badge)")
+
+        app.simulateScopeAuthored(.draftReady); try await settled(app)
+        let ready = try #require(authoredRows(app).first { $0.title == draft.title }, "the PR that needs you is shown")
+        #expect(ready.attention == "Merge conflict, Checks failing")
+        #expect(app.badge == "\(badge + 1)" && app.isUnseen(ready), "it badges and announces")
+        #expect(!app.waitingItems.contains { $0.title == draft.title })
+
+        // A dismissal on the Needs you row behaves as before: hidden, and not back in the quiet group.
+        app.markAllSeen()
+        app.dismissInboxItem(ready.id, in: context)
+        #expect(!app.items.contains { $0.id == ready.id } && app.badge == "\(badge)")
+        #expect(!app.waitingItems.contains { $0.title == draft.title })
+        app.refresh(); try await settled(app)
+        #expect(!app.items.contains { $0.id == ready.id } && app.badge == "\(badge)" && app.unseenCount == 0)
+
+        // Back to waiting: the earlier waiting dismissal still applies there.
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        #expect(!app.waitingItems.contains { $0.id == draft.id })
+    }
+
     /// Flag-on path (#94 keeps privacy mode in the code base).
     @Test func privacyModeHidesAuthoredTitlesAndRepositories() async throws {
         let app = simulated(features: .allOn); defer { app.cleanupScopeSimulation() }

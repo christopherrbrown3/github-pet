@@ -251,6 +251,17 @@ public struct InboxWaitingGroup: Equatable, Sendable {
         }
     }
 
+    /// Waiting rows have their own row ID, so a dismissal made in this quiet group applies only
+    /// while the item waits: once it needs you it returns under its source ID, which that
+    /// dismissal never matches, and shows and badges as usual. Dismissing a Needs you row keeps
+    /// its source ID and is unchanged.
+    public static let rowIDPrefix = "waiting:"
+    public static func row(_ item: InboxItem) -> InboxItem {
+        var row = item
+        row.id = rowIDPrefix + item.id
+        return row
+    }
+
     /// The disclosure header's spoken name, with its count.
     public var accessibilityLabel: String { "\(Self.title), \(spokenCount)" }
 }
