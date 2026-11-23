@@ -102,8 +102,8 @@ a second build from the tag. A tag push does not build or upload anything.
    the script refuses a build number that isn't newer.
 5. **Appcast PR.** Open a PR with only the `updates/appcast.xml` change. Users see the update once it is on `main`.
 
-`updates/appcast.xml` is committed empty but valid. `scripts/test-release-appcast.sh` tests the script with a fake
-signer.
+`updates/appcast.xml` holds one item per published release. `scripts/test-release-appcast.sh` tests the script on
+its own empty channel with a fake signer.
 
 ## Known limits
 

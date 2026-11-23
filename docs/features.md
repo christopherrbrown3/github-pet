@@ -111,8 +111,8 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 
 ## Known limits
 
-- **In-app updates work from Beta 4 onward.** Beta 5 is the first update delivered that way, so the
-  production update path is first exercised by it. Earlier betas install by hand.
+- **In-app updates work from Beta 4 onward.** Beta 5 and Beta 6 were delivered that way. Earlier
+  betas install by hand.
 - **Intel.** The app is universal (Apple Silicon and Intel). The Intel half is checked in CI under
   Rosetta, not on Intel hardware.
 - **Not notarized.** Ad-hoc signed builds need **Open Anyway** on first launch
