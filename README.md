@@ -113,10 +113,10 @@ Active GitHub incidents from githubstatus.com appear on their own, apart from yo
     </td>
     <td align="center" valign="top" width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-4/settings-github-dark.png">
-        <img src="docs/screenshots/beta-4/settings-github.png" alt="The GitHub settings pane in Demo mode: the GitHub CLI section with the data source set to Fixtures (offline) and a Recheck button, source health for reviews and issues and for GitHub status incidents, and the Monitoring scope set to Everything accessible." width="380">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-6/settings-scope-dark.png">
+        <img src="docs/screenshots/beta-6/settings-scope.png" alt="The Monitoring scope and Entitlement approvals sections of the GitHub settings pane in Demo mode: the account is Demo (offline fixtures), the active scope is Everything, and the Monitor choice offers Everything accessible (selected) or Selected organizations and repositories, followed by one demo entitlement repository with Remove and an owner/name field with Add." width="380">
       </picture>
-      <br><sub>Settings → <b>GitHub</b> (shown with Demo data)</sub>
+      <br><sub>Settings → <b>GitHub</b> → Monitoring scope (shown with Demo data)</sub>
     </td>
   </tr>
 </table>
@@ -125,6 +125,22 @@ Settings has two panes. **Mascot** chooses and sizes your pet, turns motion down
 so you can add it yourself. **GitHub** shows your `gh` connection, what to watch (everything you can access,
 or the organizations and repositories you choose), entitlement-approval repositories, opt-in alerts for failing
 Actions runs and deployment approvals, and updates.
+
+### Choosing what to monitor
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/beta-6/scope-browser-browse-dark.png">
+  <img src="docs/screenshots/beta-6/scope-browser-browse.png" alt="The Choose Repositories to Monitor window in Demo mode: a search field with Filter and Sort controls, a sidebar listing Selected (2), Your account, Shared with you and five demo organizations with repository counts, and the demo-lumen-labs organization open with an All repositories checkbox and a list of repositories, two ticked, above Add by Name…, Cancel and Apply buttons." width="520">
+</picture>
+
+In **Settings → GitHub → Monitoring scope**, **Everything accessible** watches everything your `gh`
+account can see. Choosing **Selected organizations and repositories** opens the browser above: your
+account, the repositories shared with you, and your organizations, with repository counts. Search,
+filter and sort, then tick repositories, or tick **All repositories** for an organization, which also
+covers repositories added later. **Apply** checks access to every entry, then saves your choice.
+Reopen the window with **Choose Repositories…**, or type an entry's name with **Add by Name…**. You can
+monitor up to 500 organizations and repositories. If your own account is an enterprise managed user
+(its name has an underscore), it can't be picked yet; choose **Everything accessible**.
 
 More detail on every feature: [Features](docs/features.md).
 
@@ -155,7 +171,7 @@ verified with its signature before it's installed. [How updates work](docs/updat
 - **Simpler for now.** Privacy mode, snooze and quiet hours are hidden in this beta. Settings saved by an
   earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
-- **Search limits.** At most 30 items per category; reaching that marks the result as partial.
+- **Search limits.** At most 30 items per category for each group of up to 50 selected entries; reaching that marks the result as partial. Large selections refresh more slowly.
 - **In-app updates work from Beta 4 onward.** Beta 5 is the first update delivered that way, so the
   production update path is first exercised by it. Earlier betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.

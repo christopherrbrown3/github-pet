@@ -65,6 +65,27 @@ Two panes.
   repositories you choose, access-checked before they apply), entitlement repositories, opt-in alerts for
   failing Actions runs and deployment approvals, and software updates.
 
+### Monitoring scope
+
+Under **Settings → GitHub → Monitoring scope**, **Everything accessible** watches everything your `gh`
+account can see. Choosing **Selected organizations and repositories** opens a browser of your account,
+the repositories shared with you, and your organizations, with repository counts. Search, filter and
+sort, then tick repositories, or tick **All repositories** for an organization, which also covers
+repositories added later. **Apply** checks access to every entry, then saves your choice. Reopen the
+window with **Choose Repositories…**, or type an entry's name with **Add by Name…**.
+
+- Up to 500 organizations and repositories. Long selections scroll and show how many more entries are
+  below; entries that need fixing are listed first.
+- When GitHub withholds a list (for example because of single sign-on), rate-limits the app, or your
+  `gh` account is signed out or missing, the window says so and offers a next step. It never shows a
+  false empty list.
+- If GitHub can't read one organization you chose, the repositories you chose inside it are still
+  checked on their own where possible, and the Inbox is marked partial.
+- Large selections refresh more slowly: about 7 seconds for 100 entries and about 35 seconds for 500
+  on one test machine, roughly double while a chosen organization can't be read.
+- Accounts with an underscore in their name (enterprise managed users) are listed but can't be picked
+  yet. If your own account is one, choose **Everything accessible**.
+
 ## Data source
 
 New installs use your **GitHub CLI** (`gh`) account on github.com. If `gh` is missing or signed out,
@@ -102,8 +123,8 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
   Settings saved by an earlier beta are kept but have no effect until those features return, so
   repository names and titles are shown.
 - **github.com only.** GitHub Enterprise Server isn't supported.
-- **Search caps.** Each search returns at most 30 items per category; reaching that marks the result
-  partial. Deployment approvals read up to 10 waiting runs per repository.
+- **Search caps.** Search returns at most 30 items per category for each group of up to 50 selected
+  entries; reaching that marks the result partial. Deployment approvals read up to 10 waiting runs per repository.
 - **"Checks failing"** means any failing check on the latest commit; GitHub's search can't say which
   checks are required.
 - **Announcements.** A merge conflict is announced at most once per pull request; failing checks once
