@@ -5,11 +5,13 @@ import CoreFoundation
 /// authored search row. `init` returns nil for any missing field or unknown value, so the row
 /// is malformed and the poll Partial (fail-closed).
 ///
-/// Needs action: changes requested, a merge conflict, or failing checks on the head commit
-/// (the combined rollup: GraphQL can't ask a search row which checks are required).
+/// Needs action: changes requested, a merge conflict, failing checks on the head commit
+/// (the combined rollup: GraphQL can't ask a search row which checks are required), or (#153)
+/// approved and ready to merge: approved, not a draft, checks passing or none, and no conflict.
 /// Everything else, drafts, and conflict status GitHub is still computing (`UNKNOWN`) are
-/// waiting: listed under Waiting on others with why where known (#148), never alerting.
-/// `UNKNOWN` is re-evaluated on the next poll.
+/// waiting: listed under Waiting on others with why where known (#148), never alerting. An
+/// approved PR with checks running or `UNKNOWN` waits until it is ready; `UNKNOWN` is
+/// re-evaluated on the next poll.
 ///
 /// Stable reason keys record first gains. A changes-requested round also carries the visible
 /// review's identity and submission date for chronological comparison by the inbox engine.
@@ -18,10 +20,9 @@ public enum AuthoredAttention: Equatable, Sendable {
     case needsAction([Reason])
 
     /// Why a PR that needs nothing from you is waiting (#148), in display order. Fixed wording,
-    /// no names, so it stays visible in privacy mode. A draft is only "Draft"; "Approved, ready
-    /// to merge" only when nothing else is pending (it stays waiting: no alert change).
+    /// no names, so it stays visible in privacy mode. A draft is only "Draft".
     public enum WaitReason: String, Equatable, Sendable {
-        case draft, reviewPending, checksRunning, mergeabilityPending, approved
+        case draft, reviewPending, checksRunning, mergeabilityPending
 
         public var text: String {
             switch self {
@@ -29,7 +30,6 @@ public enum AuthoredAttention: Equatable, Sendable {
             case .reviewPending: return "Review pending"
             case .checksRunning: return "Checks running"
             case .mergeabilityPending: return "Checking for conflicts"
-            case .approved: return "Approved, ready to merge"
             }
         }
 
@@ -50,12 +50,16 @@ public enum AuthoredAttention: Equatable, Sendable {
         case conflict
         /// Head commit OID: the same failure stays one event; a new failing commit is another.
         case checksFailing(String)
+        /// #153: approved with nothing pending. Head commit OID when visible: the same ready
+        /// commit is one event (a conflict check flapping back is not new); a new one is another.
+        case readyToMerge(String?)
 
         public var text: String {
             switch self {
             case .changesRequested: return "Changes requested"
             case .conflict: return "Merge conflict"
             case .checksFailing: return "Checks failing"
+            case .readyToMerge: return "Approved, ready to merge"
             }
         }
 
@@ -64,6 +68,7 @@ public enum AuthoredAttention: Equatable, Sendable {
             case .changesRequested: return "changes"
             case .conflict: return "conflict"
             case .checksFailing(let oid): return "checks@" + oid
+            case .readyToMerge(let oid): return oid.map { "ready@" + $0 } ?? "ready"
             }
         }
 
@@ -114,11 +119,12 @@ public enum AuthoredAttention: Equatable, Sendable {
         if decisionValue is NSNull { decision = nil }
         else if let value = decisionValue as? String, Self.reviewDecisions.contains(value) { decision = value }
         else { return nil }
-        var failingOID: String?, checksRunning = false
+        var headOID: String?, failingOID: String?, checksRunning = false
         if let first = commits.first {
             guard let commit = (first as? [String: Any])?["commit"] as? [String: Any],
                   let oid = commit["oid"] as? String, Self.isOID(oid),
                   let rollupValue = commit["statusCheckRollup"] else { return nil }
+            headOID = oid
             if !(rollupValue is NSNull) {
                 guard let state = (rollupValue as? [String: Any])?["state"] as? String,
                       Self.rollupStates.contains(state) else { return nil }
@@ -136,7 +142,8 @@ public enum AuthoredAttention: Equatable, Sendable {
         if decision == "REVIEW_REQUIRED" { waits.append(.reviewPending) }
         if checksRunning { waits.append(.checksRunning) }
         if mergeable == "UNKNOWN" { waits.append(.mergeabilityPending) }
-        if decision == "APPROVED" && waits.isEmpty { waits.append(.approved) }
+        // #153: approved with nothing pending is your move: merge it.
+        if decision == "APPROVED" && waits.isEmpty { self = .needsAction([.readyToMerge(headOID)]); return }
         self = .waiting(waits)
     }
 

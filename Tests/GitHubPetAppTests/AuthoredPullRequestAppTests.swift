@@ -84,7 +84,8 @@ import Testing
         let badge = app.badge, unseen = app.unseenCount, rows = app.items
         #expect(app.waitingItems.map(\.title).sorted() == ["Simulated authored approved", "Simulated authored checking",
                                                            "Simulated authored draft"])
-        #expect(Set(app.waitingItems.map(\.attention)) == ["Approved, ready to merge", "Draft", "Review pending"])
+        #expect(Set(app.waitingItems.map(\.attention)) == ["Checks running", "Draft", "Review pending"],
+                "approved with checks running still waits (#153)")
         #expect(app.waitingItems.compactMap(\.detail) == ["Review pending, checks running, checking for conflicts"])
         #expect(app.waitingItems.allSatisfy { $0.isDemo && $0.kind == .authoredPullRequest })
         #expect(Set(app.items.map(\.id)).isDisjoint(with: app.waitingItems.map(\.id)), "never both Needs you and waiting")
@@ -170,6 +171,41 @@ import Testing
         // Back to waiting: the earlier waiting dismissal still applies there.
         app.simulateScopeAuthored(.changesRequested); try await settled(app)
         #expect(!app.waitingItems.contains { $0.id == draft.id })
+    }
+
+    /// #153: an approved PR waits while its checks run; once ready to merge it needs you: a Needs
+    /// you row saying so, counted in the badge, announced once. A dismissal made while it waited
+    /// never hides it once ready; back to waiting, that dismissal applies again.
+    @Test func waitingApprovedPRDismissedThenReadyShowsBadgesAndAlertsOnce() async throws {
+        let app = simulated(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        app.markAllSeen()
+        let badge = try #require(app.badge.flatMap(Int.init))
+        let approved = try #require(app.waitingItems.first { $0.title == "Simulated authored approved" })
+        #expect(approved.attention == "Checks running" && !app.items.contains { $0.title == approved.title })
+        let context = try #require(app.inboxDismissalContext)
+        app.dismissInboxItem(approved.id, in: context)
+        #expect(!app.waitingItems.contains { $0.id == approved.id } && app.badge == "\(badge)" && app.unseenCount == 0)
+
+        app.simulateScopeAuthored(.approvedReady); try await settled(app)
+        let ready = try #require(authoredRows(app).first { $0.title == approved.title }, "shown in Needs you")
+        #expect(ready.attention == "Approved, ready to merge" && ready.kind.severity == .actionable)
+        #expect(InboxGroup(kind: ready.kind) == .yourPullRequests)
+        #expect(app.badge == "\(badge + 1)" && app.unseenCount == 1 && app.isUnseen(ready), "it badges and announces once")
+        #expect(!app.waitingItems.contains { $0.title == approved.title } && app.authoredWaitingCount == 2)
+        app.refresh(); try await settled(app)
+        #expect(app.unseenCount == 1 && app.badge == "\(badge + 1)", "unchanged poll: no replay")
+        app.markAllSeen()
+        app.refresh(); try await settled(app)
+        #expect(app.unseenCount == 0 && authoredRows(app).contains { $0.id == ready.id })
+
+        // Checks running again: back to waiting, where the earlier waiting dismissal still hides it.
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        #expect(!authoredRows(app).contains { $0.title == approved.title } && app.badge == "\(badge)")
+        #expect(!app.waitingItems.contains { $0.id == approved.id })
+        app.simulateScopeAuthored(.approvedReady); try await settled(app)
+        #expect(authoredRows(app).contains { $0.id == ready.id } && app.unseenCount == 0, "the same ready commit never re-announces")
     }
 
     /// Flag-on path (#94 keeps privacy mode in the code base).

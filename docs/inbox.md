@@ -25,16 +25,18 @@ Your open pull requests that need nothing from you right now, and deployments wa
 else's approval or a wait timer, are listed in a **Waiting on others** group below the groups that
 need you, as a section of its own. It starts collapsed with its count. Select its header, or the
 **Waiting on others** tile, to expand it. Each row says why it waits where GitHub reports it:
-**Draft**, **Review pending**, **Checks running**, **Checking for conflicts**, **Approved, ready to
-merge**, or, for a deployment (titled with its workflow name), **Approval or wait timer**. A row shows
-the first reason; its tooltip and VoiceOver give every reason, and for a deployment the full
+**Draft**, **Review pending**, **Checks running**, **Checking for conflicts**, or, for a deployment
+(titled with its workflow name), **Approval or wait timer**. A row shows the first reason; its tooltip and VoiceOver give every reason, and for a deployment the full
 wording, "Waiting for deployment approval by others or a wait timer".
 
-An approved pull request with nothing else pending stays here: GitHub Pet doesn't alert you to merge
-it.
+An approved pull request waits here while its checks run or GitHub checks it for conflicts. Once it
+is ready to merge (approved, not a draft, checks passing or none, and no conflict) it's your move:
+it moves to **Your pull requests** as **Approved, ready to merge**, counts in the badge and alerts
+once.
 
 These rows never count in the badge and never alert or notify. When a pull request starts needing
-you (for example, changes are requested), it moves to **Your pull requests** and alerts as usual.
+you (for example, changes are requested, or it is approved and ready to merge), it moves to **Your
+pull requests** and alerts as usual.
 When results are partial the count reads "at least", and when they are stale or failed it reads `?`
 and the rows are marked last known.
 
@@ -45,7 +47,7 @@ With VoiceOver, the group header reads its name, count and whether it is expande
 1. Select the **×** next to a review request, assigned issue, authored pull request (including one
    under **Waiting on others**), or entitlement review to dismiss it from your Inbox. Dismissing a pull
    request under **Waiting on others** hides it only while it waits: if it later needs you (for
-   example, changes are requested), it appears under **Your pull requests**, counts in the badge and
+   example, changes are requested, or it is approved and ready to merge), it appears under **Your pull requests**, counts in the badge and
    alerts as usual.
 2. Open **View dismissed** to see saved dismissals for the active account.
 3. Select **Restore**, then **Back to Inbox**. A restored item that still matches your current

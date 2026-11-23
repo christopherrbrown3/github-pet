@@ -16,8 +16,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
     /// #9 authored PR fixtures. `off` returns empty authored pages (the default).
     enum Authored: String, CaseIterable {
         case off
-        /// Changes requested (needs action), plus one approved, one draft with a conflict and one
-        /// still being checked (UNKNOWN): three waiting.
+        /// Changes requested (needs action), plus one approved with checks running, one draft with
+        /// a conflict and one still being checked (UNKNOWN): three waiting.
         case changesRequested = "changes-requested"
         /// The changes-requested PR now also fails checks on a new head commit: a new event.
         case checksFailing = "checks-failing"
@@ -28,6 +28,8 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         case reviewUnavailable = "review-unavailable"
         /// #148: the waiting draft is marked ready; its conflict and failing checks now need you.
         case draftReady = "draft-ready"
+        /// #153: the approved PR's checks pass: approved and ready to merge now needs you.
+        case approvedReady = "approved-ready"
     }
     private var authored = Authored.off
     /// #35 fixtures, per review search: `hidden` adds 3 matches the viewer can't see, `hiddenOnly`
@@ -185,7 +187,7 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
                     let failing = authored == .checksFailing
                     let rows: [(String, Any, String, Bool, String, String)] = [
                         ("needs", "CHANGES_REQUESTED", "MERGEABLE", false, failing ? "FAILURE" : "SUCCESS", failing ? "b" : "a"),
-                        ("approved", "APPROVED", "MERGEABLE", false, "SUCCESS", "c"),
+                        ("approved", "APPROVED", "MERGEABLE", false, authored == .approvedReady ? "SUCCESS" : "PENDING", "c"),
                         ("draft", NSNull(), "CONFLICTING", authored != .draftReady, "FAILURE", "d"),
                         ("checking", "REVIEW_REQUIRED", "UNKNOWN", false, "PENDING", "e"),
                     ]
