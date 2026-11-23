@@ -18,6 +18,10 @@ afterwards. Nothing is written to disk.
 - **Disabled controls say why** in their hint: Open at login, locked skin cards, Check for
   Updates, automatic install, beta releases, scope Apply and Cancel, the suggestion menus and
   entitlement Add.
+- **Update available (#149).** The Inbox banner is one named group ("Update available: Version X") with
+  **Later** and **Update to version X** buttons that VoiceOver can press (in light and dark); a busy Update… says
+  why it is disabled. The menu-bar item's label ends with "update available: version X" while the dot shows, and
+  the indicator is announced once when it appears.
 - **Inbox rows** are one button each. The name holds the title, kind and repository (with "New."
   when unseen), and the hint is "Opens on GitHub". **Open on GitHub** and **Dismiss Here** are
   named actions in the VoiceOver Actions rotor, and a separate "Dismiss <title>" button remains.

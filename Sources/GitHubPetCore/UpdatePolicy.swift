@@ -76,10 +76,45 @@ public struct UpdateConfiguration: Equatable, Sendable {
     }
 }
 
+/// When the app asks Sparkle for a background check of its own (#149): shortly after launch and
+/// after the Mac wakes, only when Sparkle's interval has passed since the last check. Sparkle's own
+/// schedule (`SUScheduledCheckInterval`) still runs; this only fills the gaps a sleeping Mac leaves.
+public enum UpdateCheckSchedule {
+    public static let launchDelay: TimeInterval = 60
+    /// Gives the network time to come back after a wake.
+    public static let wakeDelay: TimeInterval = 30
+
+    public static func isOverdue(lastCheck: Date?, interval: TimeInterval, now: Date) -> Bool {
+        guard let lastCheck else { return true }
+        return now.timeIntervalSince(lastCheck) >= interval
+    }
+}
+
+/// The "Update available" indicator (#149). "Later" hides it for that version until a newer one is
+/// found or a day has passed; it never hides Sparkle's own menu and Settings lines.
+public enum UpdateIndicatorPolicy {
+    public static let laterInterval: TimeInterval = 24 * 60 * 60
+
+    public static func shows(version: String?, dismissedVersion: String?, dismissedAt: Date?, now: Date) -> Bool {
+        guard let version else { return false }
+        guard version == dismissedVersion, let dismissedAt else { return true }
+        return now.timeIntervalSince(dismissedAt) >= laterInterval
+    }
+
+    /// When a "Later" for `version` runs out, or nil when it is not hiding anything.
+    public static func expiry(version: String?, dismissedVersion: String?, dismissedAt: Date?, now: Date) -> Date? {
+        guard let version, version == dismissedVersion, let dismissedAt else { return nil }
+        let end = dismissedAt.addingTimeInterval(laterInterval)
+        return end > now ? end : nil
+    }
+}
+
 /// The user's update choices that Sparkle doesn't store itself. Local only.
 public struct UpdatePreferences {
     public static let betaOptInKey = "update.betaOptIn"
     public static let silentInstallOptInKey = "update.silentInstallOptIn"
+    public static let indicatorLaterVersionKey = "update.indicatorLaterVersion"
+    public static let indicatorLaterDateKey = "update.indicatorLaterDate"
 
     private let defaults: UserDefaults
     public init(defaults: UserDefaults) { self.defaults = defaults }
@@ -94,5 +129,18 @@ public struct UpdatePreferences {
     public var betaOptIn: Bool {
         get { defaults.bool(forKey: Self.betaOptInKey) }
         nonmutating set { defaults.set(newValue, forKey: Self.betaOptInKey) }
+    }
+
+    /// The version the user said "Later" to, and when.
+    public var indicatorLater: (version: String, date: Date)? {
+        get {
+            guard let version = defaults.string(forKey: Self.indicatorLaterVersionKey),
+                  let date = defaults.object(forKey: Self.indicatorLaterDateKey) as? Date else { return nil }
+            return (version, date)
+        }
+        nonmutating set {
+            defaults.set(newValue?.version, forKey: Self.indicatorLaterVersionKey)
+            defaults.set(newValue?.date, forKey: Self.indicatorLaterDateKey)
+        }
     }
 }

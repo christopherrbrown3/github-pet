@@ -83,3 +83,30 @@ import Testing
         #expect(UpdatePreferences(defaults: defaults).betaOptIn)
     }
 }
+
+@Suite struct UpdateScheduleTests {
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    @Test func aCheckIsOverdueOnlyAfterTheInterval() {
+        #expect(UpdateCheckSchedule.isOverdue(lastCheck: nil, interval: 21_600, now: now))
+        #expect(!UpdateCheckSchedule.isOverdue(lastCheck: now.addingTimeInterval(-21_599), interval: 21_600, now: now))
+        #expect(UpdateCheckSchedule.isOverdue(lastCheck: now.addingTimeInterval(-21_600), interval: 21_600, now: now))
+        // A clock that went backwards is not overdue.
+        #expect(!UpdateCheckSchedule.isOverdue(lastCheck: now.addingTimeInterval(60), interval: 21_600, now: now))
+    }
+
+    @Test func laterHidesOneVersionForADay() {
+        let later = now.addingTimeInterval(-3_600)
+        #expect(!UpdateIndicatorPolicy.shows(version: nil, dismissedVersion: nil, dismissedAt: nil, now: now))
+        #expect(UpdateIndicatorPolicy.shows(version: "0.1.0-beta.7", dismissedVersion: nil, dismissedAt: nil, now: now))
+        #expect(!UpdateIndicatorPolicy.shows(version: "0.1.0-beta.7", dismissedVersion: "0.1.0-beta.7", dismissedAt: later, now: now))
+        #expect(UpdateIndicatorPolicy.expiry(version: "0.1.0-beta.7", dismissedVersion: "0.1.0-beta.7", dismissedAt: later, now: now)
+                == later.addingTimeInterval(86_400))
+        // A newer version shows at once; the same version comes back after 24 hours.
+        #expect(UpdateIndicatorPolicy.shows(version: "0.1.0-beta.8", dismissedVersion: "0.1.0-beta.7", dismissedAt: later, now: now))
+        #expect(UpdateIndicatorPolicy.expiry(version: "0.1.0-beta.8", dismissedVersion: "0.1.0-beta.7", dismissedAt: later, now: now) == nil)
+        let dayLater = later.addingTimeInterval(86_400)
+        #expect(UpdateIndicatorPolicy.shows(version: "0.1.0-beta.7", dismissedVersion: "0.1.0-beta.7", dismissedAt: later, now: dayLater))
+        #expect(UpdateIndicatorPolicy.expiry(version: "0.1.0-beta.7", dismissedVersion: "0.1.0-beta.7", dismissedAt: later, now: dayLater) == nil)
+    }
+}

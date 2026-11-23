@@ -356,6 +356,22 @@ for png in scope-settings-long scope-add-by-name scope-add-by-name-invalid; do
   done
 done
 
+# Update indicator (#149): the Inbox banner and the menu-bar dot, light and dark. The update never
+# changes the inbox's count badge, the mascot's badge or the alert icon; Later hides the dot and
+# banner while the quiet menu line stays. The banner's own accessibility tree is checked by
+# AccessibilityTreeTests (an offscreen render publishes no SwiftUI nodes without an assistive client).
+for png in update-inbox update-menubar; do
+  for theme in '' '-dark'; do
+    [[ -s $out/$png$theme.png ]] && echo "ok   $png$theme.png rendered" || { echo "FAIL $png$theme.png missing"; failures=$((failures + 1)); }
+  done
+done
+check_in 'update indicator (#149)' "update shows the indicator, badges unchanged" \
+  '^update-indicator: version=0\.1\.0-beta\.7 badge=([^ ]+)->\1 mascot-badge=([^ ]+)->\2 alert-icon='
+check_in 'update indicator (#149)' "menu-bar AX names the update after the inbox status" \
+  '^update menu-bar AX: GitHub Pet, Demo data, .*, update available: version 0\.1\.0-beta\.7$'
+check_in 'update indicator (#149)' "Later hides it, menu line stays" \
+  '^update-indicator after Later: version=none menu-line=0\.1\.0-beta\.7 ax-restored=true$'
+
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do

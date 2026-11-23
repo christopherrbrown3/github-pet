@@ -124,7 +124,8 @@ cat > "$app/Contents/Info.plist" <<PLIST
   $sparkle_key_plist
   <key>SUAllowsAutomaticUpdates</key><true/>
   <key>SUAutomaticallyUpdate</key><false/>
-  <key>SUScheduledCheckInterval</key><integer>86400</integer>
+  <key>SUEnableAutomaticChecks</key><true/>
+  <key>SUScheduledCheckInterval</key><integer>21600</integer>
   <key>SUVerifyUpdateBeforeExtraction</key><true/>
   $ats_plist
   <key>LSMinimumSystemVersion</key><string>13.0</string>
