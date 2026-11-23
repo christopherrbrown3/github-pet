@@ -15,8 +15,7 @@ Open it from the menu-bar icon or by clicking the pet.
 - **Grouped rows.** Items are grouped by what they ask of you. Click a row to open it on GitHub.
 - **Waiting on others.** Below the Needs you list, its own collapsed **Waiting on others** section
   lists those pull requests and deployments with its count. Expand it to see each one and why it
-  waits: draft, review pending, checks running, checking for conflicts, approved and ready to merge,
-  or, for a deployment, approval by others or a wait timer. A row shows the first reason; hover it
+  waits: draft, review pending, checks running, checking for conflicts, or, for a deployment, approval by others or a wait timer. A row shows the first reason; hover it
   (or use VoiceOver) for all of them. These rows look quieter, never count in the badge, and never
   alert or notify.
 - **Dismiss and Restore.** **×** removes an item from your Inbox on this Mac only; GitHub still
@@ -27,9 +26,10 @@ Open it from the menu-bar icon or by clicking the pet.
 - **Review requests.** Pull requests waiting for your review. Choose in Settings whether to include
   requests to your teams or only reviews requested directly from you.
 - **Assigned issues.** Open issues assigned to you.
-- **Your pull requests that need you.** Changes requested, a merge conflict or failing checks. The
-  rest, including drafts and pull requests GitHub is still checking, are listed under **Waiting on
-  others** and never alert.
+- **Your pull requests that need you.** Changes requested, a merge conflict, failing checks, or
+  approved and ready to merge (approved, not a draft, checks passing or none, and no conflict). The
+  rest, including drafts and approved pull requests whose checks are running or that GitHub is still
+  checking for conflicts, are listed under **Waiting on others** and never alert.
 - **Entitlement approvals.** List the repositories where access requests arrive as pull requests, and
   their review requests get a key icon. GitHub Pet only opens the pull request.
 - **Workflow failures (opt-in).** Failing GitHub Actions runs on the default branch of repositories you
@@ -139,7 +139,11 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 - **"Checks failing"** means any failing check on the latest commit; GitHub's search can't say which
   checks are required.
 - **Announcements.** A merge conflict is announced at most once per pull request; failing checks once
-  per new failing commit.
+  per new failing commit; approved and ready to merge once per ready commit (GitHub rechecking
+  conflicts on the same commit doesn't announce it again).
+- **"Approved, ready to merge"** uses GitHub's review decision, all checks on the latest commit and its
+  conflict check. GitHub's search can't say whether branch protection needs more, such as more
+  approvals than your repository's rule, so the pull request page has the final say.
 - **Actions alerts** cover only selected repositories, and only the default branch's latest commit.
   Changing coverage or the monitoring scope re-baselines quietly: items first seen then aren't
   announced. Actions items aren't remembered across a relaunch.

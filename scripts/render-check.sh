@@ -345,6 +345,15 @@ if (( ${collapsed:-0} >= 300 && ${expanded:-0} >= ${collapsed:-0} + 3 * 40 )); t
   echo "ok   waiting group expands its rows ($collapsed pt collapsed, $expanded pt expanded)"
 else echo "FAIL waiting group heights: collapsed ${collapsed:-missing} pt, expanded ${expanded:-missing} pt"; failures=$((failures + 1)); fi
 
+# Approved and ready to merge (#153): a Your pull requests row that badges; approved with checks
+# running still waits, saying so.
+for theme in '' '-dark'; do
+  png="inbox153-approved-ready$theme"
+  [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+done
+check_in 'approved and ready to merge (#153)' "approved and ready to merge needs you and badges" \
+  '^inbox153 state=Up to date badge=3 rows=3 your-prs=(.*\|)?Approved, ready to merge(\|.*)? waiting-rows=3 reasons=(.*\|)?Checks running(\||$)'
+
 # Scope browser (#137): every sheet state, light and dark, on the offline Demo fixture. Each
 # failure state has its own presentation; only the truly empty owner claims "no repositories".
 scope=$(section 'scope browser (#137)')
