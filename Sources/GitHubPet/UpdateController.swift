@@ -354,7 +354,8 @@ struct UpdateMenuRow: View {
             Spacer()
             if let version = updates.readyVersion {
                 Text("Version \(version) installs on quit").foregroundStyle(.secondary)
-            } else if let version = updates.pendingVersion {
+            } else if let version = updates.pendingVersion, updates.indicatorVersion == nil {
+                // While the Inbox banner shows, it says this; after "Later" this quiet line remains.
                 Text("Version \(version) available").foregroundStyle(.secondary)
             } else if !updates.isAvailable {
                 Text("Updates not configured").foregroundStyle(.secondary)
@@ -376,15 +377,19 @@ struct UpdateAvailableBanner: View {
                 Image(systemName: "arrow.down.circle.fill")
                     .foregroundStyle(Color.accentColor)
                     .accessibilityHidden(true)
-                Text("Update available: Version \(version)")
-                    .font(.callout)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                // A version never wraps at its hyphen: title and version each stay on one line.
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Update available").font(.callout).lineLimit(1)
+                    Text(version).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                }
+                .layoutPriority(1)
                 Spacer(minLength: 4)
                 Button("Later") { updates.dismissIndicator() }
+                    .buttonStyle(.borderless)
                     .accessibilityHint("Hides this until a newer version is found or for 24 hours.")
                     .accessibilityIdentifier("inbox.updateLater")
                 Button("Update…") { updates.checkForUpdates() }
+                    .buttonStyle(.borderedProminent)
                     .disabled(!updates.canCheck)
                     .accessibilityLabel("Update to version \(version)")
                     .accessibilityHint(updates.canCheck ? "Opens the updater, which asks before installing."
@@ -402,18 +407,18 @@ struct UpdateAvailableBanner: View {
 }
 
 /// #149: the menu-bar symbol, with a small dot at its top-right corner while an update is available.
-/// A template image, so the menu bar tints symbol and dot together in light and dark.
+/// A template image, so the menu bar tints symbol and dot together in light and dark. Both variants
+/// share one canvas, so the item keeps its width and baseline when the dot appears.
 enum MenuBarIcon {
     static func image(symbol: String, dot: Bool) -> NSImage {
         let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)) ?? NSImage()
-        guard dot else { base.isTemplate = true; return base }
-        let diameter: CGFloat = 6, gap: CGFloat = 1.5, overhang: CGFloat = 3
-        let size = CGSize(width: base.size.width + overhang, height: base.size.height + overhang)
-        let image = NSImage(size: size, flipped: false) { rect in
-            base.draw(in: CGRect(origin: .zero, size: base.size))
+        let diameter: CGFloat = 6, gap: CGFloat = 1.5
+        let image = NSImage(size: base.size, flipped: false) { rect in
+            base.draw(in: rect)
+            guard dot else { return true }
+            // Inside the top-right corner; a cleared ring bites into the glyph so the dot reads apart.
             let dotRect = CGRect(x: rect.maxX - diameter, y: rect.maxY - diameter, width: diameter, height: diameter)
-            // Clear a ring around the dot so it reads apart from the symbol.
             NSGraphicsContext.current?.compositingOperation = .clear
             NSBezierPath(ovalIn: dotRect.insetBy(dx: -gap, dy: -gap)).fill()
             NSGraphicsContext.current?.compositingOperation = .sourceOver

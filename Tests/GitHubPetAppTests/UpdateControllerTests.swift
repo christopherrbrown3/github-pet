@@ -227,6 +227,7 @@ final class FakeUpdater: UpdaterBackend {
         #expect(model.indicatorVersion == nil)
         // The quiet menu/Settings line still says so.
         #expect(model.pendingVersion == "0.1.0-beta.7")
+        #expect(model.indicatorVersion == nil, "the footer's quiet line shows again once the banner is hidden")
         let relaunched = FakeUpdater.controller(defaults: store, now: { clock })
         relaunched.found("0.1.0-beta.7")
         #expect(relaunched.indicatorVersion == nil)
@@ -259,7 +260,15 @@ final class FakeUpdater: UpdaterBackend {
         let plain = MenuBarIcon.image(symbol: "pawprint", dot: false)
         let dotted = MenuBarIcon.image(symbol: "pawprint", dot: true)
         #expect(plain.isTemplate && dotted.isTemplate)
-        #expect(dotted.size.width > plain.size.width && dotted.size.height > plain.size.height)
+        // Same canvas: the menu-bar item keeps its width and baseline when the dot appears.
+        #expect(dotted.size == plain.size)
+        func ink(_ image: NSImage) -> Int {
+            guard let rep = image.cgImage(forProposedRect: nil, context: nil, hints: nil).map(NSBitmapImageRep.init(cgImage:)) else { return 0 }
+            var count = 0
+            for x in 0..<rep.pixelsWide { for y in 0..<rep.pixelsHigh where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.5 { count += 1 } }
+            return count
+        }
+        #expect(ink(dotted) != ink(plain), "the dot changes the drawn image")
     }
 
     private func waitUntil(_ condition: () -> Bool) async throws {

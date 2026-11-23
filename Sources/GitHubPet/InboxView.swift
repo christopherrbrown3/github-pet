@@ -34,8 +34,8 @@ struct InboxView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            UpdateAvailableBanner(updates: updates)
             notes
+            UpdateAvailableBanner(updates: updates)
             overview
             Divider()
             inboxContent
