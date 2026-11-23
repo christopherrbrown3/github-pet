@@ -526,6 +526,56 @@ private struct StubLoginBackend: LoginItemBackend {
         }
     }
 
+    // MARK: Update indicator (#149)
+
+    /// The Inbox header's "Update available" banner: named, its buttons pressable by VoiceOver (and
+    /// so in the keyboard's focus order with Keyboard navigation on), a busy Update… says why, and
+    /// the menu-bar item's label carries the update after the inbox status. Light and dark.
+    @Test(arguments: appearances)
+    func updateBannerIsNamedPressableAndAnnounced(_ appearance: NSAppearance.Name) async throws {
+        let app = model()
+        app.showFixtureItemsForSnapshot(SnapshotRenderer.inbox87Items(4))
+        let fake = FakeUpdater()
+        let updates = FakeUpdater.controller(fake)
+        var announced: [String] = []
+        updates.announce = { announced.append($0) }
+        updates.found("0.1.0-beta.7")
+        #expect(announced == ["Update available: version 0.1.0-beta.7"])
+        let host = AXHost(InboxView(model: app, showsWindowButton: true, marksSeenOnClose: false, showsSimulator: true,
+                                    updates: updates), appearance: appearance)
+        defer { host.close() }
+        let tree = try await host.tree(until: "inbox.updateInstall")
+        let dump = tree.all.map(\.line).joined(separator: "\n")
+        #expect(tree.problems().isEmpty, "\(tree.problems())\n\(dump)")
+        let banner = try #require(tree.first(id: "inbox.update"), "\(dump)")
+        #expect(banner.name == "Update available: Version 0.1.0-beta.7", "\(banner.line)")
+        let install = try #require(tree.first(id: "inbox.updateInstall"))
+        #expect(install.role == "AXButton" && install.name == "Update to version 0.1.0-beta.7", "\(install.line)")
+        #expect(install.help.contains("asks before installing"), "\(install.line)")
+        let later = try #require(tree.first(id: "inbox.updateLater"))
+        #expect(later.role == "AXButton" && later.name == "Later" && !later.help.isEmpty, "\(later.line)")
+        // VO-Space on Update… runs Sparkle's normal (consent-asking) check, never a background one.
+        #expect(AXReader.press(install))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(fake.checks == 1 && fake.backgroundChecks == 0)
+        #expect(updates.indicatorVersion == nil)
+        #expect(MenuBarLabel.accessibilityLabel(model: app, updates: updates) == app.statusAccessibilityLabel)
+
+        // Busy updater: Update… is disabled and says why; Later still works.
+        fake.canCheckForUpdates = false
+        updates.refresh()
+        updates.found("0.1.0-beta.7")
+        #expect(MenuBarLabel.accessibilityLabel(model: app, updates: updates)
+                == "\(app.statusAccessibilityLabel), update available: version 0.1.0-beta.7")
+        let busyTree = try await host.tree(until: "inbox.updateInstall")
+        let busy = try #require(busyTree.first(id: "inbox.updateInstall"))
+        #expect(busy.enabled == false && busy.help.hasPrefix("Unavailable while"), "\(busy.line)")
+        #expect(busyTree.problems().isEmpty, "\(busyTree.problems())")
+        #expect(AXReader.press(try #require(busyTree.first(id: "inbox.updateLater"))))
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(updates.indicatorVersion == nil && updates.pendingVersion == "0.1.0-beta.7")
+    }
+
     // MARK: Scope browser (#137)
 
     /// The Choose Repositories sheet on Demo fixtures: named controls, the search field's label,

@@ -159,9 +159,10 @@ More detail on every feature: [Features](docs/features.md).
 
 ## Updates
 
-If you're on Beta 3 or earlier, install by hand once; Beta 4 and later get updates in the app. GitHub Pet asks once whether to check for updates automatically. If
-you agree, it checks in the background and asks before installing one; choose **Check for Updates…**
-from the menu-bar menu any time. Each update is
+If you're on Beta 3 or earlier, install by hand once; Beta 4 and later get updates in the app. GitHub Pet checks for
+updates in the background about every 6 hours (turn it off in Settings; an earlier choice is kept). When one is
+available, the menu-bar icon shows a small dot and the Inbox shows **Update available**; it asks before installing.
+Choose **Check for Updates…** from the menu-bar menu any time. Each update is
 verified with its signature before it's installed. [How updates work](docs/updates.md).
 
 ## Limits during the beta

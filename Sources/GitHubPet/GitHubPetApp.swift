@@ -15,7 +15,7 @@ struct GitHubPetApp: App {
         MenuBarExtra {
             InboxView(model: appDelegate.model)
         } label: {
-            MenuBarLabel(model: appDelegate.model)
+            MenuBarLabel(model: appDelegate.model, updates: appDelegate.model.updates)
         }
         .menuBarExtraStyle(.window)
 
@@ -27,18 +27,25 @@ struct GitHubPetApp: App {
 
 struct MenuBarLabel: View {
     @ObservedObject var model: AppModel
+    /// #149: the update dot; never part of the inbox count or its alert icon.
+    @ObservedObject var updates: UpdateController
 
     var body: some View {
         let symbol = model.showsAlertIcon ? "pawprint.fill" : "pawprint"
+        let icon = Image(nsImage: MenuBarIcon.image(symbol: symbol, dot: updates.indicatorVersion != nil))
         // Demo is spelled out in the menu bar itself, not only in accessibility text.
         Group {
             if model.isDemo {
-                Text("\(Image(systemName: symbol)) \(PrivacyText.demoLabel.uppercased())")
+                Text("\(icon) \(PrivacyText.demoLabel.uppercased())")
             } else {
-                Image(systemName: symbol)
+                icon
             }
         }
-        .accessibilityLabel(model.statusAccessibilityLabel)
+        .accessibilityLabel(Self.accessibilityLabel(model: model, updates: updates))
+    }
+
+    static func accessibilityLabel(model: AppModel, updates: UpdateController) -> String {
+        [model.statusAccessibilityLabel, updates.indicatorAccessibilityText].compactMap { $0 }.joined(separator: ", ")
     }
 }
 

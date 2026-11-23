@@ -17,10 +17,14 @@ struct InboxView: View {
     /// Bumped by the Waiting on others tile: scroll its group into view once expanded (#148).
     @State private var waitingReveal = 0
     @ScaledMetric(relativeTo: .body) private var textScale = 1.0
+    /// #149: renders and tests pass a controller with a stand-in updater; the app uses the model's.
+    private let updates: UpdateController
 
     init(model: AppModel, showsWindowButton: Bool = true, marksSeenOnClose: Bool = true,
-         showsSimulator: Bool = true, initialSelection: InboxViewSelection = InboxViewSelection()) {
+         showsSimulator: Bool = true, initialSelection: InboxViewSelection = InboxViewSelection(),
+         updates: UpdateController? = nil) {
         self.model = model
+        self.updates = updates ?? model.updates
         self.showsWindowButton = showsWindowButton
         self.marksSeenOnClose = marksSeenOnClose
         self.showsSimulator = showsSimulator
@@ -33,6 +37,7 @@ struct InboxView: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             notes
+            UpdateAvailableBanner(updates: updates)
             overview
             Divider()
             inboxContent
@@ -44,7 +49,7 @@ struct InboxView: View {
                 Label(note, systemImage: "exclamationmark.triangle").font(.caption)
             }
             Divider()
-            UpdateMenuRow(updates: model.updates)
+            UpdateMenuRow(updates: updates)
             footer
         }
         .padding(12)

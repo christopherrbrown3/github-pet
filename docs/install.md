@@ -135,8 +135,9 @@ accessibility output only; a live VoiceOver pass has not been done yet.
 The first install always needs **Open Anyway** (above): the app is ad-hoc signed and not notarized. After
 that, GitHub Pet updates itself with [Sparkle](https://sparkle-project.org).
 
-- **Check for Updates…** is in the menu-bar menu and in Settings › GitHub › Software updates. Sparkle asks whether to check
-  automatically (at most every 24 hours), asks before installing, and shows release notes.
+- **Check for Updates…** is in the menu-bar menu and in Settings › GitHub › Software updates. GitHub Pet checks
+  automatically about every 6 hours (you can turn this off in Settings). When an update is available, the menu-bar icon
+  gets a small dot and the Inbox shows **Update available**; **Update…** shows release notes and asks before installing.
 - Updates are verified with GitHub Pet's update signing key, not by Apple notarization, and Sparkle clears
   quarantine on the updates it installs. "Install updates automatically, without asking" is off unless you turn
   it on.

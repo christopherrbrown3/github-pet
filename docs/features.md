@@ -105,9 +105,10 @@ DEMO, and appears only if you choose it under Settings → GitHub → Source.
 ## Updates
 
 Anyone on Beta 3 or earlier installs by hand once; Beta 4 and later get updates in the app, delivered by
-[Sparkle](https://sparkle-project.org). GitHub Pet first asks once whether to check automatically
-(Sparkle's prompt). With checks on, it checks at most once a day, shows a quiet "Version X
-available" line in the menu and asks before installing, unless you turn on automatic installs. Updates
+[Sparkle](https://sparkle-project.org). Automatic checks are on for new installs (an earlier choice is kept; Settings
+can turn them off): about every 6 hours, plus after launch and wake when a check is due. An available update shows a
+dot on the menu-bar icon, an "Update available" banner in the Inbox header (Update… or Later) and a quiet "Version X
+available" line in the menu; it asks before installing, unless you turn on automatic installs. Updates
 are verified with an EdDSA signature before they're unpacked. See [Updates](updates.md).
 
 ## Privacy and security
