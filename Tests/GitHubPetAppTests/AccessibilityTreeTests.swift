@@ -300,6 +300,49 @@ private struct StubLoginBackend: LoginItemBackend {
         #expect(tree.all.contains { $0.identifier == "inbox.mascot" && $0.label.contains("\(items.count) items") })
     }
 
+    /// #148: the Waiting on others group is a collapsed disclosure whose header speaks its count and
+    /// state; VoiceOver's press expands it and its rows read like other rows (quieter, never "New").
+    /// The Waiting on others tile is a button that reveals the group.
+    @Test(arguments: appearances)
+    func waitingGroupIsADisclosureWithASpokenCountAndTheTileRevealsIt(_ appearance: NSAppearance.Name) async throws {
+        for viaTile in [false, true] {
+            let app = model()
+            app.showFixtureItemsForSnapshot(SnapshotRenderer.inbox87Items(4))
+            let waiting = app.waitingItems, unseen = app.unseenCount
+            #expect(waiting.count == 3, "Demo shows waiting PRs and a deployment")
+            let host = AXHost(inbox(app), appearance: appearance, size: CGSize(width: InboxView.width + 24, height: 1100))
+            defer { host.close() }
+            var tree = try await host.tree(until: "inbox.waiting.toggle")
+            var dump = tree.all.map(\.line).joined(separator: "\n")
+            #expect(tree.problems().isEmpty, "\(tree.problems())\n\(dump)")
+            let header = try #require(tree.first(id: "inbox.waiting.toggle"), "\(dump)")
+            #expect(header.role == "AXButton" && header.name == "Waiting on others, 3 items" && header.value == "Collapsed", "\(header.line)")
+            #expect(header.help == "Expands the group", "VoiceOver's hint: \(header.line)")
+            for item in waiting { #expect(!tree.all.contains { $0.label.contains(item.title) }, "collapsed by default: \(item.title)") }
+            let tile = try #require(tree.first(id: "inbox.overview.waiting"), "\(dump)")
+            #expect(tile.role == "AXButton" && tile.name.hasPrefix("Waiting on others: 3"), "\(tile.line)")
+
+            #expect(AXReader.press(try #require(viaTile ? tile : header)))
+            for _ in 0..<20 {
+                tree = try await host.tree(until: "inbox.waiting.toggle")
+                if tree.first(id: "inbox.waiting.toggle")?.value == "Expanded" { break }
+            }
+            dump = tree.all.map(\.line).joined(separator: "\n")
+            #expect(tree.first(id: "inbox.waiting.toggle")?.value == "Expanded", "\(viaTile ? "tile" : "header") press expands: \(dump)")
+            #expect(tree.problems().isEmpty, "\(tree.problems())")
+            for item in waiting {
+                let row = try #require(tree.all.first { $0.role == "AXButton" && $0.help == "Opens on GitHub" && $0.label.contains(item.title) },
+                                       "row for \(item.title)\n\(dump)")
+                #expect(!row.label.hasPrefix("New."), "waiting rows never read as new: \(row.label)")
+                #expect(row.label.contains(item.attention ?? "?"), "says why it waits: \(row.label)")
+                let dismissible = app.canDismissInboxItem(item)
+                #expect(Set(row.customActions.map(\.name)) == Set(["Open on GitHub"] + (dismissible ? ["Dismiss Here"] : [])), "\(row.line)")
+            }
+            #expect(tree.first(id: "inbox.waiting.toggle")?.help == "Collapses the group")
+            #expect(app.badge == "4" && app.unseenCount == unseen, "expanding changes nothing that counts")
+        }
+    }
+
     /// The named Dismiss action works through accessibility alone, and the Undo it offers is a
     /// named button that brings the row back.
     @Test func dismissActionOffersANamedUndo() async throws {

@@ -73,6 +73,41 @@ import Testing
         #expect(authoredRows(app).isEmpty && app.authoredWaitingCount == 0 && app.authoredWaitingNote == nil)
     }
 
+    /// #148: the waiting PRs are listed under Waiting on others through the real live path (simulated
+    /// scope): never Needs you rows, the badge or announcements; the group's count is its rows;
+    /// Dismiss hides one like any other row, and Restore brings it back quietly.
+    @Test func waitingPRsAreListedNeverCountedAndDismissLikeOtherRows() async throws {
+        let app = simulated(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        #expect(app.waitingItems.isEmpty)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        let badge = app.badge, unseen = app.unseenCount, rows = app.items
+        #expect(app.waitingItems.map(\.title).sorted() == ["Simulated authored approved", "Simulated authored checking",
+                                                           "Simulated authored draft"])
+        #expect(Set(app.waitingItems.map(\.attention)) == ["Approved", "Draft", "Review pending, Checks running, GitHub is checking for conflicts"])
+        #expect(app.waitingItems.allSatisfy { $0.isDemo && $0.kind == .authoredPullRequest })
+        #expect(Set(app.items.map(\.id)).isDisjoint(with: app.waitingItems.map(\.id)), "never both Needs you and waiting")
+        let group = app.waitingGroup
+        #expect(group.isShown && group.count == "3" && group.count == "\(group.items.count)")
+        #expect(InboxOverview(dataState: app.dataState, items: app.items, authoredWaiting: app.authoredWaitingCount,
+                              deploymentsWaiting: app.deploymentsWaitingCount, deploymentsComplete: app.actionsQuality == nil,
+                              serviceState: app.serviceState, incidents: app.serviceIncidents).waiting.value == group.count,
+                "the tile's count equals the listed rows")
+
+        let draft = try #require(app.waitingItems.first { $0.attention == "Draft" })
+        #expect(app.canDismissInboxItem(draft))
+        let context = try #require(app.inboxDismissalContext)
+        app.dismissInboxItem(draft.id, in: context)
+        #expect(!app.waitingItems.contains { $0.id == draft.id } && app.waitingGroup.count == "2")
+        #expect(app.dismissedInboxRows.contains { $0.item?.id == draft.id })
+        #expect(app.items == rows && app.badge == badge && app.unseenCount == unseen && !app.allCurrentInboxItemsDismissed)
+        app.refresh(); try await settled(app)
+        #expect(!app.waitingItems.contains { $0.id == draft.id }, "a dismissal survives the next poll")
+        let row = try #require(app.dismissedInboxRows.first { $0.item?.id == draft.id })
+        app.restoreInboxItem(row.id, in: context)
+        #expect(app.waitingItems.contains { $0.id == draft.id } && app.unseenCount == unseen, "restored quietly")
+    }
+
     /// Flag-on path (#94 keeps privacy mode in the code base).
     @Test func privacyModeHidesAuthoredTitlesAndRepositories() async throws {
         let app = simulated(features: .allOn); defer { app.cleanupScopeSimulation() }

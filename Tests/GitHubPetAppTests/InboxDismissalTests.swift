@@ -52,6 +52,27 @@ private struct DismissalActionsFixture: ActionsPolling {
         try #require(!app.repositoryFetchInFlight)
     }
 
+    /// #148: Demo lists invented Waiting on others rows (two PRs and a deployment) apart from the
+    /// inbox: never the badge or unseen, last known through a failure, and only PRs dismiss.
+    @Test func demoWaitingRowsStayOutOfTheBadgeAndFollowTheSourceState() throws {
+        let app = makeDemo(EphemeralDefaults(name: "dismissals.app.waiting"))
+        #expect(app.waitingItems == FixtureSimulator.defaultWaitingItems())
+        #expect(app.items.count == FixtureSimulator.defaultItems().count && app.badge == "\(app.items.count)")
+        #expect(app.authoredWaitingCount == 2 && app.deploymentsWaitingCount == 1 && app.waitingGroup.count == "3")
+        #expect(app.waitingItems.allSatisfy { !app.isUnseen($0) && $0.attention != nil })
+        let deployment = try #require(app.waitingItems.first { $0.kind == .deploymentApproval })
+        #expect(!app.canDismissInboxItem(deployment), "deployment rows are never dismissible, as in Needs you")
+        app.setPartialPolls(true)
+        #expect(app.waitingGroup.count == "3+" && app.waitingGroup.note != nil)
+        app.setPartialPolls(false)
+        app.simulateDisconnect()
+        #expect(app.waitingItems.count == 3 && app.waitingGroup.count == "?" && app.waitingGroup.lastKnown)
+        app.simulateReconnect()
+        // Everything dismissed in Needs you still lists what is waiting on others.
+        for item in app.items { try dismiss(item, in: app) }
+        #expect(app.items.isEmpty && app.allCurrentInboxItemsDismissed && app.waitingItems.count == 3)
+    }
+
     @Test func allDismissedPersistsAcrossRelaunchAndRestoresQuietly() throws {
         let defaults = EphemeralDefaults(name: "dismissals.app.relaunch")
         let key = BaselineKey(source: .fixtures, identity: .demo, scope: .everything)

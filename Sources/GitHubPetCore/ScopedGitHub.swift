@@ -240,12 +240,17 @@ public struct ScopedPollResult: Equatable, Sendable {
     /// Matches GitHub counted but the viewer can't see (#35): only for a fully clean response.
     public let hidden: Int
     /// Your open PRs that need nothing from you right now, or whose conflict status GitHub is
-    /// still computing (#9). Informational only: never rows, counts, badges or alerts.
-    public let waitingOnOthers: Int
+    /// still computing (#9), and deployments waiting on other reviewers (#10). Listed under
+    /// Waiting on others (#148), with why in `attention`: never Needs you rows, badges, events or
+    /// alerts. Never an ID that is also in `items`.
+    public let waiting: [InboxItem]
+    public var waitingOnOthers: Int { waiting.count }
     public init(viewer: ScopeViewer?, items: [InboxItem], issues: [ScopedFetchIssue], successfulSources: Int, hidden: Int = 0,
-                waitingOnOthers: Int = 0) {
+                waiting: [InboxItem] = []) {
         self.viewer = viewer; self.items = items; self.issues = issues; self.successfulSources = successfulSources
-        self.hidden = hidden; self.waitingOnOthers = waitingOnOthers
+        self.hidden = hidden
+        let actionable = Set(items.map(\.id))
+        self.waiting = InboxEngine.dedupe(waiting.filter { !actionable.contains($0.id) })
     }
     public var complete: Bool { viewer != nil && successfulSources > 0 && issues.isEmpty }
     /// Fixed texts (#7): never gh's stderr or GitHub's message, which can name organizations.
@@ -343,7 +348,7 @@ public enum ScopedResponseParser {
         }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var items: [String: InboxItem] = [:], successes = 0
-        var waiting = Set<String>()
+        var waiting: [String: InboxItem] = [:]
         var authoredStates: [String: AuthoredAttention] = [:]
         var hiddenByAlias: [String: Int] = [:]
         for search in plan.searches {
@@ -390,7 +395,15 @@ public enum ScopedResponseParser {
                     if let seen = authoredStates.updateValue(state, forKey: row.id), seen != state {
                         issues.append(.inconsistentDuplicate)
                     }
-                    guard case .needsAction(let reasons) = state else { waiting.insert(row.id); continue }
+                    if case .waiting(let waits) = state {
+                        // #148: listed under Waiting on others with why; no attention keys, so never an event.
+                        let item = InboxItem(id: key, kind: .authoredPullRequest, repository: row.repository.nameWithOwner,
+                                             title: row.title, url: url, updatedAt: row.updatedAt,
+                                             attention: waits.isEmpty ? nil : waits.map(\.text).joined(separator: ", "))
+                        if waiting[key].map({ $0.updatedAt > item.updatedAt }) != true { waiting[key] = item }
+                        continue
+                    }
+                    guard case .needsAction(let reasons) = state else { continue }
                     // One row per PR (stable ID). Each reason is its own event key, so only a gained
                     // reason, or checks failing on a new head commit, announces (#9 MED-1).
                     attention = reasons.map(\.text).joined(separator: ", ")
@@ -416,11 +429,9 @@ public enum ScopedResponseParser {
             let capped = Set(issues.compactMap { issue -> String? in if case .capped(let alias) = issue { return alias }; return nil })
             issues += hiddenByAlias.keys.sorted().filter { !capped.contains($0) }.map { ScopedFetchIssue.capped($0) }
         }
-        // A PR needing action in one inclusion is never also counted as waiting.
-        let actionable = Set(items.values.filter { $0.kind == .authoredPullRequest }.map { $0.id.split(separator: ":")[1] }.map(String.init))
+        // A PR needing action in one inclusion is never also listed as waiting (the init drops it).
         return ScopedPollResult(viewer: viewer, items: InboxEngine.dedupe(Array(items.values)), issues: issues,
-                                successfulSources: successes, hidden: hidden,
-                                waitingOnOthers: waiting.subtracting(actionable).count)
+                                successfulSources: successes, hidden: hidden, waiting: Array(waiting.values))
     }
 }
 
@@ -485,7 +496,7 @@ public struct ScopedGhClient: ScopedPolling {
         if let failure = preflight(gh, budget: budget) { return failure }
         return run(ScopeQueryPlan(identityFor: expectedAccount), gh: gh, budget: budget)
     }
-    /// Requests cover disjoint searches, so rows, sources and waiting counts add up (a #142 fallback
+    /// Requests cover disjoint searches, so rows, sources and waiting rows add up (a #142 fallback
     /// request looks up targets again, but only after their organization failed, which is Partial).
     /// Hidden counts are trusted only when every request was clean.
     static func merge(_ first: ScopedPollResult, _ next: ScopedPollResult) -> ScopedPollResult {
@@ -493,7 +504,7 @@ public struct ScopedGhClient: ScopedPolling {
         return ScopedPollResult(viewer: first.viewer, items: InboxEngine.dedupe(first.items + next.items), issues: issues,
                                 successfulSources: first.successfulSources + next.successfulSources,
                                 hidden: issues.isEmpty ? first.hidden + next.hidden : 0,
-                                waitingOnOthers: first.waitingOnOthers + next.waitingOnOthers)
+                                waiting: first.waiting + next.waiting)
     }
     private func preflight(_ gh: URL, budget: CommandBudget) -> ScopedPollResult? {
         do {
@@ -535,14 +546,14 @@ public struct ScopedGhClient: ScopedPolling {
                 guard parsed.viewer != nil, parsed.successfulSources > 0 else { return .failure(.accessDenied) }
                 let issues = parsed.issues.contains(.accessDenied) ? parsed.issues : parsed.issues + [.accessDenied]
                 return ScopedPollResult(viewer: parsed.viewer, items: parsed.items, issues: issues,
-                                        successfulSources: parsed.successfulSources)
+                                        successfulSources: parsed.successfulSources, waiting: parsed.waiting)
             }
             if result.exitCode != 0 && parsed.viewer == nil && !parsed.issues.contains(.graphQLError)
                 && !parsed.issues.contains(.rateLimited) && !parsed.issues.contains(.accessDenied) { return .failure(.transport) }
             // A failing gh process cannot turn a superficially valid empty JSON payload into success.
             if result.exitCode != 0 && parsed.issues.isEmpty {
                 return ScopedPollResult(viewer: parsed.viewer, items: parsed.items, issues: [.transport],
-                                        successfulSources: parsed.successfulSources)
+                                        successfulSources: parsed.successfulSources, waiting: parsed.waiting)
             }
             return parsed
         } catch { return Self.failure(error) }

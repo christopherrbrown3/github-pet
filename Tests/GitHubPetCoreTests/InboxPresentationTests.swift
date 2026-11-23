@@ -154,6 +154,35 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
         #expect(overview(.stale).waiting.value == "?" && overview(.stale).waiting.detail == "Last known, out of date")
     }
 
+    /// #148: the Waiting on others group's count is the tile's value; a complete, healthy count is
+    /// exactly its rows, and degraded data never reads as nothing waiting.
+    @Test func waitingGroupFollowsTheTileAndIsHonestAboutQuality() {
+        let rows = [item("a", .authoredPullRequest), item("b", .authoredPullRequest), item("d", .deploymentApproval)]
+        let ready = InboxWaitingGroup(dataState: .ready, items: rows, deploymentsComplete: true)
+        let tile = overview(.ready, authored: 2, deployments: 1).waiting
+        #expect(ready.count == tile.value && ready.count == "\(rows.count)" && ready.isShown && ready.note == nil && !ready.lastKnown)
+        #expect(ready.accessibilityLabel == "Waiting on others, 3 items")
+        let none = InboxWaitingGroup(dataState: .empty, items: [], deploymentsComplete: true)
+        #expect(!none.isShown && none.count == "0", "verified nothing waiting: the tile says so, no empty group")
+        let partial = InboxWaitingGroup(dataState: .partial, items: Array(rows.prefix(1)), deploymentsComplete: true)
+        #expect(partial.isShown && partial.count == "1+" && partial.count == overview(.partial, authored: 1).waiting.value)
+        #expect(partial.note == "Some sources didn't load, so there may be more." && partial.spokenCount == "at least 1 item")
+        let deployments = InboxWaitingGroup(dataState: .ready, items: [], deploymentsComplete: false)
+        #expect(deployments.isShown && deployments.count == "0+" && deployments.note != nil, "incomplete deployments: never nothing waiting")
+        let stale = InboxWaitingGroup(dataState: .stale, items: rows, deploymentsComplete: true)
+        #expect(stale.isShown && stale.lastKnown && stale.count == "?" && stale.note == "Last known, out of date.")
+        #expect(stale.accessibilityLabel == "Waiting on others, count unknown, 3 last known")
+        let failed = InboxWaitingGroup(dataState: .error("x"), items: [], deploymentsComplete: true)
+        #expect(failed.isShown && failed.count == "?" && failed.note == "Unknown until the next successful update.")
+        for state in [DataState.loading, .ghMissing, .unauthenticated] {
+            #expect(!InboxWaitingGroup(dataState: state, items: rows, deploymentsComplete: true).isShown, "\(state)")
+        }
+        for state in allStates {
+            let group = InboxWaitingGroup(dataState: state, items: [], deploymentsComplete: true)
+            #expect(!(group.isShown && group.count == "0" && group.note == nil), "\(state): a shown group never claims nothing waiting")
+        }
+    }
+
     @Test func tilesAgreeOnUnknownCounts() {
         // QA #92: no tile may show a current-looking count while another says the count is unknown.
         for state in allStates where !state.countIsKnown && state != .partial {

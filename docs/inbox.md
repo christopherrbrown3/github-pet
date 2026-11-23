@@ -19,10 +19,27 @@ sources keep their own coverage.
 Changing the filter refreshes the review list. Reviews already waiting in the new selection
 appear quietly. Your unread assigned issues and authored pull requests keep their unread markers.
 
+## See what's waiting on others
+
+Your open pull requests that need nothing from you right now, and deployments waiting for someone
+else's approval or a wait timer, are listed in a **Waiting on others** group below the groups that
+need you. It starts collapsed with its count. Select the group's header, or the **Waiting on others**
+tile, to expand it. Each row says why it waits where GitHub reports it: **Draft**, **Review pending**,
+**Checks running**, **GitHub is checking for conflicts**, **Approved**, or **Waiting for deployment
+approval by others or a wait timer**.
+
+These rows never count in the badge and never alert or notify. When a pull request starts needing
+you (for example, changes are requested), it moves to **Your pull requests** and alerts as usual.
+When results are partial the count reads "at least", and when they are stale or failed it reads `?`
+and the rows are marked last known.
+
+With VoiceOver, the group header reads its name, count and whether it is expanded or collapsed.
+
 ## Dismiss or restore an item
 
-1. Select the **×** next to a review request, assigned issue, authored pull request, or entitlement
-   review to dismiss it from your Inbox.
+1. Select the **×** next to a review request, assigned issue, authored pull request (including one
+   under **Waiting on others**), or entitlement review to dismiss it from your Inbox. A dismissed pull
+   request stays dismissed if it later needs you.
 2. Open **View dismissed** to see saved dismissals for the active account.
 3. Select **Restore**, then **Back to Inbox**. A restored item that still matches your current
    view returns without an alert. If it is unavailable in this view, restoring it allows it to

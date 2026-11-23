@@ -121,8 +121,9 @@ missing, empty or invalid `AppIcon.icns`, a wrong `CFBundleIconFile` and `LSUIEl
   author:@me archived:false`) with `isDraft reviewDecision mergeable` and the head commit's `oid` and
   `statusCheckRollup { state }`. Only PRs needing action become rows: changes requested, CONFLICTING,
   or rollup FAILURE/ERROR ("Checks failing": any check, not only required ones). Drafts, other states and
-  `UNKNOWN` mergeability are counted as waiting on others, shown as one informational Inbox line that is never a
-  row, count, badge, mood or alert. Each PR is one row with the stable ID `authoredPullRequest:<nodeID>`, and
+  `UNKNOWN` mergeability are waiting on others: `ScopedPollResult.waiting` rows (with why in `attention` and no
+  event keys) that `RepositoryScopeSession` keeps as last known and the Inbox lists in the collapsed Waiting on
+  others group (#148), never a Needs you row, badge, mood, event or alert. Each PR is one row with the stable ID `authoredPullRequest:<nodeID>`, and
   each reason has a stable event key (`#changes`, `#conflict`, `#checks@<head OID>`) persisted as a digest.
   The authored search asks for one changes-requesting review's ID and submission time. A distinct review
   can announce once when its timestamp is strictly later than the last verified review in a comparable

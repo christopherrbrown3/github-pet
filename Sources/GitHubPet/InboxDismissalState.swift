@@ -10,6 +10,8 @@ struct InboxDismissalContext: Equatable {
 /// Each Inbox surface owns its selection. A source/account/scope change returns it to the Inbox.
 struct InboxViewSelection {
     private var dismissedContext: InboxDismissalContext?
+    /// #148: the Waiting on others group is collapsed until expanded (its header or tile).
+    var waitingExpanded = false
 
     func showsDismissed(in context: InboxDismissalContext?) -> Bool {
         context != nil && dismissedContext == context

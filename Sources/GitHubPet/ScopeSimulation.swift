@@ -242,6 +242,6 @@ final class ScopeSimulation: ScopedPolling, @unchecked Sendable {
         return ScopedPollResult(viewer: parsed.viewer, items: parsed.items.map {
             var item = $0; item.isDemo = true; return item
         }, issues: parsed.issues, successfulSources: parsed.successfulSources, hidden: parsed.hidden,
-           waitingOnOthers: parsed.waitingOnOthers)
+           waiting: parsed.waiting.map { var item = $0; item.isDemo = true; return item })
     }
 }

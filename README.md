@@ -54,7 +54,8 @@ created. Once it exists the command will be `brew install --cask christopherrbro
 
 Review requests, issues assigned to you and your own pull requests that need a change sit in one list,
 grouped by what they ask of you. Three tiles sum it up: **Assigned to you**, **Waiting on others** and
-**GitHub status**.
+**GitHub status**. Your pull requests and deployments that are waiting on someone else are listed in a
+collapsed **Waiting on others** group, each saying why, without counting in the badge or alerting.
 
 Click a row and it opens on GitHub. Done with something? Dismiss it with **×**. It stays dismissed on this
 Mac, and **View dismissed** lets you **Restore** it later.
