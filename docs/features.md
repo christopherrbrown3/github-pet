@@ -1,6 +1,6 @@
 # GitHub Pet features
 
-The detail behind the [README](../README.md). Everything here describes the Beta 5 app. GitHub Pet is
+The detail behind the [README](../README.md). Everything here describes the Beta 7 app. GitHub Pet is
 read-only: every item opens on github.com, and nothing is approved, merged or changed from the app.
 
 ## The Inbox
@@ -105,7 +105,7 @@ DEMO, and appears only if you choose it under Settings → GitHub → Source.
 ## Updates
 
 Anyone on Beta 3 or earlier installs by hand once; Beta 4 and later get updates in the app, delivered by
-[Sparkle](https://sparkle-project.org). Automatic checks are on for new installs (an earlier choice is kept; Settings
+[Sparkle](https://sparkle-project.org). Automatic checks are on unless you turned them off (an earlier choice is kept; Settings
 can turn them off): about every 6 hours, plus after launch and wake when a check is due. An available update shows a
 dot on the menu-bar icon, an "Update available" banner in the Inbox header (Update… or Later) and a quiet "Version X
 available" line in the menu; it asks before installing, unless you turn on automatic installs. Updates
