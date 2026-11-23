@@ -30,7 +30,7 @@ The thumbnails use a neutral stand-in figure, not either skin. They show poses, 
 
 The existing `idle` (blink loop), `attention` and `urgent` states keep their v1 meaning and frames.
 
-Every new clip and state is optional in a pack. A pack without one behaves exactly as today: event clips fall back to the existing gesture, and reactions or ambient clips do not play. The placeholder figure has none of them.
+Every new clip and state is optional in a pack. A pack without one mostly behaves as today: `new-item` falls back to the #29 double wave, and reactions or ambient clips do not play. **Incidents change on purpose, even for a pack without `incident-start`** (custom packs, and the bundled packs until the art lands). An incident start with the marker previously off plays the attention double wave, whatever its severity. A second incident or an escalation plays no character clip. An incident never plays `urgent`, which today it does for major and critical impact. The placeholder figure has none of the new clips.
 
 ### Cut, and why
 
@@ -289,7 +289,7 @@ The point values above are examples. The builder measures the real ones.
 - **`framePoints`:** per-PNG overrides keyed by manifest path. Every key must be a referenced frame. Each point must lie inside the canvas. Missing `head` falls back to `points.head`. `nozzle` is required for frames 02 and 03 of `incident-end` when that clip exists (the engine emits mist only where a nozzle point exists). `hand` is optional and places sparkles, with a fallback of `head + [60, 50]`.
 - **Accessory drawing:** draw `image` translated by `framePoints[f].head − points.head`. It goes above the art, below labels, inside the same rotation as the art lean.
 - **Contours and layout:** `poseContours` / `poseOutlines` cover every state frame, every clip frame and, when the pack has the hat, every frame that can show it, composited with the hat. `allContours`, `uprightContours`, `artProfile` and `leaningContours` (attention, `drag` and `dizzy` frames) include them, so lane height, hover placement and the count's tracking stay correct for any pack. Bundled packs meet the bounds rule (section 3), so their layout does not change at all. Custom packs that exceed it get a taller lane or a wider hover offset instead of an overlap.
-- **Fallbacks:** a missing clip or state means today's behaviour. No `new-item` plays the #29 double wave. No `incident-start` plays today's incident gesture. A missing reaction or ambient clip plays nothing. No `drag` or `doze` keeps the mood pose. No hat shows no hat.
+- **Fallbacks:** a missing clip or state means today's behaviour, except for incidents. No `new-item` plays the #29 double wave. No `incident-start` is an intended change from today: an incident start with the marker previously off plays the attention double wave for any severity (never `urgent`), and a second incident or an escalation plays nothing (section 3.2). A missing reaction or ambient clip plays nothing. No `drag` or `doze` keeps the mood pose. No hat shows no hat.
 
 ### Budgets
 
@@ -433,6 +433,8 @@ That is 46 generated frames plus 1 builder composite and 1 accessory per skin: 4
 ## 7. Engine plan notes (for dev-138 and the release)
 
 - **Clip kind:** `EventClipQueue.Clip` gains a kind field (`urgent`, `incident-start`, `incident-end`, `new-item`, plus the old wave as `new-item`'s fallback). Ordering is severity, then kind rank, then earlier `startedAt` (section 2). It replaces the current tie-break.
+- **`Clip.state` comes from the kind, not the severity.** Today it is `urgent` whenever the event is critical, so a major or critical incident plays the urgent clip. From now on only the `urgent` kind (a critical inbox event) maps to the `urgent` state. Incident kinds play their own clip, or the attention double wave as the fallback, so an incident never maps to `urgent`.
+- **The per-origin merge uses the same order.** `EventClipQueue.enqueue` replaces the clip playing for an origin only when the new one ranks higher by (severity, kind rank), not by severity alone. So a new `incident-start` replaces a still-playing `incident-end` of the same `serviceIncident` origin, even when both are actionable.
 - **`incident-end` needs a new trigger.** Today a resolution only removes the marker quietly. The engine has to detect the transition "marker shown at the previous fresh result → fresh `.operational` now" in `applyServiceStatus`, and never from stale, error or loading (section 3.3).
 - **`validate_pack.py` must be extended for v2** (designer-owned, a follow-up to this doc). It should check the new manifest sections, the bounds rule, the per-clip caps and the bundled budget (8 frames per clip, 64 images, 96 KiB per image, 4 MiB per pack) before the Codex art is accepted.
 - **Gates:** the quiet hours and snooze rows in section 2 apply only if those hidden features return. Today only Reduce Motion, hiding the mascot and data freshness gate clips.
