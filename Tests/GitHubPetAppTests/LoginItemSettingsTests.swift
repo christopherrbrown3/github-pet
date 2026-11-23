@@ -102,7 +102,9 @@ private final class FakeLoginBackend: LoginItemBackend, @unchecked Sendable {
             if !options.simulatesMonitoringScope, let suite = options.defaultsSuite {
                 options.userDefaultsOverride = EphemeralDefaults(name: suite)
             }
-            let app = AppModel(options: options, runtime: AppModel.Runtime(schedulesTimers: false, scopeSimulationHoldLimit: nil))
+            let instant = ContinuousClock.now  // frozen budget clock (#162)
+            let app = AppModel(options: options, runtime: AppModel.Runtime(schedulesTimers: false,
+                                                                           repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) }, scopeSimulationHoldLimit: nil))
             defer { app.cleanupScopeSimulation() }
             let settings = app.loginItem
             #expect(!settings.isAvailable, "\(arguments)")
@@ -116,7 +118,9 @@ private final class FakeLoginBackend: LoginItemBackend, @unchecked Sendable {
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
         let backend = FakeLoginBackend(.disabled)
-        let app = AppModel(options: options, runtime: AppModel.Runtime(schedulesTimers: false, scopeSimulationHoldLimit: nil,
+        let instant = ContinuousClock.now  // frozen budget clock (#162)
+        let app = AppModel(options: options, runtime: AppModel.Runtime(schedulesTimers: false,
+                                                                       repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) }, scopeSimulationHoldLimit: nil,
                                                                        loginItemBackend: backend))
         defer { app.cleanupScopeSimulation() }
         app.loginItem.refresh()

@@ -17,8 +17,10 @@ import Testing
         let clock = plan.clock
         var launch = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         launch.forcePlaceholder = true
+        let instant = ContinuousClock.now  // frozen budget clock (#162), as in QAScenarioRunnerTests
         let model = AppModel(options: launch, runtime: AppModel.Runtime(
-            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false, scopeSimulationHoldLimit: nil,
+            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false,
+            repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) }, scopeSimulationHoldLimit: nil,
             features: .allOn))
         defer { model.cleanupScopeSimulation() }
         _ = try await QAScenarioRunner.execute(plan, model: model)
@@ -55,8 +57,10 @@ import Testing
         let clock = plan.clock
         var launch = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         launch.forcePlaceholder = true
+        let instant = ContinuousClock.now  // frozen budget clock (#162), as in QAScenarioRunnerTests
         let model = AppModel(options: launch, runtime: AppModel.Runtime(
-            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false, scopeSimulationHoldLimit: nil,
+            now: { clock.now() }, systemReducedMotion: { false }, schedulesTimers: false,
+            repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) }, scopeSimulationHoldLimit: nil,
             features: .allOff))
         defer { model.cleanupScopeSimulation() }
         _ = try await QAScenarioRunner.execute(plan, model: model)
