@@ -247,7 +247,11 @@ private func scheduler(idleGap: ClosedRange<TimeInterval> = 120...300, seed: UIn
         d.enqueue([event("c", .critical)], now: t0, playable: true)
         #expect(d.active?.kind == .urgent && d.active?.endsAt == t0 + 2.0)
         d.enqueue([event("i", .critical)], now: t0 + 0.1, playable: true, origin: .serviceIncident)
-        #expect(d.active?.event.item.id.hasSuffix("c") == true, "without the clip an incident keeps today's kind")
+        #expect(d.active?.event.item.id.hasSuffix("c") == true)
+        // An incident is never urgent: without a kind it plays the wave, whatever its severity.
+        var i = EventClipQueue()
+        i.enqueue([event("i", .critical)], now: t0, playable: true, origin: .serviceIncident)
+        #expect(i.active?.kind == .newItem && i.active?.state == .attention && i.active?.endsAt == t0 + 1.9)
     }
 
     @Test func aSameOrLowerArrivalMergesWithoutRestarting() {

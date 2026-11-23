@@ -861,12 +861,14 @@ final class AppModel: ObservableObject {
         // #138: every incident start (the marker appearing from none) puts the hat on, with the
         // incident's severity; an escalation keeps today's gesture. Without the pack's clip, as today.
         let marker = IncidentMarker.current(state: serviceMonitor.state, incidents: serviceMonitor.incidents)
-        let starts = !events.isEmpty && shownBefore == nil && marker != nil && clipLibrary.has(.incidentStart)
-        // Once the hat is on, a second incident or an escalation gets the marker burst only: no
-        // character clip (packs without the hat keep today's gesture).
-        let hatOn = shownBefore != nil && clipLibrary.accessories.contains(AccessoryPolicy.firefighterHat)
-        if hatOn { noteActivity(at: date) } else {
-            enqueueEvents(events, at: date, origin: .serviceIncident, kind: starts ? .incidentStart : nil)
+        // An incident never plays urgent (PM, #138). The marker appearing from none plays incident-start
+        // with the incident's severity, or the attention wave for a pack without that clip. A second
+        // incident or an escalation while the marker shows gets the marker burst only.
+        if !events.isEmpty, shownBefore == nil, marker != nil {
+            enqueueEvents(events, at: date, origin: .serviceIncident,
+                          kind: clipLibrary.has(.incidentStart) ? .incidentStart : .newItem)
+        } else if !events.isEmpty {
+            noteActivity(at: date)
         }
         // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
         if playable && !events.isEmpty { markerBurst = IncidentMarker.Burst(start: date, fromTier: shownBefore) }

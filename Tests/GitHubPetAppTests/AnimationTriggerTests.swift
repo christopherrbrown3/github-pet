@@ -26,64 +26,69 @@ import Testing
             mascotPackDirectory: { Self.root.appendingPathComponent("assets/mascots/\($0.rawValue)") }, clipSeed: 1))
     }
 
-    private func advance(_ app: AppModel, _ clock: Clock, by seconds: TimeInterval) {
+    /// Yields after each step so other main-actor suites running in parallel are never starved.
+    private func advance(_ app: AppModel, _ clock: Clock, by seconds: TimeInterval) async {
         clock.now += seconds
         app.tick()
+        await Task.yield()
     }
 
     /// Leaves the model with no incident shown and no clip playing.
-    private func clearIncidents(_ app: AppModel, _ clock: Clock) {
+    private func clearIncidents(_ app: AppModel, _ clock: Clock) async {
         app.resolveServiceIncidents()
-        advance(app, clock, by: 5)
+        await advance(app, clock, by: 5)
         #expect(app.incidentMarker == nil && app.activeClip == nil)
     }
 
-    @Test func placeholderPackHasEveryClip() {
+    @Test func placeholderPackHasEveryClip() async {
         let app = model(Clock())
         for id in ClipCatalog.v1.ordered.map(\.id) + MascotClipID.heldStates { #expect(app.clipLibrary.has(id), "\(id)") }
         #expect(model(Clock(), placeholderClips: false).clipLibrary == .empty, "the bundled packs ship no clips yet")
     }
 
-    @Test func hatGoesOnOnceAndComesOffOnlyOnAFreshOperationalReply() {
+    @Test func hatGoesOnOnceAndComesOffOnlyOnAFreshOperationalReply() async {
         let clock = Clock(), app = model(clock)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
         app.injectServiceIncident(.minor)
         #expect(app.activeClip?.kind == .incidentStart && app.activeClip?.origin == .serviceIncident)
         #expect(app.accessories == [AccessoryPolicy.firefighterHat])
-        advance(app, clock, by: 3)
+        await advance(app, clock, by: 3)
         // Hat on: a second incident and an escalation get the marker burst only.
         app.injectServiceIncident(.minor)
         #expect(app.activeClip == nil && app.markerBurst != nil)
-        advance(app, clock, by: 7)
+        await advance(app, clock, by: 7)
         app.escalateServiceIncidentsOneLevel()
         #expect(app.activeClip == nil && app.markerBurst != nil)
-        advance(app, clock, by: 7)
+        await advance(app, clock, by: 7)
         app.resolveServiceIncidents()
         #expect(app.activeClip?.kind == .incidentEnd)
         #expect(app.accessories.isEmpty, "the hat leaves with the marker")
-        advance(app, clock, by: 4)
+        await advance(app, clock, by: 4)
         // An unchanged operational poll replays nothing.
         app.resolveServiceIncidents()
         #expect(app.activeClip == nil)
     }
 
-    @Test func withoutTheClipsIncidentsKeepTodaysGesture() {
+    @Test func withoutTheClipsAnIncidentWavesOnceAndNeverPlaysUrgent() async {
         let clock = Clock(), app = model(clock, placeholderClips: false)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
+        app.injectServiceIncident(.critical)
+        #expect(app.activeClip?.kind == .newItem && app.activeClip?.state == .attention, "the wave, never urgent")
+        await advance(app, clock, by: 3)
         app.injectServiceIncident(.minor)
-        #expect(app.activeClip?.kind == .newItem)
-        advance(app, clock, by: 3)
-        app.injectServiceIncident(.minor)
-        #expect(app.activeClip?.kind == .newItem, "no hat: a later incident still waves, as today")
-        advance(app, clock, by: 3)
+        #expect(app.activeClip == nil && app.markerBurst != nil, "a second incident: the marker burst only")
+        await advance(app, clock, by: 7)
+        app.escalateServiceIncidentsOneLevel()
+        #expect(app.activeClip == nil, "an escalation: the marker burst only")
+        await advance(app, clock, by: 3)
         app.resolveServiceIncidents()
         #expect(app.activeClip == nil, "no incident-end clip without the art")
         #expect(app.accessories.isEmpty)
     }
 
-    @Test func reduceMotionPlaysNothingButStillWearsTheHat() {
+    @Test func reduceMotionPlaysNothingButStillWearsTheHat() async {
         let clock = Clock(), app = model(clock)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
         clock.reduced = true
         app.injectServiceIncident(.major)
         #expect(app.activeClip == nil && app.accessories == [AccessoryPolicy.firefighterHat])
@@ -93,25 +98,25 @@ import Testing
         #expect(app.clipStage.scheduled == nil)
         // Turning motion back on replays nothing.
         clock.reduced = false
-        advance(app, clock, by: 1)
+        await advance(app, clock, by: 1)
         #expect(app.activeClip == nil && app.clipStage.scheduled == nil)
     }
 
-    @Test func clicksPokeAndFiveQuickClicksMakeDizzy() {
+    @Test func clicksPokeAndFiveQuickClicksMakeDizzy() async {
         let clock = Clock(), app = model(clock)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
         app.mascotClicked()
         #expect(app.clipStage.scheduled?.id == .poke)
         for _ in 0..<4 { clock.now += 0.3; app.mascotClicked() }
         #expect(app.clipStage.scheduled?.id == .dizzy)
-        advance(app, clock, by: 3)
+        await advance(app, clock, by: 3)
         for _ in 0..<5 { clock.now += 0.3; app.mascotClicked() }
         #expect(app.clipStage.scheduled?.id != .dizzy, "dizzy waits out its 60 s cooldown")
     }
 
-    @Test func dragHoldsThePoseAndDropPlaysUnlessAnEventIsStillRunning() {
+    @Test func dragHoldsThePoseAndDropPlaysUnlessAnEventIsStillRunning() async {
         let clock = Clock(), app = model(clock)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
         app.mascotDragBegan()
         #expect(app.clipStage.dragStart == clock.now)
         app.mascotDragMoved(x: 0, time: 0)
@@ -122,7 +127,7 @@ import Testing
         app.mascotDragEnded()
         #expect(app.clipStage.dragStart == nil && app.clipStage.scheduled?.id == .drop)
         // An event clip that started under the drag shows its remaining frames instead of the drop.
-        advance(app, clock, by: 2)
+        await advance(app, clock, by: 2)
         app.mascotDragBegan()
         app.injectServiceIncident(.minor)
         #expect(app.activeClip?.kind == .incidentStart)
@@ -131,30 +136,40 @@ import Testing
         #expect(app.clipStage.scheduled == nil && app.activeClip?.kind == .incidentStart)
     }
 
-    @Test(.disabled("WIP #138: doze did not enter in the fixture model; under investigation")) func dozeAfterFifteenQuietMinutesAndHoverWakes() {
+    @Test func dozeAfterFifteenQuietMinutesAndHoverWakes() async {
         let clock = Clock(), app = model(clock)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
         app.markAllSeen()
         try? #require(app.mascotState == .idle)
-        for _ in 0..<16 { advance(app, clock, by: 60) }
+        // Fresh data is required, so poll as the app's timer would (no timers in tests).
+        for minute in 0..<16 {
+            app.replaySnapshot()
+            await advance(app, clock, by: 60)
+            if minute < 14 { #expect(app.clipStage.dozeStart == nil) }
+        }
+        #expect(app.dataState.countIsKnown)
         #expect(app.clipStage.dozeStart != nil)
         app.mascotHover(true)
         #expect(app.clipStage.dozeStart == nil)
         app.mascotHover(false)
         // Never while the incident marker shows.
         app.injectServiceIncident(.minor)
-        for _ in 0..<20 { advance(app, clock, by: 60) }
+        for _ in 0..<20 { app.replaySnapshot(); await advance(app, clock, by: 60) }
         #expect(app.clipStage.dozeStart == nil)
+        // Stale data never dozes either.
+        app.resolveServiceIncidents()
+        for _ in 0..<60 { await advance(app, clock, by: 60) }
+        #expect(app.dataState == .stale && app.clipStage.dozeStart == nil)
     }
 
-    @Test func dismissingANeedsYouRowPlaysItemCleared() throws {
+    @Test func dismissingANeedsYouRowPlaysItemCleared() async throws {
         let clock = Clock(), app = model(clock)
-        clearIncidents(app, clock)
+        await clearIncidents(app, clock)
         let context = try #require(app.inboxDismissalContext)
         let row = try #require(app.items.first { app.canDismissInboxItem($0) })
         app.dismissInboxItem(row.id, in: context)
         #expect(app.clipStage.scheduled?.id == .itemCleared)
-        advance(app, clock, by: 10)
+        await advance(app, clock, by: 10)
         if let waiting = app.waitingItems.first(where: { app.canDismissInboxItem($0) }) {
             app.dismissInboxItem(waiting.id, in: context)
             #expect(app.clipStage.scheduled == nil, "a Waiting on others row plays nothing")

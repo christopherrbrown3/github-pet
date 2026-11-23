@@ -67,12 +67,16 @@ struct MascotView: View {
             }
             figure(pose: pose, date: date, reduced: reduced)
                 .frame(width: layout.artSide, height: layout.artSide)
-                .overlay(alignment: .topTrailing) { placeholderTag(pose: pose, side: layout.artSide) }
                 // Art-layer lean about the ground anchor (#29); labels stay upright.
                 .rotationEffect(.degrees(pose.angle),
                                 anchor: UnitPoint(x: AttentionGesture.pivot.x / 256, y: AttentionGesture.pivot.y / 256))
                 .offset(x: layout.artFrame.minX, y: layout.laneHeight)
                 .opacity(drawsArt ? 1 : 0)
+            if showsPlaceholderTag(pose) {
+                placeholderTag(side: layout.artSide)
+                    .frame(width: layout.artSide, height: layout.artSide, alignment: .topTrailing)
+                    .offset(x: layout.artFrame.minX, y: layout.laneHeight)
+            }
             // Engine effects (#138): world space, so they don't lean; never in reduced motion.
             if let pack, let clip = pose.clip, !reduced, drawsArt {
                 let path = pack.imagePath(for: pose)
@@ -115,18 +119,19 @@ struct MascotView: View {
 
     /// "PH" on any clip, held pose or accessory synthesized until the art lands (#138), so a
     /// placeholder is never mistaken for final art.
-    @ViewBuilder
-    private func placeholderTag(pose: MascotPose, side: CGFloat) -> some View {
-        if let pack, !pack.placeholderClips.isEmpty,
-           pose.clip.map({ pack.placeholderClips.contains($0.id) }) == true
-            || pose.accessories.contains(where: pack.placeholderClips.contains) {
-            Text("PH")
-                .font(.system(size: max(7, side * 0.07), weight: .heavy, design: .monospaced))
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 2)
-                .background(Color(red: 0.75, green: 0, blue: 0.6))
-                .padding(side * 0.06)
-        }
+    private func showsPlaceholderTag(_ pose: MascotPose) -> Bool {
+        guard let pack, !pack.placeholderClips.isEmpty else { return false }
+        return pose.clip.map { pack.placeholderClips.contains($0.id) } == true
+            || pose.accessories.contains(where: pack.placeholderClips.contains)
+    }
+
+    private func placeholderTag(side: CGFloat) -> some View {
+        Text("PH")
+            .font(.system(size: max(7, side * 0.07), weight: .heavy, design: .monospaced))
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, 2)
+            .background(Color(red: 0.75, green: 0, blue: 0.6))
+            .padding(side * 0.06)
     }
 
     @ViewBuilder
@@ -266,19 +271,28 @@ struct PackFigure: View {
 
     var body: some View {
         let path = pack.imagePath(for: pose)
-        ZStack {
-            if let image = path.flatMap({ PackImageCache.shared.image($0, in: pack) }) {
-                layer(image)
+        let image = path.flatMap { PackImageCache.shared.image($0, in: pack) }
+        // The common case (no accessory) is exactly the single image it was before #138: no extra
+        // layout work on the idle timeline.
+        if pose.accessories.isEmpty {
+            if let image { layer(image) }
+        } else {
+            ZStack {
+                if let image { layer(image) }
+                accessories(path: path)
             }
-            // Accessories sit above the art, below the labels, and lean with it (#138). Authored at the
-            // default head point; a frame's own head point moves them.
-            GeometryReader { geo in
-                let scale = min(geo.size.width, geo.size.height) / CGFloat(MascotPack.canvasSize)
-                let offset = pack.headOffset(for: path)
-                ForEach(pose.accessories, id: \.self) { id in
-                    if let image = pack.manifest.accessorySpec(id).flatMap({ PackImageCache.shared.image($0.image, in: pack) }) {
-                        layer(image).offset(x: offset.x * scale, y: offset.y * scale)
-                    }
+        }
+    }
+
+    /// Accessories sit above the art, below the labels, and lean with it (#138). Authored at the
+    /// default head point; a frame's own head point moves them.
+    private func accessories(path: String?) -> some View {
+        GeometryReader { geo in
+            let scale = min(geo.size.width, geo.size.height) / CGFloat(MascotPack.canvasSize)
+            let offset = pack.headOffset(for: path)
+            ForEach(pose.accessories, id: \.self) { id in
+                if let image = pack.manifest.accessorySpec(id).flatMap({ PackImageCache.shared.image($0.image, in: pack) }) {
+                    layer(image).offset(x: offset.x * scale, y: offset.y * scale)
                 }
             }
         }

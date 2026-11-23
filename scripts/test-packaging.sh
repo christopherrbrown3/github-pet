@@ -143,6 +143,35 @@ fi
 grep -q 'bundled files differ from manifest runtime files' "$scratch/extra-assets.log"
 echo 'PASS mascot resources stage the two manifests and runtime frames only'
 
+# #138 schema v2: held states, clips and accessories stage with the pack; the bundled budget holds.
+v2=$scratch/v2-source
+mkdir -p "$v2"
+cp -R assets/mascots/mona-pet-v1 assets/mascots/little-chris-v1 "$v2/"
+mkdir -p "$v2/mona-pet-v1/accessories"
+cp assets/mascots/mona-pet-v1/frames/idle-00.png "$v2/mona-pet-v1/frames/poke-00.png"
+cp assets/mascots/mona-pet-v1/frames/idle-01.png "$v2/mona-pet-v1/accessories/firefighter-hat.png"
+python3 - "$v2/mona-pet-v1/manifest.json" <<'MANIFEST'
+import json, sys
+path = sys.argv[1]
+data = json.load(open(path))
+data["schemaVersion"] = 2
+data["states"]["drag"] = dict(data["states"]["attention"], loop=True)
+data["clips"] = {"poke": {"frames": ["frames/poke-00.png", "frames/idle-00.png"], "durationMs": [300, 300]}}
+data["accessories"] = {"firefighter-hat": {"image": "accessories/firefighter-hat.png", "attach": "head"}}
+data["points"] = {"head": [127, 23]}
+json.dump(data, open(path, "w"))
+MANIFEST
+python3 scripts/mascot-resources.py stage "$v2" "$scratch/v2-packs"
+test -f "$scratch/v2-packs/mona-pet-v1/frames/poke-00.png"
+test -f "$scratch/v2-packs/mona-pet-v1/accessories/firefighter-hat.png"
+head -c 100000 /dev/zero >> "$v2/mona-pet-v1/frames/poke-00.png"
+if python3 scripts/mascot-resources.py stage "$v2" "$scratch/v2-over" >"$scratch/v2-over.log" 2>&1; then
+  echo 'FAIL mascot resources staged a bundled image over 96 KiB' >&2
+  exit 1
+fi
+grep -q 'over 96 KiB' "$scratch/v2-over.log"
+echo 'PASS mascot resources stage schema v2 clips and accessories within the bundled budget'
+
 # The icon verifier accepts a good bundle and rejects each way the icon can break.
 icon_app=$scratch/icon/GitHubPet.app
 mkdir -p "$icon_app/Contents/Resources"

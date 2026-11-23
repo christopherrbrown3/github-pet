@@ -155,6 +155,8 @@ private struct DismissalActionsFixture: ActionsPolling {
         try restore(try #require(app.dismissedInboxRows.first), in: app)
         #expect(app.items.contains(entitlement) && app.activeClip == nil && !app.isUnseen(entitlement))
 
+        // #138: an incident plays a clip only when the marker appears from none, so clear the fixture's first.
+        app.resolveServiceIncidents()
         let originalIncidentCount = app.serviceIncidents.count
         app.injectServiceIncident(.major)
         let incidentClip = try #require(app.activeClip)
@@ -166,7 +168,10 @@ private struct DismissalActionsFixture: ActionsPolling {
         try dismiss(entitlement, in: app)
         #expect(app.items.contains(actionsFixture) && app.isUnseen(actionsFixture))
         #expect(app.serviceIncidents.count == originalIncidentCount + 1 && app.incidentMarker != nil)
-        #expect(app.activeClip == incidentClip)
+        // #138: the critical workflow failure plays urgent, which outranks the incident's wave by kind
+        // rank at equal severity; dismissing rows never cancels it.
+        #expect(app.activeClip?.kind == .urgent && app.activeClip?.origin == .repository)
+        #expect(incidentClip.kind == .newItem && incidentClip.state == .attention, "an incident never plays urgent")
     }
 
     @Test func verifiedAccountIsolationAndAuthoredRevisionsPreserveTheLedger() async throws {

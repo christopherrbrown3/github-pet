@@ -176,7 +176,7 @@ public struct EventClipQueue: Sendable {
             }
         }
 
-        /// Today's kind for an event: critical plays urgent, anything else the wave (or new-item).
+        /// A repository event's kind: critical plays urgent, anything else the wave (or new-item).
         public static func `default`(for event: InboxEvent) -> Self { event.severity == .critical ? .urgent : .newItem }
     }
 
@@ -235,7 +235,8 @@ public struct EventClipQueue: Sendable {
         tick(now: now)
         guard playable, let top = events.map(\.severity).max(),
               let lead = events.first(where: { $0.severity == top }) else { return }
-        let resolved = kind ?? .default(for: lead)
+        // An incident is never urgent: its state comes from its kind, not its severity.
+        let resolved = kind ?? (origin == .serviceIncident ? .newItem : .default(for: lead))
         let next = Clip(event: lead, startedAt: now, origin: origin, kind: resolved, duration: duration(resolved))
         if let current = byOrigin[origin] {
             // Merge (#29): only a higher severity or kind restarts this source's clip.

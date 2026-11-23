@@ -296,6 +296,8 @@ private final class FixtureBudgetClock: @unchecked Sendable {
     @Test func scopeApplyPreservesPublicIncidentStateUnseenBurstAndAttention() async throws {
         let app = model(); defer { app.cleanupScopeSimulation() }; try await settled(app)
         app.simulateScopeInject(); try await settled(app)
+        // #138: an incident plays a clip only when the marker appears from none, so clear the fixture's first.
+        app.resolveServiceIncidents()
         app.injectServiceIncident(.major)
         let incidents = app.serviceIncidents, state = app.serviceState, lastSuccess = app.serviceLastSuccess
         let unseen = app.unseenIncidents, burst = app.markerBurst, clip = app.activeClip
