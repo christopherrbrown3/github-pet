@@ -134,6 +134,24 @@ import Testing
             #expect(session.waiting.isEmpty)
         }
     }
+    /// #152: a failed poll that still names the viewer (the same account, no usable sources) goes
+    /// through the identity-resolved path, and must not clear the last known waiting rows either.
+    @Test func aFailedPollThatCarriesTheViewerKeepsTheLastKnownWaitingRows() throws {
+        try fixture { session, store, _ in
+            try store.save(.everything, for: .github(a)); store.rememberAccount(a)
+            session.startLive()
+            let viewer = ScopeViewer(account: a, login: "demo_sim")
+            let waiting = FixtureSimulator.defaultWaitingItems().filter { $0.kind == .authoredPullRequest }
+            let first = try #require(session.beginPoll())
+            _ = session.receive(ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2, waiting: waiting), for: first)
+            #expect(!waiting.isEmpty && session.waiting == waiting)
+            let failed = try #require(session.beginPoll())
+            let reception = session.receive(.failure(.transport, viewer: viewer), for: failed)
+            if case .apply(.failure) = reception.action {} else { Issue.record("the failure applies: \(reception.action)") }
+            #expect(session.viewer == viewer, "the failed reply did carry the viewer")
+            #expect(session.waiting == waiting, "last known waiting rows are kept")
+        }
+    }
     @Test func applyIsAtomicAndStaleValidationSourceChangesCannotPersist() throws {
         try fixture { session, store, _ in
             store.rememberAccount(a); session.startLive()
