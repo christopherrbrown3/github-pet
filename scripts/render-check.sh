@@ -403,6 +403,18 @@ check_in 'update indicator (#149)' "menu-bar AX names the update after the inbox
 check_in 'update indicator (#149)' "Later hides it, menu line stays" \
   '^update-indicator after Later: version=none menu-line=0\.1\.0-beta\.7 ax-restored=true$'
 
+# Menu-bar count (#159): the pet's badge on the menu-bar item only while the pet is hidden; a slot-free canvas at 0
+# and one width for every count; the accessibility label keeps the count.
+for png in menubar-count menubar-count-dot menubar-count-demo menubar-count-demo-dot; do
+  for theme in '' '-dark'; do
+    [[ -s $out/$png$theme.png ]] && echo "ok   $png$theme.png rendered" || { echo "FAIL $png$theme.png missing"; failures=$((failures + 1)); }
+  done
+done
+check_in 'menu-bar count (#159)' "visible pet: no menu-bar count" '^menubar-count pet-visible: count=none badge=4$'
+check_in 'menu-bar count (#159)' "hidden pet: same count as the badge, AX has it" \
+  '^menubar-count pet-hidden: count=4 badge=4 ax=GitHub Pet, Demo data, 4 items'
+check_in 'menu-bar count (#159)' "canvas width stable across counts" '^menubar-count canvas widths=.* stable=true none-narrower=true$'
+
 for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-hover 05-stale-mascot \
            05-stale-mascot-dark 10-urgent-static-mascot 00-loading-inbox settings settings-dark \
            lane-64-99plus lane-128-99plus lane-256-99plus lane-64-99plus-dark; do
