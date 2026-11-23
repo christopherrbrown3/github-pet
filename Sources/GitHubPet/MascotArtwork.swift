@@ -24,13 +24,20 @@ struct MascotArtwork {
 struct MascotArtworkLoader {
     let forcePlaceholder: Bool
     let overrideDirectory: URL?
+    /// #138 QA and renders: synthesize "PH" clips from the pack's own frames until the art lands.
+    let placeholderClips: Bool
     let builtInDirectory: (MascotSkin) -> URL?
     private var builtIns: [MascotSkin: Result<MascotPack, MascotPackErrors>] = [:]
 
     init(options: LaunchOptions, builtInDirectory: @escaping (MascotSkin) -> URL?) {
         forcePlaceholder = options.forcePlaceholder
         overrideDirectory = options.packDirectory
+        placeholderClips = options.placeholderClips
         self.builtInDirectory = builtInDirectory
+    }
+
+    private func withClips(_ pack: MascotPack) -> MascotPack {
+        placeholderClips ? pack.withPlaceholderClips() : pack
     }
 
     /// True when the launch fixes the artwork (placeholder or custom pack), so the picker is locked.
@@ -47,7 +54,7 @@ struct MascotArtworkLoader {
                                  locksPicker: true)
         }
         if let overrideDirectory {
-            switch MascotPack.load(from: overrideDirectory) {
+            switch MascotPack.load(from: overrideDirectory).map(withClips) {
             case .success(let pack):
                 return MascotArtwork(source: .custom, pack: pack,
                                      notice: "Using custom pack \(pack.manifest.displayName) for this launch.",
@@ -91,7 +98,8 @@ struct MascotArtworkLoader {
         if cacheOnly { return nil }
         let result: Result<MascotPack, MascotPackErrors>
         if let directory = builtInDirectory(skin) {
-            result = MascotPack.load(from: directory, expectedID: skin.rawValue)
+            // Bundled art has the tighter design budget (#138); custom packs keep #123's.
+            result = MascotPack.load(from: directory, expectedID: skin.rawValue, budget: .bundled).map(withClips)
         } else {
             result = .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }

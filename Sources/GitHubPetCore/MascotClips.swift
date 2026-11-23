@@ -43,20 +43,17 @@ public struct MascotClipID: RawRepresentable, Hashable, Comparable, Codable, Sen
 
 /// Priority tiers (design #138), highest first: drag masks everything; event clips (tier 1) follow
 /// the EventClipQueue severity rules; then inbox reactions, user reactions, idle variety and doze.
-public enum ClipTier: Int, Comparable, Sendable {
+public enum ClipTier: Int, Sendable {
     case drag = 0, event, inbox, reaction, idleVariant, doze
 
-    public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue > rhs.rawValue }
+    /// Below the event tier: stopped by a drag, never resumed.
+    public var isBelowEvents: Bool { rawValue > ClipTier.event.rawValue }
 }
 
-/// What starts a scheduler clip. `new-item` plays through EventClipQueue (it replaces the attention
-/// wave), and drag and doze are held poses, so they have no trigger here.
+/// What starts a scheduler clip (tiers 2–4). Tier-1 clips (urgent, incident-start, incident-end,
+/// new-item) play through EventClipQueue with its clip kind, and drag and doze are held poses.
 public enum ClipTrigger: String, CaseIterable, Sendable {
-    /// An incident event that makes the marker appear from none (fresh, confirmed).
-    case incidentStarted
-    /// The marker was shown at the previous fresh status and the new fresh result is operational.
-    case incidentResolved
-    /// The user dismissed an Inbox row.
+    /// The user dismissed a Needs you row.
     case itemDismissed
     /// A fresh poll went from at least one item to verified empty.
     case inboxZero
@@ -118,7 +115,14 @@ public enum ClipPriority {
     public static let doze = 50
 
     /// The EventClipQueue clip's place in the order.
-    public static func of(_ clip: EventClipQueue.Clip) -> Int { clip.state == .urgent ? urgent : newItem }
+    public static func of(_ clip: EventClipQueue.Clip) -> Int {
+        switch clip.kind {
+        case .urgent: return urgent
+        case .incidentStart: return incidentStart
+        case .incidentEnd: return incidentEnd
+        case .newItem: return newItem
+        }
+    }
 }
 
 /// The clips the app knows (design v1, #138). Replacing this table is the only change needed for new
@@ -149,32 +153,33 @@ public struct ClipCatalog: Equatable, Sendable {
                    maxDurationMs: maxMs, placeholder: (placeholder.0, placeholder.1, placeholder.2))
     }
 
-    /// Design v1 (#138). Placeholders reuse existing frames (design note): idle-00, attention-*, urgent-*.
+    /// Design v1 (#138, docs/design/animation-v1.md). Caps are the longest a pack's clip may play;
+    /// placeholders reuse existing frames (design note): idle, attention and urgent.
     public static let v1 = ClipCatalog([
-        policy(.incidentStart, .incidentStarted, .event, ClipPriority.incidentStart, gate: .alerts,
-               placeholder: (.urgent, [0, 1, 2, 2, 1, 2], [300, 300, 300, 300, 300, 400])),
-        policy(.incidentEnd, .incidentResolved, .event, ClipPriority.incidentEnd, gate: .alerts,
-               placeholder: (.urgent, [2, 1, 0, 0, 0, 0, 0, 0], [350, 350, 350, 350, 350, 350, 350, 350])),
-        // Plays inside the attention wave's 1.9 s event clip, so it can be no longer.
+        policy(.incidentStart, nil, .event, ClipPriority.incidentStart, gate: .alerts, maxMs: 2200,
+               placeholder: (.urgent, [0, 1, 2, 2, 1, 2], [250, 300, 300, 250, 500, 300])),
+        policy(.incidentEnd, nil, .event, ClipPriority.incidentEnd, gate: .alerts, maxMs: 3200,
+               placeholder: (.urgent, [2, 1, 0, 1, 0, 0, 0, 0], [250, 250, 300, 300, 300, 300, 700, 300])),
+        // Plays in the attention wave's 1.9 s EventClipQueue slot, so it can be no longer.
         policy(.newItem, nil, .event, ClipPriority.newItem, gate: .alerts,
                maxMs: Int(EventClipQueue.duration(of: .attention) * 1000),
-               placeholder: (.attention, [0, 1, 2, 1, 0], [300, 400, 500, 400, 300])),
-        policy(.inboxZero, .inboxZero, .inbox, ClipPriority.inboxZero, cooldown: 30 * 60, gate: .alerts,
-               placeholder: (.attention, [0, 1, 2, 1, 2, 0], [300, 350, 350, 350, 350, 300])),
-        policy(.itemCleared, .itemDismissed, .inbox, ClipPriority.itemCleared, cooldown: 8, gate: .always,
-               placeholder: (.attention, [0, 1, 2, 0], [300, 300, 300, 300])),
-        policy(.drop, .dropped, .reaction, ClipPriority.drop, gate: .always,
-               placeholder: (.attention, [0, 0], [225, 225])),
-        policy(.poke, .poke, .reaction, ClipPriority.poke, cooldown: 1.5, gate: .always,
-               placeholder: (.attention, [1, 2, 1], [250, 250, 250])),
-        policy(.dizzy, .rapidClicks, .reaction, ClipPriority.dizzy, cooldown: 60, gate: .always,
-               placeholder: (.urgent, [0, 1, 2, 1, 0], [320, 320, 320, 320, 320])),
-        policy(.idleLook, .idle, .idleVariant, ClipPriority.idleVariant, gate: .alerts,
-               placeholder: (.idle, [0, 1, 0, 1], [500, 500, 500, 500])),
-        policy(.idleStretch, .idle, .idleVariant, ClipPriority.idleVariant, gate: .alerts,
-               placeholder: (.attention, [0, 3, 3, 3, 0].map { min($0, 2) }, [480, 480, 480, 480, 480])),
-        policy(.idleFidget, .idle, .idleVariant, ClipPriority.idleVariant, gate: .alerts,
-               placeholder: (.idle, [0, 1, 1, 0], [450, 450, 450, 450])),
+               placeholder: (.attention, [0, 1, 2, 1, 0], [200, 200, 350, 350, 800])),
+        policy(.inboxZero, .inboxZero, .inbox, ClipPriority.inboxZero, cooldown: 30 * 60, gate: .alerts, maxMs: 2400,
+               placeholder: (.attention, [0, 1, 2, 1, 2, 0], [250, 300, 300, 300, 450, 400])),
+        policy(.itemCleared, .itemDismissed, .inbox, ClipPriority.itemCleared, cooldown: 8, gate: .always, maxMs: 1500,
+               placeholder: (.attention, [0, 1, 2, 0], [200, 300, 400, 300])),
+        policy(.drop, .dropped, .reaction, ClipPriority.drop, gate: .always, maxMs: 600,
+               placeholder: (.attention, [0, 1], [200, 250])),
+        policy(.poke, .poke, .reaction, ClipPriority.poke, cooldown: 1.5, gate: .always, maxMs: 900,
+               placeholder: (.attention, [1, 2, 0], [250, 300, 200])),
+        policy(.dizzy, .rapidClicks, .reaction, ClipPriority.dizzy, cooldown: 60, gate: .always, maxMs: 1800,
+               placeholder: (.urgent, [0, 1, 2, 1, 0], [300, 300, 300, 300, 400])),
+        policy(.idleLook, .idle, .idleVariant, ClipPriority.idleVariant, gate: .alerts, maxMs: 2600,
+               placeholder: (.idle, [0, 1, 0, 0], [500, 500, 600, 400])),
+        policy(.idleStretch, .idle, .idleVariant, ClipPriority.idleVariant, gate: .alerts, maxMs: 2600,
+               placeholder: (.attention, [0, 2, 2, 1, 0], [400, 600, 500, 400, 500])),
+        policy(.idleFidget, .idle, .idleVariant, ClipPriority.idleVariant, gate: .alerts, maxMs: 2600,
+               placeholder: (.idle, [0, 1, 1, 0], [400, 700, 400, 300])),
     ])
 
     /// Held-pose placeholders: drag 2 × 400 ms, doze 2 × 1200 ms.
@@ -249,6 +254,7 @@ public struct ClipScheduler: Sendable {
     public struct Permissions: Equatable, Sendable {
         public var motion: Bool
         public var alerts: Bool
+        /// - Parameter motion: Reduce Motion off (system and app) and the mascot shown.
         public init(motion: Bool, alerts: Bool) {
             self.motion = motion
             self.alerts = alerts
@@ -281,6 +287,11 @@ public struct ClipScheduler: Sendable {
     public func active(at now: Date) -> Playing? {
         guard let playing, now >= playing.startedAt, now < playing.endsAt else { return nil }
         return playing
+    }
+
+    /// The next ambient clip is due a fresh 120–300 s after any clip or pointer interaction.
+    public mutating func noteActivity(now: Date) {
+        nextIdleAt = now.addingTimeInterval(idleGap())
     }
 
     /// Asks to play the clip `trigger` maps to. `key` dedupes per session; `duration` gives the
@@ -331,6 +342,7 @@ public struct ClipScheduler: Sendable {
     public mutating func occupy(until: Date, priority: Int, now: Date) {
         if let current = active(at: now), current.priority < priority { playing = nil }
         if let hold = external, hold.until > now, hold.priority > priority { return }
+        if external?.until != until { noteActivity(now: now) }
         external = (until, priority)
     }
 
@@ -345,7 +357,7 @@ public struct ClipScheduler: Sendable {
     /// running underneath and show again on release if they haven't ended.
     public mutating func beginHold(now: Date) {
         held = true
-        if let current = active(at: now), current.tier > .event { playing = nil }
+        if let current = active(at: now), current.tier.isBelowEvents { playing = nil }
     }
 
     public mutating func endHold() { held = false }
@@ -380,7 +392,7 @@ public struct ClipScheduler: Sendable {
     private mutating func start(_ policy: ClipPolicy, length: TimeInterval, now: Date, permissions: Permissions) -> Outcome {
         guard permissions.allow(policy.gate) else { return .suppressed }
         if coolingDown(policy, now: now) { return .coolingDown }
-        if held && policy.tier > .event { return .outranked }
+        if held && policy.tier.isBelowEvents { return .outranked }
         if let hold = external, now < hold.until, hold.priority >= policy.priority { return .outranked }
         let current = active(at: now)
         if let current, current.priority >= policy.priority { return .outranked }
@@ -389,6 +401,7 @@ public struct ClipScheduler: Sendable {
         playing = Playing(id: policy.id, tier: policy.tier, priority: policy.priority, gate: policy.gate,
                           startedAt: now, endsAt: now.addingTimeInterval(max(capped, 0.1)))
         lastStarted[policy.id] = now
+        if policy.tier != .idleVariant { noteActivity(now: now) }
         return current.map { .preempted($0.id) } ?? .started
     }
 
@@ -408,12 +421,17 @@ public struct ClipScheduler: Sendable {
 /// Doze (#138): after 15 minutes without events or pointer interaction, while the mood is idle and the
 /// data is fresh, the mascot holds its doze pose; any event, hover or click wakes it (no wake clip).
 /// A held pose, so motion reduced shows its static fallback.
+///
+/// Never while the incident marker shows or the data isn't fresh (`ready`, `empty`, `hiddenOnly`): a
+/// sleeping mascot must not stand in for "nothing is happening" when the app doesn't know. During
+/// quiet hours or snooze it enters as soon as the other conditions hold.
 public enum DozePolicy {
     public static let after: TimeInterval = 15 * 60
 
-    public static func isDozing(now: Date, lastActivity: Date, mood: MascotState, dataState: DataState) -> Bool {
-        guard mood == .idle, dataState.countIsKnown else { return false }
-        return now.timeIntervalSince(lastActivity) >= after
+    public static func isDozing(now: Date, lastActivity: Date, mood: MascotState, dataState: DataState,
+                                incidentShown: Bool = false, alertsAllowed: Bool = true) -> Bool {
+        guard mood == .idle, dataState.countIsKnown, !incidentShown else { return false }
+        return !alertsAllowed || now.timeIntervalSince(lastActivity) >= after
     }
 }
 
@@ -447,6 +465,8 @@ public struct DragLean: Sendable {
     public static let fullLeanSpeed: Double = 900
     /// Smallest change the view is told about, so a slow drag doesn't redraw for nothing.
     public static let step: Double = 0.5
+    /// Seconds the lean takes to spring back upright after a drop.
+    public static let springBack: TimeInterval = 0.2
 
     public private(set) var angle: Double = 0
     private var velocity: Double = 0
@@ -514,77 +534,106 @@ public struct ClipStage: Equatable, Sendable {
     /// When the current drag began (nil: not held).
     public var dragStart: Date?
     public var dragAngle: Double
+    /// The lean springs back to 0° over `DragLean.springBack` after release.
+    public var released: (at: Date, angle: Double)?
     /// When the doze began (nil: awake).
     public var dozeStart: Date?
 
     public init(scheduled: ClipScheduler.Playing? = nil, dragStart: Date? = nil, dragAngle: Double = 0,
-                dozeStart: Date? = nil) {
+                released: (at: Date, angle: Double)? = nil, dozeStart: Date? = nil) {
         self.scheduled = scheduled
         self.dragStart = dragStart
         self.dragAngle = dragAngle
+        self.released = released
         self.dozeStart = dozeStart
+    }
+
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.scheduled == rhs.scheduled && lhs.dragStart == rhs.dragStart && lhs.dragAngle == rhs.dragAngle
+            && lhs.released?.at == rhs.released?.at && lhs.released?.angle == rhs.released?.angle
+            && lhs.dozeStart == rhs.dozeStart
+    }
+
+    /// The release spring's lean at `now` (0 once it has settled).
+    public func springAngle(at now: Date) -> Double {
+        guard let released, released.angle != 0 else { return 0 }
+        let progress = now.timeIntervalSince(released.at) / DragLean.springBack
+        guard progress >= 0, progress < 1 else { return 0 }
+        return released.angle * (1 - AttentionGesture.ease(progress))
     }
 
     public static let empty = ClipStage()
 }
 
-/// Engine-owned effect sprites (mist, sparkle, Z, smoke puff, star): pure functions of a clip's
-/// elapsed time on the single clock, in canvas coordinates. Never above canvas y 64 (the label lane)
-/// and never part of contours. Drawn code-side until the 64×64 sprites land.
+/// Engine-owned effect sprites (mist, smoke, sparkle, Z): pure functions of a clip's elapsed time
+/// on the single clock, in canvas coordinates, from the design storyboards (#138 section 3). Never
+/// above canvas y 64 (the label lane) and never part of contours. Drawn code-side until the shared
+/// 64×64 sprites land (assets/mascots/shared-fx-v1).
 public enum ClipEffects {
-    public enum Kind: String, Sendable { case mist, sparkle, z, smokePuff, star }
+    public enum Kind: String, Sendable { case mist, smoke, sparkle, z }
 
     public struct Particle: Equatable, Sendable {
         public var kind: Kind
         public var x: Double
         public var y: Double
-        /// Sprite side in canvas pixels (at most 64).
+        /// Sprite side in canvas units (at most 64).
         public var size: Double
         public var opacity: Double
     }
 
-    /// The lowest canvas row effects may reach toward the label lane.
+    /// No effect reaches above this canvas row (the label lane).
     public static let topLimit: Double = 64
 
-    public static func particles(clip: MascotClipID, elapsed t: TimeInterval, head: CGPoint,
-                                 nozzle: CGPoint?) -> [Particle] {
+    /// Where the sparkle starts when a frame names no `hand`: the head plus [60, 50].
+    public static func hand(head: CGPoint) -> CGPoint { CGPoint(x: head.x + 60, y: head.y + 50) }
+
+    /// - Parameters:
+    ///   - nozzle: incident-end's spray emitter for the current frame (no point: no mist).
+    ///   - hand: item-cleared's sparkle point.
+    public static func particles(clip: MascotClipID, elapsed t: TimeInterval, head: CGPoint, nozzle: CGPoint?,
+                                 hand: CGPoint) -> [Particle] {
         var out: [Particle] = []
-        func fade(_ t: Double, _ start: Double, _ end: Double) -> Double {
-            guard t >= start, t < end else { return 0 }
-            let p = (t - start) / (end - start)
-            return min(1, p * 4) * min(1, (1 - p) * 4)
+        /// 0 → 1 → 0 over [start, start + length).
+        func pulse(_ start: Double, _ length: Double) -> Double? {
+            let p = (t - start) / length
+            return p >= 0 && p < 1 ? sin(p * .pi) : nil
         }
         switch clip {
         case .incidentEnd:
-            let origin = nozzle ?? CGPoint(x: head.x + 40, y: head.y + 60)
-            for i in 0..<4 {
-                let start = 0.6 + Double(i) * 0.2, p = (t - start) / 1.0
-                guard p >= 0, p < 1 else { continue }
-                out.append(Particle(kind: .mist, x: origin.x + 50 * p, y: origin.y - 20 * p, size: 24 + 24 * p,
-                                    opacity: fade(t, start, start + 1.0)))
+            // A puff every 60 ms from 500 to 1450 ms, each drifting 40–80 down-left over 500 ms.
+            if let nozzle {
+                for emit in stride(from: 0.5, through: 1.45, by: 0.06) {
+                    let p = (t - emit) / 0.5
+                    guard p >= 0, p < 1 else { continue }
+                    let distance = 40 + 40 * (emit - 0.5) / 0.95
+                    out.append(Particle(kind: .mist, x: nozzle.x - distance * 0.8 * p, y: nozzle.y + distance * 0.6 * p,
+                                        size: 34 * (0.6 + 0.8 * p), opacity: 1 - p))
+                }
             }
-        case .itemCleared, .inboxZero:
-            for i in 0..<3 {
-                let start = 0.2 + Double(i) * 0.25, angle = Double(i) * 2.1
-                out.append(Particle(kind: .sparkle, x: head.x + 45 * cos(angle), y: head.y + 10 + 25 * sin(angle),
-                                    size: 20, opacity: fade(t, start, start + 0.7)))
+        case .itemCleared:
+            // One sparkle from 200 ms, scaling 0 → 1 → 0 over 400 ms; centre never above y 76.
+            if let scale = pulse(0.2, 0.4) {
+                out.append(Particle(kind: .sparkle, x: hand.x, y: max(hand.y, 76), size: 24 * scale, opacity: 1))
             }
-        case .dizzy:
-            for i in 0..<3 {
-                let angle = t * 4 + Double(i) * 2.094
-                out.append(Particle(kind: .star, x: head.x + 30 * cos(angle), y: head.y + 8 + 8 * sin(angle),
-                                    size: 16, opacity: fade(t, 0, 1.6)))
+        case .inboxZero:
+            // Three sparkles at 1150 ms beside the upper body, 350 ms each.
+            if let scale = pulse(1.15, 0.35) {
+                for (x, y) in [(48.0, 96.0), (208.0, 110.0), (54.0, 150.0)] {
+                    out.append(Particle(kind: .sparkle, x: x, y: y, size: 24 * scale, opacity: 1))
+                }
             }
-        case .drop:
-            out.append(Particle(kind: .smokePuff, x: 100, y: 222, size: 28, opacity: fade(t, 0, 0.45)))
-            out.append(Particle(kind: .smokePuff, x: 156, y: 222, size: 28, opacity: fade(t, 0, 0.45)))
         case .doze:
-            let cycle = t.truncatingRemainder(dividingBy: 2.4) / 2.4
-            out.append(Particle(kind: .z, x: head.x + 30 + 10 * cycle, y: head.y + 10 - 20 * cycle, size: 18 + 8 * cycle,
-                                opacity: min(1, (1 - cycle) * 3)))
+            // A Z every 1600 ms beside the head on the left, drifting 40 up-left over 2400 ms.
+            let first = max(0, Int(((t - 2.4) / 1.6).rounded(.down)) + 1), last = Int((t / 1.6).rounded(.down))
+            for index in first...max(first, last) {
+                let p = (t - Double(index) * 1.6) / 2.4
+                guard p >= 0, p < 1 else { continue }
+                out.append(Particle(kind: .z, x: 50 - 28 * p, y: 140 - 28 * p, size: 26 * (0.7 + 0.4 * p),
+                                    opacity: sin(p * .pi)))
+            }
         default:
             break
         }
-        return out.filter { $0.opacity > 0 && $0.y - $0.size / 2 >= topLimit }
+        return out.filter { $0.opacity > 0 && $0.size > 0 && $0.y - $0.size / 2 >= topLimit }
     }
 }

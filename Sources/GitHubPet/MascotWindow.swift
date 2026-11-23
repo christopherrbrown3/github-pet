@@ -108,11 +108,16 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
             hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
         container.onClick = openInbox
+        // #138 reactions: the Inbox opens first and is never delayed by a poke.
+        container.onPointerClick = { [weak self] in self?.model.mascotClicked() }
+        container.onDragBegan = { [weak self] in self?.model.mascotDragBegan() }
+        container.onDragMoved = { [weak self] x, time in self?.model.mascotDragMoved(x: x, time: time) }
         container.accessibilityText = { [weak self] in self.map { MascotView.accessibilityLabel($0.model) } ?? "" }
         // Save where the panel actually settles: the drop point moved fully on screen (#39), so the
         // saved origin is the one shown and restored.
         container.onDragEnded = { [weak self] origin in
             guard let self else { return }
+            self.model.mascotDragEnded()
             // Move even if the settled origin equals the last saved value: the settings stream
             // deduplicates that value, but the dragged window is currently somewhere else.
             self.update(visible: self.model.settings.mascotVisible, size: self.model.settings.mascotSize, origin: origin)
@@ -122,6 +127,7 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
         // view and the model) alive after the panel went away (#41).
         container.onHover = { [weak self, weak container] inside in
             guard let self else { return }
+            self.model.mascotHover(inside)
             if inside, let container { self.showSummary(from: container) } else { self.hideSummary() }
         }
         panel.contentView = container
@@ -335,6 +341,10 @@ final class MascotContainerView: NSView {
     var accessibilityText: () -> String = { "" }
     var onDragEnded: ((CGPoint) -> Void)?
     var onHover: ((Bool) -> Void)?
+    /// #138: a real pointer click (after `onClick`), drag start and pointer samples while held.
+    var onPointerClick: (() -> Void)?
+    var onDragBegan: (() -> Void)?
+    var onDragMoved: ((Double, TimeInterval) -> Void)?
 
     private var mouseDownScreenPoint: CGPoint?
     private var windowOriginAtMouseDown: CGPoint?
@@ -380,9 +390,10 @@ final class MascotContainerView: NSView {
         let now = NSEvent.mouseLocation
         let dx = now.x - start.x, dy = now.y - start.y
         if !dragged, hypot(dx, dy) < Self.dragThreshold { return }
-        if !dragged { onHover?(false) }
+        if !dragged { onHover?(false); onDragBegan?() }
         dragged = true
         window.setFrameOrigin(CGPoint(x: origin.x + dx, y: origin.y + dy))
+        onDragMoved?(Double(now.x), event.timestamp)
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -394,6 +405,7 @@ final class MascotContainerView: NSView {
             let dx = now.x - start.x, dy = now.y - start.y
             if hypot(dx, dy) >= Self.dragThreshold {
                 onHover?(false)
+                onDragBegan?()
                 dragged = true
                 window.setFrameOrigin(CGPoint(x: origin.x + dx, y: origin.y + dy))
             }
@@ -402,6 +414,7 @@ final class MascotContainerView: NSView {
             onDragEnded?(origin)
         } else {
             onClick?()
+            onPointerClick?()
         }
         dragged = false
     }

@@ -22,21 +22,19 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
         public var staticFallback: String
     }
 
-    /// A one-shot clip (v2). Never loops; `staticFallback` defaults to the mood's static pose.
+    /// A one-shot clip (v2): plays once and holds its last frame until it ends. No static fallback:
+    /// no clip ever plays under Reduce Motion.
     public struct ClipSpec: Codable, Equatable, Sendable {
         public var frames: [String]
         public var durationMs: [Int]
         public var loop: Bool?
-        public var staticFallback: String?
         /// Whether the incident hat stays on during the clip (default keep).
         public var accessories: AccessoryVisibility?
 
-        public init(frames: [String], durationMs: [Int], loop: Bool? = nil, staticFallback: String? = nil,
-                    accessories: AccessoryVisibility? = nil) {
+        public init(frames: [String], durationMs: [Int], loop: Bool? = nil, accessories: AccessoryVisibility? = nil) {
             self.frames = frames
             self.durationMs = durationMs
             self.loop = loop
-            self.staticFallback = staticFallback
             self.accessories = accessories
         }
     }
@@ -52,14 +50,17 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
         }
     }
 
-    /// Named canvas points: `head` places the hat, `nozzle` emits incident-end's spray.
+    /// Named canvas points: `head` places the hat, `nozzle` emits incident-end's spray and `hand`
+    /// places item-cleared's sparkle.
     public struct Points: Codable, Equatable, Sendable {
         public var head: [Int]?
         public var nozzle: [Int]?
+        public var hand: [Int]?
 
-        public init(head: [Int]? = nil, nozzle: [Int]? = nil) {
+        public init(head: [Int]? = nil, nozzle: [Int]? = nil, hand: [Int]? = nil) {
             self.head = head
             self.nozzle = nozzle
+            self.hand = hand
         }
     }
 
@@ -205,7 +206,10 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .unexpectedID(let id, let expected): return "pack ID '\(q(id))' must be '\(q(expected))'"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .wrongLoopFlag(let s, let expected):
-            return "state '\(q(s))' must declare \"loop\": \(expected) (idle, drag and doze loop; attention, urgent and clips play once)"
+            guard !MascotClipID.heldStates.contains(MascotClipID(s)), ClipCatalog.v1[MascotClipID(s)] == nil else {
+                return "'\(q(s))' must declare \"loop\": \(expected) (drag and doze loop; clips play once)"
+            }
+            return "state '\(q(s))' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
         case .badCanvas: return "canvas must be 256×256"
         case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
         case .missingState(let s): return "required state '\(q(s))' missing"
@@ -249,12 +253,21 @@ public struct MascotPackErrors: Error, Equatable {
 /// Image limits for a pack. Custom packs keep #123's per-image and total byte caps with v2's larger
 /// image count; bundled packs have the tighter design budget (#138), so the app download stays small.
 public struct PackBudget: Equatable, Sendable {
-    /// Distinct images (frames, fallbacks, accessories) in a v2 pack. v1 keeps its 24-frame rule.
+    /// Distinct images (frames, fallbacks, accessories) in a v2 pack. State frames keep the 24 rule.
     public var maxImages: Int
     public var maxBytes: Int
+    public var maxImageBytes: Int
+    /// Frames per state or clip.
+    public var maxSequenceFrames: Int
+    /// Bundled art must keep every clip, held and hat pixel inside the three states' art, so the
+    /// layout never changes. A custom pack that draws outside gets a taller lane instead.
+    public var enforcesArtBounds: Bool
 
-    public static let custom = PackBudget(maxImages: 96, maxBytes: MascotPack.maxPackBytes)
-    public static let bundled = PackBudget(maxImages: 64, maxBytes: 4 * 1024 * 1024)
+    public static let custom = PackBudget(maxImages: 96, maxBytes: MascotPack.maxPackBytes,
+                                          maxImageBytes: MascotPack.maxImageBytes, maxSequenceFrames: MascotPack.maxFrames,
+                                          enforcesArtBounds: false)
+    public static let bundled = PackBudget(maxImages: 64, maxBytes: 4 * 1024 * 1024, maxImageBytes: 96 * 1024,
+                                           maxSequenceFrames: 8, enforcesArtBounds: true)
 }
 
 public struct MascotPack: Equatable, Sendable {
@@ -289,9 +302,14 @@ public struct MascotPack: Equatable, Sendable {
     public var imageData: [String: Data] = [:]
     /// v2 (#138): outline (any coverage) of every held-pose, clip and accessory image, by path.
     public var extraOutlines: [String: ArtProfile] = [:]
-    /// Contours of v2 poses for the lane and the count's range: clip and held frames upright, drag
-    /// frames over the whole lean, and the hat at every head point it is drawn at.
-    public var extraContours: [[Int?]] = []
+    /// Upright contours of v2 poses: every clip and held frame, and every frame that can wear the
+    /// hat composited with it (#138). Part of `uprightContours`, so the count tracks them.
+    public var extraUprightContours: [[Int?]] = []
+    /// Drag and dizzy frames (with the hat where worn) over their whole lean.
+    public var extraLeaningContours: [[Int?]] = []
+    /// Largest drag/dizzy lean (≤ the #29 lean) whose swept outline stays inside the lane the states
+    /// already need, so a lean never changes the layout.
+    public var clipLeanLimit: Double = MascotPack.attentionLeanDegrees
     /// Clips and held poses synthesized from existing frames until the art lands (render-check and
     /// `--placeholder-clips` only); the renderer tags them "PH".
     public var placeholderClips: Set<MascotClipID> = []
@@ -354,10 +372,10 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// Every upright pose's contour (static and frames of every state): where the head is (#116).
-    public var uprightContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) }
+    public var uprightContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) + extraUprightContours }
 
     /// Every pose's contour, upright and leaning, for the fixed lane height and the count's range.
-    public var allContours: [[Int?]] { uprightContours + leaningContours + extraContours }
+    public var allContours: [[Int?]] { uprightContours + leaningContours + extraLeaningContours }
 
     /// Outline across every state.
     public var artProfile: ArtProfile? { ArtProfile.union(MascotState.allCases.compactMap { artProfiles[$0] }) }
@@ -419,7 +437,7 @@ public struct MascotPack: Equatable, Sendable {
         }
         // v2: every clip, held and accessory pixel stays inside the three states' art (#138), so the
         // label lane and hover placement never change.
-        let artErrors = pack.measureClips()
+        let artErrors = pack.measureClips(enforcingBounds: budget.enforcesArtBounds)
         guard artErrors.isEmpty else { return .failure(MascotPackErrors(errors: artErrors)) }
         return .success(pack)
     }
@@ -451,14 +469,14 @@ public struct MascotPack: Equatable, Sendable {
         if manifest.anchor != anchor { errors.append(.badAnchor) }
         // A state over its own limit gets that state's more specific error below.
         if manifest.isV2 {
-            let v2Errors = validateV2Structure(manifest)
+            let v2Errors = validateV2Structure(manifest, budget: budget)
             if !v2Errors.isEmpty { return (errors + v2Errors, [:]) }
             let images = manifest.imagePaths.count
             if images > budget.maxImages { return (errors + [.tooManyImages(images, limit: budget.maxImages)], [:]) }
-        } else {
-            let totalFrames = manifest.states.values.reduce(0) { $0 + $1.frames.count }
-            if totalFrames > maxPackFrames, manifest.states.values.allSatisfy({ $0.frames.count <= maxFrames }) { return (errors + [.tooManyFrames(totalFrames)], [:]) }
         }
+        // State frames keep #123's total in both schemas (v2 clips have their own image budget).
+        let totalFrames = manifest.states.filter { MascotState(rawValue: $0.key) != nil }.values.reduce(0) { $0 + $1.frames.count }
+        if totalFrames > maxPackFrames, manifest.states.values.allSatisfy({ $0.frames.count <= maxFrames }) { return (errors + [.tooManyFrames(totalFrames)], [:]) }
         var checked: Set<String> = []
         var totalBytes = 0
         for state in MascotState.allCases {
@@ -467,7 +485,8 @@ public struct MascotPack: Equatable, Sendable {
                 continue
             }
             // An over-limit state is invalid already: never open or decode its paths.
-            guard !spec.frames.isEmpty, spec.frames.count <= maxFrames, spec.durationMs.count <= maxFrames else {
+            let frameLimit = min(maxFrames, budget.maxSequenceFrames)
+            guard !spec.frames.isEmpty, spec.frames.count <= frameLimit, spec.durationMs.count <= frameLimit else {
                 errors.append(.frameCount(state.rawValue))
                 continue
             }
@@ -486,7 +505,8 @@ public struct MascotPack: Equatable, Sendable {
                 if total > limit { errors.append(.clipTooLong(state.rawValue, total, limit)) }
             }
             for path in spec.frames + [spec.staticFallback] where checked.insert(path).inserted {
-                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:])
+                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:],
+                                                      limit: budget.maxImageBytes)
                 errors += fileErrors
                 if fileErrors.isEmpty, let data { validated[path] = data }
                 totalBytes += data?.count ?? 0
@@ -496,7 +516,8 @@ public struct MascotPack: Equatable, Sendable {
         // v2 additions: held poses, clips and accessories, under the same image checks and budget.
         if manifest.isV2 {
             for path in manifest.v2ImagePaths where checked.insert(path).inserted {
-                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:])
+                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:],
+                                                      limit: budget.maxImageBytes)
                 errors += fileErrors
                 if fileErrors.isEmpty, let data { validated[path] = data }
                 totalBytes += data?.count ?? 0
@@ -507,11 +528,12 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// v2 manifest rules that need no file access: names, frame counts, durations, loop flags, points.
-    static func validateV2Structure(_ manifest: MascotPackManifest) -> [MascotPackError] {
+    static func validateV2Structure(_ manifest: MascotPackManifest, budget: PackBudget) -> [MascotPackError] {
         var errors: [MascotPackError] = []
         let core = Set(MascotState.allCases.map(\.rawValue)), held = Set(MascotClipID.heldStates.map(\.rawValue))
         func sequence(_ name: String, frames: [String], durations: [Int]) -> Bool {
-            guard !frames.isEmpty, frames.count <= maxFrames, durations.count <= maxFrames else {
+            let limit = min(maxFrames, budget.maxSequenceFrames)
+            guard !frames.isEmpty, frames.count <= limit, durations.count <= limit else {
                 errors.append(.frameCount(name)); return false
             }
             if frames.count != durations.count { errors.append(.durationMismatch(name)) }
@@ -538,11 +560,21 @@ public struct MascotPack: Equatable, Sendable {
             guard let point else { return true }
             return point.count == 2 && point.allSatisfy { (0..<canvasSize).contains($0) }
         }
-        if let points = manifest.points, !valid(points.head) || !valid(points.nozzle) { errors.append(.badPoint("points")) }
+        func valid(_ points: MascotPackManifest.Points) -> Bool { valid(points.head) && valid(points.nozzle) && valid(points.hand) }
+        // The hat is authored for the default head point, so a pack with accessories must name it.
+        if let points = manifest.points, !valid(points) { errors.append(.badPoint("points")) }
+        else if !(manifest.accessories ?? [:]).isEmpty, manifest.points?.head == nil { errors.append(.badPoint("points")) }
         let used = Set(manifest.imagePaths)
         for (path, points) in (manifest.framePoints ?? [:]).sorted(by: { $0.key < $1.key })
-        where !used.contains(path) || !valid(points.head) || !valid(points.nozzle) {
+        where !used.contains(path) || !valid(points) {
             errors.append(.badPoint(path))
+        }
+        // Mist is emitted only where a nozzle is named: incident-end's spray frames (02 and 03) need one.
+        if let end = manifest.clips?[MascotClipID.incidentEnd.rawValue] {
+            for path in Set(end.frames.dropFirst(2).prefix(2)).sorted()
+            where (manifest.framePoints?[path]?.nozzle ?? manifest.points?.nozzle) == nil {
+                errors.append(.badPoint(path))
+            }
         }
         return errors
     }
@@ -568,12 +600,12 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// Validates one image and returns the bytes it checked (nil if it couldn't be read).
-    static func validateFile(_ path: String, root: Int32, checksums: [String: String])
+    static func validateFile(_ path: String, root: Int32, checksums: [String: String], limit: Int = maxImageBytes)
         -> (errors: [MascotPackError], data: Data?) {
         guard isSafeRelativePath(path) else { return ([.unsafePath(path)], nil) }
         let data: Data
         do {
-            data = try readInPack(root: root, path: path, limit: maxImageBytes)
+            data = try readInPack(root: root, path: path, limit: min(limit, maxImageBytes))
         } catch ReadError.symlink, ReadError.unsafeComponent {
             return ([.unsafePath(path)], nil)
         } catch ReadError.tooLarge {

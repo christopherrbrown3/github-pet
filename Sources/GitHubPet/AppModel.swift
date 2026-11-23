@@ -37,6 +37,8 @@ final class AppModel: ObservableObject {
         var loadsMascotArtworkAsync = false
         /// Hideable features (#94, #95, #107): the build's switches; tests exercise both states.
         var features: FeatureSet = .current
+        /// #138 idle-variant timing: random per launch; tests and renders fix it.
+        var clipSeed: UInt64?
     }
     private let runtime: Runtime
     @Published private(set) var items: [InboxItem] = []
@@ -72,6 +74,8 @@ final class AppModel: ObservableObject {
     /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
     @Published var detailsRevealed = false
     @Published private(set) var activeClip: EventClipQueue.Clip?
+    /// #138: scheduler clip, drag and doze, sampled by the mascot view on its timeline.
+    @Published private(set) var clipStage = ClipStage()
     @Published private(set) var blockedLinkNote: String?
     @Published private(set) var now = Date()
     @Published private(set) var serviceState: ServiceStatusState = .loading
@@ -113,8 +117,12 @@ final class AppModel: ObservableObject {
         }
     }
 
-    @Published private(set) var mascotArtwork: MascotArtwork
+    @Published private(set) var mascotArtwork: MascotArtwork {
+        didSet { clipLibrary = ClipLibrary(pack: mascotArtwork.pack) }
+    }
     var pack: MascotPack? { mascotArtwork.pack }
+    /// The clips and accessories the current pack has (#138); a missing clip keeps today's behaviour.
+    private(set) var clipLibrary = ClipLibrary.empty
     private var mascotArtworkLoader: MascotArtworkLoader
     /// #41: a pack load is running off the main thread.
     @Published private(set) var mascotArtworkLoading = false
@@ -187,6 +195,14 @@ final class AppModel: ObservableObject {
     private(set) var simulatedPollLog: [ScopePollRequest] = []
     private var launchedScopePolls = 0
     private var clips = EventClipQueue()
+    // #138: one-shot clips beyond the event gesture, and the user's own reactions. Advanced by the
+    // tick and by the events themselves; no timers of their own.
+    private var scheduler = ClipScheduler(seed: 0)
+    private var clickReactions = ClickReactions()
+    private var dragLean = DragLean()
+    /// Last event, hover, click or drag: doze waits 15 minutes past it.
+    private var lastActivity = Date.distantPast
+    private var hovering = false
     private var pollTimer: Timer?
     private var tickTimer: Timer?
     // GitHub Status (#11): fixtures by default; githubstatus.com only with the live source.
@@ -231,6 +247,8 @@ final class AppModel: ObservableObject {
             scopeAccess = ScopeGhAccess()
         }
         clockOffset = options.clockOffset
+        scheduler = ClipScheduler(seed: runtime.clipSeed ?? UInt64.random(in: .min ... .max))
+        lastActivity = runtime.now().addingTimeInterval(options.clockOffset)
         updates = UpdateController.make(infoDictionary: Bundle.main.infoDictionary, bundleURL: Bundle.main.bundleURL,
                                         normalLaunch: normalLaunch, defaults: options.userDefaults,
                                         backend: runtime.updaterBackend)
@@ -260,7 +278,9 @@ final class AppModel: ObservableObject {
             mascotArtworkLoader = artworkLoader
             mascotArtworkLoading = true
         } else {
-            mascotArtwork = artworkLoader.resolve(loaded.mascotSkin)
+            let resolved = artworkLoader.resolve(loaded.mascotSkin)
+            mascotArtwork = resolved
+            clipLibrary = ClipLibrary(pack: resolved.pack)
             mascotArtworkLoader = artworkLoader
             // One launch line on stderr so QA can confirm which mascot is in use.
             FileHandle.standardError.write(Data("GitHubPet: \(mascotArtwork.logDescription)\n".utf8))
@@ -456,6 +476,8 @@ final class AppModel: ObservableObject {
         unseen.removeAll()
         clips.clear()
         activeClip = nil
+        scheduler.reset()
+        clipStage.scheduled = nil
     }
 
     /// Public GitHub Status doesn't depend on the gh account, so only a data-source switch (or a
@@ -668,7 +690,7 @@ final class AppModel: ObservableObject {
             let shown = events.map { event in
                 var event = event; event.item = classified(event.item); return event
             }
-            clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features))
+            enqueueEvents(shown, at: date)
             actionsQuality = result.complete ? nil : ActionsWatch.qualityLine(for: result.issues, watched: repositories.count)
             deploymentsWaiting = result.waiting
         }
@@ -773,6 +795,7 @@ final class AppModel: ObservableObject {
             if let key, let saved = baselineStore.load(for: key) { engine.restore(saved) }
             baselineKey = key
         }
+        let before = (state: dataState, count: items.count)
         let sourceEvents = engine.apply(outcome, now: date)
         persistBaseline()
         dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + waitingRows)
@@ -782,8 +805,13 @@ final class AppModel: ObservableObject {
         let shown = events.map { event in
             var event = event; event.item = classified(event.item); return event
         }
-        clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features))
+        enqueueEvents(shown, at: date)
         sync(now: date)
+        // #138 inbox-zero: a fresh poll took a shown inbox to verified empty (never the launch
+        // baseline, which starts from Loading, and never all-dismissed, which stays ready).
+        if case .snapshot = outcome, dataState == .empty, before.state == .ready || before.state == .partial, before.count >= 1 {
+            requestClip(.inboxZero, at: date)
+        }
     }
 
     private var currentBaselineKey: BaselineKey? {
@@ -822,6 +850,7 @@ final class AppModel: ObservableObject {
     private func applyServiceStatus(_ outcome: ServiceStatusOutcome) {
         let date = clock()
         let shownBefore = incidentMarker?.tier
+        let leadBefore = incidentMarker?.lead
         let events = serviceMonitor.apply(outcome, now: date)
         unseenIncidents.formUnion(events.map { $0.item.id })
         // Resolved incidents leave quietly, taking their markers with them.
@@ -829,16 +858,149 @@ final class AppModel: ObservableObject {
             unseenIncidents.formIntersection(serviceMonitor.incidents.map(\.inboxItem.id))
         }
         let playable = !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features)
-        clips.enqueue(events, now: date, playable: playable, origin: .serviceIncident)
+        // #138: every incident start (the marker appearing from none) puts the hat on, with the
+        // incident's severity; an escalation keeps today's gesture. Without the pack's clip, as today.
+        let marker = IncidentMarker.current(state: serviceMonitor.state, incidents: serviceMonitor.incidents)
+        let starts = !events.isEmpty && shownBefore == nil && marker != nil && clipLibrary.has(.incidentStart)
+        // Once the hat is on, a second incident or an escalation gets the marker burst only: no
+        // character clip (packs without the hat keep today's gesture).
+        let hatOn = shownBefore != nil && clipLibrary.accessories.contains(AccessoryPolicy.firefighterHat)
+        if hatOn { noteActivity(at: date) } else {
+            enqueueEvents(events, at: date, origin: .serviceIncident, kind: starts ? .incidentStart : nil)
+        }
         // New incident or a higher tier (#37): one burst; baseline and reconnect produce no events.
         if playable && !events.isEmpty { markerBurst = IncidentMarker.Burst(start: date, fromTier: shownBefore) }
+        // The hat comes off with a spray only when the marker was shown at the last fresh reply and
+        // this fresh reply says operational. Stale, failed or loading status never plays it.
+        if let leadBefore, serviceMonitor.state == .operational, clipLibrary.has(.incidentEnd) {
+            enqueueEvents([InboxEvent(item: leadBefore.inboxItem, severity: .actionable)], at: date,
+                          origin: .serviceIncident, kind: .incidentEnd)
+        }
         sync(now: date)
+    }
+
+    /// Starts or merges the event gesture (#29) for new events, unless a higher scheduler clip holds
+    /// the stage (tier 1 merges: a same-or-lower arrival never restarts it), and wakes a doze.
+    private func enqueueEvents(_ events: [InboxEvent], at date: Date, origin: EventClipQueue.Origin = .repository,
+                               kind: EventClipQueue.Kind? = nil) {
+        guard !events.isEmpty else { return }
+        noteActivity(at: date)
+        let library = clipLibrary
+        // A kind's length comes from the pack's clip; new-item only replaces repository waves.
+        let duration: (EventClipQueue.Kind) -> TimeInterval? = { kind in
+            guard let id = kind.clipID, kind != .newItem || origin == .repository else { return nil }
+            return library.duration(id)
+        }
+        clips.enqueue(events, now: date, playable: settings.mascotVisible && !effectiveReducedMotion
+                      && settings.alertsAllowed(at: date, features: features), origin: origin, kind: kind,
+                      duration: duration)
+        if let active = clips.active { scheduler.occupy(until: active.endsAt, priority: ClipPriority.of(active), now: date) }
+        updateClipStage(at: date)
+    }
+
+    /// Reduce Motion or a hidden mascot plays nothing; quiet hours and snooze stop alert clips.
+    private func clipPermissions(at date: Date) -> ClipScheduler.Permissions {
+        .init(motion: !effectiveReducedMotion && settings.mascotVisible,
+              alerts: settings.alertsAllowed(at: date, features: features))
+    }
+
+    /// Asks the scheduler for a clip; a tier-1 clip that wins preempts the event gesture (no resume).
+    @discardableResult
+    func requestClip(_ trigger: ClipTrigger, key: String? = nil, at date: Date) -> ClipScheduler.Outcome {
+        let library = clipLibrary
+        let outcome = scheduler.request(trigger, key: key, now: date, permissions: clipPermissions(at: date),
+                                        duration: { library.duration($0) })
+        // A clip that starts counts as activity for doze (tiers 2–3 here).
+        if outcome == .started || { if case .preempted = outcome { return true } else { return false } }() {
+            lastActivity = date
+        }
+        updateClipStage(at: date)
+        return outcome
+    }
+
+    /// Publishes what the stage holds now: the scheduler clip, drag, and whether the mascot dozes.
+    private func updateClipStage(at date: Date) {
+        var stage = clipStage
+        stage.scheduled = scheduler.active(at: date)
+        let dozing = stage.dragStart == nil && !hovering
+            && DozePolicy.isDozing(now: date, lastActivity: lastActivity, mood: mascotState, dataState: dataState,
+                                   incidentShown: incidentMarker != nil,
+                                   alertsAllowed: settings.alertsAllowed(at: date, features: features))
+        stage.dozeStart = dozing ? (clipStage.dozeStart ?? date) : nil
+        if stage != clipStage { clipStage = stage }
+    }
+
+    private func noteActivity(at date: Date) {
+        lastActivity = date
+        if clipStage.dozeStart != nil { updateClipStage(at: date) }
+    }
+
+    /// Pointer interaction: wakes a doze and pushes the next ambient clip a full gap away.
+    private func notePointer(at date: Date) {
+        scheduler.noteActivity(now: date)
+        noteActivity(at: date)
+    }
+
+    /// Accessory overlays worn now (#138): the hat only while a real incident marker shows.
+    var accessories: [MascotAccessoryID] { AccessoryPolicy.accessories(marker: incidentMarker) }
+
+    // MARK: Pointer reactions (#138)
+
+    /// The pointer entered or left the mascot: wakes a doze; idle variants wait while hovered.
+    func mascotHover(_ inside: Bool) {
+        hovering = inside
+        if inside { notePointer(at: clock()) }
+    }
+
+    /// A click on the mascot (the Inbox has already opened): poke, or dizzy after five quick clicks.
+    func mascotClicked() {
+        let date = clock()
+        notePointer(at: date)
+        requestClip(clickReactions.click(at: date), at: date)
+    }
+
+    func mascotDragBegan() {
+        let date = clock()
+        notePointer(at: date)
+        dragLean.reset()
+        scheduler.beginHold(now: date)
+        var stage = clipStage
+        stage.dragStart = date
+        stage.dragAngle = 0
+        stage.released = nil
+        clipStage = stage
+        updateClipStage(at: date)
+    }
+
+    /// Pointer samples while held; the view redraws only when the lean changes by a step.
+    func mascotDragMoved(x: Double, time: TimeInterval) {
+        guard clipStage.dragStart != nil, dragLean.sample(x: x, time: time, reducedMotion: effectiveReducedMotion) else { return }
+        clipStage.dragAngle = dragLean.angle
+    }
+
+    func mascotDragEnded() {
+        let date = clock()
+        dragLean.reset()
+        scheduler.endHold()
+        var stage = clipStage
+        // Only a drag that was actually shown springs back (the pack has a drag pose).
+        stage.released = stage.dragStart != nil && clipLibrary.has(.drag) ? (date, stage.dragAngle) : nil
+        stage.dragStart = nil
+        stage.dragAngle = 0
+        clipStage = stage
+        notePointer(at: date)
+        // A tier-1 clip still inside its window shows its remaining frames instead of the drop.
+        let tierOne = clips.active.map { date < $0.endsAt } ?? false
+        if !tierOne { requestClip(.dropped, at: date) }
     }
 
     private func cancelGesture() {
         clips.clear()
         activeClip = nil
         markerBurst = nil
+        // Reduce Motion stops every clip; snooze and quiet hours only the alert-gated ones.
+        if effectiveReducedMotion { scheduler.cancel() } else { scheduler.cancelAlertClips() }
+        updateClipStage(at: clock())
     }
 
     /// System Reduce Motion: stop a playing gesture the moment it is switched on.
@@ -854,6 +1016,14 @@ final class AppModel: ObservableObject {
         }
         clips.tick(now: date)
         sync(now: date)
+        if let active = clips.active { scheduler.occupy(until: active.endsAt, priority: ClipPriority.of(active), now: date) }
+        let library = clipLibrary
+        // Ambient: idle mood, nothing else on stage, not hovered or held, no doze, no incident marker.
+        let idleAllowed = mascotState == .idle && !hovering && clipStage.dragStart == nil
+            && clipStage.dozeStart == nil && clips.active == nil && incidentMarker == nil
+        scheduler.tick(now: date, permissions: clipPermissions(at: date), idleAllowed: idleAllowed,
+                       duration: { library.duration($0) })
+        updateClipStage(at: date)
     }
 
     /// #8: display-time only. The engine, its IDs and unseen state keep the source's kind.
@@ -967,6 +1137,11 @@ final class AppModel: ObservableObject {
             // still observe it, so a Restore cannot replay that attention.
             unseen.remove(id)
             clips.clear(origin: .repository, matching: { $0.item.id == id })
+            sync(now: date)
+            noteActivity(at: date)
+            // Only a Needs you row: dismissing a Waiting on others row plays nothing (#138).
+            if engine.items.contains(where: { $0.id == id }) { requestClip(.itemDismissed, at: date) }
+            return
         }
         sync(now: date)
     }

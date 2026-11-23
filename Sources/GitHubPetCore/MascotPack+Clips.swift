@@ -20,7 +20,7 @@ extension MascotPackManifest {
         guard isV2 else { return [] }
         var paths: [String] = []
         for id in MascotClipID.heldStates { if let spec = states[id.rawValue] { paths += spec.frames + [spec.staticFallback] } }
-        for (_, spec) in (clips ?? [:]).sorted(by: { $0.key < $1.key }) { paths += spec.frames + (spec.staticFallback.map { [$0] } ?? []) }
+        for (_, spec) in (clips ?? [:]).sorted(by: { $0.key < $1.key }) { paths += spec.frames }
         for (_, spec) in (accessories ?? [:]).sorted(by: { $0.key < $1.key }) { paths.append(spec.image) }
         var seen: Set<String> = []
         return paths.filter { seen.insert($0).inserted }
@@ -51,9 +51,11 @@ public struct ClipLibrary: Equatable, Sendable {
     public var durationsMs: [MascotClipID: [Int]] = [:]
     public var hidesAccessories: Set<MascotClipID> = []
     public var accessories: Set<MascotAccessoryID> = []
+    /// Largest drag/dizzy lean the pack's layout has room for.
+    public var leanLimit: Double = MascotPack.attentionLeanDegrees
 
     public init() {}
-    public static let none = ClipLibrary()
+    public static let empty = ClipLibrary()
 
     public init(pack: MascotPack?) {
         guard let manifest = pack?.manifest, manifest.isV2 else { return }
@@ -63,6 +65,7 @@ public struct ClipLibrary: Equatable, Sendable {
             if spec.accessories == .hide { hidesAccessories.insert(MascotClipID(name)) }
         }
         accessories = Set((manifest.accessories ?? [:]).keys.map { MascotClipID($0) })
+        leanLimit = pack?.clipLeanLimit ?? leanLimit
     }
 
     public func has(_ id: MascotClipID) -> Bool { durationsMs[id] != nil }
@@ -77,13 +80,11 @@ extension MascotPack {
     /// The image a pose draws: a clip or held frame (or its static fallback), else the state's.
     public func imagePath(for pose: MascotPose) -> String? {
         if let clip = pose.clip {
-            let spec: (frames: [String], fallback: String?)?
-            if let held = manifest.heldSpec(clip.id) { spec = (held.frames, held.staticFallback) }
-            else if let one = manifest.clipSpec(clip.id) { spec = (one.frames, one.staticFallback) }
-            else { spec = nil }
-            if let spec {
-                if let frame = clip.frame, spec.frames.indices.contains(frame) { return spec.frames[frame] }
-                if clip.frame == nil, let fallback = spec.fallback { return fallback }
+            if let held = manifest.heldSpec(clip.id) {
+                guard let frame = clip.frame else { return held.staticFallback }
+                if held.frames.indices.contains(frame) { return held.frames[frame] }
+            } else if let one = manifest.clipSpec(clip.id), let frame = clip.frame, one.frames.indices.contains(frame) {
+                return one.frames[frame]
             }
         }
         guard let spec = manifest.states[pose.state.rawValue] else { return nil }
@@ -114,6 +115,13 @@ extension MascotPack {
     public func head(for path: String?) -> CGPoint {
         let offset = headOffset(for: path), base = headPoint
         return CGPoint(x: base.x + offset.x, y: base.y + offset.y)
+    }
+
+    /// item-cleared's sparkle point: the frame's `hand`, else the head plus [60, 50].
+    public func hand(for path: String?) -> CGPoint {
+        let point = path.flatMap { manifest.framePoints?[$0]?.hand } ?? manifest.points?.hand
+        guard let point, point.count == 2 else { return ClipEffects.hand(head: head(for: path)) }
+        return CGPoint(x: point[0], y: point[1])
     }
 
     /// The spray emitter for incident-end's frame, if the pack names one.
@@ -158,13 +166,16 @@ extension MascotPack {
         }
     }
 
-    /// Measures v2 images: their outlines, the contours they add, and the hard rule that each one
-    /// (and the hat at every head point it is drawn at) stays inside the three states' art.
-    mutating func measureClips() -> [MascotPackError] {
+    /// Measures v2 images: their outlines, the upright and leaning contours they add (hat composites
+    /// included), the lean the layout has room for, and (bundled) the rule that every clip, held and
+    /// hat pixel stays inside the three states' art. A custom pack drawing outside it is accepted with
+    /// a taller lane and wider hover outline instead.
+    mutating func measureClips(enforcingBounds: Bool = true) -> [MascotPackError] {
         let v2Paths = manifest.v2ImagePaths
         guard !v2Paths.isEmpty else { return [] }
         let core = MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }
         guard let union = ArtProfile.union(core), let limit = union.bounds else { return [] }
+        let baseTop = (MascotState.allCases.flatMap(poseContours) + leaningContours).flatMap { $0.compactMap { $0 } }.min() ?? 0
         var errors: [MascotPackError] = []
         extraOutlines = [:]
         for path in manifest.imagePaths {
@@ -176,33 +187,69 @@ extension MascotPack {
             return box.minX + dx >= limit.minX && box.maxX + dx <= limit.maxX && box.top + dy >= limit.top
                 && box.bottom + dy < Self.canvasSize
         }
-        let hatPaths = Set((manifest.accessories ?? [:]).values.map(\.image))
-        var contours: [[Int?]] = []
+        let hats = (manifest.accessories ?? [:]).values.map(\.image).sorted()
+        let hatPaths = Set(hats)
+        var outside: [ArtProfile] = []
         for path in v2Paths where !hatPaths.contains(path) {
-            guard let outline = extraOutlines[path] else { continue }
-            if !inside(outline) { errors.append(.outsideArt(path)) }
-            contours.append(outline.columnTops)
+            guard let outline = extraOutlines[path], !inside(outline) else { continue }
+            errors.append(.outsideArt(path))
+            outside.append(outline)
         }
-        // Drag frames over the whole lean, as the attention frames are (#29).
-        if let drag = manifest.heldSpec(.drag) {
-            let lean = DragLean.maxDegrees
-            for path in Set(drag.frames + [drag.staticFallback]).sorted() {
-                guard let points = extraOutlines[path]?.outlinePoints else { continue }
-                contours += stride(from: -lean, to: lean, by: 1).map {
-                    ArtProfile.rotatedContour(points, canvas: Self.canvasSize, from: $0, to: $0 + 1,
+        // Frames that can wear the hat: every state and held frame, and clips that keep accessories.
+        var wearing = Set(MascotState.allCases.flatMap { manifest.states[$0.rawValue].map { $0.frames + [$0.staticFallback] } ?? [] })
+        for id in MascotClipID.heldStates { if let spec = manifest.heldSpec(id) { wearing.formUnion(spec.frames + [spec.staticFallback]) } }
+        for (_, spec) in manifest.clips ?? [:] where spec.accessories != .hide { wearing.formUnion(spec.frames) }
+        var upright = v2Paths.filter { !hatPaths.contains($0) }.compactMap { extraOutlines[$0]?.columnTops }
+        for hatPath in hats {
+            guard let hat = extraOutlines[hatPath] else { continue }
+            var reported = false
+            for path in wearing.sorted() {
+                let offset = headOffset(for: path)
+                if !inside(hat, offset) && !reported { errors.append(.outsideArt(hatPath)); reported = true; outside.append(hat) }
+                let shifted = Self.shifted(hat.columnTops, by: offset)
+                upright.append(extraOutlines[path].map { Self.merge($0.columnTops, shifted) } ?? shifted)
+            }
+        }
+        extraUprightContours = upright
+        // Drag and dizzy lean (#138): swept like the attention frames (#29), with the hat where worn,
+        // at the largest angle whose sweep needs no taller lane.
+        let leaning = Set((manifest.heldSpec(.drag).map { $0.frames + [$0.staticFallback] } ?? [])
+                          + (manifest.clipSpec(.dizzy)?.frames ?? [])).sorted()
+        let pointSets: [[CGPoint]] = leaning.compactMap { path in
+            guard let art = extraOutlines[path] else { return nil }
+            let hatPoints = hats.filter { _ in wearing.contains(path) && manifest.heldSpec(.drag)?.frames.contains(path) == true }
+                .compactMap { extraOutlines[$0] }.flatMap { hat -> [CGPoint] in
+                    let offset = headOffset(for: path)
+                    return hat.outlinePoints.map { CGPoint(x: $0.x + offset.x, y: $0.y + offset.y) }
+                }
+            return art.outlinePoints + hatPoints
+        }
+        // In 1° bands like the attention frames, the same contours the lane is measured from.
+        func sweep(_ lean: Double) -> [[Int?]] {
+            guard lean > 0 else { return [] }
+            return pointSets.flatMap { points in
+                stride(from: -lean, to: lean, by: 1).map {
+                    ArtProfile.rotatedContour(points, canvas: Self.canvasSize, from: $0, to: min($0 + 1, lean),
                                               pivot: AttentionGesture.pivot, step: 0.05)
                 }
             }
         }
-        // The hat at the default head point and every per-frame head point.
-        let offsets = [CGPoint.zero] + manifest.imagePaths.map { headOffset(for: $0) }.filter { $0 != .zero }
-        for path in hatPaths.sorted() {
-            guard let hat = extraOutlines[path] else { continue }
-            if offsets.contains(where: { !inside(hat, $0) }) { errors.append(.outsideArt(path)) }
-            contours += offsets.map { Self.shifted(hat.columnTops, by: $0) }
+        var lean = Self.attentionLeanDegrees
+        var contours = sweep(lean)
+        while lean > 0, contours.flatMap({ $0.compactMap { $0 } }).min().map({ $0 < baseTop }) == true {
+            lean -= 0.5
+            contours = sweep(lean)
         }
-        extraContours = contours
-        return errors
+        clipLeanLimit = lean
+        extraLeaningContours = contours
+        // A custom pack drawing outside the states' art widens the hover outline instead (#138).
+        if !enforcingBounds, !outside.isEmpty {
+            for state in MascotState.allCases {
+                artProfiles[state] = ArtProfile.union([artProfiles[state]].compactMap { $0 } + outside)
+            }
+            return []
+        }
+        return enforcingBounds ? errors : []
     }
 
     /// The pack with every design-v1 clip, held pose and the hat it lacks synthesized from its own
@@ -234,7 +281,7 @@ extension MascotPack {
                                                  staticFallback: id == .doze ? paths[0] : base.staticFallback)
             pack.placeholderClips.insert(id)
         }
-        if manifest.accessories?[AccessoryPolicy.firefighterHat.rawValue] == nil,
+        if manifest.accessories?[AccessoryPolicy.firefighterHat.rawValue] == nil, manifest.points?.head == nil,
            let union = ArtProfile.union(MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }),
            let limit = union.bounds, let hat = Self.placeholderHat(head: headPoint, limit: limit) {
             let path = "placeholder/firefighter-hat.png"
@@ -242,6 +289,9 @@ extension MascotPack {
             var accessories = manifest.accessories ?? [:]
             accessories[AccessoryPolicy.firefighterHat.rawValue] = .init(image: path)
             manifest.accessories = accessories
+            let head = headPoint
+            // Mist from low on the left, where the extinguisher would be.
+            manifest.points = .init(head: [Int(head.x.rounded()), Int(head.y.rounded())], nozzle: [limit.minX + 12, 196])
             pack.placeholderClips.insert(AccessoryPolicy.firefighterHat)
         }
         pack.manifest = manifest
