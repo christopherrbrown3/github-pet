@@ -50,6 +50,7 @@ extension SnapshotRenderer {
         }
         report += await inboxLegibilityRenders(model: model, directory: directory)
         report += await waitingGroupRenders(model: model, directory: directory)
+        report += await approvedReadyRenders(model: model, directory: directory)
         model.settings = saved
         return report
     }
@@ -127,6 +128,47 @@ extension SnapshotRenderer {
             if state == "partial" { model.setPartialPolls(false) }
         }
         model.showFixtureItemsForSnapshot(inbox87Items(4))
+        await cleanUp("four", model: model)
+        return report
+    }
+
+    /// #153: an approved PR ready to merge is a Your pull requests row that badges; one approved
+    /// with checks running still waits, saying so. Demo fixtures only, Waiting on others expanded,
+    /// light and dark. Files: `inbox153-approved-ready[-dark].png`.
+    private static func approvedReadyRenders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## approved and ready to merge (#153)"]
+        model.settings.mascotSkin = MascotSkin.allCases[0]
+        var selection = InboxViewSelection()
+        await prepare("four", model: model, selection: &selection)
+        let reference = Date(timeIntervalSince1970: 1_793_000_000)
+        func authored(_ repo: String, _ number: Int, _ title: String, _ hoursAgo: Double, _ attention: String) -> InboxItem {
+            let id = "authoredPullRequest:\(repo)#\(number)"
+            return InboxItem(id: id, kind: .authoredPullRequest, repository: repo, title: title,
+                             url: URL(string: "https://github.com/\(repo)/pull/\(number)"),
+                             updatedAt: reference.addingTimeInterval(-hoursAgo * 3600), isDemo: true, attention: attention)
+        }
+        var ready = authored("example/pet-tools", 9, "Bounded command budget for gh calls", 0.5,
+                             AuthoredAttention.Reason.readyToMerge(nil).text)
+        ready.attentionKeys = [ready.id + "#ready"]
+        let running = authored("example/pet-demo", 61, "Quiet hours end at local midnight", 3,
+                               AuthoredAttention.WaitReason.checksRunning.text)
+        let waiting = [running] + FixtureSimulator.defaultWaitingItems().filter { $0.kind == .authoredPullRequest }
+        model.showFixtureItemsForSnapshot([ready] + inbox87Items(2), waiting: waiting)
+        model.markAllSeen()
+        selection.waitingExpanded = true
+        let group = model.waitingGroup
+        let authoredRows = model.items.filter { $0.kind == .authoredPullRequest }
+        report.append("inbox153 state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
+                      + "your-prs=\(authoredRows.map { $0.attention ?? "none" }.joined(separator: "|")) "
+                      + "waiting-rows=\(group.items.count) reasons=\(group.items.map { $0.attention ?? "none" }.joined(separator: "|"))")
+        for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+            let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                               showsSimulator: false, initialSelection: selection),
+                                     name: "inbox153-approved-ready\(suffix)", directory: directory,
+                                     appearance: appearance, asWindow: true)
+            if let first = lines.first { report.append("inbox153 approved-ready\(suffix): \(first)") }
+        }
+        model.showFixtureItemsForSnapshot(inbox87Items(4), waiting: FixtureSimulator.defaultWaitingItems())
         await cleanUp("four", model: model)
         return report
     }

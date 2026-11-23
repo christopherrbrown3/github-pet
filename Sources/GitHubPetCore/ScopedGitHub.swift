@@ -30,7 +30,8 @@ public struct ScopeQueryPlan: Sendable {
                  type: "PullRequest", fields: ""),
         Category(kind: .assignedIssue, aliasPrefix: "assigned", query: "is:issue is:open assignee:@me",
                  type: "Issue", fields: ""),
-        // #9: your open PRs; only those needing your action become rows (see AuthoredAttention).
+        // #9: your open PRs; only those needing your action become rows (see AuthoredAttention),
+        // approved and ready to merge included (#153); the rest are listed as waiting (#148).
         Category(kind: .authoredPullRequest, aliasPrefix: "authored", query: "is:pr is:open author:@me archived:false",
                  type: "PullRequest",
                  fields: " isDraft reviewDecision mergeable commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }"
@@ -42,7 +43,8 @@ public struct ScopeQueryPlan: Sendable {
     /// Changes whenever the category set changes, so a persisted baseline from an older set
     /// re-baselines silently instead of announcing a new category's existing items (#12).
     /// 4: authored changes-requested reasons use a stable key with chronological review evidence.
-    public static let categoriesVersion = 4
+    /// 5: approved and ready to merge needs you (#153), so already-approved PRs never announce on upgrade.
+    public static let categoriesVersion = 5
     public struct Search: Sendable {
         public let alias: String
         public let kind: ItemKind

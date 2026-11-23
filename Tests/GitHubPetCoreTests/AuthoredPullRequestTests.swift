@@ -61,16 +61,39 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         #expect(AuthoredAttention.Reason.checksFailing(oidA).text == "Checks failing", "never claims 'required' checks")
     }
 
+    /// #153: approved, not a draft, checks passing (or none) and no conflict is your move.
+    @Test func approvedAndReadyToMergeNeedsYou() {
+        #expect(AuthoredAttention(authored(decision: "APPROVED")) == .needsAction([.readyToMerge(oidA)]))
+        #expect(AuthoredAttention(authored(decision: "APPROVED", rollup: NSNull())) == .needsAction([.readyToMerge(oidA)]), "no checks")
+        #expect(AuthoredAttention(authored(decision: "APPROVED", commits: ["nodes": []])) == .needsAction([.readyToMerge(nil)]),
+                "no commits visible")
+        #expect(AuthoredAttention.Reason.readyToMerge(oidA).text == "Approved, ready to merge")
+        #expect(AuthoredAttention.Reason.readyToMerge(oidA).idComponent == "ready@" + oidA, "a new ready head commit is a new event")
+        #expect(AuthoredAttention.Reason.readyToMerge(nil).idComponent == "ready")
+        // Still waiting on GitHub: its reason says what for.
+        #expect(AuthoredAttention(authored(decision: "APPROVED", rollup: ["state": "PENDING"])) == .waiting([.checksRunning]))
+        #expect(AuthoredAttention(authored(decision: "APPROVED", rollup: ["state": "EXPECTED"])) == .waiting([.checksRunning]))
+        #expect(AuthoredAttention(authored(decision: "APPROVED", mergeable: "UNKNOWN")) == .waiting([.mergeabilityPending]))
+        #expect(AuthoredAttention(authored(decision: "APPROVED", mergeable: "UNKNOWN", rollup: ["state": "PENDING"]))
+                == .waiting([.checksRunning, .mergeabilityPending]))
+        #expect(AuthoredAttention(authored(draft: true, decision: "APPROVED")) == .waiting([.draft]), "an approved draft is a draft")
+        // Approved but blocked: needs you for what blocks it, never "ready to merge".
+        #expect(AuthoredAttention(authored(decision: "APPROVED", mergeable: "CONFLICTING")) == .needsAction([.conflict]))
+        #expect(AuthoredAttention(authored(decision: "APPROVED", rollup: ["state": "FAILURE"])) == .needsAction([.checksFailing(oidA)]))
+        #expect(AuthoredAttention(authored(decision: "APPROVED", mergeable: "CONFLICTING", rollup: ["state": "ERROR"]))
+                == .needsAction([.conflict, .checksFailing(oidA)]), "the reasons list both")
+    }
+
     @Test func waitingOnOthersDraftsAndStillChecking() {
         // #148: each waiting PR says why, where GitHub says so.
-        let decisions: [(Any, AuthoredAttention.WaitReason?)] = [("APPROVED", .approved), ("REVIEW_REQUIRED", .reviewPending), (NSNull(), nil)]
+        let decisions: [(Any, AuthoredAttention.WaitReason?)] = [("APPROVED", nil), ("REVIEW_REQUIRED", .reviewPending), (NSNull(), nil)]
         for (decision, decided) in decisions {
             for state in ["SUCCESS", "PENDING", "EXPECTED"] {
                 var reasons: [AuthoredAttention.WaitReason] = []
                 if decided == .reviewPending { reasons.append(.reviewPending) }
                 if state != "SUCCESS" { reasons.append(.checksRunning) }
-                // Approved reads "ready to merge" only when nothing else is pending.
-                if decided == .approved && reasons.isEmpty { reasons.append(.approved) }
+                // #153: approved with nothing pending needs you (see approvedAndReadyToMergeNeedsYou).
+                if decision as? String == "APPROVED" && reasons.isEmpty { continue }
                 #expect(AuthoredAttention(authored(decision: decision, rollup: ["state": state])) == .waiting(reasons))
             }
         }
@@ -81,8 +104,7 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         #expect(AuthoredAttention(authored(mergeable: "UNKNOWN")) == .waiting([.mergeabilityPending]), "conflict status not known yet")
         #expect(AuthoredAttention.WaitReason.draft.text == "Draft" && AuthoredAttention.WaitReason.reviewPending.text == "Review pending"
                 && AuthoredAttention.WaitReason.checksRunning.text == "Checks running"
-                && AuthoredAttention.WaitReason.mergeabilityPending.text == "Checking for conflicts"
-                && AuthoredAttention.WaitReason.approved.text == "Approved, ready to merge")
+                && AuthoredAttention.WaitReason.mergeabilityPending.text == "Checking for conflicts")
         #expect(AuthoredAttention.WaitReason.summary([.reviewPending, .checksRunning, .mergeabilityPending])
                 == "Review pending, checks running, checking for conflicts", "sentence case")
         #expect(AuthoredAttention.WaitReason.summary([]) == nil)
@@ -100,8 +122,8 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
                 == .needsAction([.changesRequested(review: review)]))
         #expect(AuthoredAttention.Reason.changesRequested(review: review).idComponent == "changes")
         #expect(AuthoredAttention.Reason.changesRequested(review: nil).idComponent == "changes")
-        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: visible)) == .waiting([.approved]),
-                "an old changes-requesting review alone never needs action")
+        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: visible)) == .needsAction([.readyToMerge(oidA)]),
+                "an old changes-requesting review alone never means changes requested")
         let undated = AuthoredAttention.Review(digest: review.digest, submittedAt: nil)
         #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED",
                                            reviews: ["nodes": [["id": "PRR_round_2", "submittedAt": NSNull()]]]))
@@ -150,14 +172,16 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
             authored("PR_unknown", number: 5, mergeable: "UNKNOWN"),
         ])
         #expect(result.complete && result.issues.isEmpty, "UNKNOWN mergeability never makes the poll Partial")
-        #expect(result.waitingOnOthers == 3)
-        #expect(Set(result.items.map(\.id)) == ["authoredPullRequest:PR_changes", "authoredPullRequest:PR_checks"],
-                "one stable row ID per PR")
+        #expect(result.waitingOnOthers == 2)
+        #expect(Set(result.items.map(\.id)) == ["authoredPullRequest:PR_changes", "authoredPullRequest:PR_checks",
+                                                "authoredPullRequest:PR_approved"], "one stable row ID per PR")
         #expect(Set(result.items.flatMap(\.attentionKeys)) == ["authoredPullRequest:PR_changes#changes",
-                                                              "authoredPullRequest:PR_checks#checks@\(oidB)"])
+                                                              "authoredPullRequest:PR_checks#checks@\(oidB)",
+                                                              "authoredPullRequest:PR_approved#ready@\(oidA)"])
         #expect(result.items.allSatisfy { $0.kind == .authoredPullRequest && $0.kind.severity == .actionable })
         #expect(result.items.first { $0.id.contains("PR_changes") }?.attention == "Changes requested")
         #expect(result.items.first { $0.id.contains("PR_checks") }?.attention == "Checks failing")
+        #expect(result.items.first { $0.id.contains("PR_approved") }?.attention == "Approved, ready to merge")
     }
 
     /// #148: the waiting PRs are rows for the Waiting on others group, one per PR, saying why,
@@ -265,9 +289,30 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
     @Test func waitingPRsNeverAnnounce() throws {
         let engine = InboxEngine()
         #expect(try poll(engine, [], at: 0).isEmpty)
-        #expect(try poll(engine, [authored(decision: "APPROVED"), authored("PR_draft", number: 2, draft: true, mergeable: "CONFLICTING"),
+        #expect(try poll(engine, [authored(decision: "APPROVED", rollup: ["state": "PENDING"]),
+                                  authored("PR_draft", number: 2, draft: true, mergeable: "CONFLICTING"),
                                   authored("PR_unknown", number: 3, mergeable: "UNKNOWN")], at: 1).isEmpty)
         #expect(engine.items.isEmpty && engine.state == .empty)
+    }
+
+    /// #153: approved with checks running waits quietly; once ready it needs you and announces
+    /// once. The conflict check flapping back to ready is not new; ready on a new head commit is.
+    @Test func approvedBecomingReadyAnnouncesOnce() throws {
+        let engine = InboxEngine()
+        #expect(try poll(engine, [], at: 0).isEmpty, "baseline")
+        #expect(try poll(engine, [authored(decision: "APPROVED", rollup: ["state": "PENDING"])], at: 1).isEmpty)
+        #expect(engine.items.isEmpty, "checks running: still waiting")
+        let ready = try poll(engine, [authored(decision: "APPROVED")], at: 2)
+        #expect(ready.map(\.item.attention) == ["Approved, ready to merge"])
+        #expect(engine.items.map(\.id) == ["authoredPullRequest:PR_authored_1"])
+        #expect(try poll(engine, [authored(decision: "APPROVED")], at: 3).isEmpty, "unchanged poll: no replay")
+        #expect(try poll(engine, [authored(decision: "APPROVED", mergeable: "UNKNOWN")], at: 4).isEmpty)
+        #expect(engine.items.isEmpty, "GitHub rechecking conflicts: waiting again")
+        #expect(try poll(engine, [authored(decision: "APPROVED")], at: 5).isEmpty, "the same ready commit is not new")
+        #expect(try poll(engine, [authored(decision: "APPROVED", rollup: ["state": "PENDING"], oid: oidB)], at: 6).isEmpty)
+        #expect(try poll(engine, [authored(decision: "APPROVED", oid: oidB)], at: 7).count == 1, "ready on a new head commit")
+        let conflict = try poll(engine, [authored(decision: "APPROVED", mergeable: "CONFLICTING", oid: oidB)], at: 8)
+        #expect(conflict.map(\.item.attention) == ["Merge conflict"], "a conflict replaces ready and announces")
     }
 }
 
@@ -304,8 +349,10 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         let scopeText = String(decoding: try { let e = JSONEncoder(); e.outputFormatting = .sortedKeys; return try e.encode(MonitoringScope.everything) }(), as: UTF8.self)
         let legacy = EventBaseline.digest("v\(EventBaseline.version)\n\(DataSourceMode.githubCLI.rawValue)\n\(ScopeIdentity.github(accountA).storageSuffix)\n\(scopeText)")
         let current = BaselineKey(source: .githubCLI, identity: .github(accountA), scope: .everything)
-        #expect(ScopeQueryPlan.categoriesVersion == 4)
+        #expect(ScopeQueryPlan.categoriesVersion == 5)
         #expect(current.value != legacy, "a v1 (reviews+assigned) record no longer matches")
+        let v4 = EventBaseline.digest("v\(EventBaseline.version)\nc4\n\(DataSourceMode.githubCLI.rawValue)\n\(ScopeIdentity.github(accountA).storageSuffix)\n\(scopeText)")
+        #expect(current.value != v4, "#153: a v4 record (approved PRs waiting) re-baselines silently, no upgrade announcements")
         let defaults = EphemeralDefaults(name: "authored.baseline.\(UUID().uuidString)")
         let store = EventBaselineStore(defaults: defaults)
         store.save(EventBaseline(key: legacy, digests: [EventBaseline.digest("reviewRequest:PR_1")], baselineEstablished: true,

@@ -52,7 +52,8 @@ created. Once it exists the command will be `brew install --cask christopherrbro
   <img src="docs/screenshots/beta-4/inbox-dismissed.png" alt="The Inbox with Little Chris in the header, showing the Dismissed here list: two dismissed Demo items, a pull request and a review request, each with its dismissal time and a Restore button, and a Back to Inbox link." width="380" align="right">
 </picture>
 
-Review requests, issues assigned to you and your own pull requests that need a change sit in one list,
+Review requests, issues assigned to you and your own pull requests that need a change or are approved and
+ready to merge sit in one list,
 grouped by what they ask of you. Three tiles sum it up: **Needs you** (the same count as the badge),
 **Waiting on others** and **GitHub status**. Your pull requests and deployments that are waiting on someone
 else are listed in their own collapsed **Waiting on others** section, each saying why, without counting in
