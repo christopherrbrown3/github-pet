@@ -8,9 +8,13 @@ import Testing
     private func simulated(features: FeatureSet = .current) -> AppModel {
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
+        // A frozen budget clock (#162): held replies have no real-time bound, and a starved CI runner
+        // spent the 20 s budget between launch and reply ("Monitoring scope could not be verified").
+        let instant = ContinuousClock.now
         return AppModel(options: options, runtime: AppModel.Runtime(
             now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false },
-            schedulesTimers: false, scopeSimulationHoldLimit: nil, features: features))
+            schedulesTimers: false, repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) },
+            scopeSimulationHoldLimit: nil, features: features))
     }
     /// Waits on explicit model state, not elapsed time: the poll task is done, every simulated
     /// request has been received, and the first load has landed. A stalled CI run (#127) only makes
@@ -135,10 +139,12 @@ import Testing
         let failing = Failing()
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
+        let instant = ContinuousClock.now
         let app = AppModel(options: options, runtime: AppModel.Runtime(
             now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false }, schedulesTimers: false,
-            // A zero-time budget: the simulated live client returns a real .deadline failure.
-            repositoryBudget: { CommandBudget(timeout: failing.on ? 0 : 20) }, scopeSimulationHoldLimit: nil))
+            // A zero-time budget: the simulated live client returns a real .deadline failure. The clock
+            // is frozen (#162), so only that switch, never runner load, makes a poll time out.
+            repositoryBudget: { CommandBudget(timeout: failing.on ? 0 : 20, now: { instant }) }, scopeSimulationHoldLimit: nil))
         defer { app.cleanupScopeSimulation() }
         try await settled(app)
         app.simulateScopeAuthored(.changesRequested); try await settled(app)

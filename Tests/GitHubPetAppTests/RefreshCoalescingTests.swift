@@ -12,8 +12,12 @@ import Testing
     private func simulated() -> AppModel {
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
+        // A frozen budget clock (#162): a held reply stays held until delivered. With the real clock a
+        // starved CI runner let the 20 s budget expire it before `held` checked the count.
+        let instant = ContinuousClock.now
         return AppModel(options: options, runtime: AppModel.Runtime(
             now: { self.launch }, systemReducedMotion: { false }, schedulesTimers: false,
+            repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) },
             scopeSimulationHoldLimit: nil, wakeCenter: NotificationCenter(), wakeRefreshDelay: .milliseconds(20)))
     }
     private func settled(_ model: AppModel) async throws {
