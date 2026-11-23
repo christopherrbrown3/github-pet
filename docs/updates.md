@@ -111,6 +111,11 @@ Agents never generate, read, export or commit the production private key.
 The ZIP that users receive is **the exact artifact one CI run built and tested**, never a local rebuild and never
 a second build from the tag. A tag push does not build or upload anything.
 
+0. **README.** Before the CI build, merge a PR that brings `README.md` up to date for this release: the
+   **Download Beta N** link points at the new tag's release page, the in-app updates line lists the new beta, and any
+   text, screenshots or alt text for features in this release are current, and version statements
+   such as "describes the Beta N app" in docs/features.md name the new beta. The tag's README is the one the release
+   notes link to, so it must be right before the build.
 1. **CI artifact.** Run the Swift workflow manually (Actions › Swift › Run workflow) **on `main`** with
    `release_version` = `0.1.0-beta.4` (or `0.1.0` for stable); `VERSION` must hold the core version. It runs the full
    suite and packages the universal app with that `RELEASE_VERSION`, the committed key and the committed feed. It

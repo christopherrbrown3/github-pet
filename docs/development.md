@@ -18,7 +18,7 @@ scripts/test.sh                   # swift-testing suite (see note below)
 scripts/build-app.sh              # release .app -> .build/app/GitHubPet.app
 scripts/test-update-build.sh      # Sparkle packaging regression (debug builds, ~1 min)
 scripts/package-zip.sh            # universal .app + ZIP + .sha256 -> .build/dist (self-verified)
-scripts/readme-screenshots.sh .build/app/GitHubPet.app   # offscreen Demo renders -> docs/screenshots/beta-5
+scripts/readme-screenshots.sh .build/app/GitHubPet.app   # offscreen Demo renders -> docs/screenshots/beta-5 (pass a folder to write elsewhere)
 open .build/app/GitHubPet.app     # launch (menu-bar icon + mascot, no Dock icon)
 ```
 

@@ -131,8 +131,10 @@ import Testing
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
         let suite = try #require(options.defaultsSuite)
+        let instant = ContinuousClock.now  // frozen budget clock (#162): runner load never times a poll out
         let app = AppModel(options: options, runtime: AppModel.Runtime(now: { self.launch }, systemReducedMotion: { false },
-                                                                        schedulesTimers: false, scopeSimulationHoldLimit: nil))
+                                                                        schedulesTimers: false, repositoryBudget: { CommandBudget(timeout: 20, now: { instant }) },
+                                                                        scopeSimulationHoldLimit: nil))
         try await settled(app)
         let domain = EphemeralDefaults.named(suite)
         let store = EventBaselineStore(defaults: domain)
