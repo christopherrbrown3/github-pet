@@ -319,12 +319,20 @@ public struct MascotPose: Equatable, Sendable {
     public var clipElapsed: TimeInterval?
     /// Art-layer lean in degrees about the ground anchor (attention gesture); positive leans right.
     public var angle: Double
+    /// A v2 clip or held pose (#138) drawn instead of the state's own frame; `state` stays the mood
+    /// for everything that isn't the art.
+    public var clip: ClipFrame?
+    /// Accessory overlays worn in this pose (drawn above the art, leaning with it).
+    public var accessories: [MascotAccessoryID]
 
-    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0) {
+    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0,
+                clip: ClipFrame? = nil, accessories: [MascotAccessoryID] = []) {
         self.state = state
         self.frame = frame
         self.clipElapsed = clipElapsed
         self.angle = angle
+        self.clip = clip
+        self.accessories = accessories
     }
 }
 
@@ -338,10 +346,62 @@ public struct MascotPose: Equatable, Sendable {
 public enum MascotAnimator {
     /// - Parameter gesture: the attention gesture to play when the pack supports it (its attention
     ///   state has the frames it uses); otherwise attention plays its manifest one-shot.
+    ///
+    /// #138 (all optional; a pack without a clip keeps today's behaviour):
+    /// - Drag masks everything while held (its clocks underneath keep running).
+    /// - The higher of the scheduler clip and the EventClipQueue clip plays; an actionable repository
+    ///   batch plays `new-item` in place of the wave when the pack has it.
+    /// - Doze holds when nothing else plays.
+    /// - Reduced motion shows static substitutions only: drag or doze's static pose, and accessories.
     public static func pose(mood: MascotState, clip: EventClipQueue.Clip?, now: Date, reducedMotion: Bool,
-                            idleEpoch: Date, gesture: AttentionGesture? = nil,
+                            idleEpoch: Date, gesture: AttentionGesture? = nil, stage: ClipStage = .empty,
+                            library: ClipLibrary = .none, accessories: [MascotAccessoryID] = [],
                             durationsMs: (MascotState) -> [Int]) -> MascotPose {
-        if reducedMotion { return MascotPose(state: mood, frame: nil, clipElapsed: nil) }
+        let worn = accessories.filter(library.accessories.contains)
+        func wearing(_ pose: MascotPose) -> MascotPose {
+            var pose = pose
+            if let clip = pose.clip, library.hidesAccessories.contains(clip.id) { return pose }
+            pose.accessories = worn
+            return pose
+        }
+        func clipPose(_ id: MascotClipID, since start: Date, loop: Bool, state: MascotState = mood,
+                      angle: Double = 0) -> MascotPose? {
+            guard let durations = library.durationsMs[id] else { return nil }
+            let elapsed = max(0, now.timeIntervalSince(start))
+            let frame = FrameClock.frameIndex(durationsMs: durations, loop: loop, elapsedMs: Int(elapsed * 1000),
+                                              reducedMotion: false)
+            return wearing(MascotPose(state: state, frame: nil, clipElapsed: loop ? nil : elapsed, angle: angle,
+                                      clip: ClipFrame(id: id, frame: frame, elapsed: elapsed)))
+        }
+        if reducedMotion {
+            for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil)]
+            where active && library.has(id) {
+                return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: id, frame: nil, elapsed: 0)))
+            }
+            return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil))
+        }
+        if let start = stage.dragStart, let pose = clipPose(.drag, since: start, loop: true, angle: stage.dragAngle) {
+            return pose
+        }
+        let event = clip.flatMap { now >= $0.startedAt && now < $0.endsAt ? $0 : nil }
+        if let scheduled = stage.scheduled, now >= scheduled.startedAt, now < scheduled.endsAt,
+           scheduled.priority > event.map(ClipPriority.of) ?? .min,
+           let pose = clipPose(scheduled.id, since: scheduled.startedAt, loop: false) {
+            return pose
+        }
+        if let event, event.state == .attention, event.origin == .repository,
+           let pose = clipPose(.newItem, since: event.startedAt, loop: false, state: .attention) {
+            return pose
+        }
+        if event == nil, mood == .idle, let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
+            return pose
+        }
+        return wearing(legacyPose(mood: mood, clip: event, now: now, idleEpoch: idleEpoch, gesture: gesture,
+                                  durationsMs: durationsMs))
+    }
+
+    static func legacyPose(mood: MascotState, clip: EventClipQueue.Clip?, now: Date, idleEpoch: Date,
+                           gesture: AttentionGesture?, durationsMs: (MascotState) -> [Int]) -> MascotPose {
         if let clip, now >= clip.startedAt, now < clip.endsAt {
             let elapsed = now.timeIntervalSince(clip.startedAt)
             if clip.state == .attention, let gesture {
