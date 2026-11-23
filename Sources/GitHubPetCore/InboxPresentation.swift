@@ -105,7 +105,7 @@ public enum InboxTone: String, Equatable, Sendable {
     case neutral, positive, caution, critical
 }
 
-/// The three overview tiles: Assigned to you, Waiting on others, GitHub status.
+/// The three overview tiles: Needs you, Waiting on others, GitHub status.
 public struct InboxOverview: Equatable, Sendable {
     public struct Tile: Equatable, Sendable {
         public var title: String
@@ -144,7 +144,7 @@ public struct InboxOverview: Equatable, Sendable {
         case .unknown: detail = "GitHub CLI needs setup"
         case .error: detail = "Couldn't update"
         }
-        return Tile(title: "Assigned to you", value: value, detail: detail, tone: tone(SourceHealth(dataState)))
+        return Tile(title: "Needs you", value: value, detail: detail, tone: tone(SourceHealth(dataState)))
     }
 
     static func waitingTile(dataState: DataState, authored: Int, deployments: Int, deploymentsComplete: Bool) -> Tile {
@@ -226,6 +226,8 @@ public struct InboxWaitingGroup: Equatable, Sendable {
     public var isShown: Bool
     /// The spoken count, e.g. "3 items", "at least 3 items", "count unknown, 2 last known".
     public var spokenCount: String
+    /// The header's secondary count, like Needs you's: "3 items", "3+ items" or "Count unknown".
+    public var countLabel: String
 
     public init(dataState: DataState, items: [InboxItem], deploymentsComplete: Bool) {
         self.items = items
@@ -240,14 +242,16 @@ public struct InboxWaitingGroup: Equatable, Sendable {
             lastKnown = false
             isShown = lowerBound || n > 0
             spokenCount = lowerBound ? "at least " + noun : noun
+            countLabel = lowerBound ? "\(n)+ items" : noun
         case .stale, .error:
             count = "?"
             note = health == .stale ? "Last known, out of date." : "Unknown until the next successful update."
             lastKnown = true
             isShown = true
             spokenCount = n > 0 ? "count unknown, \(n) last known" : "count unknown"
+            countLabel = "Count unknown"
         case .loading, .unknown:
-            count = "?"; note = nil; lastKnown = false; isShown = false; spokenCount = "count unknown"
+            count = "?"; note = nil; lastKnown = false; isShown = false; spokenCount = "count unknown"; countLabel = "Count unknown"
         }
     }
 

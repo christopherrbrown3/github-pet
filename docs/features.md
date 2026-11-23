@@ -9,15 +9,16 @@ Open it from the menu-bar icon or by clicking the pet.
 
 - **Header.** Your chosen pet with a blue badge counting the items that need you, the source status and when the list last
   updated. Refresh and Settings sit on the right.
-- **Tiles.** **Assigned to you** counts what's waiting on you, **Waiting on others** counts your pull
+- **Tiles.** **Needs you** counts the items in the Needs you list (the same number as the badge), **Waiting on others** counts your pull
   requests and deployments that are waiting on someone else, and **GitHub status** shows the
   githubstatus.com status. Click **Waiting on others** to jump to its list.
 - **Grouped rows.** Items are grouped by what they ask of you. Click a row to open it on GitHub.
-- **Waiting on others.** Below the groups that need you, a collapsed **Waiting on others** group lists
-  those pull requests and deployments with its count. Expand it to see each one and why it waits:
-  draft, review pending, checks running, GitHub still checking for conflicts, approved, or a deployment
-  waiting for approval by others or a wait timer. These rows look quieter, never count in the badge,
-  and never alert or notify.
+- **Waiting on others.** Below the Needs you list, its own collapsed **Waiting on others** section
+  lists those pull requests and deployments with its count. Expand it to see each one and why it
+  waits: draft, review pending, checks running, checking for conflicts, approved and ready to merge,
+  or, for a deployment, approval by others or a wait timer. A row shows the first reason; hover it
+  (or use VoiceOver) for all of them. These rows look quieter, never count in the badge, and never
+  alert or notify.
 - **Dismiss and Restore.** **×** removes an item from your Inbox on this Mac only; GitHub still
   has it. **View dismissed** lists saved dismissals, each with **Restore**. See [Using the Inbox](inbox.md).
 

@@ -84,7 +84,8 @@ extension SnapshotRenderer {
     /// #148: the Waiting on others group below the Needs you groups, collapsed (the default) and
     /// expanded, light and dark. Demo fixtures only: two Needs you rows (so every waiting row fits
     /// without scrolling) and the default waiting rows.
-    /// Files: `inbox148-waiting-<collapsed|expanded>[-dark].png`.
+    /// Then expanded with partial and stale data, where the group shows its note.
+    /// Files: `inbox148-waiting-<collapsed|expanded|expanded-partial|expanded-stale>[-dark].png`.
     private static func waitingGroupRenders(model: AppModel, directory: URL) async -> [String] {
         var report = ["## waiting on others (#148)"]
         model.settings.mascotSkin = MascotSkin.allCases[0]
@@ -111,6 +112,21 @@ extension SnapshotRenderer {
                 if let first = lines.first { report.append("inbox148 \(name)\(suffix): \(first)") }
             }
         }
+        for state in ["partial", "stale"] {
+            if state == "partial" { model.setPartialPolls(true) } else { model.markStale() }
+            let degraded = model.waitingGroup
+            report.append("inbox148 expanded-\(state) state=\(model.dataState.statusText) group-count=\(degraded.count) "
+                          + "rows=\(degraded.items.count) note=\(degraded.note ?? "none") label=\(degraded.countLabel)")
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                                   showsSimulator: false, initialSelection: selection),
+                                         name: "inbox148-waiting-expanded-\(state)\(suffix)", directory: directory,
+                                         appearance: appearance, asWindow: true)
+                if let first = lines.first { report.append("inbox148 expanded-\(state)\(suffix): \(first)") }
+            }
+            if state == "partial" { model.setPartialPolls(false) }
+        }
+        model.showFixtureItemsForSnapshot(inbox87Items(4))
         await cleanUp("four", model: model)
         return report
     }

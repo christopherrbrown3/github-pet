@@ -196,7 +196,8 @@ struct InboxView: View {
                 .accessibilityIdentifier("inbox.overview.assigned")
             // #148: reveals the Waiting on others group when there is one to show.
             OverviewTile(tile: overview.waiting, symbol: "hourglass", action: revealWaitingAction)
-                .help(waitingHelp.isEmpty ? "Your pull requests and deployments waiting on someone else" : waitingHelp.joined(separator: "\n"))
+                .help((waitingHelp.isEmpty ? ["Your pull requests and deployments waiting on someone else."] : waitingHelp)
+                      .joined(separator: "\n") + (revealWaitingAction == nil ? "" : "\nClick to show them below."))
                 .accessibilityIdentifier("inbox.overview.waiting")
             OverviewTile(tile: overview.status, symbol: serviceSymbol)
                 .help(serviceHelp)
@@ -308,6 +309,8 @@ struct InboxView: View {
                         }
                     }
                     if waiting.isShown {
+                        // A peer of Needs you, not one of its groups: a hairline and extra space above.
+                        Divider().padding(.top, 4)
                         WaitingSectionView(group: waiting, expanded: waitingExpanded,
                                            toggle: { selection.waitingExpanded.toggle() }) { item in
                             // Quieter than Needs you rows: never unseen, always the muted styling.
@@ -480,11 +483,18 @@ struct OverviewTile: View {
     let symbol: String
     /// A tile with an action is one button (#148: the Waiting on others tile reveals its group).
     var action: (() -> Void)? = nil
+    @State private var hovering = false
 
     var body: some View {
         if let action {
+            // Discoverable as a button: hover fill, pointing hand and a chevron (#148 design review).
             Button(action: action) { face.contentShape(Rectangle()) }
                 .buttonStyle(.plain)
+                .onHover { inside in
+                    hovering = inside
+                    if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                }
+                .onDisappear { if hovering { hovering = false; NSCursor.pop() } }
                 .accessibilityLabel(tile.accessibilityLabel)
                 .accessibilityHint("Shows the Waiting on others group")
         } else {
@@ -505,10 +515,20 @@ struct OverviewTile: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-            Text(tile.value)
-                .font(.title3.weight(.semibold).monospacedDigit())
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(tile.value)
+                    .font(.title3.weight(.semibold).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                if action != nil {
+                    // Beside the value, so the title keeps its full width.
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+            }
             Text(tile.detail)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -518,7 +538,7 @@ struct OverviewTile: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.08)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(hovering ? 0.14 : 0.08)))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(tint.opacity(0.25)))
     }
 
@@ -578,19 +598,20 @@ struct WaitingSectionView<Row: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Button(action: toggle) {
-                HStack(spacing: 4) {
+                // The Needs you heading's style (#148 design review): a section of its own.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Image(systemName: "chevron.right")
                         .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .font(.caption2.weight(.semibold))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                         .frame(width: 10)
                         .accessibilityHidden(true)
                     Text(InboxWaitingGroup.title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(group.countLabel)
+                        .font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Text(group.count).monospacedDigit()
                 }
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -673,7 +694,7 @@ struct InboxRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(privacy ? "Open on GitHub" : "\(item.title)\nOpen on GitHub")
+            .help(([privacy ? nil : item.title, item.detail, "Open on GitHub"] as [String?]).compactMap { $0 }.joined(separator: "\n"))
             .accessibilityLabel(accessibilityText)
             .accessibilityHint("Opens on GitHub")
             .accessibilityAction(named: "Open on GitHub", open)
@@ -704,6 +725,7 @@ struct InboxRow: View {
 
     private var accessibilityText: String {
         (unseen ? "New. " : "") + title + ". " + PrivacyText.subtitle(item, privacy: privacy)
+            + (item.detail.map { ". " + $0 } ?? "")
     }
 }
 

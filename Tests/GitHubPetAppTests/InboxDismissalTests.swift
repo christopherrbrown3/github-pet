@@ -73,6 +73,24 @@ private struct DismissalActionsFixture: ActionsPolling {
         #expect(app.items.isEmpty && app.allCurrentInboxItemsDismissed && app.waitingItems.count == 3)
     }
 
+    /// QA W7 (#148): with nothing in Needs you, dismissing a waiting row must not turn a verified
+    /// empty inbox into "All current Inbox items are dismissed". Guards `onlyDismissed`, which
+    /// counts only Needs you rows hidden by a dismissal.
+    @Test func aWaitingDismissalNeverMakesAnEmptyInboxReadAsAllDismissed() throws {
+        let defaults = EphemeralDefaults(name: "dismissals.app.waiting-empty.\(UUID().uuidString)")
+        var options = LaunchOptions.parse(arguments: ["app", "--render-snapshots", "/tmp/unused-dismissals", "--placeholder"],
+                                          environment: [:])
+        options.userDefaultsOverride = defaults
+        let app = AppModel(options: options, runtime: .init(now: { date }, systemReducedMotion: { true }, schedulesTimers: false))
+        app.showFixtureItemsForSnapshot([])
+        #expect(app.items.isEmpty && app.dataState == .empty && app.waitingItems.count == 3)
+        let draft = try #require(app.waitingItems.first { $0.attention == "Draft" })
+        try dismiss(draft, in: app)
+        #expect(!app.waitingItems.contains { $0.id == draft.id }, "the dismissal applied")
+        #expect(app.dataState == .empty && !app.allCurrentInboxItemsDismissed && !app.showsCompleteDismissalState)
+        #expect(InboxEmptyState(dataState: app.dataState, allDismissed: app.allCurrentInboxItemsDismissed) == .allClear)
+    }
+
     @Test func allDismissedPersistsAcrossRelaunchAndRestoresQuietly() throws {
         let defaults = EphemeralDefaults(name: "dismissals.app.relaunch")
         let key = BaselineKey(source: .fixtures, identity: .demo, scope: .everything)

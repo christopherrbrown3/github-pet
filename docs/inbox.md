@@ -23,10 +23,15 @@ appear quietly. Your unread assigned issues and authored pull requests keep thei
 
 Your open pull requests that need nothing from you right now, and deployments waiting for someone
 else's approval or a wait timer, are listed in a **Waiting on others** group below the groups that
-need you. It starts collapsed with its count. Select the group's header, or the **Waiting on others**
-tile, to expand it. Each row says why it waits where GitHub reports it: **Draft**, **Review pending**,
-**Checks running**, **GitHub is checking for conflicts**, **Approved**, or **Waiting for deployment
-approval by others or a wait timer**.
+need you, as a section of its own. It starts collapsed with its count. Select its header, or the
+**Waiting on others** tile, to expand it. Each row says why it waits where GitHub reports it:
+**Draft**, **Review pending**, **Checks running**, **Checking for conflicts**, **Approved, ready to
+merge**, or, for a deployment (titled with its workflow name), **Approval or wait timer**. A row shows
+the first reason; its tooltip and VoiceOver give every reason, and for a deployment the full
+wording, "Waiting for deployment approval by others or a wait timer".
+
+An approved pull request with nothing else pending stays here: GitHub Pet doesn't alert you to merge
+it.
 
 These rows never count in the badge and never alert or notify. When a pull request starts needing
 you (for example, changes are requested), it moves to **Your pull requests** and alerts as usual.

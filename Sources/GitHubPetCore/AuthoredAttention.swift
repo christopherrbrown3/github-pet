@@ -18,7 +18,8 @@ public enum AuthoredAttention: Equatable, Sendable {
     case needsAction([Reason])
 
     /// Why a PR that needs nothing from you is waiting (#148), in display order. Fixed wording,
-    /// no names, so it stays visible in privacy mode. A draft is only "Draft".
+    /// no names, so it stays visible in privacy mode. A draft is only "Draft"; "Approved, ready
+    /// to merge" only when nothing else is pending (it stays waiting: no alert change).
     public enum WaitReason: String, Equatable, Sendable {
         case draft, reviewPending, checksRunning, mergeabilityPending, approved
 
@@ -27,9 +28,15 @@ public enum AuthoredAttention: Equatable, Sendable {
             case .draft: return "Draft"
             case .reviewPending: return "Review pending"
             case .checksRunning: return "Checks running"
-            case .mergeabilityPending: return "GitHub is checking for conflicts"
-            case .approved: return "Approved"
+            case .mergeabilityPending: return "Checking for conflicts"
+            case .approved: return "Approved, ready to merge"
             }
+        }
+
+        /// Every reason in one sentence-case line, e.g. "Review pending, checks running".
+        public static func summary(_ reasons: [WaitReason]) -> String? {
+            guard let first = reasons.first else { return nil }
+            return ([first.text] + reasons.dropFirst().map { $0.text.lowercased() }).joined(separator: ", ")
         }
     }
 
@@ -129,7 +136,7 @@ public enum AuthoredAttention: Equatable, Sendable {
         if decision == "REVIEW_REQUIRED" { waits.append(.reviewPending) }
         if checksRunning { waits.append(.checksRunning) }
         if mergeable == "UNKNOWN" { waits.append(.mergeabilityPending) }
-        if decision == "APPROVED" { waits.append(.approved) }
+        if decision == "APPROVED" && waits.isEmpty { waits.append(.approved) }
         self = .waiting(waits)
     }
 

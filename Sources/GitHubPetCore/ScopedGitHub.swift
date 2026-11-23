@@ -396,10 +396,12 @@ public enum ScopedResponseParser {
                         issues.append(.inconsistentDuplicate)
                     }
                     if case .waiting(let waits) = state {
-                        // #148: listed under Waiting on others with why; no attention keys, so never an event.
+                        // #148: listed under Waiting on others with why (the first reason on the row,
+                        // all of them in help and VoiceOver); no attention keys, so never an event.
                         let item = InboxItem(id: key, kind: .authoredPullRequest, repository: row.repository.nameWithOwner,
                                              title: row.title, url: url, updatedAt: row.updatedAt,
-                                             attention: waits.isEmpty ? nil : waits.map(\.text).joined(separator: ", "))
+                                             attention: waits.first?.text,
+                                             detail: waits.count > 1 ? AuthoredAttention.WaitReason.summary(waits) : nil)
                         if waiting[key].map({ $0.updatedAt > item.updatedAt }) != true { waiting[key] = item }
                         continue
                     }

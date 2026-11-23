@@ -161,7 +161,8 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
         let ready = InboxWaitingGroup(dataState: .ready, items: rows, deploymentsComplete: true)
         let tile = overview(.ready, authored: 2, deployments: 1).waiting
         #expect(ready.count == tile.value && ready.count == "\(rows.count)" && ready.isShown && ready.note == nil && !ready.lastKnown)
-        #expect(ready.accessibilityLabel == "Waiting on others, 3 items")
+        #expect(ready.accessibilityLabel == "Waiting on others, 3 items" && ready.countLabel == "3 items")
+        #expect(InboxWaitingGroup(dataState: .partial, items: rows, deploymentsComplete: true).countLabel == "3+ items")
         let none = InboxWaitingGroup(dataState: .empty, items: [], deploymentsComplete: true)
         #expect(!none.isShown && none.count == "0", "verified nothing waiting: the tile says so, no empty group")
         let partial = InboxWaitingGroup(dataState: .partial, items: Array(rows.prefix(1)), deploymentsComplete: true)
@@ -171,7 +172,7 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
         #expect(deployments.isShown && deployments.count == "0+" && deployments.note != nil, "incomplete deployments: never nothing waiting")
         let stale = InboxWaitingGroup(dataState: .stale, items: rows, deploymentsComplete: true)
         #expect(stale.isShown && stale.lastKnown && stale.count == "?" && stale.note == "Last known, out of date.")
-        #expect(stale.accessibilityLabel == "Waiting on others, count unknown, 3 last known")
+        #expect(stale.accessibilityLabel == "Waiting on others, count unknown, 3 last known" && stale.countLabel == "Count unknown")
         let failed = InboxWaitingGroup(dataState: .error("x"), items: [], deploymentsComplete: true)
         #expect(failed.isShown && failed.count == "?" && failed.note == "Unknown until the next successful update.")
         for state in [DataState.loading, .ghMissing, .unauthenticated] {
@@ -212,7 +213,7 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
 
     @Test func tileAccessibilityLabelSaysEverything() {
         let tile = overview(.ready, items: [item("r", .reviewRequest)]).assigned
-        #expect(tile.accessibilityLabel == "Assigned to you: 1, 1 review")
+        #expect(tile.accessibilityLabel == "Needs you: 1, 1 review", "named like the section and the badge (#148)")
     }
 }
 

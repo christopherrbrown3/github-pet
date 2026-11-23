@@ -247,7 +247,7 @@ private struct StubLoginBackend: LoginItemBackend {
         }
         // Overview tiles read as text with their value.
         let assigned = try #require(tree.first(id: "inbox.overview.assigned"))
-        #expect(assigned.role == "AXStaticText" && assigned.spoken.hasPrefix("Assigned to you"), "\(assigned.line)")
+        #expect(assigned.role == "AXStaticText" && assigned.spoken.hasPrefix("Needs you: "), "\(assigned.line)")
         // Degraded states say so in words, never only in colour.
         let status = try #require(tree.first(id: "inbox.status"))
         #expect(status.value == app.dataState.statusText)
@@ -335,6 +335,7 @@ private struct StubLoginBackend: LoginItemBackend {
                                        "row for \(item.title)\n\(dump)")
                 #expect(!row.label.hasPrefix("New."), "waiting rows never read as new: \(row.label)")
                 #expect(row.label.contains(item.attention ?? "?"), "says why it waits: \(row.label)")
+                if let detail = item.detail { #expect(row.label.contains(detail) && row.help.isEmpty == false, "full reason spoken: \(row.label)") }
                 let dismissible = app.canDismissInboxItem(item)
                 #expect(Set(row.customActions.map(\.name)) == Set(["Open on GitHub"] + (dismissible ? ["Dismiss Here"] : [])), "\(row.line)")
             }

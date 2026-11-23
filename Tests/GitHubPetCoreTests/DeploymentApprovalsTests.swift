@@ -83,8 +83,10 @@ private func client(_ runner: Runner) -> DeploymentGhClient {
         // #148: those runs are listed under Waiting on others, saying why, never as approvals.
         #expect(result.waiting.map(\.id).sorted() == ["deploy:WFR_theirs", "deploy:WFR_timer"])
         #expect(result.waiting.allSatisfy { $0.kind == .deploymentApproval && $0.attention == DeploymentApprovals.waitingReason
-                                            && $0.title == "Deploy is waiting for deployment approval" && $0.attentionKeys.isEmpty })
-        #expect(DeploymentApprovals.waitingReason == "Waiting for deployment approval by others or a wait timer")
+                                            && $0.detail == DeploymentApprovals.waitingDetail
+                                            && $0.title == "Deploy" && $0.attentionKeys.isEmpty }, "the workflow name is the title")
+        #expect(DeploymentApprovals.waitingReason == "Approval or wait timer")
+        #expect(DeploymentApprovals.waitingDetail == "Waiting for deployment approval by others or a wait timer")
         #expect(result.items.map(\.id) == ["deploy:WFR_mine", "deploy:WFR_mixed"])
         #expect(result.items.allSatisfy { $0.kind == .deploymentApproval })
         #expect(result.items[0].title == "Deploy is waiting for your approval to production")

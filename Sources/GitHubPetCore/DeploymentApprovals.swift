@@ -15,9 +15,11 @@ public enum DeploymentApprovals {
     /// Issue aliases are "deploy<i>", indexed like the watched repositories.
     public static func alias(_ index: Int) -> String { "deploy\(index)" }
 
-    /// Why a waiting run is listed under Waiting on others (#148). Neutral: a run with no
-    /// approvable request may wait on other reviewers or only a wait timer.
-    public static let waitingReason = "Waiting for deployment approval by others or a wait timer"
+    /// Why a waiting run is listed under Waiting on others (#148), short for the row; the full
+    /// wording is for help and VoiceOver. Neutral: a run with no approvable request may wait on
+    /// other reviewers or only a wait timer.
+    public static let waitingReason = "Approval or wait timer"
+    public static let waitingDetail = "Waiting for deployment approval by others or a wait timer"
 
     /// One line beside usable data, never alerts or mood. A lower bound while incomplete.
     public static func waitingNote(_ count: Int, complete: Bool) -> String? {
@@ -171,8 +173,8 @@ public enum PendingRequestsParser {
             guard readable else { issues.append(.malformedRow(alias)); continue }
             guard !approvable.isEmpty else {
                 waiting.append(InboxItem(id: "deploy:\(run.nodeID)", kind: .deploymentApproval, repository: run.repository,
-                                         title: "\(run.workflow) is waiting for deployment approval", url: run.url,
-                                         updatedAt: run.updatedAt, attention: DeploymentApprovals.waitingReason))
+                                         title: run.workflow, url: run.url, updatedAt: run.updatedAt,
+                                         attention: DeploymentApprovals.waitingReason, detail: DeploymentApprovals.waitingDetail))
                 continue
             }
             let environments = Array(Set(approvable.filter { !$0.isEmpty })).sorted()

@@ -84,7 +84,8 @@ import Testing
         let badge = app.badge, unseen = app.unseenCount, rows = app.items
         #expect(app.waitingItems.map(\.title).sorted() == ["Simulated authored approved", "Simulated authored checking",
                                                            "Simulated authored draft"])
-        #expect(Set(app.waitingItems.map(\.attention)) == ["Approved", "Draft", "Review pending, Checks running, GitHub is checking for conflicts"])
+        #expect(Set(app.waitingItems.map(\.attention)) == ["Approved, ready to merge", "Draft", "Review pending"])
+        #expect(app.waitingItems.compactMap(\.detail) == ["Review pending, checks running, checking for conflicts"])
         #expect(app.waitingItems.allSatisfy { $0.isDemo && $0.kind == .authoredPullRequest })
         #expect(Set(app.items.map(\.id)).isDisjoint(with: app.waitingItems.map(\.id)), "never both Needs you and waiting")
         let group = app.waitingGroup
@@ -106,6 +107,36 @@ import Testing
         let row = try #require(app.dismissedInboxRows.first { $0.item?.id == draft.id })
         app.restoreInboxItem(row.id, in: context)
         #expect(app.waitingItems.contains { $0.id == draft.id } && app.unseenCount == unseen, "restored quietly")
+    }
+
+    /// QA W8b (#148): a failed live poll keeps the last known waiting rows from the session, shown
+    /// as last known with an unknown count; the next good poll makes them current again.
+    @Test func aFailedLivePollKeepsLastKnownWaitingRows() async throws {
+        final class Failing: @unchecked Sendable { var on = false }
+        let failing = Failing()
+        var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
+        options.forcePlaceholder = true
+        let app = AppModel(options: options, runtime: AppModel.Runtime(
+            now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false }, schedulesTimers: false,
+            // A zero-time budget: the simulated live client returns a real .deadline failure.
+            repositoryBudget: { CommandBudget(timeout: failing.on ? 0 : 20) }, scopeSimulationHoldLimit: nil))
+        defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        let known = app.waitingItems
+        #expect(known.count == 3 && app.waitingGroup.count == "3")
+
+        failing.on = true
+        app.refresh()
+        await app.repositoryPollSettled()
+        if case .error = app.dataState {} else { Issue.record("the live poll failed: \(app.dataState)") }
+        #expect(app.waitingItems == known, "last known rows are kept, not emptied")
+        let group = app.waitingGroup
+        #expect(group.isShown && group.lastKnown && group.count == "?" && group.note == "Unknown until the next successful update.")
+
+        failing.on = false
+        app.refresh(); try await settled(app)
+        #expect(app.dataState == .ready && app.waitingItems == known && app.waitingGroup.count == "3" && !app.waitingGroup.lastKnown)
     }
 
     /// #148 (PM): a dismissal made in the quiet Waiting on others group applies only while the PR

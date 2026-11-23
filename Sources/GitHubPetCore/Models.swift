@@ -60,12 +60,15 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
     /// Extra event keys besides `id` (#9): one per attention reason. The item is new when its ID
     /// is new or when it gains a key never seen before; losing keys never announces.
     public var attentionKeys: [String]
+    /// Longer fixed wording for help and VoiceOver when `attention` is shortened for the row, e.g.
+    /// every reason a PR waits (#148). No names, so it stays visible in privacy mode.
+    public var detail: String?
     /// Evidence for an authored review round, independent of its stable Changes requested reason.
     var authoredReview: AuthoredAttention.Review?
 
     public init(id: String, kind: ItemKind, repository: String, title: String,
                 url: URL?, updatedAt: Date, isDemo: Bool = false, attention: String? = nil,
-                attentionKeys: [String] = []) {
+                attentionKeys: [String] = [], detail: String? = nil) {
         self.id = id
         self.kind = kind
         self.repository = repository
@@ -75,6 +78,7 @@ public struct InboxItem: Identifiable, Hashable, Codable, Sendable {
         self.isDemo = isDemo
         self.attention = attention
         self.attentionKeys = attentionKeys
+        self.detail = detail
     }
 }
 
