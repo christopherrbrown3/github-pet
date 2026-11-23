@@ -408,28 +408,36 @@ struct UpdateAvailableBanner: View {
 
 /// #149: the menu-bar symbol, with a small dot at its top-right corner while an update is available.
 /// #159: while the desktop pet is hidden, the pet's badge text follows the symbol. A template image, so
-/// the menu bar tints symbol, dot and count together in light and dark. Every variant with the count
-/// slot shares one canvas (the slot is as wide as "99+"), and every variant without it shares another,
-/// so the item keeps its width and baseline when the dot appears or the count changes.
+/// the menu bar tints symbol, dot and count together in light and dark. With a count the canvas has a
+/// slot as wide as "99+", so the item keeps its width and baseline when the dot appears or the count
+/// changes; with no count there is no slot, so the width changes only between none and some.
 enum MenuBarIcon {
-    static let countFont = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .semibold)
-    static let countGap: CGFloat = 2
+    static let countGap: CGFloat = 3
 
-    /// `count` is the pet's badge text (nil draws nothing); `showsCount` reserves its slot, so a hidden
-    /// pet's item does not resize between an empty inbox and "99+".
-    static func image(symbol: String, dot: Bool, count: String? = nil, showsCount: Bool = false) -> NSImage {
+    private static func countAttributes(_ count: String) -> [NSAttributedString.Key: Any] {
+        // The digits' weight on "?", whose glyph reads lighter at the same weight.
+        let weight: NSFont.Weight = count == "?" ? .bold : .semibold
+        return [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: weight), .foregroundColor: NSColor.black]
+    }
+
+    /// `count` is the pet's badge text (nil: no slot). `fitsCount` sizes the slot to the text instead of
+    /// "99+", for the Demo item whose "DEMO" follows the image and would otherwise sit after a hole.
+    static func image(symbol: String, dot: Bool, count: String? = nil, fitsCount: Bool = false) -> NSImage {
         let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)) ?? NSImage()
         let diameter: CGFloat = 4.5, gap: CGFloat = 0.75
-        let attributes: [NSAttributedString.Key: Any] = [.font: countFont, .foregroundColor: NSColor.black]
-        let slot = showsCount ? ceil(NSAttributedString(string: "99+", attributes: attributes).size().width) + countGap : 0
+        let text = count.map { NSAttributedString(string: $0, attributes: countAttributes($0)) }
+        let slotText = fitsCount ? text : text.map { _ in NSAttributedString(string: "99+", attributes: countAttributes("9")) }
+        let slot = slotText.map { ceil($0.size().width) + countGap } ?? 0
         let size = NSSize(width: base.size.width + slot, height: base.size.height)
         let image = NSImage(size: size, flipped: false) { rect in
             base.draw(in: CGRect(x: 0, y: 0, width: base.size.width, height: base.size.height))
-            if showsCount, let count {
-                let text = NSAttributedString(string: count, attributes: attributes)
-                let textSize = text.size()
-                text.draw(at: CGPoint(x: base.size.width + countGap, y: (rect.height - textSize.height) / 2))
+            if let text {
+                // Centered in the item; in the Demo text run the image sits on the baseline, so the count
+                // does too, level with "DEMO".
+                let y = fitsCount ? (text.attribute(.font, at: 0, effectiveRange: nil) as? NSFont).map(\.descender)!
+                                  : (rect.height - text.size().height) / 2
+                text.draw(at: CGPoint(x: base.size.width + countGap, y: y))
             }
             guard dot else { return true }
             // Inside the symbol's top-right corner; a cleared ring bites into the glyph so the dot reads apart.

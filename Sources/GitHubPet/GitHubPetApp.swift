@@ -33,16 +33,18 @@ struct MenuBarLabel: View {
     var body: some View {
         let symbol = model.showsAlertIcon ? "pawprint.fill" : "pawprint"
         let icon = Image(nsImage: MenuBarIcon.image(symbol: symbol, dot: updates.indicatorVersion != nil,
-                                                       count: model.menuBarCount, showsCount: model.showsMenuBarCount))
-        // Demo is spelled out in the menu bar itself, not only in accessibility text.
-        Group {
-            if model.isDemo {
-                Text("\(icon) \(PrivacyText.demoLabel.uppercased())")
-            } else {
-                icon
-            }
-        }
+                                                       count: model.menuBarCount, fitsCount: model.isDemo))
+        Self.content(icon: icon, demo: model.isDemo)
         .accessibilityLabel(Self.accessibilityLabel(model: model, updates: updates))
+    }
+
+    /// Demo is spelled out in the menu bar itself, not only in accessibility text.
+    @ViewBuilder static func content(icon: Image, demo: Bool) -> some View {
+        if demo {
+            Text("\(icon) \(PrivacyText.demoLabel.uppercased())")
+        } else {
+            icon
+        }
     }
 
     static func accessibilityLabel(model: AppModel, updates: UpdateController) -> String {

@@ -337,8 +337,7 @@ final class AppModel: ObservableObject {
     var mascotBadge: String? { MascotPolicy.mascotBadge(dataState: dataState, count: items.count) }
 
     /// #159: the menu-bar item carries the pet's badge only while the pet is hidden; never a second count.
-    var showsMenuBarCount: Bool { !settings.mascotVisible }
-    var menuBarCount: String? { showsMenuBarCount ? mascotBadge : nil }
+    var menuBarCount: String? { settings.mascotVisible ? nil : mascotBadge }
 
     /// Fixture data is always identified as Demo, in every surface and in privacy mode.
     /// Informational note beside visible rows; never a Partial badge, warning or mood change.
