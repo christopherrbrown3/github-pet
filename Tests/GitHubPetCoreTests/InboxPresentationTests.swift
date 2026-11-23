@@ -173,6 +173,10 @@ private let allStates: [DataState] = [.loading, .ready, .empty, .hiddenOnly(2), 
         let stale = InboxWaitingGroup(dataState: .stale, items: rows, deploymentsComplete: true)
         #expect(stale.isShown && stale.lastKnown && stale.count == "?" && stale.note == "Last known, out of date.")
         #expect(stale.accessibilityLabel == "Waiting on others, count unknown, 3 last known" && stale.countLabel == "Count unknown")
+        let needsYou = MascotPolicy.badge(dataState: .stale, count: 4)
+        #expect(needsYou == "?" && InboxHeadingCount.label(badge: "?") == stale.countLabel, "#152: both headers say Count unknown")
+        #expect(InboxHeadingCount.label(badge: "1") == "1 item" && InboxHeadingCount.label(badge: "4") == "4 items"
+                && InboxHeadingCount.label(badge: "99+") == "99+ items")
         let failed = InboxWaitingGroup(dataState: .error("x"), items: [], deploymentsComplete: true)
         #expect(failed.isShown && failed.count == "?" && failed.note == "Unknown until the next successful update.")
         for state in [DataState.loading, .ghMissing, .unauthenticated] {

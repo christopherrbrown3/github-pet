@@ -249,7 +249,7 @@ struct InboxView: View {
                 .font(.subheadline.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)
             if !viewingDismissed, model.dataState.hasUsableItems, !model.items.isEmpty {
-                Text(model.badge.map { $0 == "?" ? "Count unknown" : $0 == "1" ? "1 item" : "\($0) items" } ?? "")
+                Text(model.badge.map(InboxHeadingCount.label) ?? "")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()

@@ -336,7 +336,7 @@ check_in 'waiting on others (#148)' "waiting rows apart from the badge, tile equ
 check_in 'waiting on others (#148)' "partial waiting group is a lower bound with a note" \
   '^inbox148 expanded-partial state=Partial data group-count=3\+ rows=3 note=Some sources'
 check_in 'waiting on others (#148)' "stale waiting group is unknown, last known rows" \
-  '^inbox148 expanded-stale state=Stale group-count=\? rows=3 note=Last known, out of date\. label=Count unknown$'
+  '^inbox148 expanded-stale state=Stale group-count=\? rows=3 note=Last known, out of date\. label=Count unknown needs-you=Count unknown$'
 collapsed=$(section 'waiting on others (#148)' | grep -E '^inbox148 collapsed: ' | sed -E 's/.*x([0-9]+) pt/\1/')
 expanded=$(section 'waiting on others (#148)' | grep -E '^inbox148 expanded: ' | sed -E 's/.*x([0-9]+) pt/\1/')
 # Assigned to you was renamed Needs you (#148), matching the section heading and the badge.

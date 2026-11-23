@@ -105,6 +105,14 @@ public enum InboxTone: String, Equatable, Sendable {
     case neutral, positive, caution, critical
 }
 
+/// The Needs you heading's secondary count (#152): the badge text as "N items", with the same
+/// "Count unknown" the Waiting on others header uses when the badge is "?".
+public enum InboxHeadingCount {
+    public static func label(badge: String) -> String {
+        badge == "?" ? "Count unknown" : badge == "1" ? "1 item" : "\(badge) items"
+    }
+}
+
 /// The three overview tiles: Needs you, Waiting on others, GitHub status.
 public struct InboxOverview: Equatable, Sendable {
     public struct Tile: Equatable, Sendable {
