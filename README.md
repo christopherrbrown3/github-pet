@@ -9,7 +9,7 @@
 Reviews, assigned issues and your pull requests in one calm Inbox, with a small pet on your desktop.
 Read-only, local and built on the GitHub CLI you already use.
 
-[**Download Beta 6**](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.6) ·
+[**Download Beta 7**](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.7) ·
 macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 
 <br>
@@ -176,7 +176,7 @@ verified with its signature before it's installed. [How updates work](docs/updat
   earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
 - **Search limits.** At most 30 items per category for each group of up to 50 selected entries; reaching that marks the result as partial. Large selections refresh more slowly.
-- **In-app updates work from Beta 4 onward.** Beta 5 and Beta 6 were delivered that way. Earlier
+- **In-app updates work from Beta 4 onward.** Beta 5, 6 and 7 were delivered that way. Earlier
   betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
 - **Not yet checked by hand:** keyboard and VoiceOver use of the new Inbox, Reduce Motion, hover, the

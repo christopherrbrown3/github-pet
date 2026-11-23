@@ -122,7 +122,7 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 
 ## Known limits
 
-- **In-app updates work from Beta 4 onward.** Beta 5 and Beta 6 were delivered that way. Earlier
+- **In-app updates work from Beta 4 onward.** Beta 5, 6 and 7 were delivered that way. Earlier
   betas install by hand.
 - **Intel.** The app is universal (Apple Silicon and Intel). The Intel half is checked in CI under
   Rosetta, not on Intel hardware.
