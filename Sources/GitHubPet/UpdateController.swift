@@ -413,7 +413,7 @@ enum MenuBarIcon {
     static func image(symbol: String, dot: Bool) -> NSImage {
         let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
             .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)) ?? NSImage()
-        let diameter: CGFloat = 6, gap: CGFloat = 1.5
+        let diameter: CGFloat = 4.5, gap: CGFloat = 0.75
         let image = NSImage(size: base.size, flipped: false) { rect in
             base.draw(in: rect)
             guard dot else { return true }

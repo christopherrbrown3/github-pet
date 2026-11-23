@@ -117,7 +117,7 @@ extension SnapshotRenderer {
             if state == "partial" { model.setPartialPolls(true) } else { model.markStale() }
             let degraded = model.waitingGroup
             report.append("inbox148 expanded-\(state) state=\(model.dataState.statusText) group-count=\(degraded.count) "
-                          + "rows=\(degraded.items.count) note=\(degraded.note ?? "none") label=\(degraded.countLabel)")
+                          + "rows=\(degraded.items.count) note=\(degraded.note ?? "none") label=\(degraded.countLabel) needs-you=\(model.badge.map(InboxHeadingCount.label) ?? "none")")
             for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
                 let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
                                                    showsSimulator: false, initialSelection: selection),
