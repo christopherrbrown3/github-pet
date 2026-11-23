@@ -52,6 +52,45 @@ private struct DismissalActionsFixture: ActionsPolling {
         try #require(!app.repositoryFetchInFlight)
     }
 
+    /// #148: Demo lists invented Waiting on others rows (two PRs and a deployment) apart from the
+    /// inbox: never the badge or unseen, last known through a failure, and only PRs dismiss.
+    @Test func demoWaitingRowsStayOutOfTheBadgeAndFollowTheSourceState() throws {
+        let app = makeDemo(EphemeralDefaults(name: "dismissals.app.waiting"))
+        #expect(app.waitingItems == FixtureSimulator.defaultWaitingItems().map(InboxWaitingGroup.row))
+        #expect(app.items.count == FixtureSimulator.defaultItems().count && app.badge == "\(app.items.count)")
+        #expect(app.authoredWaitingCount == 2 && app.deploymentsWaitingCount == 1 && app.waitingGroup.count == "3")
+        #expect(app.waitingItems.allSatisfy { !app.isUnseen($0) && $0.attention != nil })
+        let deployment = try #require(app.waitingItems.first { $0.kind == .deploymentApproval })
+        #expect(!app.canDismissInboxItem(deployment), "deployment rows are never dismissible, as in Needs you")
+        app.setPartialPolls(true)
+        #expect(app.waitingGroup.count == "3+" && app.waitingGroup.note != nil)
+        app.setPartialPolls(false)
+        app.simulateDisconnect()
+        #expect(app.waitingItems.count == 3 && app.waitingGroup.count == "?" && app.waitingGroup.lastKnown)
+        app.simulateReconnect()
+        // Everything dismissed in Needs you still lists what is waiting on others.
+        for item in app.items { try dismiss(item, in: app) }
+        #expect(app.items.isEmpty && app.allCurrentInboxItemsDismissed && app.waitingItems.count == 3)
+    }
+
+    /// QA W7 (#148): with nothing in Needs you, dismissing a waiting row must not turn a verified
+    /// empty inbox into "All current Inbox items are dismissed". Guards `onlyDismissed`, which
+    /// counts only Needs you rows hidden by a dismissal.
+    @Test func aWaitingDismissalNeverMakesAnEmptyInboxReadAsAllDismissed() throws {
+        let defaults = EphemeralDefaults(name: "dismissals.app.waiting-empty.\(UUID().uuidString)")
+        var options = LaunchOptions.parse(arguments: ["app", "--render-snapshots", "/tmp/unused-dismissals", "--placeholder"],
+                                          environment: [:])
+        options.userDefaultsOverride = defaults
+        let app = AppModel(options: options, runtime: .init(now: { date }, systemReducedMotion: { true }, schedulesTimers: false))
+        app.showFixtureItemsForSnapshot([])
+        #expect(app.items.isEmpty && app.dataState == .empty && app.waitingItems.count == 3)
+        let draft = try #require(app.waitingItems.first { $0.attention == "Draft" })
+        try dismiss(draft, in: app)
+        #expect(!app.waitingItems.contains { $0.id == draft.id }, "the dismissal applied")
+        #expect(app.dataState == .empty && !app.allCurrentInboxItemsDismissed && !app.showsCompleteDismissalState)
+        #expect(InboxEmptyState(dataState: app.dataState, allDismissed: app.allCurrentInboxItemsDismissed) == .allClear)
+    }
+
     @Test func allDismissedPersistsAcrossRelaunchAndRestoresQuietly() throws {
         let defaults = EphemeralDefaults(name: "dismissals.app.relaunch")
         let key = BaselineKey(source: .fixtures, identity: .demo, scope: .everything)

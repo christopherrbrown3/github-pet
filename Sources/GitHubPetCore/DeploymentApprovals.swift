@@ -5,7 +5,7 @@ import CoreFoundation
 /// one REST `actions/runs?status=waiting` call per watched repository, then (only if any run is
 /// waiting) one batched GraphQL request for each run's `pendingDeploymentRequests`, where GitHub
 /// itself says whether the viewer can approve. Approvable runs are rows that open the run page;
-/// runs waiting for other reviewers or a wait timer are only a count.
+/// runs waiting for other reviewers or a wait timer are listed under Waiting on others (#148).
 public enum DeploymentApprovals {
     /// Waiting runs read per repository; more marks it capped (Partial).
     public static let waitingRunsPerRepository = 10
@@ -15,7 +15,13 @@ public enum DeploymentApprovals {
     /// Issue aliases are "deploy<i>", indexed like the watched repositories.
     public static func alias(_ index: Int) -> String { "deploy\(index)" }
 
-    /// One line beside usable data, never rows, alerts or mood. A lower bound while incomplete.
+    /// Why a waiting run is listed under Waiting on others (#148), short for the row; the full
+    /// wording is for help and VoiceOver. Neutral: a run with no approvable request may wait on
+    /// other reviewers or only a wait timer.
+    public static let waitingReason = "Approval or wait timer"
+    public static let waitingDetail = "Waiting for deployment approval by others or a wait timer"
+
+    /// One line beside usable data, never alerts or mood. A lower bound while incomplete.
     public static func waitingNote(_ count: Int, complete: Bool) -> String? {
         guard count > 0 else { return nil }
         let prefix = complete ? "" : "At least "
@@ -119,8 +125,8 @@ public enum PendingRequestsParser {
         return number.boolValue
     }
 
-    /// Approvable runs become `deploymentApproval` rows; every other waiting run is counted as
-    /// waiting on others. Anything unreadable fails closed for that repository.
+    /// Approvable runs become `deploymentApproval` rows; every other waiting run is a waiting
+    /// row (#148). Anything unreadable fails closed for that repository.
     public static func parse(_ bytes: Data, plan: PendingRequestsPlan) -> ScopedPollResult {
         guard bytes.count <= CommandBudget.maximumBytes else { return .failure(.outputLimit) }
         guard let envelope = (try? JSONSerialization.jsonObject(with: bytes)) as? [String: Any] else {
@@ -147,7 +153,7 @@ public enum PendingRequestsParser {
         }
         let viewer = ScopeViewer(account: account, login: login)
         if let expected = plan.expectedAccount, expected != account { return .failure(.identityMismatch, viewer: viewer) }
-        var items: [InboxItem] = [], waiting = 0
+        var items: [InboxItem] = [], waiting: [InboxItem] = []
         for (index, run) in plan.runs.enumerated() {
             let alias = DeploymentApprovals.alias(run.repositoryIndex)
             guard let node = body["run\(index)"] as? [String: Any], node["__typename"] as? String == "WorkflowRun",
@@ -165,7 +171,12 @@ public enum PendingRequestsParser {
                 if canApprove { approvable.append(((request["environment"] as? [String: Any])?["name"] as? String) ?? "") }
             }
             guard readable else { issues.append(.malformedRow(alias)); continue }
-            guard !approvable.isEmpty else { waiting += 1; continue }
+            guard !approvable.isEmpty else {
+                waiting.append(InboxItem(id: "deploy:\(run.nodeID)", kind: .deploymentApproval, repository: run.repository,
+                                         title: run.workflow, url: run.url, updatedAt: run.updatedAt,
+                                         attention: DeploymentApprovals.waitingReason, detail: DeploymentApprovals.waitingDetail))
+                continue
+            }
             let environments = Array(Set(approvable.filter { !$0.isEmpty })).sorted()
             let target = environments.isEmpty ? "" : " to " + environments.joined(separator: ", ")
             // The run is the row: a new attempt of the same run waiting again doesn't re-announce.
@@ -173,7 +184,7 @@ public enum PendingRequestsParser {
                                    title: "\(run.workflow) is waiting for your approval\(target)", url: run.url,
                                    updatedAt: run.updatedAt))
         }
-        return ScopedPollResult(viewer: viewer, items: items, issues: issues, successfulSources: 1, waitingOnOthers: waiting)
+        return ScopedPollResult(viewer: viewer, items: items, issues: issues, successfulSources: 1, waiting: waiting)
     }
 }
 
@@ -231,7 +242,7 @@ public struct DeploymentGhClient: DeploymentPolling {
             var all = issues + parsed.issues
             if result.exitCode != 0 { all.append(ScopedGhClient.deniesAccess(result.stderrText) ? .accessDenied : .transport) }
             return ScopedPollResult(viewer: parsed.viewer, items: parsed.items, issues: all, successfulSources: readable,
-                                    waitingOnOthers: parsed.waitingOnOthers)
+                                    waiting: parsed.waiting)
         } catch CommandError.outputLimitExceeded { return .failure(.outputLimit) }
         catch CommandError.timedOut { return .failure(.deadline) }
         catch CommandError.cancelled { return .failure(.cancelled) }

@@ -6,6 +6,8 @@ public final class FixtureSimulator {
     private static let teamReviewID = "reviewRequest:example/pet-tools#7"
     public private(set) var baseItems: [InboxItem]
     public private(set) var injected: [InboxItem] = []
+    /// Demo rows for the Waiting on others group (#148): never polled into the inbox itself.
+    public private(set) var waitingItems: [InboxItem]
     public private(set) var connected = true
     /// While on, every poll is partial (assigned-issue fixtures "unavailable"). Sticky, so the
     /// periodic fixture poll cannot silently flip the state back to complete.
@@ -13,8 +15,10 @@ public final class FixtureSimulator {
     private let makeID: () -> String
 
     public init(baseItems: [InboxItem] = FixtureSimulator.defaultItems(),
+                waitingItems: [InboxItem] = FixtureSimulator.defaultWaitingItems(),
                 makeID: @escaping () -> String = { UUID().uuidString.lowercased() }) {
         self.baseItems = baseItems
+        self.waitingItems = waitingItems
         self.makeID = makeID
     }
 
@@ -61,6 +65,11 @@ public final class FixtureSimulator {
         injected = []
     }
 
+    /// Replace the Waiting on others rows (render hooks: an exact set of rows).
+    public func replaceWaitingItems(_ items: [InboxItem]) {
+        waitingItems = items
+    }
+
     public func disconnect() { connected = false }
     public func reconnect() { connected = true }
 
@@ -75,6 +84,25 @@ public final class FixtureSimulator {
             item(.reviewRequest, "example/pet-demo", 42, "Add hover summary to mascot", 1),
             item(.reviewRequest, "example/pet-tools", 7, "Tighten link validation", 5),
             item(.assignedIssue, "example/pet-demo", 18, "Mascot position resets after a display change", 26),
+        ]
+    }
+
+    /// Your pull requests and a deployment that need nothing from you (#148), with why each waits.
+    public static func defaultWaitingItems(reference: Date = Date(timeIntervalSince1970: 1_793_000_000)) -> [InboxItem] {
+        [
+            InboxItem(id: "authoredPullRequest:example/pet-demo#57", kind: .authoredPullRequest, repository: "example/pet-demo",
+                      title: "Animate the badge count change", url: URL(string: "https://github.com/example/pet-demo/pull/57"),
+                      updatedAt: reference.addingTimeInterval(-2 * 3600), isDemo: true,
+                      attention: AuthoredAttention.WaitReason.reviewPending.text,
+                      detail: AuthoredAttention.WaitReason.summary([.reviewPending, .checksRunning])),
+            InboxItem(id: "deploy:fixture-pet-site-4242", kind: .deploymentApproval, repository: "example/pet-site",
+                      title: "Deploy site", url: URL(string: "https://github.com/example/pet-site/actions/runs/4242"),
+                      updatedAt: reference.addingTimeInterval(-4 * 3600), isDemo: true,
+                      attention: DeploymentApprovals.waitingReason, detail: DeploymentApprovals.waitingDetail),
+            InboxItem(id: "authoredPullRequest:example/pet-tools#12", kind: .authoredPullRequest, repository: "example/pet-tools",
+                      title: "Fixture simulator presets", url: URL(string: "https://github.com/example/pet-tools/pull/12"),
+                      updatedAt: reference.addingTimeInterval(-30 * 3600), isDemo: true,
+                      attention: AuthoredAttention.WaitReason.draft.text),
         ]
     }
 }

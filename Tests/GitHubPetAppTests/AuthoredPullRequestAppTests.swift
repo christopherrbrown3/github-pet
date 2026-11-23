@@ -73,6 +73,105 @@ import Testing
         #expect(authoredRows(app).isEmpty && app.authoredWaitingCount == 0 && app.authoredWaitingNote == nil)
     }
 
+    /// #148: the waiting PRs are listed under Waiting on others through the real live path (simulated
+    /// scope): never Needs you rows, the badge or announcements; the group's count is its rows;
+    /// Dismiss hides one like any other row, and Restore brings it back quietly.
+    @Test func waitingPRsAreListedNeverCountedAndDismissLikeOtherRows() async throws {
+        let app = simulated(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        #expect(app.waitingItems.isEmpty)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        let badge = app.badge, unseen = app.unseenCount, rows = app.items
+        #expect(app.waitingItems.map(\.title).sorted() == ["Simulated authored approved", "Simulated authored checking",
+                                                           "Simulated authored draft"])
+        #expect(Set(app.waitingItems.map(\.attention)) == ["Approved, ready to merge", "Draft", "Review pending"])
+        #expect(app.waitingItems.compactMap(\.detail) == ["Review pending, checks running, checking for conflicts"])
+        #expect(app.waitingItems.allSatisfy { $0.isDemo && $0.kind == .authoredPullRequest })
+        #expect(Set(app.items.map(\.id)).isDisjoint(with: app.waitingItems.map(\.id)), "never both Needs you and waiting")
+        let group = app.waitingGroup
+        #expect(group.isShown && group.count == "3" && group.count == "\(group.items.count)")
+        #expect(InboxOverview(dataState: app.dataState, items: app.items, authoredWaiting: app.authoredWaitingCount,
+                              deploymentsWaiting: app.deploymentsWaitingCount, deploymentsComplete: app.actionsQuality == nil,
+                              serviceState: app.serviceState, incidents: app.serviceIncidents).waiting.value == group.count,
+                "the tile's count equals the listed rows")
+
+        let draft = try #require(app.waitingItems.first { $0.attention == "Draft" })
+        #expect(app.canDismissInboxItem(draft))
+        let context = try #require(app.inboxDismissalContext)
+        app.dismissInboxItem(draft.id, in: context)
+        #expect(!app.waitingItems.contains { $0.id == draft.id } && app.waitingGroup.count == "2")
+        #expect(app.dismissedInboxRows.contains { $0.item?.id == draft.id })
+        #expect(app.items == rows && app.badge == badge && app.unseenCount == unseen && !app.allCurrentInboxItemsDismissed)
+        app.refresh(); try await settled(app)
+        #expect(!app.waitingItems.contains { $0.id == draft.id }, "a dismissal survives the next poll")
+        let row = try #require(app.dismissedInboxRows.first { $0.item?.id == draft.id })
+        app.restoreInboxItem(row.id, in: context)
+        #expect(app.waitingItems.contains { $0.id == draft.id } && app.unseenCount == unseen, "restored quietly")
+    }
+
+    /// QA W8b (#148): a failed live poll keeps the last known waiting rows from the session, shown
+    /// as last known with an unknown count; the next good poll makes them current again.
+    @Test func aFailedLivePollKeepsLastKnownWaitingRows() async throws {
+        final class Failing: @unchecked Sendable { var on = false }
+        let failing = Failing()
+        var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
+        options.forcePlaceholder = true
+        let app = AppModel(options: options, runtime: AppModel.Runtime(
+            now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false }, schedulesTimers: false,
+            // A zero-time budget: the simulated live client returns a real .deadline failure.
+            repositoryBudget: { CommandBudget(timeout: failing.on ? 0 : 20) }, scopeSimulationHoldLimit: nil))
+        defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        let known = app.waitingItems
+        #expect(known.count == 3 && app.waitingGroup.count == "3")
+
+        failing.on = true
+        app.refresh()
+        await app.repositoryPollSettled()
+        if case .error = app.dataState {} else { Issue.record("the live poll failed: \(app.dataState)") }
+        #expect(app.waitingItems == known, "last known rows are kept, not emptied")
+        let group = app.waitingGroup
+        #expect(group.isShown && group.lastKnown && group.count == "?" && group.note == "Unknown until the next successful update.")
+
+        failing.on = false
+        app.refresh(); try await settled(app)
+        #expect(app.dataState == .ready && app.waitingItems == known && app.waitingGroup.count == "3" && !app.waitingGroup.lastKnown)
+    }
+
+    /// #148 (PM): a dismissal made in the quiet Waiting on others group applies only while the PR
+    /// waits. Once it needs you it shows in Needs you, badges and announces as usual; a dismissal
+    /// made on the Needs you row still hides it exactly as before.
+    @Test func waitingDismissalNeverHidesThePROnceItNeedsYou() async throws {
+        let app = simulated(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        app.markAllSeen()
+        let badge = try #require(app.badge.flatMap(Int.init))
+        let draft = try #require(app.waitingItems.first { $0.attention == "Draft" })
+        let context = try #require(app.inboxDismissalContext)
+        app.dismissInboxItem(draft.id, in: context)
+        #expect(!app.waitingItems.contains { $0.id == draft.id } && app.badge == "\(badge)")
+
+        app.simulateScopeAuthored(.draftReady); try await settled(app)
+        let ready = try #require(authoredRows(app).first { $0.title == draft.title }, "the PR that needs you is shown")
+        #expect(ready.attention == "Merge conflict, Checks failing")
+        #expect(app.badge == "\(badge + 1)" && app.isUnseen(ready), "it badges and announces")
+        #expect(!app.waitingItems.contains { $0.title == draft.title })
+
+        // A dismissal on the Needs you row behaves as before: hidden, and not back in the quiet group.
+        app.markAllSeen()
+        app.dismissInboxItem(ready.id, in: context)
+        #expect(!app.items.contains { $0.id == ready.id } && app.badge == "\(badge)")
+        #expect(!app.waitingItems.contains { $0.title == draft.title })
+        app.refresh(); try await settled(app)
+        #expect(!app.items.contains { $0.id == ready.id } && app.badge == "\(badge)" && app.unseenCount == 0)
+
+        // Back to waiting: the earlier waiting dismissal still applies there.
+        app.simulateScopeAuthored(.changesRequested); try await settled(app)
+        #expect(!app.waitingItems.contains { $0.id == draft.id })
+    }
+
     /// Flag-on path (#94 keeps privacy mode in the code base).
     @Test func privacyModeHidesAuthoredTitlesAndRepositories() async throws {
         let app = simulated(features: .allOn); defer { app.cleanupScopeSimulation() }

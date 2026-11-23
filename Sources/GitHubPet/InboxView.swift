@@ -14,6 +14,8 @@ struct InboxView: View {
     @State private var selection: InboxViewSelection
     /// The last local dismissal, offered back as Undo until it expires or something else happens.
     @State private var undo: UndoDismissal?
+    /// Bumped by the Waiting on others tile: scroll its group into view once expanded (#148).
+    @State private var waitingReveal = 0
     @ScaledMetric(relativeTo: .body) private var textScale = 1.0
     /// #149: renders and tests pass a controller with a stand-in updater; the app uses the model's.
     private let updates: UpdateController
@@ -197,14 +199,24 @@ struct InboxView: View {
             OverviewTile(tile: overview.assigned, symbol: "tray.full")
                 .help(model.inboxCountDescription)
                 .accessibilityIdentifier("inbox.overview.assigned")
-            OverviewTile(tile: overview.waiting, symbol: "hourglass")
-                .help(waitingHelp.isEmpty ? "Your pull requests and deployments waiting on someone else" : waitingHelp.joined(separator: "\n"))
+            // #148: reveals the Waiting on others group when there is one to show.
+            OverviewTile(tile: overview.waiting, symbol: "hourglass", action: revealWaitingAction)
+                .help((waitingHelp.isEmpty ? ["Your pull requests and deployments waiting on someone else."] : waitingHelp)
+                      .joined(separator: "\n") + (revealWaitingAction == nil ? "" : "\nClick to show them below."))
                 .accessibilityIdentifier("inbox.overview.waiting")
             OverviewTile(tile: overview.status, symbol: serviceSymbol)
                 .help(serviceHelp)
                 .accessibilityIdentifier("inbox.serviceStatus")
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var revealWaitingAction: (() -> Void)? {
+        guard model.waitingGroup.isShown, !selection.showsDismissed(in: model.inboxDismissalContext) else { return nil }
+        return {
+            selection.waitingExpanded = true
+            waitingReveal += 1
+        }
     }
 
     private var serviceSymbol: String {
@@ -275,43 +287,64 @@ struct InboxView: View {
         }
     }
 
-    /// Unknown or failed data is never rendered as an empty inbox.
+    /// Unknown or failed data is never rendered as an empty inbox. The Waiting on others group
+    /// (#148) follows the Needs you groups in the same list, so a long list scrolls to it.
     @ViewBuilder
     private var content: some View {
+        let waiting = model.waitingGroup
+        let waitingExpanded = selection.waitingExpanded && waiting.isShown
+        let dimmed = !model.dataState.hasUsableItems || model.dataState == .stale
         if model.items.isEmpty {
             EmptyInboxView(model: model,
                            state: InboxEmptyState(dataState: model.dataState,
                                                   allDismissed: model.allCurrentInboxItemsDismissed))
-        } else {
-            let dimmed = !model.dataState.hasUsableItems || model.dataState == .stale
-            if dimmed {
-                Label("Showing last known items", systemImage: "clock.arrow.circlepath")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("inbox.lastKnown")
-            }
-            let sections = InboxPresentation.sections(model.items)
-            let list = VStack(alignment: .leading, spacing: 8) {
-                ForEach(sections) { section in
-                    InboxSectionView(section: section) { item in
-                        InboxRow(item: item, privacy: model.inboxPrivacy, unseen: model.isUnseen(item), dimmed: dimmed,
-                                 open: { model.open(item) }, dismiss: dismissAction(item))
+        } else if dimmed {
+            Label("Showing last known items", systemImage: "clock.arrow.circlepath")
+                .font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("inbox.lastKnown")
+        }
+        let sections = InboxPresentation.sections(model.items)
+        if !sections.isEmpty || waiting.isShown {
+            ScrollViewReader { proxy in
+                let list = VStack(alignment: .leading, spacing: 8) {
+                    ForEach(sections) { section in
+                        InboxSectionView(section: section) { item in
+                            InboxRow(item: item, privacy: model.inboxPrivacy, unseen: model.isUnseen(item), dimmed: dimmed,
+                                     open: { model.open(item) }, dismiss: dismissAction(item))
+                        }
+                    }
+                    if waiting.isShown {
+                        // A peer of Needs you, not one of its groups: a hairline and extra space above.
+                        Divider().padding(.top, 4)
+                        WaitingSectionView(group: waiting, expanded: waitingExpanded,
+                                           toggle: { selection.waitingExpanded.toggle() }) { item in
+                            // Quieter than Needs you rows: never unseen, always the muted styling.
+                            InboxRow(item: item, privacy: model.inboxPrivacy, unseen: false, dimmed: true,
+                                     open: { model.open(item) }, dismiss: dismissAction(item))
+                        }
+                        .id(Self.waitingScrollID)
                     }
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Group {
-                // Short queues size to their rows (no blank region); long ones scroll in a fixed
-                // height. A ScrollView with only a max height collapses inside auto-sized windows
-                // and popovers (#20), so the scrolling case gets a real height.
-                if Self.scrolls(rows: model.items.count, sections: sections.count, textScale: textScale) {
-                    ScrollView { list }
-                        .frame(height: Self.maxListHeight)
-                } else {
-                    list
+                .frame(maxWidth: .infinity, alignment: .leading)
+                let rows = model.items.count + (waitingExpanded ? max(1, waiting.items.count) : 0)
+                Group {
+                    // Short queues size to their rows (no blank region); long ones scroll in a fixed
+                    // height. A ScrollView with only a max height collapses inside auto-sized windows
+                    // and popovers (#20), so the scrolling case gets a real height.
+                    if Self.scrolls(rows: rows, sections: sections.count + (waiting.isShown ? 1 : 0), textScale: textScale) {
+                        ScrollView { list }
+                            .frame(height: Self.maxListHeight)
+                    } else {
+                        list
+                    }
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Inbox items")
+                .onChange(of: waitingReveal) { _ in
+                    // After the expansion has laid out; no animation, so Reduce Motion is respected.
+                    DispatchQueue.main.async { proxy.scrollTo(Self.waitingScrollID, anchor: .top) }
                 }
             }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel("Inbox items")
         }
     }
 
@@ -327,6 +360,7 @@ struct InboxView: View {
     }
 
     static let maxListHeight = CGFloat(InboxRowMetrics.maxListHeight)
+    static let waitingScrollID = "inbox.waitingGroup"
 
     /// `textScale` is 1 at the default text size and grows with Dynamic Type, so larger text
     /// scrolls the list instead of growing the window past the screen.
@@ -452,8 +486,31 @@ struct MascotStill: View {
 struct OverviewTile: View {
     let tile: InboxOverview.Tile
     let symbol: String
+    /// A tile with an action is one button (#148: the Waiting on others tile reveals its group).
+    var action: (() -> Void)? = nil
+    @State private var hovering = false
 
     var body: some View {
+        if let action {
+            // Discoverable as a button: hover fill, pointing hand and a chevron (#148 design review).
+            Button(action: action) { face.contentShape(Rectangle()) }
+                .buttonStyle(.plain)
+                .onHover { inside in
+                    hovering = inside
+                    if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                }
+                .onDisappear { if hovering { hovering = false; NSCursor.pop() } }
+                .accessibilityLabel(tile.accessibilityLabel)
+                .accessibilityHint("Shows the Waiting on others group")
+        } else {
+            face
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(tile.accessibilityLabel)
+                .accessibilityAddTraits(.isStaticText)
+        }
+    }
+
+    private var face: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
                 Image(systemName: symbol)
@@ -463,10 +520,20 @@ struct OverviewTile: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-            Text(tile.value)
-                .font(.title3.weight(.semibold).monospacedDigit())
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(tile.value)
+                    .font(.title3.weight(.semibold).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                if action != nil {
+                    // Beside the value, so the title keeps its full width.
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                }
+            }
             Text(tile.detail)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -476,11 +543,8 @@ struct OverviewTile: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(0.08)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(tint.opacity(hovering ? 0.14 : 0.08)))
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(tint.opacity(0.25)))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(tile.accessibilityLabel)
-        .accessibilityAddTraits(.isStaticText)
     }
 
     /// Tint supports the words; it never carries meaning on its own.
@@ -524,6 +588,65 @@ struct InboxSectionView<Row: View>: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(section.group.title)
+    }
+}
+
+/// #148: your pull requests and deployments that need nothing from you, below the Needs you
+/// groups. A disclosure (collapsed by default) whose header speaks its count; the count and note
+/// follow the Waiting on others tile, so degraded data never reads as nothing waiting.
+struct WaitingSectionView<Row: View>: View {
+    let group: InboxWaitingGroup
+    let expanded: Bool
+    let toggle: () -> Void
+    @ViewBuilder let row: (InboxItem) -> Row
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Button(action: toggle) {
+                // The Needs you heading's style (#148 design review): a section of its own.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 10)
+                        .accessibilityHidden(true)
+                    Text(InboxWaitingGroup.title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(group.countLabel)
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(expanded ? "Hide what's waiting on others" : "Show what's waiting on others")
+            .accessibilityLabel(group.accessibilityLabel)
+            .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+            .accessibilityHint(expanded ? "Collapses the group" : "Expands the group")
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("inbox.waiting.toggle")
+            if expanded {
+                VStack(alignment: .leading, spacing: 0) {
+                    if let note = group.note {
+                        Label(note, systemImage: group.lastKnown ? "clock.arrow.circlepath" : "exclamationmark.triangle")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal, 8).padding(.vertical, 5)
+                            .accessibilityIdentifier("inbox.waiting.note")
+                    }
+                    ForEach(group.items) { item in
+                        row(item)
+                        if item.id != group.items.last?.id {
+                            Divider().padding(.leading, 34)
+                        }
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.02)))
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(InboxWaitingGroup.title)
     }
 }
 
@@ -576,7 +699,7 @@ struct InboxRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(privacy ? "Open on GitHub" : "\(item.title)\nOpen on GitHub")
+            .help(([privacy ? nil : item.title, item.detail, "Open on GitHub"] as [String?]).compactMap { $0 }.joined(separator: "\n"))
             .accessibilityLabel(accessibilityText)
             .accessibilityHint("Opens on GitHub")
             .accessibilityAction(named: "Open on GitHub", open)
@@ -607,6 +730,7 @@ struct InboxRow: View {
 
     private var accessibilityText: String {
         (unseen ? "New. " : "") + title + ". " + PrivacyText.subtitle(item, privacy: privacy)
+            + (item.detail.map { ". " + $0 } ?? "")
     }
 }
 

@@ -323,6 +323,28 @@ if grep -E '^inbox87 ' <<< "$inbox87" | grep -v ' empty: ' | grep -q 'empty=allC
   echo "FAIL a non-empty or degraded inbox claims all clear"; failures=$((failures + 1))
 else echo "ok   only the verified empty inbox is all clear"; fi
 
+# Waiting on others (#148): Demo's waiting rows are listed in their own group, collapsed and
+# expanded, light and dark; never the badge or unseen, and the tile's count equals the rows.
+for state in collapsed expanded expanded-partial expanded-stale; do
+  for theme in '' '-dark'; do
+    png="inbox148-waiting-$state$theme"
+    [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
+  done
+done
+check_in 'waiting on others (#148)' "waiting rows apart from the badge, tile equals rows" \
+  '^inbox148 state=Up to date badge=2 rows=2 waiting-rows=3 group-count=3 tile=3 shown=true unseen-waiting=0 reasons=Review pending\|Approval or wait timer\|Draft$'
+check_in 'waiting on others (#148)' "partial waiting group is a lower bound with a note" \
+  '^inbox148 expanded-partial state=Partial data group-count=3\+ rows=3 note=Some sources'
+check_in 'waiting on others (#148)' "stale waiting group is unknown, last known rows" \
+  '^inbox148 expanded-stale state=Stale group-count=\? rows=3 note=Last known, out of date\. label=Count unknown$'
+collapsed=$(section 'waiting on others (#148)' | grep -E '^inbox148 collapsed: ' | sed -E 's/.*x([0-9]+) pt/\1/')
+expanded=$(section 'waiting on others (#148)' | grep -E '^inbox148 expanded: ' | sed -E 's/.*x([0-9]+) pt/\1/')
+# Assigned to you was renamed Needs you (#148), matching the section heading and the badge.
+check_in 'inbox redesign (#87)' "Needs you tile matches the section" '^inbox87 [a-z0-9-]+ four tiles: Needs you=4 '
+if (( ${collapsed:-0} >= 300 && ${expanded:-0} >= ${collapsed:-0} + 3 * 40 )); then
+  echo "ok   waiting group expands its rows ($collapsed pt collapsed, $expanded pt expanded)"
+else echo "FAIL waiting group heights: collapsed ${collapsed:-missing} pt, expanded ${expanded:-missing} pt"; failures=$((failures + 1)); fi
+
 # Scope browser (#137): every sheet state, light and dark, on the offline Demo fixture. Each
 # failure state has its own presentation; only the truly empty owner claims "no repositories".
 scope=$(section 'scope browser (#137)')

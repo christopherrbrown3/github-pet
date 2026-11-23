@@ -79,7 +79,14 @@ private func client(_ runner: Runner) -> DeploymentGhClient {
             [],
             [request(false, environment: "staging"), request(true, environment: "production"), request(true, environment: "eu")],
         ]), plan: plan)
-        #expect(result.complete && result.waitingOnOthers == 2, "not approvable by you: only counted")
+        #expect(result.complete && result.waitingOnOthers == 2, "not approvable by you: Waiting on others")
+        // #148: those runs are listed under Waiting on others, saying why, never as approvals.
+        #expect(result.waiting.map(\.id).sorted() == ["deploy:WFR_theirs", "deploy:WFR_timer"])
+        #expect(result.waiting.allSatisfy { $0.kind == .deploymentApproval && $0.attention == DeploymentApprovals.waitingReason
+                                            && $0.detail == DeploymentApprovals.waitingDetail
+                                            && $0.title == "Deploy" && $0.attentionKeys.isEmpty }, "the workflow name is the title")
+        #expect(DeploymentApprovals.waitingReason == "Approval or wait timer")
+        #expect(DeploymentApprovals.waitingDetail == "Waiting for deployment approval by others or a wait timer")
         #expect(result.items.map(\.id) == ["deploy:WFR_mine", "deploy:WFR_mixed"])
         #expect(result.items.allSatisfy { $0.kind == .deploymentApproval })
         #expect(result.items[0].title == "Deploy is waiting for your approval to production")
@@ -135,11 +142,14 @@ private func client(_ runner: Runner) -> DeploymentGhClient {
 
     @Test func combiningBindsViewersAndKeepsTheWaitingCount() {
         let viewer = ScopeViewer(account: viewerA, login: "a")
-        let deployments = ScopedPollResult(viewer: nil, items: [], issues: [], successfulSources: 2, waitingOnOthers: 0)
+        let deployments = ScopedPollResult(viewer: nil, items: [], issues: [], successfulSources: 2)
         let joined = ScopedPollResult.combiningActions(failures: nil, deployments: deployments, fallbackViewer: viewer)
         #expect(joined.complete && joined.viewer == viewer, "no waiting runs: bound to the inbox viewer, complete")
         let counted = ScopedPollResult.combiningActions(failures: ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 1),
-            deployments: ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 1, waitingOnOthers: 2), fallbackViewer: viewer)
+            deployments: ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 1, waiting: (1...2).map {
+                InboxItem(id: "deploy:RUN_\($0)", kind: .deploymentApproval, repository: "example/pet", title: "Deploy",
+                          url: nil, updatedAt: Date(timeIntervalSince1970: Double($0)))
+            }), fallbackViewer: viewer)
         #expect(counted.complete && counted.waitingOnOthers == 2 && counted.successfulSources == 2)
         let mismatch = ScopedPollResult.combiningActions(failures: ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 1),
             deployments: ScopedPollResult(viewer: ScopeViewer(account: viewerB, login: "b"), items: [], issues: [], successfulSources: 1),

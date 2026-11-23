@@ -55,8 +55,15 @@ final class AppModel: ObservableObject {
     @Published private(set) var hiddenResultCount = 0
     /// #10: why workflow failures aren't fully known right now (their own line; never the inbox's).
     @Published private(set) var actionsQuality: String?
-    /// #10: deployments in watched repositories waiting for other reviewers or a wait timer. A count, never rows.
-    @Published private(set) var deploymentsWaitingCount = 0
+    /// #10: deployments in watched repositories waiting for other reviewers or a wait timer, from
+    /// the last Actions cycle. Listed under Waiting on others (#148), never Needs you rows.
+    private var deploymentsWaiting: [InboxItem] = []
+    /// Demo fixtures' Waiting on others rows (#148), from the last fixture snapshot.
+    private var fixtureWaiting: [InboxItem] = []
+    /// #148: the Waiting on others group's rows (your PRs and deployments that need nothing from
+    /// you), newest first, without local dismissals. Never the badge, events, alerts or notifications.
+    @Published private(set) var waitingItems: [InboxItem] = []
+    var deploymentsWaitingCount: Int { waitingItems.filter { $0.kind == .deploymentApproval }.count }
     var deploymentsWaitingNote: String? {
         DeploymentApprovals.waitingNote(deploymentsWaitingCount, complete: actionsQuality == nil)
     }
@@ -336,9 +343,14 @@ final class AppModel: ObservableObject {
         displayedState == .ready && hiddenResultCount > 0 ? HiddenResults.notVisible(hiddenResultCount) : nil
     }
 
-    /// Your open PRs that need nothing from you (#9): one informational line, never rows,
-    /// counts, badges, mood or attention.
-    @Published private(set) var authoredWaitingCount = 0
+    /// Your open PRs that need nothing from you (#9): listed under Waiting on others (#148), never
+    /// Needs you rows, the badge, mood or attention.
+    var authoredWaitingCount: Int { waitingItems.filter { $0.kind == .authoredPullRequest }.count }
+
+    /// The Waiting on others group, with the same honesty rules as its tile.
+    var waitingGroup: InboxWaitingGroup {
+        InboxWaitingGroup(dataState: dataState, items: waitingItems, deploymentsComplete: actionsQuality == nil)
+    }
     var authoredWaitingNote: String? { AuthoredWaiting.note(authoredWaitingCount, dataState: dataState) }
 
     var isDemo: Bool { usingFixtures }
@@ -439,6 +451,7 @@ final class AppModel: ObservableObject {
 
     private func resetSession() {
         engine.reset()
+        fixtureWaiting = []
         baselineKey = nil
         unseen.removeAll()
         clips.clear()
@@ -657,7 +670,7 @@ final class AppModel: ObservableObject {
             }
             clips.enqueue(shown, now: date, playable: !effectiveReducedMotion && settings.alertsAllowed(at: date, features: features))
             actionsQuality = result.complete ? nil : ActionsWatch.qualityLine(for: result.issues, watched: repositories.count)
-            deploymentsWaitingCount = result.waitingOnOthers
+            deploymentsWaiting = result.waiting
         }
     }
 
@@ -666,7 +679,7 @@ final class AppModel: ObservableObject {
         actionsEngine.reset()
         actionsCoverageKey = nil
         actionsQuality = nil
-        deploymentsWaitingCount = 0
+        deploymentsWaiting = []
     }
 
     /// Settings › GitHub Actions: what is (and isn't) watched right now.
@@ -743,6 +756,7 @@ final class AppModel: ObservableObject {
             guard let scope = scopeSession.scope else { apply(scopeSession.configurationFailure); return }
             let outcome = simulator.poll(assignmentMode: settings.assignmentMode)
             if case .snapshot(let items, let complete, let hidden) = outcome {
+                fixtureWaiting = simulator.waitingItems.filter { scope.includes(repository: $0.repository) }
                 apply(.snapshot(items: items.filter { scope.includes(repository: $0.repository) }, complete: complete, hidden: hidden))
             } else { apply(outcome) }
         } else if let request = scopeSession.beginPoll(assignmentMode: settings.assignmentMode) {
@@ -761,7 +775,7 @@ final class AppModel: ObservableObject {
         }
         let sourceEvents = engine.apply(outcome, now: date)
         persistBaseline()
-        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items)
+        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + waitingRows)
         let events = sourceEvents.filter { !dismissals.hiddenIDs.contains($0.item.id) }
         unseen.record(events)
         unseen.reconcile(after: outcome, items: engine.items + actionsEngine.items)
@@ -882,11 +896,14 @@ final class AppModel: ObservableObject {
         scopeSummary = scopeSession.summary
         scopeQuality = scopeSession.qualitySummary
         scopeSimulationStatus = scopeSimulation?.status ?? ""
-        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items)
+        let waitingRows = waitingRows
+        dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + waitingRows)
         let primary = engine.items.filter { !dismissals.hiddenIDs.contains($0.id) }
         let shown = InboxEngine.dedupe(primary + actionsEngine.items).map(classified)
         if items != shown { items = shown }
-        let onlyDismissed = shown.isEmpty && !dismissals.hiddenIDs.isEmpty
+        let waiting = waitingRows.filter { !dismissals.hiddenIDs.contains($0.id) }
+        if waitingItems != waiting { waitingItems = waiting }
+        let onlyDismissed = shown.isEmpty && engine.items.contains { dismissals.hiddenIDs.contains($0.id) }
         let sourceState = displayedState
         let state: DataState = onlyDismissed && sourceState == .ready && actionsQuality != nil ? .partial : sourceState
         if dataState != state { dataState = state }
@@ -895,7 +912,6 @@ final class AppModel: ObservableObject {
         syncDismissedInbox()
         if lastSuccess != engine.lastSuccess { lastSuccess = engine.lastSuccess }
         if hiddenResultCount != engine.hiddenCount { hiddenResultCount = engine.hiddenCount }
-        if authoredWaitingCount != scopeSession.waitingOnOthers { authoredWaitingCount = scopeSession.waitingOnOthers }
         if serviceState != serviceMonitor.state { serviceState = serviceMonitor.state }
         if serviceIncidents != serviceMonitor.incidents { serviceIncidents = serviceMonitor.incidents }
         if serviceLastSuccess != serviceMonitor.lastSuccess { serviceLastSuccess = serviceMonitor.lastSuccess }
@@ -903,6 +919,15 @@ final class AppModel: ObservableObject {
         if burst != markerBurst { markerBurst = burst }
         if activeClip != clips.active { activeClip = clips.active }
         scopeEditor.observeActive()
+    }
+
+    /// The Waiting on others rows (#148): the source's own (Demo fixtures or the live scope session)
+    /// and deployments, never an item that is also a Needs you row, under their waiting row IDs so
+    /// a dismissal made there never hides the item once it needs you.
+    private var waitingRows: [InboxItem] {
+        let source = settings.dataSource == .fixtures ? fixtureWaiting : scopeSession.waiting
+        let actionable = Set((engine.items + actionsEngine.items).map(\.id))
+        return InboxEngine.dedupe(source + deploymentsWaiting).filter { !actionable.contains($0.id) }.map(InboxWaitingGroup.row)
     }
 
     // MARK: Actions
@@ -935,7 +960,7 @@ final class AppModel: ObservableObject {
 
     func dismissInboxItem(_ id: String, in context: InboxDismissalContext) {
         guard context == inboxDismissalContext, context.generation == scopeSession.generation,
-              let item = engine.items.first(where: { $0.id == id }), canDismissInboxItem(item) else { return }
+              let item = (engine.items + waitingRows).first(where: { $0.id == id }), canDismissInboxItem(item) else { return }
         let date = clock()
         if dismissals.dismiss(classified(item), at: date) {
             // Drop only this row's pending attention. The raw snapshot and event ledger
@@ -1350,9 +1375,11 @@ final class AppModel: ObservableObject {
     }
 
     /// Render hook only: show exactly these Demo fixture rows (#87 Inbox renders), then poll.
-    func showFixtureItemsForSnapshot(_ items: [InboxItem]) {
+    /// `waiting` replaces the Waiting on others rows too (#148); nil keeps them.
+    func showFixtureItemsForSnapshot(_ items: [InboxItem], waiting: [InboxItem]? = nil) {
         guard snapshotMode, usingFixtures else { return }
         simulator.replaceItems(items)
+        if let waiting { simulator.replaceWaitingItems(waiting) }
         refresh()
     }
 

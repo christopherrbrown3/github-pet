@@ -9,9 +9,16 @@ Open it from the menu-bar icon or by clicking the pet.
 
 - **Header.** Your chosen pet with a blue badge counting the items that need you, the source status and when the list last
   updated. Refresh and Settings sit on the right.
-- **Tiles.** **Assigned to you** counts what's waiting on you, **Waiting on others** counts your pull
-  requests that are waiting on someone else, and **GitHub status** shows the githubstatus.com status.
+- **Tiles.** **Needs you** counts the items in the Needs you list (the same number as the badge), **Waiting on others** counts your pull
+  requests and deployments that are waiting on someone else, and **GitHub status** shows the
+  githubstatus.com status. Click **Waiting on others** to jump to its list.
 - **Grouped rows.** Items are grouped by what they ask of you. Click a row to open it on GitHub.
+- **Waiting on others.** Below the Needs you list, its own collapsed **Waiting on others** section
+  lists those pull requests and deployments with its count. Expand it to see each one and why it
+  waits: draft, review pending, checks running, checking for conflicts, approved and ready to merge,
+  or, for a deployment, approval by others or a wait timer. A row shows the first reason; hover it
+  (or use VoiceOver) for all of them. These rows look quieter, never count in the badge, and never
+  alert or notify.
 - **Dismiss and Restore.** **×** removes an item from your Inbox on this Mac only; GitHub still
   has it. **View dismissed** lists saved dismissals, each with **Restore**. See [Using the Inbox](inbox.md).
 
@@ -21,14 +28,15 @@ Open it from the menu-bar icon or by clicking the pet.
   requests to your teams or only reviews requested directly from you.
 - **Assigned issues.** Open issues assigned to you.
 - **Your pull requests that need you.** Changes requested, a merge conflict or failing checks. The
-  rest, including drafts and pull requests GitHub is still checking, are counted as waiting on others
-  and never alert.
+  rest, including drafts and pull requests GitHub is still checking, are listed under **Waiting on
+  others** and never alert.
 - **Entitlement approvals.** List the repositories where access requests arrive as pull requests, and
   their review requests get a key icon. GitHub Pet only opens the pull request.
 - **Workflow failures (opt-in).** Failing GitHub Actions runs on the default branch of repositories you
   select. Failures you triggered are marked urgent.
 - **Deployment approvals (opt-in).** Runs in repositories you select that wait for a deployment you can
-  approve. The row opens the run; waits for other reviewers or a timer are only counted.
+  approve. The row opens the run; runs waiting for other reviewers or a timer are listed under
+  **Waiting on others**.
 - **GitHub service incidents.** Active incidents from the public githubstatus.com feed, kept apart
   from your own items.
 
@@ -37,6 +45,8 @@ Open it from the menu-bar icon or by clicking the pet.
 Loading, partial, stale, signed out, rate limited, access denied and failed results are labelled as
 such and never look like an empty Inbox. When a refresh fails, the last good list stays visible with
 the time it was fetched. Matches GitHub counts but your account can't see are reported as a number.
+**Waiting on others** follows the same rules: a partial result shows "at least" (for example `2+`), and
+stale or failed data shows `?` with the last known rows marked as such, never "nothing waiting".
 Error text from `gh` or GitHub is classified rather than shown, so it can't leak organization names.
 
 ## The desktop pet

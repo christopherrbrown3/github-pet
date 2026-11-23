@@ -278,7 +278,7 @@ public final class ActionsLastKnown: @unchecked Sendable {
         guard !carried.isEmpty else { return result }
         return ScopedPollResult(viewer: result.viewer, items: result.items + carried, issues: result.issues,
                                 successfulSources: result.successfulSources, hidden: result.hidden,
-                                waitingOnOthers: result.waitingOnOthers)
+                                waiting: result.waiting)
     }
 }
 
@@ -296,6 +296,6 @@ public extension ScopedPollResult {
             ?? (deployments.map { $0.successfulSources > 0 } == true ? fallbackViewer : nil)
         return ScopedPollResult(viewer: viewer, items: parts.flatMap(\.items), issues: parts.flatMap(\.issues),
                                 successfulSources: parts.reduce(0) { $0 + $1.successfulSources },
-                                waitingOnOthers: deployments?.waitingOnOthers ?? 0)
+                                waiting: deployments?.waiting ?? [])
     }
 }

@@ -113,6 +113,27 @@ import Testing
             #expect(try #require(session.beginPoll()).expectedAccount == a)
         }
     }
+    /// #148: the waiting rows of the last applied snapshot stay as last known through a failure,
+    /// and never carry over to another account or a newly applied scope.
+    @Test func waitingRowsFollowTheLastSnapshotAndResetWithTheAccountOrScope() throws {
+        try fixture { session, store, _ in
+            try store.save(.everything, for: .github(a)); store.rememberAccount(a)
+            session.startLive()
+            let waiting = FixtureSimulator.defaultWaitingItems().filter { $0.kind == .authoredPullRequest }
+            let first = try #require(session.beginPoll())
+            _ = session.receive(ScopedPollResult(viewer: ScopeViewer(account: a, login: "demo_sim"), items: [], issues: [],
+                                                 successfulSources: 2, waiting: waiting), for: first)
+            #expect(session.waiting == waiting && session.waitingOnOthers == waiting.count)
+            let failed = try #require(session.beginPoll())
+            _ = session.receive(.failure(.transport), for: failed)
+            #expect(session.waiting == waiting, "a failed poll keeps the last known rows (the Inbox labels them)")
+            let switched = try #require(session.beginPoll())
+            _ = session.receive(result(b, issues: [.identityMismatch]), for: switched)
+            #expect(session.waiting.isEmpty, "another account never sees these rows")
+            session.startLive()
+            #expect(session.waiting.isEmpty)
+        }
+    }
     @Test func applyIsAtomicAndStaleValidationSourceChangesCannotPersist() throws {
         try fixture { session, store, _ in
             store.rememberAccount(a); session.startLive()

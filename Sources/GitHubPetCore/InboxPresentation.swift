@@ -105,7 +105,7 @@ public enum InboxTone: String, Equatable, Sendable {
     case neutral, positive, caution, critical
 }
 
-/// The three overview tiles: Assigned to you, Waiting on others, GitHub status.
+/// The three overview tiles: Needs you, Waiting on others, GitHub status.
 public struct InboxOverview: Equatable, Sendable {
     public struct Tile: Equatable, Sendable {
         public var title: String
@@ -144,7 +144,7 @@ public struct InboxOverview: Equatable, Sendable {
         case .unknown: detail = "GitHub CLI needs setup"
         case .error: detail = "Couldn't update"
         }
-        return Tile(title: "Assigned to you", value: value, detail: detail, tone: tone(SourceHealth(dataState)))
+        return Tile(title: "Needs you", value: value, detail: detail, tone: tone(SourceHealth(dataState)))
     }
 
     static func waitingTile(dataState: DataState, authored: Int, deployments: Int, deploymentsComplete: Bool) -> Tile {
@@ -204,6 +204,70 @@ public struct InboxOverview: Equatable, Sendable {
         case .unknown, .error: return .critical
         }
     }
+}
+
+/// The Waiting on others group (#148): your pull requests and deployments that need nothing from
+/// you right now, below the Needs you groups. Collapsed by default; never the badge, events,
+/// alerts or notifications. Its count follows the Waiting on others tile, so a complete, healthy
+/// count equals its rows, and partial, stale or failed data never reads as nothing waiting.
+public struct InboxWaitingGroup: Equatable, Sendable {
+    public static let title = "Waiting on others"
+
+    /// Newest first. Last known rows while the data is stale or failed.
+    public var items: [InboxItem]
+    /// The tile's value: "2", "2+" (a lower bound) or "?" (not current).
+    public var count: String
+    /// What isn't known, shown inside the group; nil when the rows are the complete answer.
+    public var note: String?
+    /// Last known rows (stale or failed data), styled like other last known rows.
+    public var lastKnown: Bool
+    /// Hidden only while nothing can be said yet (loading, GitHub CLI setup) or when a complete,
+    /// healthy answer has nothing waiting (the tile then says "Nothing waiting").
+    public var isShown: Bool
+    /// The spoken count, e.g. "3 items", "at least 3 items", "count unknown, 2 last known".
+    public var spokenCount: String
+    /// The header's secondary count, like Needs you's: "3 items", "3+ items" or "Count unknown".
+    public var countLabel: String
+
+    public init(dataState: DataState, items: [InboxItem], deploymentsComplete: Bool) {
+        self.items = items
+        let health = SourceHealth(dataState)
+        let n = items.count
+        let noun = n == 1 ? "1 item" : "\(n) items"
+        switch health {
+        case .healthy, .partial:
+            let lowerBound = health == .partial || !deploymentsComplete
+            count = "\(n)" + (lowerBound ? "+" : "")
+            note = lowerBound ? "Some sources didn't load, so there may be more." : nil
+            lastKnown = false
+            isShown = lowerBound || n > 0
+            spokenCount = lowerBound ? "at least " + noun : noun
+            countLabel = lowerBound ? "\(n)+ items" : noun
+        case .stale, .error:
+            count = "?"
+            note = health == .stale ? "Last known, out of date." : "Unknown until the next successful update."
+            lastKnown = true
+            isShown = true
+            spokenCount = n > 0 ? "count unknown, \(n) last known" : "count unknown"
+            countLabel = "Count unknown"
+        case .loading, .unknown:
+            count = "?"; note = nil; lastKnown = false; isShown = false; spokenCount = "count unknown"; countLabel = "Count unknown"
+        }
+    }
+
+    /// Waiting rows have their own row ID, so a dismissal made in this quiet group applies only
+    /// while the item waits: once it needs you it returns under its source ID, which that
+    /// dismissal never matches, and shows and badges as usual. Dismissing a Needs you row keeps
+    /// its source ID and is unchanged.
+    public static let rowIDPrefix = "waiting:"
+    public static func row(_ item: InboxItem) -> InboxItem {
+        var row = item
+        row.id = rowIDPrefix + item.id
+        return row
+    }
+
+    /// The disclosure header's spoken name, with its count.
+    public var accessibilityLabel: String { "\(Self.title), \(spokenCount)" }
 }
 
 /// What the Inbox shows when no rows are visible. Only a verified, fresh, complete empty inbox is

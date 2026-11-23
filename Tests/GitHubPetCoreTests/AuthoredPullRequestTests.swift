@@ -62,16 +62,30 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
     }
 
     @Test func waitingOnOthersDraftsAndStillChecking() {
-        for decision in ["APPROVED", "REVIEW_REQUIRED", NSNull()] as [Any] {
+        // #148: each waiting PR says why, where GitHub says so.
+        let decisions: [(Any, AuthoredAttention.WaitReason?)] = [("APPROVED", .approved), ("REVIEW_REQUIRED", .reviewPending), (NSNull(), nil)]
+        for (decision, decided) in decisions {
             for state in ["SUCCESS", "PENDING", "EXPECTED"] {
-                #expect(AuthoredAttention(authored(decision: decision, rollup: ["state": state])) == .waiting)
+                var reasons: [AuthoredAttention.WaitReason] = []
+                if decided == .reviewPending { reasons.append(.reviewPending) }
+                if state != "SUCCESS" { reasons.append(.checksRunning) }
+                // Approved reads "ready to merge" only when nothing else is pending.
+                if decided == .approved && reasons.isEmpty { reasons.append(.approved) }
+                #expect(AuthoredAttention(authored(decision: decision, rollup: ["state": state])) == .waiting(reasons))
             }
         }
-        #expect(AuthoredAttention(authored(rollup: NSNull())) == .waiting, "no checks")
-        #expect(AuthoredAttention(authored(commits: ["nodes": []])) == .waiting, "no commits visible")
+        #expect(AuthoredAttention(authored(rollup: NSNull())) == .waiting([]), "no checks")
+        #expect(AuthoredAttention(authored(commits: ["nodes": []])) == .waiting([]), "no commits visible")
         #expect(AuthoredAttention(authored(draft: true, decision: "CHANGES_REQUESTED", mergeable: "CONFLICTING",
-                                           rollup: ["state": "FAILURE"])) == .waiting, "drafts never alert")
-        #expect(AuthoredAttention(authored(mergeable: "UNKNOWN")) == .waiting, "conflict status not known yet")
+                                           rollup: ["state": "FAILURE"])) == .waiting([.draft]), "drafts never alert")
+        #expect(AuthoredAttention(authored(mergeable: "UNKNOWN")) == .waiting([.mergeabilityPending]), "conflict status not known yet")
+        #expect(AuthoredAttention.WaitReason.draft.text == "Draft" && AuthoredAttention.WaitReason.reviewPending.text == "Review pending"
+                && AuthoredAttention.WaitReason.checksRunning.text == "Checks running"
+                && AuthoredAttention.WaitReason.mergeabilityPending.text == "Checking for conflicts"
+                && AuthoredAttention.WaitReason.approved.text == "Approved, ready to merge")
+        #expect(AuthoredAttention.WaitReason.summary([.reviewPending, .checksRunning, .mergeabilityPending])
+                == "Review pending, checks running, checking for conflicts", "sentence case")
+        #expect(AuthoredAttention.WaitReason.summary([]) == nil)
         #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED", mergeable: "UNKNOWN")) == .needsAction([.changesRequested(review: nil)]),
                 "UNKNOWN adds no conflict reason; other reasons still apply")
     }
@@ -86,7 +100,7 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
                 == .needsAction([.changesRequested(review: review)]))
         #expect(AuthoredAttention.Reason.changesRequested(review: review).idComponent == "changes")
         #expect(AuthoredAttention.Reason.changesRequested(review: nil).idComponent == "changes")
-        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: visible)) == .waiting,
+        #expect(AuthoredAttention(authored(decision: "APPROVED", reviews: visible)) == .waiting([.approved]),
                 "an old changes-requesting review alone never needs action")
         let undated = AuthoredAttention.Review(digest: review.digest, submittedAt: nil)
         #expect(AuthoredAttention(authored(decision: "CHANGES_REQUESTED",
@@ -146,6 +160,48 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         #expect(result.items.first { $0.id.contains("PR_checks") }?.attention == "Checks failing")
     }
 
+    /// #148: the waiting PRs are rows for the Waiting on others group, one per PR, saying why,
+    /// with no event keys; the count is exactly those rows.
+    @Test func waitingPRsAreListedWithWhyAndNoEventKeys() throws {
+        let result = try parse(ScopeQueryPlan(), authored: [
+            authored("PR_changes", number: 1, decision: "CHANGES_REQUESTED"),
+            authored("PR_review", number: 2, title: "Review me", updatedAt: "2026-11-14T12:00:00Z", decision: "REVIEW_REQUIRED",
+                     rollup: ["state": "PENDING"]),
+            authored("PR_draft", number: 3, updatedAt: "2026-11-14T11:00:00Z", draft: true, mergeable: "CONFLICTING"),
+            authored("PR_unknown", number: 4, updatedAt: "2026-11-14T09:00:00Z", mergeable: "UNKNOWN"),
+            authored("PR_plain", number: 5, updatedAt: "2026-11-14T08:00:00Z"),
+        ])
+        #expect(result.complete && result.waitingOnOthers == result.waiting.count && result.waiting.count == 4)
+        #expect(result.waiting.map(\.id) == ["authoredPullRequest:PR_review", "authoredPullRequest:PR_draft",
+                                             "authoredPullRequest:PR_unknown", "authoredPullRequest:PR_plain"], "newest first")
+        // The row shows the first reason; help and VoiceOver get every reason.
+        #expect(result.waiting.map(\.attention) == ["Review pending", "Draft", "Checking for conflicts", nil])
+        #expect(result.waiting.map(\.detail) == ["Review pending, checks running", nil, nil, nil])
+        #expect(result.waiting.allSatisfy { $0.kind == .authoredPullRequest && $0.attentionKeys.isEmpty && $0.url != nil })
+        #expect(result.waiting[0].title == "Review me" && result.waiting[0].repository == "example/pet")
+        #expect(Set(result.items.map(\.id)).isDisjoint(with: result.waiting.map(\.id)))
+        if case .snapshot(let items, _, _) = result.outcome { #expect(items.count == 1, "waiting rows never reach the engine") }
+    }
+
+    /// QA W2c (#148): a PR in both lists (needs action in one request or inclusion, waiting in
+    /// another) is shown only in Needs you: the result, and a merge of two requests, drop it from
+    /// the waiting rows so the tile never counts it twice.
+    @Test func aPRInBothListsIsOnlyANeedsYouRow() throws {
+        let both = InboxItem(id: "authoredPullRequest:PR_both", kind: .authoredPullRequest, repository: "example/pet",
+                             title: "Both", url: nil, updatedAt: Date(timeIntervalSince1970: 2), attention: "Merge conflict")
+        var quiet = both; quiet.attention = "Review pending"
+        let other = InboxItem(id: "authoredPullRequest:PR_wait", kind: .authoredPullRequest, repository: "example/pet",
+                              title: "Wait", url: nil, updatedAt: Date(timeIntervalSince1970: 1), attention: "Draft")
+        let viewer = ScopeViewer(account: accountA, login: "fixture-user")
+        let one = ScopedPollResult(viewer: viewer, items: [both], issues: [], successfulSources: 1, waiting: [quiet, other])
+        #expect(one.items == [both] && one.waiting == [other] && one.waitingOnOthers == 1)
+        let actionable = ScopedPollResult(viewer: viewer, items: [both], issues: [], successfulSources: 1)
+        let waiting = ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 1, waiting: [quiet, other])
+        for merged in [ScopedGhClient.merge(actionable, waiting), ScopedGhClient.merge(waiting, actionable)] {
+            #expect(merged.items == [both] && merged.waiting == [other] && merged.waitingOnOthers == 1)
+        }
+    }
+
     @Test func malformedAuthoredRowIsPartialNotWaiting() throws {
         let result = try parse(ScopeQueryPlan(), authored: [authored(mergeable: "MAYBE"), authored("PR_ok", number: 2, decision: "CHANGES_REQUESTED")])
         #expect(!result.complete && result.issues == [.malformedRow("authored0")])
@@ -158,6 +214,7 @@ private func parse(_ plan: ScopeQueryPlan, authored rows: [Any]) throws -> Scope
         let plan = try ScopeQueryPlan(scope: scope, expectedAccount: accountA)
         let result = try parse(plan, authored: [authored("PR_wait", number: 1), authored("PR_act", number: 2, mergeable: "CONFLICTING")])
         #expect(result.complete && result.waitingOnOthers == 1)
+        #expect(result.waiting.map(\.id) == ["authoredPullRequest:PR_wait"])
         #expect(result.items.map(\.id) == ["authoredPullRequest:PR_act"])
     }
 

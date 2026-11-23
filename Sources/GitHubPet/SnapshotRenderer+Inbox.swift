@@ -49,6 +49,7 @@ extension SnapshotRenderer {
             }
         }
         report += await inboxLegibilityRenders(model: model, directory: directory)
+        report += await waitingGroupRenders(model: model, directory: directory)
         model.settings = saved
         return report
     }
@@ -77,6 +78,56 @@ extension SnapshotRenderer {
             }
         }
         await cleanUp("stale", model: model)
+        return report
+    }
+
+    /// #148: the Waiting on others group below the Needs you groups, collapsed (the default) and
+    /// expanded, light and dark. Demo fixtures only: two Needs you rows (so every waiting row fits
+    /// without scrolling) and the default waiting rows.
+    /// Then expanded with partial and stale data, where the group shows its note.
+    /// Files: `inbox148-waiting-<collapsed|expanded|expanded-partial|expanded-stale>[-dark].png`.
+    private static func waitingGroupRenders(model: AppModel, directory: URL) async -> [String] {
+        var report = ["## waiting on others (#148)"]
+        model.settings.mascotSkin = MascotSkin.allCases[0]
+        var selection = InboxViewSelection()
+        await prepare("four", model: model, selection: &selection)
+        model.showFixtureItemsForSnapshot(inbox87Items(2))
+        model.markAllSeen()
+        let group = model.waitingGroup
+        let tile = InboxOverview(dataState: model.dataState, items: model.items, authoredWaiting: model.authoredWaitingCount,
+                                 deploymentsWaiting: model.deploymentsWaitingCount, deploymentsComplete: model.actionsQuality == nil,
+                                 serviceState: model.serviceState, incidents: model.serviceIncidents).waiting
+        report.append("inbox148 state=\(model.dataState.statusText) badge=\(model.badge ?? "none") rows=\(model.items.count) "
+                      + "waiting-rows=\(group.items.count) group-count=\(group.count) tile=\(tile.value) shown=\(group.isShown) "
+                      + "unseen-waiting=\(group.items.filter(model.isUnseen).count) "
+                      + "reasons=\(group.items.map { $0.attention ?? "none" }.joined(separator: "|"))")
+        for expanded in [false, true] {
+            selection.waitingExpanded = expanded
+            let name = expanded ? "expanded" : "collapsed"
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                                   showsSimulator: false, initialSelection: selection),
+                                         name: "inbox148-waiting-\(name)\(suffix)", directory: directory,
+                                         appearance: appearance, asWindow: true)
+                if let first = lines.first { report.append("inbox148 \(name)\(suffix): \(first)") }
+            }
+        }
+        for state in ["partial", "stale"] {
+            if state == "partial" { model.setPartialPolls(true) } else { model.markStale() }
+            let degraded = model.waitingGroup
+            report.append("inbox148 expanded-\(state) state=\(model.dataState.statusText) group-count=\(degraded.count) "
+                          + "rows=\(degraded.items.count) note=\(degraded.note ?? "none") label=\(degraded.countLabel)")
+            for (suffix, appearance) in [("", NSAppearance.Name.aqua), ("-dark", .darkAqua)] {
+                let lines = await render(InboxView(model: model, showsWindowButton: false, marksSeenOnClose: false,
+                                                   showsSimulator: false, initialSelection: selection),
+                                         name: "inbox148-waiting-expanded-\(state)\(suffix)", directory: directory,
+                                         appearance: appearance, asWindow: true)
+                if let first = lines.first { report.append("inbox148 expanded-\(state)\(suffix): \(first)") }
+            }
+            if state == "partial" { model.setPartialPolls(false) }
+        }
+        model.showFixtureItemsForSnapshot(inbox87Items(4))
+        await cleanUp("four", model: model)
         return report
     }
 

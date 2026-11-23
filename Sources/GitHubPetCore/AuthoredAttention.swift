@@ -8,13 +8,37 @@ import CoreFoundation
 /// Needs action: changes requested, a merge conflict, or failing checks on the head commit
 /// (the combined rollup: GraphQL can't ask a search row which checks are required).
 /// Everything else, drafts, and conflict status GitHub is still computing (`UNKNOWN`) are
-/// waiting: counted, never alerting. `UNKNOWN` is re-evaluated on the next poll.
+/// waiting: listed under Waiting on others with why where known (#148), never alerting.
+/// `UNKNOWN` is re-evaluated on the next poll.
 ///
 /// Stable reason keys record first gains. A changes-requested round also carries the visible
 /// review's identity and submission date for chronological comparison by the inbox engine.
 public enum AuthoredAttention: Equatable, Sendable {
-    case waiting
+    case waiting([WaitReason])
     case needsAction([Reason])
+
+    /// Why a PR that needs nothing from you is waiting (#148), in display order. Fixed wording,
+    /// no names, so it stays visible in privacy mode. A draft is only "Draft"; "Approved, ready
+    /// to merge" only when nothing else is pending (it stays waiting: no alert change).
+    public enum WaitReason: String, Equatable, Sendable {
+        case draft, reviewPending, checksRunning, mergeabilityPending, approved
+
+        public var text: String {
+            switch self {
+            case .draft: return "Draft"
+            case .reviewPending: return "Review pending"
+            case .checksRunning: return "Checks running"
+            case .mergeabilityPending: return "Checking for conflicts"
+            case .approved: return "Approved, ready to merge"
+            }
+        }
+
+        /// Every reason in one sentence-case line, e.g. "Review pending, checks running".
+        public static func summary(_ reasons: [WaitReason]) -> String? {
+            guard let first = reasons.first else { return nil }
+            return ([first.text] + reasons.dropFirst().map { $0.text.lowercased() }).joined(separator: ", ")
+        }
+    }
 
     public struct Review: Hashable, Codable, Sendable {
         let digest: String
@@ -90,7 +114,7 @@ public enum AuthoredAttention: Equatable, Sendable {
         if decisionValue is NSNull { decision = nil }
         else if let value = decisionValue as? String, Self.reviewDecisions.contains(value) { decision = value }
         else { return nil }
-        var failingOID: String?
+        var failingOID: String?, checksRunning = false
         if let first = commits.first {
             guard let commit = (first as? [String: Any])?["commit"] as? [String: Any],
                   let oid = commit["oid"] as? String, Self.isOID(oid),
@@ -99,14 +123,21 @@ public enum AuthoredAttention: Equatable, Sendable {
                 guard let state = (rollupValue as? [String: Any])?["state"] as? String,
                       Self.rollupStates.contains(state) else { return nil }
                 if state == "FAILURE" || state == "ERROR" { failingOID = oid }
+                if state == "PENDING" || state == "EXPECTED" { checksRunning = true }
             }
         }
-        if draftValue.boolValue { self = .waiting; return }
+        if draftValue.boolValue { self = .waiting([.draft]); return }
         var reasons: [Reason] = []
         if decision == "CHANGES_REQUESTED" { reasons.append(.changesRequested(review: latestChangesReview)) }
         if mergeable == "CONFLICTING" { reasons.append(.conflict) }
         if let failingOID { reasons.append(.checksFailing(failingOID)) }
-        self = reasons.isEmpty ? .waiting : .needsAction(reasons)
+        guard reasons.isEmpty else { self = .needsAction(reasons); return }
+        var waits: [WaitReason] = []
+        if decision == "REVIEW_REQUIRED" { waits.append(.reviewPending) }
+        if checksRunning { waits.append(.checksRunning) }
+        if mergeable == "UNKNOWN" { waits.append(.mergeabilityPending) }
+        if decision == "APPROVED" && waits.isEmpty { waits.append(.approved) }
+        self = .waiting(waits)
     }
 
     static func isOID(_ value: String) -> Bool {

@@ -36,7 +36,9 @@ private final class FakeActions: ActionsPolling, @unchecked Sendable {
     }
 
     @Test func actionsRunAfterAUsableInboxReplyAndComeBackSeparately() throws {
-        let inboxResult = ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2, hidden: 1, waitingOnOthers: 3)
+        let inboxResult = ScopedPollResult(viewer: viewer, items: [], issues: [], successfulSources: 2, hidden: 1,
+                                           waiting: (1...3).map { InboxItem(id: "authoredPullRequest:PR_\($0)", kind: .authoredPullRequest, repository: "example/pet",
+                                                                           title: "Waiting \($0)", url: nil, updatedAt: Date(timeIntervalSince1970: Double($0))) })
         let actions = FakeActions(ScopedPollResult(viewer: viewer, items: [failure], issues: [.targetUnavailable(0)], successfulSources: 0))
         let job = AppModel.ActionsJob(client: actions, repositories: [pet], makeBudget: { CommandBudget(timeout: 20) })
         let reply = AppModel.poll(FakeScoped(inboxResult), try request(), CommandBudget(timeout: 20), actions: job)

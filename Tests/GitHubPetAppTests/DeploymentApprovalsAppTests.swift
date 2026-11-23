@@ -24,7 +24,13 @@ private final class ScriptedDeployments: DeploymentPolling, @unchecked Sendable 
                       url: URL(string: "https://github.com/demo-a/pet/actions/runs/7"), updatedAt: Date(timeIntervalSince1970: 1_763_200_000))
         }
         return ScopedPollResult(viewer: ScopeViewer(account: ScopeSimulation.accountA, login: "demo-a_sim"), items: items,
-                                issues: [], successfulSources: repositories.count, waitingOnOthers: waiting)
+                                issues: [], successfulSources: repositories.count,
+                                waiting: (0..<waiting).map { run in
+                                    InboxItem(id: "deploy:waiting\(run)", kind: .deploymentApproval, repository: "demo-a/pet",
+                                              title: "Deploy is waiting for deployment approval",
+                                              url: URL(string: "https://github.com/demo-a/pet/actions/runs/\(100 + run)"),
+                                              updatedAt: Date(timeIntervalSince1970: 1_763_200_000), attention: DeploymentApprovals.waitingReason)
+                                })
     }
 }
 private final class CountingFailures: ActionsPolling, @unchecked Sendable {
