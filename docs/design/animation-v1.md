@@ -16,8 +16,8 @@ The thumbnails use a neutral stand-in figure, not either skin. They show poses, 
 | firefighter hat (`firefighter-hat`) | accessory overlay | Shown whenever the incident marker is shown | 1 overlay | held |
 | `incident-end` | event clip | All incidents resolve on a fresh status fetch while the marker was shown | 6 + 2 reused | 2700 ms |
 | `new-item` | event clip | A batch of new actionable items (replaces the double wave when the pack has it) | 5 | 1900 ms |
-| `urgent` (existing) | event clip | A new critical item, unchanged | existing | 2000 ms |
-| `item-cleared` | outcome clip | You dismiss an Inbox row | 3 + 1 reused | 1200 ms |
+| `urgent` (existing) | event clip | A new critical inbox item, unchanged. Never played for an incident. | existing | 2000 ms |
+| `item-cleared` | outcome clip | You dismiss a Needs you row in the Inbox | 3 + 1 reused | 1200 ms |
 | `inbox-zero` | outcome clip | A fresh poll verifies an empty inbox after it had items | 5 + 1 reused | 2000 ms |
 | `drag` | held state (loop) | Pointer drag past the 3 pt threshold | 2 | 800 ms loop |
 | `drop` | reaction clip | Mouse up after a drag | 2 | 450 ms |
@@ -60,12 +60,20 @@ Higher tiers preempt lower ones at once. The new clip starts at frame 0 with no 
 | Tier | Members (high to low within the tier) | Same-or-lower arrival while playing |
 |---|---|---|
 | 0 | `drag` (held state) | — |
-| 1, event | `urgent` > `incident-start` > `incident-end` > `new-item` (and the old wave) | Existing `EventClipQueue` rules (#29): merge, no restart, no queue, no backlog. Severity orders them. Repository before incident at equal severity, as today. |
+| 1, event | ordered by severity, then kind rank, then earlier start (below) | Existing `EventClipQueue` rules (#29): merge, no restart, no queue, no backlog. |
 | 2, outcome | `inbox-zero` > `item-cleared` | Dropped |
 | 3, reaction | `drop` > `dizzy` > `poke` | Dropped (`dizzy` replaces `poke` when it triggers) |
 | 4, ambient | `idle-look`, `idle-stretch`, `idle-fidget` | Dropped |
 | 5 | `doze` (held state) | — |
 | base | mood: `idle` loop, or the `attention` / `urgent` static pose | — |
+
+**Tier 1 order is deterministic.** `EventClipQueue.Clip` gains a clip-kind field. The visible clip is chosen by:
+
+1. severity, higher first (critical > actionable);
+2. kind rank, high to low: `urgent` (critical inbox event) > `incident-start` > `incident-end` > `new-item` (and the old wave);
+3. the earlier `startedAt`.
+
+Incident clips carry their incident's severity: a major or critical incident start is critical, so it outranks `new-item`. If a critical inbox event and an incident start collide, both are critical and `urgent` wins by kind rank. The hat overlay still appears, because the marker is shown.
 
 Drag is special. While a drag is held the `drag` pose masks everything. Tier 1 clips that start or are already running keep their own clock, so nothing is replayed after the drop. Tier 2 to 4 clips are discarded. On mouse up, a tier 1 clip still inside its window shows its remaining frames and `drop` is skipped. Otherwise `drop` plays.
 
@@ -74,7 +82,7 @@ Drag is special. While a drag is held the `drag` pose masks everything. Tier 1 c
 | Gate | Tier 1 event clips, `inbox-zero` | `item-cleared`, `drag`, `drop`, `poke`, `dizzy` | Ambient clips | `doze` | Hat overlay |
 |---|---|---|---|---|---|
 | Reduce Motion (system or app setting) | not played | not played; `drag` shows its static fallback while held | not played | static fallback, no Z | shown (static) |
-| Quiet hours, snooze | not played (as today) | played: the user caused them | not played | allowed, and enters at once | shown |
+| Quiet hours, snooze (only if those hidden features return; `FeatureSet.current` has them off today) | not played (as today) | played: the user caused them | not played | allowed, and enters at once | shown |
 | Mascot hidden | nothing plays | — | — | — | — |
 | Stale, error, loading data | unchanged existing treatment | played | played | not entered | follows the marker (hidden) |
 
@@ -119,13 +127,13 @@ FX sprites (mist, sparkle, Z, smoke puff) are drawn by the engine in world space
 
 | | |
 |---|---|
-| Trigger | `applyServiceStatus` produces incident events and the marker was not shown before (the same condition that starts a marker burst, with `fromTier == nil`). An escalation of a shown incident (`fromTier != nil`) keeps today's gesture and does not re-hat. |
-| Tier | 1, using the incident event's severity, origin `serviceIncident` |
+| Trigger | Every incident start: `applyServiceStatus` produces an event for a new incident ID. This includes a second incident while the hat is already on: the clip replays (frame 00 has no hat, so it reads as suiting up again). An escalation of a known incident to a higher tier is not a start: the marker burst shows it and no character clip plays. An incident never plays `urgent`. A pack without `incident-start` plays the attention double wave for an incident start, whatever its severity. |
+| Tier | 1, kind `incident-start`, carrying the incident's severity (major and critical are critical, so it outranks `new-item`), origin `serviceIncident` |
 | Frames | `incident-start-00` 250 · `01` 300 · `02` 300 · `03` 250 · `04` 500 · `05` 300 = **1900 ms** |
 | Poses | 00 notices: eyes wide, glancing down-left toward the siren. 01 brings the hat into view at chest height in the left hand or tentacle. 02 lifts it onto the head from the front, tilted, hands at forehead level (never above y 20). 03 hat on, slightly askew, eyes squeezed while pulling it down. 04 hat straight, determined little nod (head 4 px lower), limbs on hips. 05 = `idle-00` with the hat composited by the builder, so the hand-off to the held overlay is pixel-identical. |
 | Accessories | `hide` (hat baked in) |
 | Concurrent | The marker burst (#37) fades in behind as today. No FX. |
-| Interrupts | Preempted only by `urgent` or a drag. If preempted, the hat overlay simply appears with the next pose. |
+| Interrupts | Preempted only by a critical `urgent` (kind rank) or a drag. If preempted, the hat overlay simply appears with the next pose. |
 | Reduce Motion | No clip. The hat overlay and the static marker appear together. |
 | Mona | Tentacles hold the helmet by the brim. The face stays front-on. |
 | Little Chris | Both hands on the brim. Hair under the helmet must not poke above y 20. |
@@ -135,7 +143,7 @@ FX sprites (mist, sparkle, Z, smoke puff) are drawn by the engine in world space
 | | |
 |---|---|
 | Trigger | The marker was shown at the previous fresh status result, and the new result is fresh `.operational` (no unresolved incidents). It never plays when the marker disappears because status went stale, errored or is loading. In that case the hat goes with the marker, and if a later fresh result is operational no clip plays either (the incident was not visibly ended on screen). Partial resolution (marker still shown, tier lower) plays nothing. |
-| Tier | 1, severity actionable, origin `serviceIncident` |
+| Tier | 1, kind `incident-end`, severity actionable, origin `serviceIncident`. This trigger is new: today nothing fires when incidents resolve (section 7). |
 | Frames | `incident-end-00` 250 · `01` 250 · `02` 300 · `03` 300 · `02` 300 (reused) · `04` 300 · `05` 700 · `idle-00` 300 (reused) = **2700 ms** |
 | Poses | 00 hat on, pulls a small red extinguisher from behind and holds it at the left side with a grin. 01 braces and aims the nozzle down-left at the ground near the siren. 02 sprays: squeezes the handle, body recoils a touch right. 03 sweeps the nozzle lower. 04 lowers the extinguisher and looks at the cleared ground, relieved. 05 "phew": hat off in the right hand at chest height, left limb wiping the brow, eyes closed, big smile (the extinguisher is set down out of frame). Then `idle-00`. |
 | Accessories | `hide` (hat baked into 00–04) |
@@ -163,7 +171,7 @@ FX sprites (mist, sparkle, Z, smoke puff) are drawn by the engine in world space
 
 | | |
 |---|---|
-| Trigger | `AppModel.dismissInboxItem` succeeds (the user dismissed a row). Pointer or keyboard, any Inbox. |
+| Trigger | `AppModel.dismissInboxItem` succeeds for a **Needs you** row (pointer or keyboard). Dismissing a Waiting on others row (#148) never plays it: nothing was asked of you. |
 | Tier | 2. Cooldown 8 s: further dismissals inside it play nothing. |
 | Frames | `item-cleared-00` 200 · `01` 300 · `02` 400 · `idle-00` 300 (reused) = **1200 ms** |
 | Poses | 00 glances down-left, pleased. 01 raises the right limb in a thumbs-up at shoulder height (Mona: tentacle tip curled into a neat loop). 02 holds it with a wink. Then `idle-00`. |
@@ -421,6 +429,14 @@ That is 46 generated frames plus 1 builder composite and 1 accessory per skin: 4
 - A Reduce Motion pass: no clip plays, and the hat, doze and drag substitutions are static.
 - Trigger truth: stale/error/loading never plays `incident-end` or `inbox-zero`. Launch mid-incident shows the hat without `incident-start`. Unchanged polls and reconnects replay nothing.
 - A CPU check at 8 fps idle plus doze FX, and during a drag.
+
+## 7. Engine plan notes (for dev-138 and the release)
+
+- **Clip kind:** `EventClipQueue.Clip` gains a kind field (`urgent`, `incident-start`, `incident-end`, `new-item`, plus the old wave as `new-item`'s fallback). Ordering is severity, then kind rank, then earlier `startedAt` (section 2). It replaces the current tie-break.
+- **`incident-end` needs a new trigger.** Today a resolution only removes the marker quietly. The engine has to detect the transition "marker shown at the previous fresh result → fresh `.operational` now" in `applyServiceStatus`, and never from stale, error or loading (section 3.3).
+- **`validate_pack.py` must be extended for v2** (designer-owned, a follow-up to this doc). It should check the new manifest sections, the bounds rule, the per-clip caps and the bundled budget (8 frames per clip, 64 images, 96 KiB per image, 4 MiB per pack) before the Codex art is accepted.
+- **Gates:** the quiet hours and snooze rows in section 2 apply only if those hidden features return. Today only Reduce Motion, hiding the mascot and data freshness gate clips.
+- **App size:** the two bundled packs grow from about 0.9 MB to about 6–7 MB together (about 48 new images per skin at roughly 50–60 KB each, plus the shared FX). That is roughly **6 MB of app size growth**: note it in the release notes for the build that ships the art.
 
 ## Open questions for PM
 
