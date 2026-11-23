@@ -56,7 +56,10 @@ Error text from `gh` or GitHub is classified rather than shown, so it can't leak
 - **Calm by default.** A short animation plays once for a genuinely new item, not on every refresh or
   after a reconnect. **Reduce motion** (or macOS's own setting) keeps the pet still.
 - **Count badge and hover summary.** The badge shows how many items need you; hover for the newest.
-- **Optional.** Hide the pet in Settings; monitoring, the Inbox and the menu-bar icon keep working.
+- **Optional.** Hide the pet in Settings; monitoring and the Inbox keep working, and the menu-bar icon then
+  shows the same count the badge would (`?`, `99+` and stale or partial rules included; nothing when
+  there is nothing to count). While the pet is showing, the menu-bar icon has no count. The count sits
+  beside the paw in a fixed-width slot, so the icon doesn't shift, and VoiceOver reads it with the status.
 - **Remembers across restarts.** Items you've seen don't come back as new after a relaunch. Items that
   arrived while the app was quit are announced once (within 24 hours).
 - **Custom packs (advanced).** Launch from Terminal with `GITHUB_PET_PACK_DIR` set to replace the
