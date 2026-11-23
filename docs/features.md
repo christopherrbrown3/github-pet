@@ -1,6 +1,6 @@
 # GitHub Pet features
 
-The detail behind the [README](../README.md). Everything here describes the Beta 5 app. GitHub Pet is
+The detail behind the [README](../README.md). Everything here describes the Beta 7 app. GitHub Pet is
 read-only: every item opens on github.com, and nothing is approved, merged or changed from the app.
 
 ## The Inbox
@@ -56,7 +56,10 @@ Error text from `gh` or GitHub is classified rather than shown, so it can't leak
 - **Calm by default.** A short animation plays once for a genuinely new item, not on every refresh or
   after a reconnect. **Reduce motion** (or macOS's own setting) keeps the pet still.
 - **Count badge and hover summary.** The badge shows how many items need you; hover for the newest.
-- **Optional.** Hide the pet in Settings; monitoring, the Inbox and the menu-bar icon keep working.
+- **Optional.** Hide the pet in Settings; monitoring and the Inbox keep working, and the menu-bar icon then
+  shows the same count the badge would (`?`, `99+` and stale or partial rules included; nothing when
+  there is nothing to count). While the pet is showing, the menu-bar icon has no count. The count sits
+  beside the paw in a fixed-width slot, so the icon doesn't shift, and VoiceOver reads it with the status.
 - **Remembers across restarts.** Items you've seen don't come back as new after a relaunch. Items that
   arrived while the app was quit are announced once (within 24 hours).
 - **Custom packs (advanced).** Launch from Terminal with `GITHUB_PET_PACK_DIR` set to replace the
@@ -105,7 +108,7 @@ DEMO, and appears only if you choose it under Settings → GitHub → Source.
 ## Updates
 
 Anyone on Beta 3 or earlier installs by hand once; Beta 4 and later get updates in the app, delivered by
-[Sparkle](https://sparkle-project.org). Automatic checks are on for new installs (an earlier choice is kept; Settings
+[Sparkle](https://sparkle-project.org). Automatic checks are on unless you turned them off (an earlier choice is kept; Settings
 can turn them off): about every 6 hours, plus after launch and wake when a check is due. An available update shows a
 dot on the menu-bar icon, an "Update available" banner in the Inbox header (Update… or Later) and a quiet "Version X
 available" line in the menu; it asks before installing, unless you turn on automatic installs. Updates
