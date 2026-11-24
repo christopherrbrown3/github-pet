@@ -21,6 +21,10 @@ Incident-start B review: ears are concealed and unused cells appear empty; the h
 
 Incident-end A review: the retry keeps the extinguisher below the face, but ears remain exposed above the brim, nozzle is not held, the poses have little sweep and pose 02 differs in scale. First attempt `exec-9e11a18a-7bc9-4866-a881-ef7656e0dc80` crossed the face with the handle and extended the nozzle; one retry used. Bounds and baseline unverified.
 
+| `assets/mascots/mona-pet-v1/sources/incident-end-b-sheet.png` | `exec-61d7b0fc-79be-4baa-878e-54ce3a726d1a` | Incident-end 04–05, lowered extinguisher then helmet off and brow wipe; other cells empty. | Same three reference hashes as pilot above. |
+
+Incident-end B review: 04 looks down-left and 05 reads as phew; 04 helmet appears large and nozzle extends left; 05 includes motion ticks and the wiping limb touches the face edge. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
