@@ -57,13 +57,14 @@ import Testing
         #expect(Array(held.entries(from: Self.start, mode: .normal).prefix(3)).count == 1, "a held mood draws once")
     }
 
-    @Test func idleTicksDoNotNotifyViews() async {
+    @Test(arguments: [false, true])
+    func idleTicksDoNotNotifyViews(reducedMotion: Bool) async {
         final class Clock: @unchecked Sendable { var now = Date(timeIntervalSince1970: 1_763_208_001) }
         let clock = Clock()
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures"], environment: [:])
         options.userDefaultsOverride = EphemeralDefaults(name: "dev.github-pet.tests.idle-redraw.\(UUID().uuidString)")
         _ = NSApplication.shared
-        let app = AppModel(options: options, runtime: AppModel.Runtime(now: { clock.now }, systemReducedMotion: { false },
+        let app = AppModel(options: options, runtime: AppModel.Runtime(now: { clock.now }, systemReducedMotion: { reducedMotion },
                                                                       schedulesTimers: false))
         app.tick()
         await Task.yield()

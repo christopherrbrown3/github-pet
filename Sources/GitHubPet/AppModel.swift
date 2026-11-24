@@ -1037,7 +1037,7 @@ final class AppModel: ObservableObject {
         serviceMonitor.refreshFreshness(now: date)
         if effectiveReducedMotion || !settings.alertsAllowed(at: date, features: features) {
             clips.clear()
-            markerBurst = nil
+            if markerBurst != nil { markerBurst = nil } // an equal assignment still notifies views (#166)
         }
         clips.tick(now: date)
         sync(now: date)
