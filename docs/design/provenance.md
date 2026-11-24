@@ -77,6 +77,10 @@ Little Chris incident-start A review: retry makes 02 visibly in transit but helm
 
 Little Chris incident-start B review: expression has assertive eyebrows; crown and baseline need measurement. No visible effect marks. No retry.
 
+| `assets/mascots/little-chris-v1/sources/incident-end-a-sheet.png` | `exec-d71dd338-0115-4d5a-ae27-2f4df89ba545` | Incident-end 00–03, compact extinguisher and nozzle sweep. | Same three Little Chris reference hashes as incident-start A above. |
+
+Little Chris incident-end A review: 01–03 nozzle extends beyond normal width and helmet crowns appear high; 02 eyes closed. Face is unobstructed and no spray is baked in. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
