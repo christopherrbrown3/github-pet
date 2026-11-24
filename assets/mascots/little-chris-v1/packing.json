@@ -1,0 +1,2330 @@
+{
+  "v2": {
+    "builder": "docs/design/build_pack_v2.py",
+    "rules": [
+      "one generated cell per runtime frame; no pixel drawn or synthesized",
+      "alpha <= 8 dropped before and after resampling",
+      "resampled with macOS sips so the face width matches idle-00 (headScale is the result)",
+      "face centre aligned to idle-00, lowest visible pixel on y 232",
+      "points measured from masks: head = face top minus the idle-00 face-to-skull offset"
+    ],
+    "faceWidthTarget": 63.799,
+    "idleFaceBounds": [
+      96,
+      51,
+      159,
+      107
+    ],
+    "skullOffset": 30,
+    "union": {
+      "x": [
+        62,
+        205
+      ],
+      "yMin": 20
+    },
+    "excludedCells": {
+      "dizzy-poke cell 2": "extra opposite-lean alternate; dizzy-02 comes from dizzy-b cell 0",
+      "B sheets cells 1-3 (incident-end-b: 2-3)": "left empty by generation"
+    },
+    "helmetReplacement": {
+      "mode": "evaluate",
+      "applied": false,
+      "frames": {
+        "incident-start-03": "not packed (canvas overflow)",
+        "incident-start-04": {
+          "helmetPixels": 4222,
+          "exposedPixels": 2670,
+          "exposedHelmetCore": 2459,
+          "exposedBounds": [
+            69,
+            5,
+            175,
+            81
+          ]
+        },
+        "incident-end-00": "not packed (canvas overflow)",
+        "incident-end-01": "not packed (canvas overflow)",
+        "incident-end-02": "not packed (canvas overflow)",
+        "incident-end-03": "not packed (canvas overflow)",
+        "incident-end-04": "not packed (canvas overflow)"
+      }
+    },
+    "accessory": {
+      "source": "shared-fx-v1/sources/props-reference.png",
+      "sourceCell": 0,
+      "sourceAlphaBounds": [
+        39,
+        122,
+        627,
+        557
+      ],
+      "size": [
+        90,
+        67
+      ],
+      "scale": 0.15306,
+      "translation": [
+        96,
+        20
+      ],
+      "shieldCentreX": 31.5,
+      "alphaBounds": [
+        96,
+        20,
+        186,
+        87
+      ]
+    },
+    "frames": {
+      "incident-start-00": {
+        "sourceSheet": "sources/incident-start-a-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          316,
+          143,
+          463,
+          283
+        ],
+        "sourceAlphaBounds": [
+          257,
+          65,
+          503,
+          614
+        ],
+        "paddedCellMargin": 65,
+        "neighbourPixelsDropped": 933,
+        "scale": 0.43401,
+        "scaledCellSize": 314,
+        "translation": [
+          -42,
+          -35
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          69,
+          -7,
+          176,
+          232
+        ]
+      },
+      "incident-start-01": {
+        "sourceSheet": "sources/incident-start-a-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          274,
+          145,
+          422,
+          272
+        ],
+        "sourceAlphaBounds": [
+          221,
+          65,
+          457,
+          614
+        ],
+        "paddedCellMargin": 65,
+        "neighbourPixelsDropped": 2063,
+        "scale": 0.43107,
+        "scaledCellSize": 312,
+        "translation": [
+          -22,
+          -33
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          73,
+          -5,
+          176,
+          232
+        ]
+      },
+      "incident-start-02": {
+        "sourceSheet": "sources/incident-start-a-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          321,
+          175,
+          456,
+          271
+        ],
+        "sourceAlphaBounds": [
+          258,
+          79,
+          511,
+          624
+        ],
+        "paddedCellMargin": 79,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.47259,
+        "scaledCellSize": 342,
+        "translation": [
+          -56,
+          -63
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          66,
+          -26,
+          186,
+          232
+        ]
+      },
+      "incident-start-03": {
+        "sourceSheet": "sources/incident-start-a-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          268,
+          171,
+          417,
+          278
+        ],
+        "sourceAlphaBounds": [
+          197,
+          66,
+          480,
+          624
+        ],
+        "paddedCellMargin": 66,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.42818,
+        "scaledCellSize": 310,
+        "translation": [
+          -20,
+          -36
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          64,
+          -8,
+          186,
+          232
+        ]
+      },
+      "incident-start-04": {
+        "sourceSheet": "sources/incident-start-b-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          309,
+          252,
+          447,
+          345
+        ],
+        "sourceAlphaBounds": [
+          253,
+          144,
+          494,
+          633
+        ],
+        "paddedCellMargin": 90,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.46231,
+        "scaledCellSize": 334,
+        "translation": [
+          -47,
+          -61
+        ],
+        "faceBounds": [
+          96,
+          56,
+          159,
+          98
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          69,
+          5,
+          181,
+          232
+        ],
+        "hazePixelsDropped": [
+          3877,
+          126
+        ],
+        "redFringePixels": [
+          891,
+          6
+        ],
+        "head": [
+          128,
+          26
+        ]
+      },
+      "incident-end-00": {
+        "sourceSheet": "sources/incident-end-a-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          317,
+          173,
+          458,
+          286
+        ],
+        "sourceAlphaBounds": [
+          265,
+          73,
+          487,
+          641
+        ],
+        "paddedCellMargin": 73,
+        "neighbourPixelsDropped": 1057,
+        "scale": 0.45248,
+        "scaledCellSize": 327,
+        "translation": [
+          -48,
+          -58
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          71,
+          -25,
+          172,
+          232
+        ]
+      },
+      "incident-end-01": {
+        "sourceSheet": "sources/incident-end-a-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          270,
+          180,
+          411,
+          300
+        ],
+        "sourceAlphaBounds": [
+          217,
+          81,
+          458,
+          641
+        ],
+        "paddedCellMargin": 81,
+        "neighbourPixelsDropped": 494,
+        "scale": 0.45248,
+        "scaledCellSize": 327,
+        "translation": [
+          -26,
+          -58
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          72,
+          -22,
+          181,
+          232
+        ]
+      },
+      "incident-end-02": {
+        "sourceSheet": "sources/incident-end-a-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          310,
+          169,
+          453,
+          295
+        ],
+        "sourceAlphaBounds": [
+          257,
+          75,
+          509,
+          642
+        ],
+        "paddedCellMargin": 75,
+        "neighbourPixelsDropped": 1805,
+        "scale": 0.44615,
+        "scaledCellSize": 323,
+        "translation": [
+          -43,
+          -55
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          72,
+          -22,
+          184,
+          232
+        ]
+      },
+      "incident-end-03": {
+        "sourceSheet": "sources/incident-end-a-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          247,
+          187,
+          390,
+          309
+        ],
+        "sourceAlphaBounds": [
+          164,
+          82,
+          458,
+          642
+        ],
+        "paddedCellMargin": 81,
+        "neighbourPixelsDropped": 1801,
+        "scale": 0.44615,
+        "scaledCellSize": 323,
+        "translation": [
+          -15,
+          -55
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          58,
+          -18,
+          190,
+          232
+        ]
+      },
+      "incident-end-04": {
+        "sourceSheet": "sources/incident-end-b-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          290,
+          213,
+          441,
+          331
+        ],
+        "sourceAlphaBounds": [
+          246,
+          99,
+          510,
+          656
+        ],
+        "paddedCellMargin": 67,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.42251,
+        "scaledCellSize": 305,
+        "translation": [
+          -26,
+          -44
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          78,
+          -3,
+          189,
+          232
+        ]
+      },
+      "incident-end-05": {
+        "sourceSheet": "sources/incident-end-b-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          273,
+          170,
+          425,
+          297
+        ],
+        "sourceAlphaBounds": [
+          221,
+          96,
+          498,
+          654
+        ],
+        "paddedCellMargin": 69,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.41973,
+        "scaledCellSize": 303,
+        "translation": [
+          -24,
+          -42
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          69,
+          -2,
+          185,
+          232
+        ]
+      },
+      "new-item-00": {
+        "sourceSheet": "sources/new-item-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          321,
+          148,
+          471,
+          279
+        ],
+        "sourceAlphaBounds": [
+          268,
+          75,
+          514,
+          616
+        ],
+        "paddedCellMargin": 75,
+        "neighbourPixelsDropped": 6562,
+        "scale": 0.42533,
+        "scaledCellSize": 308,
+        "translation": [
+          -42,
+          -31
+        ],
+        "faceBounds": [
+          95,
+          32,
+          159,
+          88
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          72,
+          1,
+          177,
+          232
+        ],
+        "hazePixelsDropped": [
+          22537,
+          132
+        ],
+        "redFringePixels": [
+          2973,
+          8
+        ],
+        "head": [
+          127,
+          2
+        ]
+      },
+      "new-item-01": {
+        "sourceSheet": "sources/new-item-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          249,
+          187,
+          400,
+          319
+        ],
+        "sourceAlphaBounds": [
+          193,
+          111,
+          437,
+          617
+        ],
+        "paddedCellMargin": 106,
+        "neighbourPixelsDropped": 6882,
+        "scale": 0.42251,
+        "scaledCellSize": 305,
+        "translation": [
+          -9,
+          -28
+        ],
+        "faceBounds": [
+          96,
+          51,
+          159,
+          106
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          72,
+          19,
+          175,
+          232
+        ],
+        "hazePixelsDropped": [
+          22871,
+          112
+        ],
+        "redFringePixels": [
+          2558,
+          15
+        ],
+        "head": [
+          128,
+          21
+        ]
+      },
+      "new-item-02": {
+        "sourceSheet": "sources/new-item-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          332,
+          113,
+          486,
+          244
+        ],
+        "sourceAlphaBounds": [
+          229,
+          39,
+          527,
+          622
+        ],
+        "paddedCellMargin": 39,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.41428,
+        "scaledCellSize": 300,
+        "translation": [
+          -42,
+          -26
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          53,
+          -10,
+          177,
+          232
+        ]
+      },
+      "new-item-03": {
+        "sourceSheet": "sources/new-item-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          263,
+          112,
+          418,
+          248
+        ],
+        "sourceAlphaBounds": [
+          169,
+          37,
+          469,
+          622
+        ],
+        "paddedCellMargin": 37,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.41161,
+        "scaledCellSize": 298,
+        "translation": [
+          -13,
+          -24
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          56,
+          -9,
+          180,
+          232
+        ]
+      },
+      "new-item-04": {
+        "sourceSheet": "sources/new-item-b-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          290,
+          160,
+          455,
+          303
+        ],
+        "sourceAlphaBounds": [
+          233,
+          78,
+          488,
+          650
+        ],
+        "paddedCellMargin": 73,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.38666,
+        "scaledCellSize": 280,
+        "translation": [
+          -16,
+          -20
+        ],
+        "faceBounds": [
+          96,
+          42,
+          160,
+          97
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          74,
+          10,
+          173,
+          232
+        ],
+        "hazePixelsDropped": [
+          5609,
+          102
+        ],
+        "redFringePixels": [
+          1886,
+          5
+        ],
+        "head": [
+          128,
+          12
+        ]
+      },
+      "item-cleared-00": {
+        "sourceSheet": "sources/cleared-poke-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          309,
+          145,
+          461,
+          279
+        ],
+        "sourceAlphaBounds": [
+          260,
+          64,
+          509,
+          630
+        ],
+        "paddedCellMargin": 64,
+        "neighbourPixelsDropped": 2578,
+        "scale": 0.41973,
+        "scaledCellSize": 303,
+        "translation": [
+          -34,
+          -32
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          75,
+          -5,
+          179,
+          232
+        ]
+      },
+      "item-cleared-01": {
+        "sourceSheet": "sources/cleared-poke-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          268,
+          140,
+          421,
+          272
+        ],
+        "sourceAlphaBounds": [
+          213,
+          64,
+          464,
+          630
+        ],
+        "paddedCellMargin": 64,
+        "neighbourPixelsDropped": 1995,
+        "scale": 0.41699,
+        "scaledCellSize": 301,
+        "translation": [
+          -16,
+          -30
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          73,
+          -3,
+          177,
+          232
+        ]
+      },
+      "item-cleared-02": {
+        "sourceSheet": "sources/cleared-poke-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          320,
+          141,
+          471,
+          271
+        ],
+        "sourceAlphaBounds": [
+          265,
+          64,
+          518,
+          630
+        ],
+        "paddedCellMargin": 64,
+        "neighbourPixelsDropped": 190,
+        "scale": 0.42251,
+        "scaledCellSize": 305,
+        "translation": [
+          -39,
+          -34
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          73,
+          -7,
+          180,
+          232
+        ]
+      },
+      "poke-00": {
+        "sourceSheet": "sources/cleared-poke-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          262,
+          140,
+          423,
+          280
+        ],
+        "sourceAlphaBounds": [
+          198,
+          66,
+          456,
+          630
+        ],
+        "paddedCellMargin": 66,
+        "neighbourPixelsDropped": 189,
+        "scale": 0.39627,
+        "scaledCellSize": 287,
+        "translation": [
+          -8,
+          -18
+        ],
+        "faceBounds": [
+          96,
+          38,
+          160,
+          93
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          71,
+          8,
+          173,
+          232
+        ],
+        "hazePixelsDropped": [
+          12604,
+          76
+        ],
+        "redFringePixels": [
+          1461,
+          21
+        ],
+        "head": [
+          128,
+          8
+        ]
+      },
+      "poke-01": {
+        "sourceSheet": "sources/dizzy-poke-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          251,
+          152,
+          411,
+          290
+        ],
+        "sourceAlphaBounds": [
+          194,
+          74,
+          442,
+          633
+        ],
+        "paddedCellMargin": 74,
+        "neighbourPixelsDropped": 460,
+        "scale": 0.39874,
+        "scaledCellSize": 288,
+        "translation": [
+          -4,
+          -20
+        ],
+        "faceBounds": [
+          96,
+          41,
+          160,
+          95
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          73,
+          9,
+          172,
+          232
+        ],
+        "hazePixelsDropped": [
+          10346,
+          99
+        ],
+        "redFringePixels": [
+          2249,
+          12
+        ],
+        "head": [
+          128,
+          11
+        ]
+      },
+      "inbox-zero-00": {
+        "sourceSheet": "sources/inbox-zero-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          318,
+          152,
+          470,
+          282
+        ],
+        "sourceAlphaBounds": [
+          229,
+          75,
+          567,
+          635
+        ],
+        "paddedCellMargin": 75,
+        "neighbourPixelsDropped": 826,
+        "scale": 0.41973,
+        "scaledCellSize": 303,
+        "translation": [
+          -38,
+          -34
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          58,
+          -2,
+          200,
+          232
+        ]
+      },
+      "inbox-zero-01": {
+        "sourceSheet": "sources/inbox-zero-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          253,
+          148,
+          415,
+          287
+        ],
+        "sourceAlphaBounds": [
+          149,
+          81,
+          489,
+          634
+        ],
+        "paddedCellMargin": 81,
+        "neighbourPixelsDropped": 1256,
+        "scale": 0.39382,
+        "scaledCellSize": 285,
+        "translation": [
+          -4,
+          -18
+        ],
+        "faceBounds": [
+          96,
+          40,
+          159,
+          95
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          54,
+          14,
+          189,
+          232
+        ],
+        "hazePixelsDropped": [
+          22961,
+          110
+        ],
+        "redFringePixels": [
+          3228,
+          1
+        ],
+        "head": [
+          128,
+          10
+        ]
+      },
+      "inbox-zero-02": {
+        "sourceSheet": "sources/inbox-zero-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          303,
+          142,
+          463,
+          280
+        ],
+        "sourceAlphaBounds": [
+          250,
+          77,
+          553,
+          633
+        ],
+        "paddedCellMargin": 77,
+        "neighbourPixelsDropped": 814,
+        "scale": 0.39874,
+        "scaledCellSize": 288,
+        "translation": [
+          -25,
+          -20
+        ],
+        "faceBounds": [
+          96,
+          37,
+          159,
+          91
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          74,
+          11,
+          195,
+          232
+        ],
+        "hazePixelsDropped": [
+          28858,
+          137
+        ],
+        "redFringePixels": [
+          3907,
+          4
+        ],
+        "head": [
+          128,
+          7
+        ]
+      },
+      "inbox-zero-03": {
+        "sourceSheet": "sources/inbox-zero-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          261,
+          146,
+          417,
+          277
+        ],
+        "sourceAlphaBounds": [
+          129,
+          73,
+          536,
+          632
+        ],
+        "paddedCellMargin": 73,
+        "neighbourPixelsDropped": 717,
+        "scale": 0.40897,
+        "scaledCellSize": 296,
+        "translation": [
+          -12,
+          -27
+        ],
+        "faceBounds": [
+          95,
+          33,
+          159,
+          86
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          41,
+          3,
+          208,
+          232
+        ],
+        "hazePixelsDropped": [
+          26754,
+          144
+        ],
+        "redFringePixels": [
+          3499,
+          4
+        ],
+        "head": [
+          127,
+          3
+        ]
+      },
+      "inbox-zero-04": {
+        "sourceSheet": "sources/inbox-zero-b-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          300,
+          181,
+          451,
+          312
+        ],
+        "sourceAlphaBounds": [
+          248,
+          111,
+          492,
+          623
+        ],
+        "paddedCellMargin": 100,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.42251,
+        "scaledCellSize": 305,
+        "translation": [
+          -31,
+          -31
+        ],
+        "faceBounds": [
+          96,
+          46,
+          159,
+          100
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          73,
+          16,
+          177,
+          232
+        ],
+        "hazePixelsDropped": [
+          4691,
+          93
+        ],
+        "redFringePixels": [
+          1277,
+          3
+        ],
+        "head": [
+          128,
+          16
+        ]
+      },
+      "drag-00": {
+        "sourceSheet": "sources/drag-drop-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          310,
+          151,
+          446,
+          275
+        ],
+        "sourceAlphaBounds": [
+          264,
+          84,
+          492,
+          576
+        ],
+        "paddedCellMargin": 84,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.46911,
+        "scaledCellSize": 339,
+        "translation": [
+          -50,
+          -38
+        ],
+        "faceBounds": [
+          95,
+          33,
+          159,
+          90
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          74,
+          1,
+          181,
+          232
+        ],
+        "hazePixelsDropped": [
+          15811,
+          136
+        ],
+        "redFringePixels": [
+          2542,
+          4
+        ],
+        "head": [
+          127,
+          3
+        ]
+      },
+      "drag-01": {
+        "sourceSheet": "sources/drag-drop-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          297,
+          155,
+          433,
+          275
+        ],
+        "sourceAlphaBounds": [
+          242,
+          87,
+          497,
+          573
+        ],
+        "paddedCellMargin": 87,
+        "neighbourPixelsDropped": 354,
+        "scale": 0.46911,
+        "scaledCellSize": 339,
+        "translation": [
+          -44,
+          -37
+        ],
+        "faceBounds": [
+          95,
+          36,
+          159,
+          92
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          69,
+          4,
+          189,
+          232
+        ],
+        "hazePixelsDropped": [
+          12007,
+          145
+        ],
+        "redFringePixels": [
+          2098,
+          0
+        ],
+        "head": [
+          127,
+          6
+        ]
+      },
+      "drop-00": {
+        "sourceSheet": "sources/drag-drop-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          317,
+          250,
+          453,
+          369
+        ],
+        "sourceAlphaBounds": [
+          246,
+          176,
+          519,
+          593
+        ],
+        "paddedCellMargin": 130,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.46911,
+        "scaledCellSize": 339,
+        "translation": [
+          -52,
+          -46
+        ],
+        "faceBounds": [
+          96,
+          71,
+          160,
+          127
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          63,
+          36,
+          192,
+          232
+        ],
+        "hazePixelsDropped": [
+          21587,
+          149
+        ],
+        "redFringePixels": [
+          2084,
+          1
+        ],
+        "head": [
+          128,
+          41
+        ]
+      },
+      "drop-01": {
+        "sourceSheet": "sources/drag-drop-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          294,
+          151,
+          430,
+          269
+        ],
+        "sourceAlphaBounds": [
+          247,
+          85,
+          471,
+          593
+        ],
+        "paddedCellMargin": 85,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.46911,
+        "scaledCellSize": 339,
+        "translation": [
+          -42,
+          -46
+        ],
+        "canvasOverflow": true,
+        "alphaBounds": [
+          74,
+          -6,
+          179,
+          232
+        ]
+      },
+      "dizzy-00": {
+        "sourceSheet": "sources/dizzy-poke-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          301,
+          144,
+          464,
+          286
+        ],
+        "sourceAlphaBounds": [
+          247,
+          64,
+          513,
+          633
+        ],
+        "paddedCellMargin": 64,
+        "neighbourPixelsDropped": 1439,
+        "scale": 0.39141,
+        "scaledCellSize": 283,
+        "translation": [
+          -22,
+          -16
+        ],
+        "faceBounds": [
+          96,
+          41,
+          160,
+          96
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          75,
+          9,
+          179,
+          232
+        ],
+        "hazePixelsDropped": [
+          10311,
+          129
+        ],
+        "redFringePixels": [
+          3089,
+          11
+        ],
+        "head": [
+          128,
+          11
+        ]
+      },
+      "dizzy-01": {
+        "sourceSheet": "sources/dizzy-poke-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          212,
+          148,
+          381,
+          297
+        ],
+        "sourceAlphaBounds": [
+          156,
+          72,
+          469,
+          633
+        ],
+        "paddedCellMargin": 72,
+        "neighbourPixelsDropped": 1604,
+        "scale": 0.37751,
+        "scaledCellSize": 273,
+        "translation": [
+          16,
+          -7
+        ],
+        "faceBounds": [
+          96,
+          49,
+          160,
+          105
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          75,
+          20,
+          193,
+          232
+        ],
+        "hazePixelsDropped": [
+          10052,
+          128
+        ],
+        "redFringePixels": [
+          3022,
+          7
+        ],
+        "head": [
+          128,
+          19
+        ]
+      },
+      "dizzy-02": {
+        "sourceSheet": "sources/dizzy-b-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          302,
+          161,
+          471,
+          316
+        ],
+        "sourceAlphaBounds": [
+          241,
+          88,
+          538,
+          637
+        ],
+        "paddedCellMargin": 86,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.37751,
+        "scaledCellSize": 273,
+        "translation": [
+          -18,
+          -8
+        ],
+        "faceBounds": [
+          96,
+          53,
+          159,
+          111
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          73,
+          25,
+          185,
+          232
+        ],
+        "hazePixelsDropped": [
+          7974,
+          119
+        ],
+        "redFringePixels": [
+          1936,
+          8
+        ],
+        "head": [
+          128,
+          23
+        ]
+      },
+      "dizzy-03": {
+        "sourceSheet": "sources/dizzy-b-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          280,
+          165,
+          446,
+          314
+        ],
+        "sourceAlphaBounds": [
+          216,
+          88,
+          481,
+          636
+        ],
+        "paddedCellMargin": 87,
+        "neighbourPixelsDropped": 0,
+        "scale": 0.38433,
+        "scaledCellSize": 278,
+        "translation": [
+          -12,
+          -13
+        ],
+        "faceBounds": [
+          96,
+          51,
+          159,
+          107
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          71,
+          21,
+          173,
+          232
+        ],
+        "hazePixelsDropped": [
+          8362,
+          89
+        ],
+        "redFringePixels": [
+          1975,
+          8
+        ],
+        "head": [
+          128,
+          21
+        ]
+      },
+      "idle-look-00": {
+        "sourceSheet": "sources/ambient-a-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          295,
+          156,
+          455,
+          294
+        ],
+        "sourceAlphaBounds": [
+          241,
+          73,
+          493,
+          638
+        ],
+        "paddedCellMargin": 73,
+        "neighbourPixelsDropped": 1256,
+        "scale": 0.39874,
+        "scaledCellSize": 288,
+        "translation": [
+          -22,
+          -22
+        ],
+        "faceBounds": [
+          96,
+          40,
+          159,
+          95
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          74,
+          7,
+          175,
+          232
+        ],
+        "hazePixelsDropped": [
+          10724,
+          132
+        ],
+        "redFringePixels": [
+          2565,
+          16
+        ],
+        "head": [
+          128,
+          10
+        ]
+      },
+      "idle-look-01": {
+        "sourceSheet": "sources/ambient-a-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          296,
+          156,
+          456,
+          295
+        ],
+        "sourceAlphaBounds": [
+          241,
+          73,
+          494,
+          636
+        ],
+        "paddedCellMargin": 73,
+        "neighbourPixelsDropped": 1195,
+        "scale": 0.39874,
+        "scaledCellSize": 288,
+        "translation": [
+          -22,
+          -22
+        ],
+        "faceBounds": [
+          96,
+          40,
+          159,
+          95
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          74,
+          7,
+          175,
+          232
+        ],
+        "hazePixelsDropped": [
+          11576,
+          108
+        ],
+        "redFringePixels": [
+          2672,
+          19
+        ],
+        "head": [
+          128,
+          10
+        ]
+      },
+      "idle-look-02": {
+        "sourceSheet": "sources/ambient-a-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          304,
+          143,
+          468,
+          284
+        ],
+        "sourceAlphaBounds": [
+          242,
+          72,
+          493,
+          638
+        ],
+        "paddedCellMargin": 72,
+        "neighbourPixelsDropped": 1067,
+        "scale": 0.38902,
+        "scaledCellSize": 281,
+        "translation": [
+          -22,
+          -15
+        ],
+        "faceBounds": [
+          96,
+          41,
+          160,
+          95
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          72,
+          13,
+          170,
+          232
+        ],
+        "hazePixelsDropped": [
+          15060,
+          123
+        ],
+        "redFringePixels": [
+          2873,
+          14
+        ],
+        "head": [
+          128,
+          11
+        ]
+      },
+      "idle-stretch-00": {
+        "sourceSheet": "sources/ambient-a-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          297,
+          154,
+          457,
+          296
+        ],
+        "sourceAlphaBounds": [
+          241,
+          75,
+          493,
+          636
+        ],
+        "paddedCellMargin": 75,
+        "neighbourPixelsDropped": 1064,
+        "scale": 0.39874,
+        "scaledCellSize": 288,
+        "translation": [
+          -22,
+          -21
+        ],
+        "faceBounds": [
+          96,
+          40,
+          160,
+          97
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          74,
+          9,
+          175,
+          232
+        ],
+        "hazePixelsDropped": [
+          14045,
+          130
+        ],
+        "redFringePixels": [
+          2875,
+          17
+        ],
+        "head": [
+          128,
+          10
+        ]
+      },
+      "idle-stretch-01": {
+        "sourceSheet": "sources/ambient-b-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          302,
+          134,
+          468,
+          271
+        ],
+        "sourceAlphaBounds": [
+          242,
+          56,
+          512,
+          637
+        ],
+        "paddedCellMargin": 56,
+        "neighbourPixelsDropped": 3493,
+        "scale": 0.38433,
+        "scaledCellSize": 278,
+        "translation": [
+          -20,
+          -13
+        ],
+        "faceBounds": [
+          96,
+          39,
+          160,
+          91
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          73,
+          9,
+          177,
+          232
+        ],
+        "hazePixelsDropped": [
+          22979,
+          125
+        ],
+        "redFringePixels": [
+          3411,
+          26
+        ],
+        "head": [
+          128,
+          9
+        ]
+      },
+      "idle-stretch-02": {
+        "sourceSheet": "sources/ambient-b-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          276,
+          133,
+          443,
+          269
+        ],
+        "sourceAlphaBounds": [
+          217,
+          56,
+          486,
+          637
+        ],
+        "paddedCellMargin": 56,
+        "neighbourPixelsDropped": 3313,
+        "scale": 0.38203,
+        "scaledCellSize": 276,
+        "translation": [
+          -10,
+          -11
+        ],
+        "faceBounds": [
+          96,
+          40,
+          159,
+          91
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          73,
+          10,
+          176,
+          232
+        ],
+        "hazePixelsDropped": [
+          21194,
+          111
+        ],
+        "redFringePixels": [
+          2746,
+          37
+        ],
+        "head": [
+          128,
+          10
+        ]
+      },
+      "idle-stretch-03": {
+        "sourceSheet": "sources/ambient-b-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          302,
+          140,
+          466,
+          278
+        ],
+        "sourceAlphaBounds": [
+          244,
+          60,
+          509,
+          650
+        ],
+        "paddedCellMargin": 60,
+        "neighbourPixelsDropped": 1165,
+        "scale": 0.38902,
+        "scaledCellSize": 281,
+        "translation": [
+          -22,
+          -21
+        ],
+        "faceBounds": [
+          96,
+          34,
+          159,
+          87
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          73,
+          2,
+          176,
+          232
+        ],
+        "hazePixelsDropped": [
+          23378,
+          117
+        ],
+        "redFringePixels": [
+          3116,
+          25
+        ],
+        "head": [
+          128,
+          4
+        ]
+      },
+      "idle-fidget-00": {
+        "sourceSheet": "sources/ambient-b-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          282,
+          146,
+          445,
+          287
+        ],
+        "sourceAlphaBounds": [
+          221,
+          61,
+          492,
+          650
+        ],
+        "paddedCellMargin": 61,
+        "neighbourPixelsDropped": 1140,
+        "scale": 0.39141,
+        "scaledCellSize": 283,
+        "translation": [
+          -14,
+          -22
+        ],
+        "faceBounds": [
+          96,
+          35,
+          160,
+          90
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          73,
+          2,
+          179,
+          232
+        ],
+        "hazePixelsDropped": [
+          18066,
+          127
+        ],
+        "redFringePixels": [
+          2293,
+          28
+        ],
+        "head": [
+          128,
+          5
+        ]
+      },
+      "idle-fidget-01": {
+        "sourceSheet": "sources/ambient-c-sheet.png",
+        "sourceCell": 0,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          314,
+          151,
+          478,
+          294
+        ],
+        "sourceAlphaBounds": [
+          261,
+          64,
+          523,
+          644
+        ],
+        "paddedCellMargin": 64,
+        "neighbourPixelsDropped": 2118,
+        "scale": 0.38902,
+        "scaledCellSize": 281,
+        "translation": [
+          -26,
+          -18
+        ],
+        "faceBounds": [
+          96,
+          41,
+          159,
+          96
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          75,
+          7,
+          177,
+          232
+        ],
+        "hazePixelsDropped": [
+          19125,
+          126
+        ],
+        "redFringePixels": [
+          2065,
+          21
+        ],
+        "head": [
+          128,
+          11
+        ]
+      },
+      "idle-fidget-02": {
+        "sourceSheet": "sources/ambient-c-sheet.png",
+        "sourceCell": 1,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          261,
+          150,
+          423,
+          288
+        ],
+        "sourceAlphaBounds": [
+          206,
+          64,
+          470,
+          644
+        ],
+        "paddedCellMargin": 64,
+        "neighbourPixelsDropped": 1164,
+        "scale": 0.39382,
+        "scaledCellSize": 285,
+        "translation": [
+          -7,
+          -22
+        ],
+        "faceBounds": [
+          96,
+          37,
+          159,
+          91
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          74,
+          3,
+          178,
+          232
+        ],
+        "hazePixelsDropped": [
+          17558,
+          124
+        ],
+        "redFringePixels": [
+          1889,
+          25
+        ],
+        "head": [
+          128,
+          7
+        ]
+      },
+      "doze-00": {
+        "sourceSheet": "sources/ambient-c-sheet.png",
+        "sourceCell": 2,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          317,
+          160,
+          482,
+          304
+        ],
+        "sourceAlphaBounds": [
+          261,
+          68,
+          514,
+          644
+        ],
+        "paddedCellMargin": 68,
+        "neighbourPixelsDropped": 2406,
+        "scale": 0.38666,
+        "scaledCellSize": 280,
+        "translation": [
+          -28,
+          -18
+        ],
+        "faceBounds": [
+          95,
+          44,
+          159,
+          100
+        ],
+        "headScale": 1.0159,
+        "alphaBounds": [
+          73,
+          9,
+          171,
+          232
+        ],
+        "hazePixelsDropped": [
+          19917,
+          109
+        ],
+        "redFringePixels": [
+          2154,
+          12
+        ],
+        "head": [
+          127,
+          14
+        ]
+      },
+      "doze-01": {
+        "sourceSheet": "sources/ambient-c-sheet.png",
+        "sourceCell": 3,
+        "cellPadding": 48,
+        "sourceFaceBounds": [
+          264,
+          172,
+          428,
+          316
+        ],
+        "sourceAlphaBounds": [
+          205,
+          77,
+          464,
+          644
+        ],
+        "paddedCellMargin": 77,
+        "neighbourPixelsDropped": 2408,
+        "scale": 0.38902,
+        "scaledCellSize": 281,
+        "translation": [
+          -7,
+          -18
+        ],
+        "faceBounds": [
+          96,
+          49,
+          159,
+          105
+        ],
+        "headScale": 1.0,
+        "alphaBounds": [
+          72,
+          12,
+          173,
+          232
+        ],
+        "hazePixelsDropped": [
+          19810,
+          114
+        ],
+        "redFringePixels": [
+          1770,
+          13
+        ],
+        "head": [
+          128,
+          19
+        ]
+      },
+      "incident-start-05": {
+        "composite": "frames/idle-00.png + accessories/firefighter-hat.png",
+        "alphaBounds": [
+          74,
+          19,
+          186,
+          232
+        ],
+        "head": [
+          128,
+          21
+        ]
+      }
+    },
+    "boundsViolations": {
+      "frames/dizzy-00.png": {
+        "top": 11
+      },
+      "frames/doze-00.png": {
+        "top": 11
+      },
+      "frames/doze-01.png": {
+        "top": 8
+      },
+      "frames/drag-00.png": {
+        "top": 19
+      },
+      "frames/drag-01.png": {
+        "top": 16
+      },
+      "frames/drop-01.png": {
+        "top": 26
+      },
+      "frames/idle-fidget-00.png": {
+        "top": 18
+      },
+      "frames/idle-fidget-01.png": {
+        "top": 13
+      },
+      "frames/idle-fidget-02.png": {
+        "top": 17
+      },
+      "frames/idle-look-00.png": {
+        "top": 13
+      },
+      "frames/idle-look-01.png": {
+        "top": 13
+      },
+      "frames/idle-look-02.png": {
+        "top": 7
+      },
+      "frames/idle-stretch-00.png": {
+        "top": 11
+      },
+      "frames/idle-stretch-01.png": {
+        "top": 11
+      },
+      "frames/idle-stretch-02.png": {
+        "top": 10
+      },
+      "frames/idle-stretch-03.png": {
+        "top": 18
+      },
+      "frames/inbox-zero-00.png": {
+        "left": 4,
+        "top": 22
+      },
+      "frames/inbox-zero-01.png": {
+        "left": 8,
+        "top": 6
+      },
+      "frames/inbox-zero-02.png": {
+        "top": 9
+      },
+      "frames/inbox-zero-03.png": {
+        "left": 21,
+        "right": 2,
+        "top": 17
+      },
+      "frames/inbox-zero-04.png": {
+        "top": 4
+      },
+      "frames/incident-end-00.png": {
+        "top": 45
+      },
+      "frames/incident-end-01.png": {
+        "top": 42
+      },
+      "frames/incident-end-02.png": {
+        "top": 42
+      },
+      "frames/incident-end-03.png": {
+        "left": 4,
+        "top": 38
+      },
+      "frames/incident-end-04.png": {
+        "top": 23
+      },
+      "frames/incident-end-05.png": {
+        "top": 22
+      },
+      "frames/incident-start-00.png": {
+        "top": 27
+      },
+      "frames/incident-start-01.png": {
+        "top": 25
+      },
+      "frames/incident-start-02.png": {
+        "top": 46
+      },
+      "frames/incident-start-03.png": {
+        "top": 28
+      },
+      "frames/incident-start-04.png": {
+        "top": 15
+      },
+      "frames/incident-start-05.png": {
+        "top": 1
+      },
+      "frames/item-cleared-00.png": {
+        "top": 25
+      },
+      "frames/item-cleared-01.png": {
+        "top": 23
+      },
+      "frames/item-cleared-02.png": {
+        "top": 27
+      },
+      "frames/new-item-00.png": {
+        "top": 19
+      },
+      "frames/new-item-01.png": {
+        "top": 1
+      },
+      "frames/new-item-02.png": {
+        "left": 9,
+        "top": 30
+      },
+      "frames/new-item-03.png": {
+        "left": 6,
+        "top": 29
+      },
+      "frames/new-item-04.png": {
+        "top": 10
+      },
+      "frames/poke-00.png": {
+        "top": 12
+      },
+      "frames/poke-01.png": {
+        "top": 11
+      },
+      "frames/dizzy-00.png + hat": {
+        "top": 10
+      },
+      "frames/dizzy-01.png + hat": {
+        "top": 2
+      },
+      "frames/doze-00.png + hat": {
+        "top": 7
+      },
+      "frames/doze-01.png + hat": {
+        "top": 2
+      },
+      "frames/drag-00.png + hat": {
+        "top": 18
+      },
+      "frames/drag-01.png + hat": {
+        "top": 15
+      },
+      "frames/idle-fidget-00.png + hat": {
+        "top": 16
+      },
+      "frames/idle-fidget-01.png + hat": {
+        "top": 10
+      },
+      "frames/idle-fidget-02.png + hat": {
+        "top": 14
+      },
+      "frames/idle-look-00.png + hat": {
+        "top": 11
+      },
+      "frames/idle-look-01.png + hat": {
+        "top": 11
+      },
+      "frames/idle-look-02.png + hat": {
+        "top": 10
+      },
+      "frames/idle-stretch-00.png + hat": {
+        "top": 11
+      },
+      "frames/idle-stretch-01.png + hat": {
+        "top": 12
+      },
+      "frames/idle-stretch-02.png + hat": {
+        "top": 11
+      },
+      "frames/idle-stretch-03.png + hat": {
+        "top": 17
+      },
+      "frames/poke-00.png + hat": {
+        "top": 13
+      },
+      "frames/poke-01.png + hat": {
+        "top": 10
+      }
+    },
+    "omittedFromManifest": {
+      "incident-start": [
+        "incident-start-00",
+        "incident-start-01",
+        "incident-start-02",
+        "incident-start-03"
+      ],
+      "incident-end": [
+        "incident-end-00",
+        "incident-end-01",
+        "incident-end-02",
+        "incident-end-03",
+        "incident-end-04",
+        "incident-end-05"
+      ],
+      "new-item": [
+        "new-item-02",
+        "new-item-03"
+      ],
+      "item-cleared": [
+        "item-cleared-00",
+        "item-cleared-01",
+        "item-cleared-02"
+      ],
+      "inbox-zero": [
+        "inbox-zero-00"
+      ],
+      "drop": [
+        "drop-01"
+      ]
+    },
+    "sourceSha256": {
+      "sources/ambient-a-sheet.png": "3759f65d047bbd8a44279642dd29913b06f0bdb403d01a46cffaff4d121966ea",
+      "sources/ambient-b-sheet.png": "ab2978e307cdb774e10e9649908420bccd938f456922a4954f0ad851e5bcb2e5",
+      "sources/ambient-c-sheet.png": "dd6bbfbf912723234938f07a6a1ad94a6e3deea329e071254feb2f5073d425e9",
+      "sources/cleared-poke-sheet.png": "c99c9d83e155850049628ec3ff00f8977905497ae03f65f0be85a06c7946cb0b",
+      "sources/dizzy-b-sheet.png": "55db69ce1b19c7af2721c116988b9ab2917193469793bcae06137603dfc928b5",
+      "sources/dizzy-poke-sheet.png": "86c678c8e9d76b8fb75e4e86ad12b4ff2b30483509bd2f0d45399eb425416805",
+      "sources/drag-drop-sheet.png": "42d095bca4d465f9ed14321015455798c1cf06ad4a2a4a5b249f5a00a69de421",
+      "sources/inbox-zero-b-sheet.png": "5159efb66acaa3b74deb763bcf56b0aee6668ce074bc93cb57e1b21a046f41d6",
+      "sources/inbox-zero-sheet.png": "9d3892daed9d54ba12a84599f429afd45b90ad3b549c66177e48968a2aa14b41",
+      "sources/incident-end-a-sheet.png": "2cd0bab2e81051fab475c1bfa30557bd1b024a4e235237df2b921987fabb7caa",
+      "sources/incident-end-b-sheet.png": "2aa08aa67b29f0bd310c9e63801ecef1615303f708bfb1e7d0333a459cf4386c",
+      "sources/incident-start-a-sheet.png": "4ae09c224d072b80bf309c7c871f47a8b1bf1d2eafeb47ed38669330a9828261",
+      "sources/incident-start-b-sheet.png": "be9ec0473c56d44ba504636c15fad241fe7ddf7a2a3fded811485ef747540b9c",
+      "sources/new-item-b-sheet.png": "f024481a516ad14f415d442eec136eb0fe52c0ee81b30439553942a1dcf3565d",
+      "sources/new-item-sheet.png": "f62688ca2d0fc44344952f23472331b36bb74acb8734d8d9b1a658c19b7af86f",
+      "shared-fx-v1/sources/props-reference.png": "3d6c53d34522894af690c5bc83ce0db877fe353e2269c0264b2efe4917365888"
+    }
+  }
+}

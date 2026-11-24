@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "mona-pet-v1",
   "name": "Mona-inspired Pet",
   "canvas": {
@@ -58,17 +58,411 @@
       ],
       "loop": false,
       "staticFallback": "frames/urgent-00.png"
+    },
+    "doze": {
+      "frames": [
+        "frames/doze-00.png",
+        "frames/doze-01.png"
+      ],
+      "durationMs": [
+        1200,
+        1200
+      ],
+      "loop": true,
+      "staticFallback": "frames/doze-00.png"
+    }
+  },
+  "clips": {
+    "new-item": {
+      "frames": [
+        "frames/new-item-00.png",
+        "frames/new-item-01.png",
+        "frames/new-item-02.png",
+        "frames/new-item-03.png",
+        "frames/new-item-04.png"
+      ],
+      "durationMs": [
+        200,
+        200,
+        350,
+        350,
+        800
+      ]
+    },
+    "item-cleared": {
+      "frames": [
+        "frames/item-cleared-00.png",
+        "frames/item-cleared-01.png",
+        "frames/item-cleared-02.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        200,
+        300,
+        400,
+        300
+      ]
+    },
+    "inbox-zero": {
+      "frames": [
+        "frames/inbox-zero-00.png",
+        "frames/inbox-zero-01.png",
+        "frames/inbox-zero-02.png",
+        "frames/inbox-zero-01.png",
+        "frames/inbox-zero-03.png",
+        "frames/inbox-zero-04.png"
+      ],
+      "durationMs": [
+        250,
+        300,
+        300,
+        300,
+        450,
+        400
+      ]
+    },
+    "drop": {
+      "frames": [
+        "frames/drop-00.png",
+        "frames/drop-01.png"
+      ],
+      "durationMs": [
+        200,
+        250
+      ]
+    },
+    "poke": {
+      "frames": [
+        "frames/poke-00.png",
+        "frames/poke-01.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        250,
+        300,
+        200
+      ]
+    },
+    "dizzy": {
+      "frames": [
+        "frames/dizzy-00.png",
+        "frames/dizzy-01.png",
+        "frames/dizzy-02.png",
+        "frames/dizzy-01.png",
+        "frames/dizzy-03.png"
+      ],
+      "durationMs": [
+        300,
+        300,
+        300,
+        300,
+        400
+      ]
+    },
+    "idle-look": {
+      "frames": [
+        "frames/idle-look-00.png",
+        "frames/idle-look-01.png",
+        "frames/idle-look-02.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        500,
+        500,
+        600,
+        400
+      ]
+    },
+    "idle-stretch": {
+      "frames": [
+        "frames/idle-stretch-00.png",
+        "frames/idle-stretch-01.png",
+        "frames/idle-stretch-02.png",
+        "frames/idle-stretch-03.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        400,
+        600,
+        500,
+        400,
+        500
+      ]
+    },
+    "idle-fidget": {
+      "frames": [
+        "frames/idle-fidget-00.png",
+        "frames/idle-fidget-01.png",
+        "frames/idle-fidget-02.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        400,
+        700,
+        400,
+        300
+      ]
+    }
+  },
+  "accessories": {
+    "firefighter-hat": {
+      "image": "accessories/firefighter-hat.png",
+      "attach": "head"
+    }
+  },
+  "points": {
+    "head": [
+      128,
+      35
+    ]
+  },
+  "framePoints": {
+    "frames/dizzy-00.png": {
+      "head": [
+        129,
+        38
+      ]
+    },
+    "frames/dizzy-01.png": {
+      "head": [
+        129,
+        31
+      ]
+    },
+    "frames/dizzy-02.png": {
+      "head": [
+        129,
+        37
+      ]
+    },
+    "frames/dizzy-03.png": {
+      "head": [
+        129,
+        40
+      ]
+    },
+    "frames/doze-00.png": {
+      "head": [
+        129,
+        42
+      ]
+    },
+    "frames/doze-01.png": {
+      "head": [
+        128,
+        49
+      ]
+    },
+    "frames/drop-00.png": {
+      "head": [
+        128,
+        56
+      ]
+    },
+    "frames/drop-01.png": {
+      "head": [
+        129,
+        28
+      ]
+    },
+    "frames/idle-fidget-00.png": {
+      "head": [
+        128,
+        27
+      ]
+    },
+    "frames/idle-fidget-01.png": {
+      "head": [
+        128,
+        31
+      ]
+    },
+    "frames/idle-fidget-02.png": {
+      "head": [
+        128,
+        31
+      ]
+    },
+    "frames/idle-look-00.png": {
+      "head": [
+        128,
+        40
+      ]
+    },
+    "frames/idle-look-01.png": {
+      "head": [
+        128,
+        40
+      ]
+    },
+    "frames/idle-look-02.png": {
+      "head": [
+        128,
+        28
+      ]
+    },
+    "frames/idle-stretch-00.png": {
+      "head": [
+        128,
+        37
+      ]
+    },
+    "frames/idle-stretch-01.png": {
+      "head": [
+        128,
+        21
+      ]
+    },
+    "frames/idle-stretch-02.png": {
+      "head": [
+        128,
+        20
+      ]
+    },
+    "frames/idle-stretch-03.png": {
+      "head": [
+        128,
+        26
+      ]
+    },
+    "frames/inbox-zero-00.png": {
+      "head": [
+        128,
+        33
+      ]
+    },
+    "frames/inbox-zero-01.png": {
+      "head": [
+        128,
+        23
+      ]
+    },
+    "frames/inbox-zero-02.png": {
+      "head": [
+        128,
+        26
+      ]
+    },
+    "frames/inbox-zero-03.png": {
+      "head": [
+        128,
+        34
+      ]
+    },
+    "frames/inbox-zero-04.png": {
+      "head": [
+        128,
+        37
+      ]
+    },
+    "frames/item-cleared-00.png": {
+      "head": [
+        128,
+        38
+      ]
+    },
+    "frames/item-cleared-01.png": {
+      "head": [
+        128,
+        36
+      ],
+      "hand": [
+        195,
+        145
+      ]
+    },
+    "frames/item-cleared-02.png": {
+      "head": [
+        128,
+        36
+      ]
+    },
+    "frames/new-item-00.png": {
+      "head": [
+        128,
+        28
+      ]
+    },
+    "frames/new-item-01.png": {
+      "head": [
+        128,
+        54
+      ]
+    },
+    "frames/new-item-02.png": {
+      "head": [
+        129,
+        21
+      ]
+    },
+    "frames/new-item-03.png": {
+      "head": [
+        128,
+        20
+      ]
+    },
+    "frames/new-item-04.png": {
+      "head": [
+        128,
+        30
+      ]
+    },
+    "frames/poke-00.png": {
+      "head": [
+        129,
+        36
+      ]
+    },
+    "frames/poke-01.png": {
+      "head": [
+        128,
+        36
+      ]
     }
   },
   "frameSha256": {
-    "frames/idle-00.png": "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb",
-    "frames/idle-01.png": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730",
-    "frames/idle-02.png": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409",
-    "frames/idle-03.png": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2",
+    "accessories/firefighter-hat.png": "f26318992f4cddb4e26356a3fa234749c9637579897280f5428b989b8338abc3",
     "frames/attention-00.png": "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff",
     "frames/attention-01.png": "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691",
     "frames/attention-02.png": "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10",
     "frames/attention-03.png": "271776fe5995ec0d9ce40f497f0ead6fcb742d617ddc55cbc6fb89c1ed14b5bd",
+    "frames/dizzy-00.png": "6d62470addd6fe684b69a062f3070a8a8af6a2cdaa7bd3089856d27f79358428",
+    "frames/dizzy-01.png": "242fe868875d6f139145a1d5e08f226376c76ebddb150201e8da7663df26aff2",
+    "frames/dizzy-02.png": "834a15b052ccc49e3dc6e44d1f47b4d380326c6a1fbb95b9cdcd8367025323d8",
+    "frames/dizzy-03.png": "a1289ae0918f38846cc1b69493c208caf2668f7be4fb4b5d53d98712014f0d03",
+    "frames/doze-00.png": "a9f0f67734cf16665a8d35fcd190421f783ae51edb56ba4aa559ada05911862a",
+    "frames/doze-01.png": "a6a6365abafdf8ba03829cbc3c002c0982dc0f7a20b6d2ba975e464e0abb6456",
+    "frames/drop-00.png": "23649c02b64e3c50d49bc3c21327a8d958827300f958d6ee8923466a63a8086f",
+    "frames/drop-01.png": "1dda5e20df9342755cbb5e59e9808c9aeabddaec00ab27c50d9840cdc17dbbe4",
+    "frames/idle-00.png": "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb",
+    "frames/idle-01.png": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730",
+    "frames/idle-02.png": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409",
+    "frames/idle-03.png": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2",
+    "frames/idle-fidget-00.png": "ed1e9eff4885d1f32ce7cc5d63785cad3baaa4f1b6f23575ad2b4f64015ae9cd",
+    "frames/idle-fidget-01.png": "a2519fb152368e1c1641ca4437de0054fc375d3fffb5c0cf37d8d312a4dc1a96",
+    "frames/idle-fidget-02.png": "98098b2cef9c9c5e115965e0496d16d8f3528684552ce07270b58fccd2245c79",
+    "frames/idle-look-00.png": "e466c7b2a73253d79899596d926db834ff825354a48468e884ef1ab3177951b4",
+    "frames/idle-look-01.png": "8876fb9e1c2dd7d588d14972cb8d4d86a205f5ec9e127186f5c7b6ee4bca99a8",
+    "frames/idle-look-02.png": "429141b3c6d9c08af3bebbc6910f523512cba4814d798c18da3d7976e7a51165",
+    "frames/idle-stretch-00.png": "de243de35fd32222d2ed4b83d07e1f6a3c5326796ddd3f33393ad0763c85ca9c",
+    "frames/idle-stretch-01.png": "569f92e90f1ce6d9a2af6e265b4b2db053536be05a90697ab2388ac5070387c1",
+    "frames/idle-stretch-02.png": "ae1c1472aa32fe10d1e269e312319d87c9c4027cb754b3f6860985d092ee12b4",
+    "frames/idle-stretch-03.png": "eca9bd8fd224f8a6b900b2f229fe145e8ee4bf7412ee61d51d00b1a8c37b5478",
+    "frames/inbox-zero-00.png": "955a16ca27f7938157f8a7e5cbafe8221d61a0b4ad6d4ddcec836108eaf182a7",
+    "frames/inbox-zero-01.png": "0cd40c36b6a0da8086c097ec4d0a52a3a0dad2f50b68d7ba26754670153c3cb7",
+    "frames/inbox-zero-02.png": "ecd9aa891fd277c78b74c4b0ecf1f033eb6e32e98545a9de82386d47f939b031",
+    "frames/inbox-zero-03.png": "8604f719f943aa256c826f6823ff3f5942edb77552fc54029a1b1d1c96f62ddf",
+    "frames/inbox-zero-04.png": "5de85765d610bad4f00f8e56587dce938467c6c40de6f268c386310237ca5fb1",
+    "frames/item-cleared-00.png": "8b8c5f88f1f6a931468ae8be9635c226665a463ab287514ce66ae452f6dbc1bd",
+    "frames/item-cleared-01.png": "be8c044c39edba4495b9ded1eb2f4d6ad33688a348622b18810266572e3564b6",
+    "frames/item-cleared-02.png": "3677b807c6ef7dd5478f59e3623228c803e7c2b34d43eb8370e38b01d81c88f9",
+    "frames/new-item-00.png": "b80f06ae621f2346405310ff9d1ad55e8592631eec7a66bb1a5020f5f46d94e7",
+    "frames/new-item-01.png": "f421be7f2029b1d2fbf0128b44b567577bfb45ef236a85288835cc57832c8d3d",
+    "frames/new-item-02.png": "48ed193efb9a4ed392d2845267bc499b89f79b8907cf0076fadf0c9d9dee342b",
+    "frames/new-item-03.png": "dbe587c4a21869479f161c13002ac0a9bb5b2ef91b87059d72f40d509452bf67",
+    "frames/new-item-04.png": "9917b7603a317b48865b68cc472623e17aa6c776c85988cc062373e18d051c69",
+    "frames/poke-00.png": "233461d9796a3e7dd499bc1659bc5348b6472385d60050ae739b8f5488010cbe",
+    "frames/poke-01.png": "15ddfd6778f5facf9204f6dd58a273ead32bf023f178431ea4f031e53a912825",
     "frames/urgent-00.png": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4",
     "frames/urgent-01.png": "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d",
     "frames/urgent-02.png": "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d",

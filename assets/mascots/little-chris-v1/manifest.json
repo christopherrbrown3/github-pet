@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "little-chris-v1",
   "name": "Little Chris",
   "canvas": {
@@ -52,15 +52,262 @@
       ],
       "loop": false,
       "staticFallback": "frames/urgent-02.png"
+    },
+    "drag": {
+      "frames": [
+        "frames/drag-00.png",
+        "frames/drag-01.png"
+      ],
+      "durationMs": [
+        400,
+        400
+      ],
+      "loop": true,
+      "staticFallback": "frames/drag-00.png"
+    },
+    "doze": {
+      "frames": [
+        "frames/doze-00.png",
+        "frames/doze-01.png"
+      ],
+      "durationMs": [
+        1200,
+        1200
+      ],
+      "loop": true,
+      "staticFallback": "frames/doze-00.png"
+    }
+  },
+  "clips": {
+    "poke": {
+      "frames": [
+        "frames/poke-00.png",
+        "frames/poke-01.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        250,
+        300,
+        200
+      ]
+    },
+    "dizzy": {
+      "frames": [
+        "frames/dizzy-00.png",
+        "frames/dizzy-01.png",
+        "frames/dizzy-02.png",
+        "frames/dizzy-01.png",
+        "frames/dizzy-03.png"
+      ],
+      "durationMs": [
+        300,
+        300,
+        300,
+        300,
+        400
+      ]
+    },
+    "idle-look": {
+      "frames": [
+        "frames/idle-look-00.png",
+        "frames/idle-look-01.png",
+        "frames/idle-look-02.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        500,
+        500,
+        600,
+        400
+      ]
+    },
+    "idle-stretch": {
+      "frames": [
+        "frames/idle-stretch-00.png",
+        "frames/idle-stretch-01.png",
+        "frames/idle-stretch-02.png",
+        "frames/idle-stretch-03.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        400,
+        600,
+        500,
+        400,
+        500
+      ]
+    },
+    "idle-fidget": {
+      "frames": [
+        "frames/idle-fidget-00.png",
+        "frames/idle-fidget-01.png",
+        "frames/idle-fidget-02.png",
+        "frames/idle-00.png"
+      ],
+      "durationMs": [
+        400,
+        700,
+        400,
+        300
+      ]
+    }
+  },
+  "accessories": {
+    "firefighter-hat": {
+      "image": "accessories/firefighter-hat.png",
+      "attach": "head"
+    }
+  },
+  "points": {
+    "head": [
+      128,
+      21
+    ]
+  },
+  "framePoints": {
+    "frames/dizzy-00.png": {
+      "head": [
+        128,
+        11
+      ]
+    },
+    "frames/dizzy-01.png": {
+      "head": [
+        128,
+        19
+      ]
+    },
+    "frames/dizzy-02.png": {
+      "head": [
+        128,
+        23
+      ]
+    },
+    "frames/doze-00.png": {
+      "head": [
+        127,
+        14
+      ]
+    },
+    "frames/doze-01.png": {
+      "head": [
+        128,
+        19
+      ]
+    },
+    "frames/drag-00.png": {
+      "head": [
+        127,
+        3
+      ]
+    },
+    "frames/drag-01.png": {
+      "head": [
+        127,
+        6
+      ]
+    },
+    "frames/idle-fidget-00.png": {
+      "head": [
+        128,
+        5
+      ]
+    },
+    "frames/idle-fidget-01.png": {
+      "head": [
+        128,
+        11
+      ]
+    },
+    "frames/idle-fidget-02.png": {
+      "head": [
+        128,
+        7
+      ]
+    },
+    "frames/idle-look-00.png": {
+      "head": [
+        128,
+        10
+      ]
+    },
+    "frames/idle-look-01.png": {
+      "head": [
+        128,
+        10
+      ]
+    },
+    "frames/idle-look-02.png": {
+      "head": [
+        128,
+        11
+      ]
+    },
+    "frames/idle-stretch-00.png": {
+      "head": [
+        128,
+        10
+      ]
+    },
+    "frames/idle-stretch-01.png": {
+      "head": [
+        128,
+        9
+      ]
+    },
+    "frames/idle-stretch-02.png": {
+      "head": [
+        128,
+        10
+      ]
+    },
+    "frames/idle-stretch-03.png": {
+      "head": [
+        128,
+        4
+      ]
+    },
+    "frames/poke-00.png": {
+      "head": [
+        128,
+        8
+      ]
+    },
+    "frames/poke-01.png": {
+      "head": [
+        128,
+        11
+      ]
     }
   },
   "frameSha256": {
-    "frames/idle-00.png": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
-    "frames/idle-01.png": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
-    "frames/idle-02.png": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
+    "accessories/firefighter-hat.png": "1193468902fa65e2004c9f4e690bcb2f6e00b720a74d4bc91d781ecd3b64c100",
     "frames/attention-00.png": "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
     "frames/attention-01.png": "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
     "frames/attention-02.png": "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
+    "frames/dizzy-00.png": "87f91fc84d3944c5ed3a8be7f880e722aa9eb372a38c55425b6767e8707fba17",
+    "frames/dizzy-01.png": "150d811883e658c3aab66e3e8c0d24c1f99a7d3b285854fdcf13350428b314b0",
+    "frames/dizzy-02.png": "1cf414996804fab16d6d32879b3794e336b2cfad34e3d34e8276c6a854433230",
+    "frames/dizzy-03.png": "47f8c0c7c03a2ea597c88a62f962d286d5872df2ec019f7472938b988456f352",
+    "frames/doze-00.png": "8a7c27a576403908ac6e8b141d3700ce4041f2e0b79822e901e365a70c673057",
+    "frames/doze-01.png": "43cce2f8b509f51ccea7e11edb1350d4b048a4019399628269bee99462feaec4",
+    "frames/drag-00.png": "c3721c72c7c6fdce43ab2d53180e97b2e56cf37189558f8133570b53db20c702",
+    "frames/drag-01.png": "5800776879d40bf9e39df3b97c75e5a0f178518fc2e58058fb52fbdea927d213",
+    "frames/idle-00.png": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
+    "frames/idle-01.png": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
+    "frames/idle-02.png": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
+    "frames/idle-fidget-00.png": "3219e7945e5324e3ca74f2843d2dd52a1aebd90f73117c0f55b3645beb03def7",
+    "frames/idle-fidget-01.png": "53a29f11bc67aca5eba1ab1e525a5bb24cb51b879173dcdf50a17ac452ad77ce",
+    "frames/idle-fidget-02.png": "bed5ce714e474f7c2b32b76848e01ebf9db3df56288a5cda5cfc1a356596e810",
+    "frames/idle-look-00.png": "8c60052b4dd288ded51aa85c742ddd939d4b7ed10f416ad3287050efb9dfb9e8",
+    "frames/idle-look-01.png": "436167d33c8d41ffde399974173f04578eaee985cba5b27c8cf7e0a47bdc7def",
+    "frames/idle-look-02.png": "16485fcfd22f01d750ff9f0e8933895ec64c42bcee040410998d7f3b82e6ae3f",
+    "frames/idle-stretch-00.png": "0a68fc6ed0751a07a2e526016703a1c312c89067697debf61e79a66b1c354caf",
+    "frames/idle-stretch-01.png": "f53fd850d9bd9871b9f00cfa565b95eedc894f3390ab87d8d94d78e502e9eae5",
+    "frames/idle-stretch-02.png": "c158c5970aa0a2713e5b056abdaf2ffae62c88cd9aa238c3baa253992140d7e0",
+    "frames/idle-stretch-03.png": "28233993fe2a609a0e4de3d198bedcd2544bdfcc67b5bac9580c4a8228f828ea",
+    "frames/poke-00.png": "7e6ff7cc6d0b1de86b4d012d7b175f01621bfda1ccbe6736679b1666d94a844b",
+    "frames/poke-01.png": "4c9ce638a7e20a03ea0454a1ff1887fdd68d78b85054399a8672c782d7d1e840",
     "frames/urgent-00.png": "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
     "frames/urgent-01.png": "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
     "frames/urgent-02.png": "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"

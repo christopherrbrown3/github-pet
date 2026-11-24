@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Rebuild Little Chris from the supplied pose sheet using Python and macOS sips."""
+"""Rebuild Little Chris from the supplied pose sheet using Python and macOS sips.
+
+This writes the v1 manifest: run build_pack_v2.py afterwards for the schema v2 clips (#138).
+"""
 import json
 from pathlib import Path
 import subprocess

@@ -3,6 +3,7 @@
 
 Run from any directory: python3 docs/design/build_pack.py
 Only assets/mascots/mona-pet-v1 is written. The source PNGs are never changed.
+This writes the v1 manifest: run build_pack_v2.py afterwards for the schema v2 clips (#138).
 """
 from pathlib import Path
 import json
@@ -90,9 +91,12 @@ def main():
                 'canvas': {'width': CANVAS, 'height': CANVAS}, 'anchor': ANCHOR,
                 'states': states, 'frameSha256': hashes}
     (PACK / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    previous = json.loads((PACK / 'packing.json').read_text()) if (PACK / 'packing.json').exists() else {}
     packing = {'canvas': [256, 256], 'anchor': ANCHOR, 'faceWidthTarget': FACE_WIDTH,
                'resampling': 'macOS sips; original generated artwork only', 'sourceAlphaCleanupThreshold': 8, 'transforms': transforms,
                'sheets': sheets, 'sourceSha256': {str(p.relative_to(PACK)): sha(p) for p in sorted((PACK / 'sources').glob('*.png'))}}
+    if 'v2' in previous:
+        packing['v2'] = previous['v2']  # build_pack_v2.py's record; rerun it after this builder
     (PACK / 'packing.json').write_text(json.dumps(packing, indent=2) + '\n')
     print(f'Packed {sum(len(s["frames"]) for s in states.values())} frames; manifest {sha(PACK / "manifest.json")}')
 

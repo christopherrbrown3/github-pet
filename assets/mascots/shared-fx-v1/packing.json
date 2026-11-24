@@ -1,0 +1,189 @@
+{
+  "builder": "docs/design/build_pack_v2.py",
+  "size": [
+    64,
+    64
+  ],
+  "clearMargin": 4,
+  "sourceSha256": {
+    "sources/fx-sheet.png": "f264efa779a073e5c44596cc791223254beff78ed8028f7a3d19854d427c5bfb"
+  },
+  "sprites": {
+    "fx-mist-00": {
+      "sourceCell": 0,
+      "sourceAlphaBounds": [
+        276,
+        154,
+        408,
+        279
+      ],
+      "familySide": 167,
+      "scale": 0.33533,
+      "hazePixelsDropped": [
+        6084,
+        12
+      ],
+      "alphaBounds": [
+        10,
+        11,
+        54,
+        53
+      ],
+      "sha256": "8fa3c7272f14702c5e53d1cd21c09519eae5672ddc225d3efff1380f7bf72358"
+    },
+    "fx-mist-01": {
+      "sourceCell": 1,
+      "sourceAlphaBounds": [
+        214,
+        172,
+        381,
+        279
+      ],
+      "familySide": 167,
+      "scale": 0.33533,
+      "hazePixelsDropped": [
+        6292,
+        22
+      ],
+      "alphaBounds": [
+        4,
+        14,
+        60,
+        50
+      ],
+      "sha256": "ddbef859daf4f5995d4cfcc11c6dc9b1318c2873637df147df0b8ce1dbc79583"
+    },
+    "fx-mist-02": {
+      "sourceCell": 2,
+      "sourceAlphaBounds": [
+        275,
+        131,
+        405,
+        250
+      ],
+      "familySide": 167,
+      "scale": 0.33533,
+      "hazePixelsDropped": [
+        9702,
+        14
+      ],
+      "alphaBounds": [
+        10,
+        12,
+        54,
+        52
+      ],
+      "sha256": "cdc397052415cce38c3cf782963d0b8c606839a0a0107d8e95d86f1d0ed1db65"
+    },
+    "fx-smoke-00": {
+      "sourceCell": 3,
+      "sourceAlphaBounds": [
+        229,
+        119,
+        366,
+        261
+      ],
+      "familySide": 142,
+      "scale": 0.39437,
+      "hazePixelsDropped": [
+        11632,
+        24
+      ],
+      "alphaBounds": [
+        5,
+        4,
+        59,
+        60
+      ],
+      "sha256": "a0fb0950b04cde13b95353ccf64ee972807092bc8e9c082960877574e7cb04e5"
+    },
+    "fx-smoke-01": {
+      "sourceCell": 4,
+      "sourceAlphaBounds": [
+        265,
+        83,
+        407,
+        220
+      ],
+      "familySide": 142,
+      "scale": 0.39437,
+      "hazePixelsDropped": [
+        5668,
+        25
+      ],
+      "alphaBounds": [
+        4,
+        5,
+        60,
+        59
+      ],
+      "sha256": "9b364c5c60545ce3aa9392a1837a01849d9769882c2b91a656281eabe808684a"
+    },
+    "fx-sparkle-00": {
+      "sourceCell": 5,
+      "sourceAlphaBounds": [
+        230,
+        87,
+        364,
+        223
+      ],
+      "familySide": 136,
+      "scale": 0.41176,
+      "hazePixelsDropped": [
+        8213,
+        29
+      ],
+      "alphaBounds": [
+        5,
+        4,
+        59,
+        60
+      ],
+      "sha256": "4f13576afbdde389682a023e0f9af8d57537d6a76a7cb60f74e9cb1f0f37e3ec"
+    },
+    "fx-sparkle-01": {
+      "sourceCell": 6,
+      "sourceAlphaBounds": [
+        299,
+        111,
+        374,
+        187
+      ],
+      "familySide": 136,
+      "scale": 0.41176,
+      "hazePixelsDropped": [
+        2911,
+        12
+      ],
+      "alphaBounds": [
+        17,
+        16,
+        48,
+        48
+      ],
+      "sha256": "797966c5f7906bf935736b09a34322de37db58c7eb4392eb48c5f6943508c041"
+    },
+    "fx-z": {
+      "sourceCell": 7,
+      "sourceAlphaBounds": [
+        253,
+        104,
+        342,
+        199
+      ],
+      "familySide": 95,
+      "scale": 0.58947,
+      "hazePixelsDropped": [
+        7367,
+        34
+      ],
+      "alphaBounds": [
+        6,
+        4,
+        58,
+        60
+      ],
+      "sha256": "eead9fc98b19a57af3dae50d7e9954232c2955511481006e16e2737b584fd70b"
+    }
+  }
+}
