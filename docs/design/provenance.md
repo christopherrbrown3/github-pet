@@ -97,6 +97,10 @@ Little Chris new-item B review: envelope is compact and face clear; no visible e
 
 Little Chris cleared/poke review: gestures read clearly; pose scale and baseline need measurement. No visible effect marks. No retry.
 
+| `assets/mascots/little-chris-v1/sources/inbox-zero-sheet.png` | `exec-33063648-24b5-4fa3-94c7-a6b7b8667bbb` | Inbox-zero 00–03, surprise and happy dance. | Same three Little Chris reference hashes as incident-start A above. |
+
+Little Chris inbox-zero review: raised arms extend beyond normal idle width across poses; head tilts noticeably. No visible effect marks. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
