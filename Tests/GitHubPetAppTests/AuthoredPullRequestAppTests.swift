@@ -9,7 +9,7 @@ import Testing
         var options = LaunchOptions.parse(arguments: ["app", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
         options.forcePlaceholder = true
         // A frozen budget clock (#162): held replies have no real-time bound, and a starved CI runner
-        // spent the 20 s budget between launch and reply ("Monitoring scope could not be verified").
+        // spent the 20 s budget between launch and reply ("GitHub took too long to answer").
         let instant = ContinuousClock.now
         return AppModel(options: options, runtime: AppModel.Runtime(
             now: { Date(timeIntervalSince1970: 1_763_208_000) }, systemReducedMotion: { false },

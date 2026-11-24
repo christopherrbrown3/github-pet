@@ -988,7 +988,7 @@ private final class ScopeRunner: CommandRunner, @unchecked Sendable {
         #expect(limited.outcome == .failure(.failed(ScopedPollResult.rateLimitedMessage)))
         // Controls keep their existing classification.
         #expect(client(ScopeRunner([CommandResult(exitCode: 0), CommandResult(exitCode: 1,
-            stderr: Data("network unavailable".utf8))])).fetch().outcome == .failure(.failed("Monitoring scope could not be verified")))
+            stderr: Data("network unavailable".utf8))])).fetch().outcome == .failure(.failed(ScopedPollResult.unverifiedMessage)))
         #expect(client(ScopeRunner([CommandResult(exitCode: 4)])).fetch().outcome == .failure(.unauthenticated))
     }
 

@@ -145,7 +145,7 @@ public final class RepositoryScopeSession {
 
     public func failCycle(_ issue: ScopedFetchIssue) -> FetchOutcome {
         pending = nil; issues = [issue]
-        return .failure(.failed(issue == .deadline ? "Monitoring scope request budget exhausted" : "Monitoring scope could not be verified"))
+        return .failure(.failed(issue == .deadline ? ScopedPollResult.timeoutMessage : ScopedPollResult.unverifiedMessage))
     }
 
     /// Explicit configuration error: never empty, never Everything. Settings › Monitoring scope
