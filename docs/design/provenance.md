@@ -149,6 +149,10 @@ Little Chris ambient B replacement review: both yawns have hands raised close to
 
 Incident-end B replacement review: 04 looks down-left with small helmet; phew pose is regenerated in same intent, not pixel-identical. No visible effect marks. Exact bounds and baseline unverified. No retry.
 
+| `assets/mascots/little-chris-v1/sources/incident-start-a-sheet.png` (replacement; supersedes earlier incident-start A above) | `exec-f343eae3-cbff-4b8a-91e2-0a8e98307c4c` | Helmet mid-lift at forehead with crown below hair top; other poses retained in intent. | Same three Little Chris reference hashes as incident-start A above; prior sheet: `8a7f36d934822c0f012fc22a62ad6702b5368d886b7845f3a51053b7c2333cb2`. |
+
+Little Chris incident-start A replacement review: 02 helmet is small, held at forehead and below hair top, but appears seated against hair rather than clearly in transit; its size also changes markedly in 03. Other cells are regenerated in same intent, not pixel-identical. Exact bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
