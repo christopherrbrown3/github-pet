@@ -133,6 +133,10 @@ Little Chris ambient C review: phone stays compact; doze head lowering and breat
 
 FX review: retry separates eight sprites with clear cell gaps; smoke 01 has a detached small puff and the z resembles uppercase. Initial `exec-3fc75b78-2272-4a20-99b2-5156347d94a9` had halos crossing cells. One retry used. Runtime downsampling and margins unverified.
 
+| `assets/mascots/mona-pet-v1/sources/incident-end-a-sheet.png` (replacement; supersedes earlier incident-end A above) | `exec-8ae319b2-a8fc-4c22-aef7-7489d3ed5753` | Extinguisher sequence based on Little Chris poses, with small helmet between Mona ears. | Same three Mona reference hashes as pilot above; Little Chris incident-end A: `2cd0bab2e81051fab475c1bfa30557bd1b024a4e235237df2b921987fabb7caa`; prior Mona incident-end A: `d03352f048585b9305555691c7d4d7271d5039305ea6f6134d12dddda5625355`. |
+
+Incident-end A replacement review: 01 and 03 grip the nozzle and aim down-left; 02 squints but does not visibly hold the nozzle and lean is slight. No spray or visible motion marks. Nozzle extends left beyond idle silhouette in 01 and 03; bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
