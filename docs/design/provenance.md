@@ -1,5 +1,13 @@
 # Artwork provenance
 
+## #138 cutout rig sources
+
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/mona-pet-v1/rig/sources/parts-sheet.png` | `exec-b222ebf7-48e5-46ce-8422-1d04e0e261c5` | Edit of the regenerated transparent Mona exploded-view sheet, rounding joints and simplifying the body; preserve the other pieces. | Edited sheet `exec-1e949367-5ac7-4583-8cf6-4f6de84c7320`: `f0b24d2756ecd178442c5e949b657d8da249b5f56f2844f75796b08ec563c0dc`; its references in order: `mona-pet-v1/frames/idle-00.png`: `79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb`; `mona-pet-v1/sources/probe.png`: `62eba55c827cfc1fdf355069a2239fc41afec370995b6ec38933cf8fdadb9fe2`. |
+
+Sheet 1 review: initial generation `exec-b49f0ac8-58ee-4af4-abee-9dcc7458b5d4` failed transparency and separation, so one regeneration was used. The regeneration had 16 islands but narrow gaps and flat joint ends; one edit pass produced the saved sheet. The cutter finds 16 islands and 7 specks; two grip pairs have bounding-box gaps of 1 and 7 px, below 40. Corners are transparent, but 31,794 faint pixels (alpha 1–8) and specks need inspection. The assembled figure is approximately 417 px high rather than 300, and the blank head is visibly larger than the assembled head; the edited shading is softer than idle. Blank face, rounded ends, complete body and front view appear present, subject to assembly review. Tip variants are not cleanly separated to the requested 40 px. Saved sheet SHA-256: `76f355fe69e87599a228372984b5caa5182119b23d572bf695778ca39d9e312d`.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
