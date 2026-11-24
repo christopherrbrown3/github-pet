@@ -44,6 +44,12 @@ Sheet 5 review: initial `exec-895b3931-9208-4d0a-88bf-5ee77bdc1ad2` had narrow g
 
 Sheet 6 review: initial `exec-199c4110-6ec2-41a6-8a3a-5135920857e6` had narrow gaps and large features; one regeneration and a sizing edit followed. Cutter reports 32 expected islands, 5 specks, 117,945 faint pixels and five gaps under 40 px. The head is front-facing and brows are present, but eyes and mouths remain large relative to the head and the edited head differs from sheet 5; facial fit requires assembly review. Joint and hidden-area checks do not apply.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/little-chris-v1/rig/sources/hands-sheet.png` | `exec-7d882294-274e-4405-b53e-040cb0f15948` | Edit regenerated hands to round wrist stubs and remove background glow. | Regeneration `exec-e1ed349a-027b-402a-b8c0-a122466774e7`: `c655db8af74aecc41f7678fdbbd7dcb47ee81df77a33dac468eb392e83719f4a`; its references in order: sheet 5 `4dc26a36cccfc73656390b8f940f2ffe6c8f8a782a3b7aca5808731a6479f654`, idle-00 `0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7`. |
+
+Sheet 7 review: initial `exec-e9ea2bf5-9088-4dd9-8a2e-0ad211e77b9e` had nontransparent corners and halos; one regeneration and one edit followed. The saved 1536 × 1024 sheet has 12 expected islands and clear corners, but visible brown halos, 19,212 faint pixels and numerous gaps under 40 px. Wrist ends appear rounded after the edit; their actual fit and scale relative to the cuffs need assembly review. No text or labels. The skin and lighting are visibly warmer than the parts head.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
