@@ -28,3 +28,4 @@ Reference SHA-256: Mona probe `62eba55c827cfc1fdf355069a2239fc41afec370995b6ec38
 | Master | Generation artifact ID | Prompt intent | References |
 |---|---|---|---|
 | `app-icon-88/painted/painted-a-portrait.png` | `exec-e9642d31-b40d-4f0a-a253-e54aa52cb6d4` | Large centered painted Mona portrait and upper tentacles on a blue macOS tile, transparent outside, readable at 32 px; no text or official marks. | Probe, idle frame, current icon (hashes above) |
+| `app-icon-88/painted/painted-b-inbox.png` | `exec-b185edc5-2b4a-475a-bed7-255a1b21d4f7` | Painted Mona peeking over a rounded inbox tray on the blue tile, face unobstructed and readable at 32 px; no text or official marks. | Probe, idle frame, current icon (hashes above) |
