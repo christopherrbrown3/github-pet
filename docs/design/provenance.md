@@ -50,6 +50,12 @@ Sheet 6 review: initial `exec-199c4110-6ec2-41a6-8a3a-5135920857e6` had narrow g
 
 Sheet 7 review: initial `exec-e9ea2bf5-9088-4dd9-8a2e-0ad211e77b9e` had nontransparent corners and halos; one regeneration and one edit followed. The saved 1536 × 1024 sheet has 12 expected islands and clear corners, but visible brown halos, 19,212 faint pixels and numerous gaps under 40 px. Wrist ends appear rounded after the edit; their actual fit and scale relative to the cuffs need assembly review. No text or labels. The skin and lighting are visibly warmer than the parts head.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/shared-fx-v1/sources/helmet-fit-sheet.png` | `exec-e5b3075c-8b95-420a-bdab-e624d2a339c8` | Edit helmet fit illustration to blank both heads, preserving helmet placement. | Initial fit `exec-f03f7997-f59a-448d-b1da-f0716e28af24`: `0150d3ae93ade3d11e47faf561fb7a822829fcccf7b04d00861a7e450a8f18a2`; its references in order: Mona parts `6c00567ab4d937ae4ad38929e56a89eaf4a5d1c57afc79b1fdcf1380ec3dda95`, Little Chris parts `4dc26a36cccfc73656390b8f940f2ffe6c8f8a782a3b7aca5808731a6479f654`, props `7cdaf60fba1016fc4c6eadf24bcaf095bdb56d6d0e8f37509df9110e87341cb1`. |
+
+Sheet 8 review: one edit removed facial features from the initially expressive heads. Cutter reports two separate islands, two specks, 8,298 faint pixels and clear corners. Cat ears are hidden, hair is visible at the sides, both brims are curved and shields blank. Chris is rendered front-on and faces and helmets are regenerated rather than exact source composites; this illustrative reference does not prove actual rig fit. Joint and hidden-area checks are not applicable. Not bundled.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
