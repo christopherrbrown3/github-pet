@@ -141,6 +141,10 @@ Incident-end A replacement review: 01 and 03 grip the nozzle and aim down-left; 
 
 Ambient B replacement review: both stretch poses have closed eyes and upward tentacles close to head; mouth is much larger in 02. No visible effect marks. Exact bounds and baseline unverified. No retry.
 
+| `assets/mascots/little-chris-v1/sources/ambient-b-sheet.png` (replacement; supersedes earlier ambient B above) | `exec-f534b622-d62a-4b60-bfa7-d267b3e191f2` | Compact upward closed-eye yawn stretches, relaxed and phone poses. | Same three Little Chris reference hashes as incident-start A above; prior ambient B: `cd102fbd001ebd4d384a84128fa066745af65adb6baf5200fb6b3521f5ca41c2`. |
+
+Little Chris ambient B replacement review: both yawns have hands raised close to head and closed eyes; lower cells preserve poses in intent but are regenerated, not pixel-identical. Exact bounds and baseline unverified. No visible effect marks; no retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
