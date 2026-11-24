@@ -33,6 +33,10 @@ New-item review: 02–03 envelope extends outside normal width; 01 head is lower
 
 New-item B review: envelope is compact and face clear; unrequested motion ticks appear at right. Bounds and baseline unverified. No retry.
 
+| `assets/mascots/mona-pet-v1/sources/cleared-poke-sheet.png` | `exec-46bc6139-219e-4620-8091-4691f34294ef` | Item-cleared 00–02 and poke 00, curled tentacle gesture and flinching giggle. | Same three reference hashes as pilot above. |
+
+Cleared/poke review: 00 gaze does not clearly read down-left; 03 leans only subtly. No visible effect marks. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
