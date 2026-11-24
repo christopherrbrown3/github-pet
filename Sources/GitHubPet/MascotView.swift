@@ -33,18 +33,57 @@ struct MascotView: View {
             } else if reduced {
                 scene(at: model.clock(), reduced: true, layout: layout)
             } else {
-                // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
-                TimelineView(.animation(minimumInterval: model.activeClip == nil && model.clipStage.scheduled == nil
-                                        && model.clipStage.dragStart == nil
-                                        && model.markerPhase(at: model.now, reduced: false).time == nil
-                                        ? 1.0 / 8.0 : 1.0 / 30.0)) { context in
-                    scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
+                switch redraw {
+                case .continuous(let fps):
+                    TimelineView(.animation(minimumInterval: 1 / fps)) { context in
+                        scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
+                    }
+                case .idleFrames(let schedule):
+                    // A new schedule (mood, pack timing) starts a fresh timeline from now.
+                    TimelineView(schedule) { context in
+                        scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
+                    }
+                    .id(schedule)
                 }
             }
         }
         .frame(width: layout.panelWidth, height: layout.panelSize.height)
         // VoiceOver sees the panel's container as one button (see MascotContainerView).
         .accessibilityHidden(true)
+    }
+
+    /// How the live (not reduced) mascot redraws (#166).
+    enum Redraw: Equatable {
+        /// 30 fps while a gesture plays (smooth lean); 8 fps for motion between frames (the
+        /// placeholder's breathing, doze's effects, the release spring).
+        case continuous(fps: Double)
+        /// Only when the idle loop changes frame; a held mood (attention, urgent) never redraws.
+        case idleFrames(IdleFrameSchedule)
+    }
+
+    static let gestureFPS = 30.0
+    static let motionFPS = 8.0
+
+    /// Pure, so tests can pin the idle choice: the gesture condition is the one 30 fps always used.
+    static func redraw(pack: Bool, clip: EventClipQueue.Clip?, stage: ClipStage, markerBursting: Bool,
+                       dozeHasClip: Bool, now: Date, idle: IdleFrameSchedule) -> Redraw {
+        if clip != nil || stage.scheduled != nil || stage.dragStart != nil || markerBursting {
+            return .continuous(fps: gestureFPS)
+        }
+        let dozing = stage.dozeStart != nil && dozeHasClip
+        if !pack || dozing || stage.springAngle(at: now) != 0 { return .continuous(fps: motionFPS) }
+        return .idleFrames(idle)
+    }
+
+    private var redraw: Redraw {
+        let now = model.clock()
+        let pack = self.pack
+        let idle = IdleFrameSchedule(mood: model.mascotState, clockOffset: model.clockOffset,
+                                     durationsMs: pack?.manifest.states[MascotState.idle.rawValue]?.durationMs ?? [])
+        return Self.redraw(pack: pack != nil, clip: model.activeClip, stage: model.clipStage,
+                           markerBursting: model.markerPhase(at: now, reduced: false).time != nil,
+                           dozeHasClip: (packOverride.map { ClipLibrary(pack: $0) } ?? model.clipLibrary).has(.doze),
+                           now: now, idle: idle)
     }
 
     /// Art and labels for one instant, from one pose, so the count never lags the frame it tracks
@@ -144,6 +183,30 @@ struct MascotView: View {
     }
 }
 
+/// Timeline entries at the idle loop's frame changes only (#166): the pose between them is the same
+/// image, so redrawing at a fixed rate repainted identical frames. Dates are wall clock; the loop
+/// runs on the app clock, `clockOffset` ahead.
+struct IdleFrameSchedule: TimelineSchedule, Hashable {
+    var mood: MascotState
+    var clockOffset: TimeInterval
+    var durationsMs: [Int]
+
+    func entries(from startDate: Date, mode: TimelineScheduleMode) -> AnyIterator<Date> {
+        var next: Date? = startDate
+        return AnyIterator {
+            defer { next = next.flatMap(change(after:)) }
+            return next
+        }
+    }
+
+    /// The next frame change after `date`, on the same clock and epoch `MascotView.pose` uses.
+    func change(after date: Date) -> Date? {
+        MascotAnimator.nextIdleFrameChange(after: date.addingTimeInterval(clockOffset), mood: mood, reducedMotion: false,
+                                           idleEpoch: .distantPast) { _ in durationsMs }
+            .map { $0.addingTimeInterval(-clockOffset) }
+    }
+}
+
 /// A lane capsule (design spec #28): DEMO in SF bold, the count in SF semibold with monospaced
 /// digits; width `max(height, text + 2 × padding)`, never truncated. Fills are appearance-aware
 /// with at least 4.5:1 text contrast; urgency is also stated in words elsewhere.
@@ -151,11 +214,21 @@ struct Tag: View {
     enum Role { case demo, count, urgentCount }
 
     /// Native text width of a label at its font (for the capsule width the count tracks with).
-    static func textWidth(_ text: String, role: Role, size: CGFloat) -> CGFloat {
+    /// Memoized: the mascot asks on every frame it draws, and text measurement was most of a frame (#166).
+    @MainActor static func textWidth(_ text: String, role: Role, size: CGFloat) -> CGFloat {
+        let key = WidthKey(text: text, demo: role == .demo, size: size)
+        if let width = widths[key] { return width }
         let font = role == .demo ? NSFont.systemFont(ofSize: size, weight: .bold)
                                  : NSFont.monospacedDigitSystemFont(ofSize: size, weight: .semibold)
-        return (text as NSString).size(withAttributes: [.font: font]).width
+        let width = (text as NSString).size(withAttributes: [.font: font]).width
+        // Badges are short and sizes few; a full cache (a size slider dragged end to end) starts over.
+        if widths.count >= 512 { widths.removeAll() }
+        widths[key] = width
+        return width
     }
+
+    private struct WidthKey: Hashable { var text: String; var demo: Bool; var size: CGFloat }
+    @MainActor private static var widths: [WidthKey: CGFloat] = [:]
 
     let text: String
     let role: Role

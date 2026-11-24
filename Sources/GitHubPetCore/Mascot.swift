@@ -348,6 +348,23 @@ public enum FrameClock {
         }
         return durations.count - 1
     }
+
+    /// #166: the first elapsed millisecond after `elapsedMs` at which `frameIndex` returns another
+    /// frame, or nil once it never changes again (a single frame, reduced motion, a finished one-shot).
+    public static func nextChangeMs(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool) -> Int? {
+        guard !reducedMotion, durationsMs.count > 1 else { return nil }
+        let durations = durationsMs.map { max($0, minimumDurationMs) }
+        let total = durations.reduce(0, +)
+        let t = max(elapsedMs, 0)
+        let cycleStart = loop ? t - t % total : 0
+        guard loop || t < total - durations[durations.count - 1] else { return nil }
+        var boundary = cycleStart
+        for duration in durations {
+            boundary += duration
+            if boundary > t { return boundary }
+        }
+        return nil
+    }
 }
 
 /// What the mascot shows at an instant: a state plus either a frame index or its static pose.
@@ -446,6 +463,22 @@ public enum MascotAnimator {
         }
         return wearing(legacyPose(mood: mood, clip: event, now: now, idleEpoch: idleEpoch, gesture: gesture,
                                   durationsMs: durationsMs))
+    }
+
+    /// #166: when the mood's own art next changes. Without a clip, drag, spring or doze (which the
+    /// view redraws continuously) `pose` is the idle loop or a held static pose, so it changes only
+    /// at a frame boundary: the first instant after `date` at which `pose` shows another idle frame,
+    /// or nil while it holds (reduced motion, attention and urgent). The view schedules its next
+    /// redraw here instead of polling the idle loop at a fixed rate.
+    public static func nextIdleFrameChange(after date: Date, mood: MascotState, reducedMotion: Bool, idleEpoch: Date,
+                                           durationsMs: (MascotState) -> [Int]) -> Date? {
+        guard mood == .idle else { return nil }
+        // The same millisecond `legacyPose` reads, so the boundary lands on its frame change.
+        let elapsedMs = Int(max(0, date.timeIntervalSince(idleEpoch)) * 1000)
+        guard let next = FrameClock.nextChangeMs(durationsMs: durationsMs(.idle), loop: true, elapsedMs: elapsedMs,
+                                                 reducedMotion: reducedMotion) else { return nil }
+        // Half a millisecond in, so rounding at the epoch's magnitude can't land on the old frame.
+        return idleEpoch.addingTimeInterval((Double(next) + 0.5) / 1000)
     }
 
     /// Dizzy's wobble (#138): 0, −5°, +5°, −5°, 0 reached at its frame starts with the #29 easing.

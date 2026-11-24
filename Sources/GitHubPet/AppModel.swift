@@ -77,7 +77,27 @@ final class AppModel: ObservableObject {
     /// #138: scheduler clip, drag and doze, sampled by the mascot view on its timeline.
     @Published private(set) var clipStage = ClipStage()
     @Published private(set) var blockedLinkNote: String?
-    @Published private(set) var now = Date()
+    /// App clock at the last tick (every 0.25 s). Readers always get the latest tick, but views are
+    /// told only when something they show from it can change (#166): publishing every tick redrew
+    /// the mascot four times a second for nothing. Motion runs on the mascot's own timeline.
+    private(set) var now = Date()
+
+    /// What views derive from `now`: the minute (quiet hours start and end on one; also a fallback
+    /// for anything coarser), a snooze ending, and the mascot's redraw choice (marker burst, spring).
+    private struct ClockSignature: Equatable {
+        var minute: Double
+        var snoozed: Bool
+        var bursting: Bool
+        var springing: Bool
+    }
+
+    private func clockSignature(at date: Date) -> ClockSignature {
+        ClockSignature(minute: (date.timeIntervalSinceReferenceDate / 60).rounded(.down),
+                       snoozed: settings.isSnoozed(at: date, features: features),
+                       bursting: markerPhase(at: date, reduced: effectiveReducedMotion).time != nil,
+                       springing: clipStage.springAngle(at: date) != 0)
+    }
+    private var publishedClock: ClockSignature?
     @Published private(set) var serviceState: ServiceStatusState = .loading
     @Published private(set) var serviceIncidents: [ServiceIncident] = []
     @Published private(set) var serviceLastSuccess: Date?
@@ -1067,10 +1087,13 @@ final class AppModel: ObservableObject {
     }
 
     private func sync(now date: Date) {
+        let signature = clockSignature(at: date)
+        if signature != publishedClock { objectWillChange.send(); publishedClock = signature }
         now = date
-        scopeSummary = scopeSession.summary
-        scopeQuality = scopeSession.qualitySummary
-        scopeSimulationStatus = scopeSimulation?.status ?? ""
+        // Assigning a @Published value notifies even when it is equal: only publish changes (#166).
+        if scopeSummary != scopeSession.summary { scopeSummary = scopeSession.summary }
+        if scopeQuality != scopeSession.qualitySummary { scopeQuality = scopeSession.qualitySummary }
+        if scopeSimulationStatus != scopeSimulation?.status ?? "" { scopeSimulationStatus = scopeSimulation?.status ?? "" }
         let waitingRows = waitingRows
         dismissals.update(identity: verifiedDismissalIdentity, items: engine.items + waitingRows)
         let primary = engine.items.filter { !dismissals.hiddenIDs.contains($0.id) }
