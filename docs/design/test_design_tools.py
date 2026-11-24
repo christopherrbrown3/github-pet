@@ -10,6 +10,7 @@ import zlib
 from pathlib import Path
 
 from png_rgba import MAX_EDGE, MAX_FILE_BYTES, bounds, read_png, sha256_png, write_png
+from rig_cut import cut, report
 from validate_pack import PACK, check_pack
 
 
@@ -137,6 +138,34 @@ class DesignToolsTests(unittest.TestCase):
         manifest_path.write_text(json.dumps(manifest))
         with self.assertRaisesRegex(ValueError, 'Ground anchor mismatch'):
             check_pack(copy)
+
+
+class RigCutTests(unittest.TestCase):
+    def sheet(self, root, rects):
+        width = height = 200
+        pixels = bytearray(width * height * 4)
+        for x0, y0, x1, y1 in rects:
+            for y in range(y0, y1):
+                for x in range(x0, x1):
+                    pixels[(y * width + x) * 4:(y * width + x) * 4 + 4] = b'\x10\x10\x10\xff'
+        path = root / 'sheet.png'
+        write_png(path, width, height, pixels)
+        return path
+
+    def test_islands_in_reading_order_and_gap_rule(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            # Two parts in the top band, one below, one 2 px speck that is ignored.
+            path = self.sheet(root, [(120, 10, 180, 60), (10, 20, 60, 50), (10, 120, 60, 190), (150, 150, 152, 151)])
+            text, parts, _, ok = report(path, expect=3)
+            self.assertTrue(ok, text)
+            self.assertEqual([p['box'] for p in parts], [[10, 20, 60, 50], [120, 10, 180, 60], [10, 120, 60, 190]])
+            self.assertIn('1 specks', text)
+            self.assertFalse(report(path, expect=4)[3])
+            cut(path, root / 'out')
+            self.assertEqual(read_png(root / 'out' / 'island-00.png')[:2], (58, 38))
+            path = self.sheet(root, [(10, 10, 60, 60), (80, 10, 120, 60)])
+            self.assertIn('within 20 px', report(path)[0])
 
 
 if __name__ == '__main__':
