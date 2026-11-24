@@ -8,6 +8,12 @@
 
 Sheet 1 review: initial generation `exec-b49f0ac8-58ee-4af4-abee-9dcc7458b5d4` failed transparency and separation, so one regeneration was used. The regeneration had 16 islands but narrow gaps and flat joint ends; one edit pass produced the saved sheet. The cutter finds 16 islands and 7 specks; two grip pairs have bounding-box gaps of 1 and 7 px, below 40. Corners are transparent, but 31,794 faint pixels (alpha 1–8) and specks need inspection. The assembled figure is approximately 417 px high rather than 300, and the blank head is visibly larger than the assembled head; the edited shading is softer than idle. Blank face, rounded ends, complete body and front view appear present, subject to assembly review. Tip variants are not cleanly separated to the requested 40 px. Saved sheet SHA-256: `76f355fe69e87599a228372984b5caa5182119b23d572bf695778ca39d9e312d`.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/mona-pet-v1/rig/sources/face-sheet.png` | `exec-627c2968-2e20-4a75-afd7-6595d7639e24` | Edit regenerated face layers to reduce feature scale while preserving expressions and layout. | Regeneration `exec-5315b3d4-efff-4611-90cb-13531759d0a8`: `697db07238b2d2298c25553cb9873ea3ceedf7a9664010979a44cbc9ec118de1`; idle-00: `79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb`; regeneration references in order: sheet 1 `76f355fe69e87599a228372984b5caa5182119b23d572bf695778ca39d9e312d`, idle-00 as above. |
+
+Sheet 2 review: initial `exec-3e10d024-65f5-48ed-bea0-b9b997be8a9e` and regeneration had oversized features; one edit reduced them. Cutter reports 24 expected islands, 7 specks and 15,042 faint alpha pixels, with clear corners and gaps. Head and features were regenerated rather than pixel-preserved; eye proportions are closer to idle but placement and exact match need assembly review. Blank head and content appear clean; joint and hidden-area checks are not applicable.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
