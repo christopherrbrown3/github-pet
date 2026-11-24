@@ -22,7 +22,7 @@ import Testing
     /// #165: a client-level time limit reads as a timeout; real verification failures keep their own wording.
     @Test func failureHeadlinesNameTheirKind() {
         let timeout = FetchOutcome.failure(.failed(ScopedPollResult.timeoutMessage))
-        #expect(ScopedPollResult.timeoutMessage == "GitHub took too long to answer. Retrying…")
+        #expect(ScopedPollResult.timeoutMessage == "GitHub took too long to answer. GitHub Pet will try again on the next refresh.")
         #expect(ScopedPollResult.failure(.deadline).outcome == timeout)
         let unverified = FetchOutcome.failure(.failed("Monitoring scope could not be verified"))
         for issue in [ScopedFetchIssue.identityMismatch, .targetUnavailable(0), .malformedTarget(0), .transport, .viewerUnavailable] {
@@ -32,6 +32,15 @@ import Testing
         #expect(ScopedPollResult.failure(.rateLimited).outcome == .failure(.failed(ScopedPollResult.rateLimitedMessage)))
         #expect(ScopedPollResult.failure(.ghMissing).outcome == .failure(.ghMissing))
         #expect(ScopedPollResult.failure(.signedOut).outcome == .failure(.unauthenticated))
+        // A deadline alongside a more specific failure never hides it, whatever the issue order.
+        for issues: [ScopedFetchIssue] in [[.deadline, .rateLimited], [.rateLimited, .deadline]] {
+            #expect(ScopedPollResult(viewer: nil, items: [], issues: issues, successfulSources: 0).outcome
+                    == .failure(.failed(ScopedPollResult.rateLimitedMessage)))
+        }
+        for issues: [ScopedFetchIssue] in [[.deadline, .accessDenied], [.accessDenied, .deadline]] {
+            #expect(ScopedPollResult(viewer: nil, items: [], issues: issues, successfulSources: 0).outcome
+                    == .failure(.failed(ScopedPollResult.accessDeniedMessage)))
+        }
         fixture { session, _, _ in
             #expect(session.failCycle(.deadline) == timeout)
             #expect(session.qualitySummary == "Scope request time limit reached; results are unverified.")
