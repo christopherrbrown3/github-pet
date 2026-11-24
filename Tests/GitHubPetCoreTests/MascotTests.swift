@@ -224,6 +224,63 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
     }
 }
 
+/// #166: the idle mascot redraws only when its frame changes. A schedule that asks for frames faster
+/// than the pose changes is wasted work; one that misses a change shows a wrong frame.
+@Suite struct IdleFrameChangeTests {
+    private func pose(_ date: Date, _ durations: [Int], mood: MascotState = .idle) -> MascotPose {
+        MascotAnimator.pose(mood: mood, clip: nil, now: date, reducedMotion: false, idleEpoch: .distantPast) { _ in durations }
+    }
+
+    @Test(arguments: [[2000, 200, 200, 2000], [2000, 125, 125], [4000, 150], [10, 10, 300]])
+    func changesExactlyWhenTheFrameDoes(_ durations: [Int]) throws {
+        for start in [t0, t0.addingTimeInterval(0.1234), t0.addingTimeInterval(-7_777.0049)] {
+            var entry = start
+            var changes = 0
+            // Several whole loops: every scheduled date shows a new frame, and nothing changes between them.
+            while entry < start.addingTimeInterval(15) {
+                // Bounded: a schedule that stops advancing fails here instead of spinning forever.
+                try #require(changes < 500, "more redraws than 15 s of frames can hold")
+                let next = try #require(MascotAnimator.nextIdleFrameChange(after: entry, mood: .idle, reducedMotion: false,
+                                                                           idleEpoch: .distantPast) { _ in durations })
+                try #require(next > entry, "the schedule must move forward")
+                #expect(pose(next, durations) != pose(entry, durations), "a redraw at \(next) repaints the same frame")
+                var probe = entry
+                while probe < next.addingTimeInterval(-0.001) {
+                    #expect(pose(probe, durations) == pose(entry, durations), "missed a change at \(probe)")
+                    probe.addTimeInterval(0.005)
+                }
+                // Within a millisecond of the true boundary.
+                #expect(pose(next.addingTimeInterval(-0.001), durations) == pose(entry, durations))
+                entry = next
+                changes += 1
+            }
+            let loop = Double(durations.map { max($0, FrameClock.minimumDurationMs) }.reduce(0, +)) / 1000
+            #expect(Double(changes) <= (15 / loop + 1) * Double(durations.count), "more redraws than frame changes")
+        }
+    }
+
+    @Test func heldPosesNeverAskForARedraw() {
+        let durations: (MascotState) -> [Int] = { _ in [2000, 200] }
+        for mood in [MascotState.attention, .urgent] {
+            #expect(MascotAnimator.nextIdleFrameChange(after: t0, mood: mood, reducedMotion: false, idleEpoch: .distantPast,
+                                                       durationsMs: durations) == nil)
+        }
+        #expect(MascotAnimator.nextIdleFrameChange(after: t0, mood: .idle, reducedMotion: true, idleEpoch: .distantPast,
+                                                   durationsMs: durations) == nil)
+        #expect(MascotAnimator.nextIdleFrameChange(after: t0, mood: .idle, reducedMotion: false, idleEpoch: .distantPast) { _ in [500] } == nil,
+                "a single idle frame never changes")
+    }
+
+    @Test func oneShotStopsAfterItsLastFrameStarts() {
+        let d = [200, 300, 400]
+        #expect(FrameClock.nextChangeMs(durationsMs: d, loop: false, elapsedMs: 0, reducedMotion: false) == 200)
+        #expect(FrameClock.nextChangeMs(durationsMs: d, loop: false, elapsedMs: 499, reducedMotion: false) == 500)
+        #expect(FrameClock.nextChangeMs(durationsMs: d, loop: false, elapsedMs: 500, reducedMotion: false) == nil)
+        #expect(FrameClock.nextChangeMs(durationsMs: d, loop: true, elapsedMs: 900, reducedMotion: false) == 1100)
+        #expect(FrameClock.nextChangeMs(durationsMs: d, loop: true, elapsedMs: -50, reducedMotion: false) == 200)
+    }
+}
+
 @Suite struct DemoLabelTests {
     private func demoItem() -> InboxItem {
         var demo = item("d")

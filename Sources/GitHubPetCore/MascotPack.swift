@@ -346,7 +346,8 @@ public struct MascotPack: Equatable, Sendable {
 
     /// The attention gesture, when this pack's attention state has the frames it uses.
     public var attentionGesture: AttentionGesture? {
-        frameURLs(for: .attention).count >= AttentionGesture.friendlyDoubleWave.frameCount
+        // Counted from the manifest, not `frameURLs`: the view asks on every frame it draws (#166).
+        (manifest.states[MascotState.attention.rawValue]?.frames.count ?? 0) >= AttentionGesture.friendlyDoubleWave.frameCount
             ? AttentionGesture.friendlyDoubleWave : nil
     }
 
