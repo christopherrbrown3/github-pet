@@ -72,22 +72,7 @@
       "staticFallback": "frames/doze-00.png"
     }
   },
-  "clips": {
-    "item-cleared": {
-      "frames": [
-        "frames/item-cleared-00.png",
-        "frames/item-cleared-01.png",
-        "frames/item-cleared-02.png",
-        "frames/idle-00.png"
-      ],
-      "durationMs": [
-        200,
-        300,
-        400,
-        300
-      ]
-    }
-  },
+  "clips": {},
   "accessories": {
     "firefighter-hat": {
       "image": "accessories/firefighter-hat.png",
@@ -112,28 +97,6 @@
         128,
         49
       ]
-    },
-    "frames/item-cleared-00.png": {
-      "head": [
-        128,
-        38
-      ]
-    },
-    "frames/item-cleared-01.png": {
-      "head": [
-        128,
-        36
-      ],
-      "hand": [
-        195,
-        145
-      ]
-    },
-    "frames/item-cleared-02.png": {
-      "head": [
-        128,
-        36
-      ]
     }
   },
   "frameSha256": {
@@ -148,9 +111,6 @@
     "frames/idle-01.png": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730",
     "frames/idle-02.png": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409",
     "frames/idle-03.png": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2",
-    "frames/item-cleared-00.png": "8b8c5f88f1f6a931468ae8be9635c226665a463ab287514ce66ae452f6dbc1bd",
-    "frames/item-cleared-01.png": "be8c044c39edba4495b9ded1eb2f4d6ad33688a348622b18810266572e3564b6",
-    "frames/item-cleared-02.png": "3677b807c6ef7dd5478f59e3623228c803e7c2b34d43eb8370e38b01d81c88f9",
     "frames/urgent-00.png": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4",
     "frames/urgent-01.png": "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d",
     "frames/urgent-02.png": "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d",

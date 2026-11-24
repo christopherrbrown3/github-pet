@@ -597,11 +597,14 @@ private func repositoryRoot() -> URL {
         let pack = try fixture.load().get()
         #expect(ClipLibrary(pack: pack) == .empty)
         #expect(pack.extraUprightContours.isEmpty && pack.manifest.v2ImagePaths.isEmpty)
-        // The bundled packs are v1 and load under the bundled budget unchanged.
+        // The bundled packs load under the bundled budget (bounds rule included) and offer exactly
+        // the clips and held poses their manifests declare (#138: only those inside the union ship).
         for skin in MascotSkin.allCases {
             let bundled = try MascotPack.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
                                               expectedID: skin.rawValue, budget: .bundled).get()
-            #expect(ClipLibrary(pack: bundled) == .empty)
+            let declared = Set((bundled.manifest.clips ?? [:]).keys.map { MascotClipID($0) })
+                .union(MascotClipID.heldStates.filter { bundled.manifest.heldSpec($0) != nil })
+            #expect(Set(ClipLibrary(pack: bundled).durationsMs.keys) == declared)
             let total = bundled.imageData.values.reduce(0) { $0 + $1.count }
             #expect(bundled.imageData.count <= PackBudget.bundled.maxImages && total <= PackBudget.bundled.maxBytes)
         }
@@ -755,7 +758,8 @@ private func repositoryRoot() -> URL {
             let library = ClipLibrary(pack: placeholder)
             for id in ClipCatalog.v1.ordered.map(\.id) + MascotClipID.heldStates {
                 #expect(library.has(id), "\(skin.rawValue) placeholder \(id)")
-                #expect(placeholder.placeholderClips.contains(id))
+                // Placeholders fill only what the bundled art does not have.
+                #expect(placeholder.placeholderClips.contains(id) == !ClipLibrary(pack: original).has(id))
             }
             #expect(library.accessories == [AccessoryPolicy.firefighterHat])
             #expect(placeholder.measureClips() == [], "the placeholder hat and frames stay inside the art")

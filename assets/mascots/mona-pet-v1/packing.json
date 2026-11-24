@@ -2911,16 +2911,21 @@
         "incident-end-03"
       ]
     },
-    "outsideBoundsNotBundled": [
-      "dizzy",
-      "drop",
-      "idle-fidget",
-      "idle-look",
-      "idle-stretch",
-      "inbox-zero",
-      "new-item",
-      "poke"
-    ],
+    "notBundled": {
+      "outsideBounds": [
+        "dizzy",
+        "drop",
+        "idle-fidget",
+        "idle-look",
+        "idle-stretch",
+        "inbox-zero",
+        "new-item",
+        "poke"
+      ],
+      "layoutChange": {
+        "item-cleared": "raises the count lane at 256 pt from 13 to 18 pt (HoverPlacementTests.nearTouchCountTracksEveryPoseAtTheGap)"
+      }
+    },
     "sourceSha256": {
       "sources/ambient-a-sheet.png": "df0545445834c0f1f2f332da8e3808c58aa506d8cda8fe0279087491419fea68",
       "sources/ambient-b-sheet.png": "50ca2179a0e6876c6bb8bf97948240f80247186842661b6c5d7e81f220eed67d",

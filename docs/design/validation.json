@@ -275,14 +275,12 @@
     },
     "decodedRuntimeFrameBytes": 3145728,
     "v2": {
-      "clips": [
-        "item-cleared"
-      ],
+      "clips": [],
       "heldStates": [
         "doze"
       ],
-      "images": 18,
-      "bytes": 719900,
+      "images": 15,
+      "bytes": 587919,
       "union": {
         "x": [
           47,
@@ -293,7 +291,7 @@
       "boundsRule": "pass",
       "boundsViolations": {}
     },
-    "manifestSha256": "0593adb559fb1ced2c72d61c42e8dd41b9aec4da4feeb4b8b59912c4966288c9",
+    "manifestSha256": "a125772a4d6ae9a32e7c33f11d38ee97dd283397312e46ff46f75fd4d7fd6551",
     "limitations": [
       "Source sheets are generated; minor contour variation remains between poses.",
       "Browser design review is not native app, VoiceOver, or physical display verification."

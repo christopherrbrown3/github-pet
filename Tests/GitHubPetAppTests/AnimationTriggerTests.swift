@@ -43,7 +43,10 @@ import Testing
     @Test func placeholderPackHasEveryClip() async {
         let app = model(Clock())
         for id in ClipCatalog.v1.ordered.map(\.id) + MascotClipID.heldStates { #expect(app.clipLibrary.has(id), "\(id)") }
-        #expect(model(Clock(), placeholderClips: false).clipLibrary == .empty, "the bundled packs ship no clips yet")
+        // Without placeholders the library is exactly what the bundled pack ships (#138).
+        let bundled = model(Clock(), placeholderClips: false)
+        #expect(bundled.mascotArtwork.pack != nil, "the bundled pack loads, not the placeholder")
+        #expect(bundled.clipLibrary == ClipLibrary(pack: bundled.mascotArtwork.pack))
     }
 
     @Test func hatGoesOnOnceAndComesOffOnlyOnAFreshOperationalReply() async {

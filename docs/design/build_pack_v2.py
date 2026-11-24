@@ -67,6 +67,13 @@ EXCLUDED = {
     'B sheets cells 1-3 (incident-end-b: 2-3)': 'left empty by generation',
 }
 
+# Inside the union's bounding box but still a layout change, found by the app's layout tests: kept out
+# of the bundled manifest (still in the preview) until the PM decides.
+LAYOUT_CHANGES = {
+    'mona-pet-v1': {'item-cleared': 'raises the count lane at 256 pt from 13 to 18 pt '
+                                    '(HoverPlacementTests.nearTouchCountTracksEveryPoseAtTheGap)'},
+}
+
 # Section 3 timings. Clip frames may repeat and reuse idle-00.
 HELD = {'drag': (['drag-00', 'drag-01'], [400, 400]), 'doze': (['doze-00', 'doze-01'], [1200, 1200])}
 CLIPS = {
@@ -518,7 +525,7 @@ def build_skin(pack_id, config, work):
         return not any(p in bounds_report or (keeps_hat and f'{p} + hat' in bounds_report) for p in spec['frames'])
 
     bundled_states = {k: v for k, v in states.items() if k in core or clean(v, True)}
-    bundled_clips = {k: v for k, v in clips.items() if clean(v, v.get('accessories') != 'hide')}
+    bundled_clips = {k: v for k, v in clips.items() if clean(v, v.get('accessories') != 'hide') and k not in LAYOUT_CHANGES.get(pack_id, {})}
     gated = sorted((set(states) - set(bundled_states)) | (set(clips) - set(bundled_clips)))
     (pack / 'manifest.json').write_text(json.dumps(manifest_for(bundled_states, bundled_clips), indent=2) + '\n')
     preview = manifest_for(states, clips)
@@ -540,7 +547,8 @@ def build_skin(pack_id, config, work):
         'frames': records,
         'boundsViolations': bounds_report,
         'omittedFromManifest': omitted,
-        'outsideBoundsNotBundled': gated,
+        'notBundled': {'outsideBounds': [k for k in gated if k not in LAYOUT_CHANGES.get(pack_id, {})],
+                       'layoutChange': LAYOUT_CHANGES.get(pack_id, {})},
         'sourceSha256': {str(p.relative_to(pack)): sha256_png(p) for p in sorted((pack / 'sources').glob('*-sheet.png'))
                          if p.stem.removesuffix('-sheet') in {stem for stem, _ in CELLS.values()}}
                         | {'shared-fx-v1/sources/props-reference.png': sha256_png(MASCOTS / 'shared-fx-v1/sources/props-reference.png')},
