@@ -18,3 +18,13 @@ These are prompt summaries. Every generation requested equal quadrants, matching
 Visual review covered the original probe, all generated sheets and all exported runtime sequences. `validation.json` records actual dimension, alpha, padding, hash and timing checks. Native app integration and accessibility testing are not represented by these asset checks.
 
 This is an independent Mona-inspired companion concept, not an official GitHub asset or endorsement. It is not offered as the app's product/logo mark. GitHub's [logo policy](https://docs.github.com/en/site-policy/other-site-policies/github-logo-policy) and [Octodex usage information](https://octodex.github.com/faq/) remain relevant to any distribution decision; generation alone establishes no trademark permission or clearance.
+
+## App icon, painted (#88)
+
+Generated using the built-in `image_gen.imagegen` integration; the image model identifier is not exposed. Each output was resized to 1024 × 1024 with `sips`, preserving alpha. These are design explorations, not shipping assets.
+
+Reference SHA-256: Mona probe `62eba55c827cfc1fdf355069a2239fc41afec370995b6ec38933cf8fdadb9fe2`; Mona idle frame `79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb`; current icon `5a669b09b796028f75ab8f275341d179a33f87836dd394d374c36b596b989103`.
+
+| Master | Generation artifact ID | Prompt intent | References |
+|---|---|---|---|
+| `app-icon-88/painted/painted-a-portrait.png` | `exec-e9642d31-b40d-4f0a-a253-e54aa52cb6d4` | Large centered painted Mona portrait and upper tentacles on a blue macOS tile, transparent outside, readable at 32 px; no text or official marks. | Probe, idle frame, current icon (hashes above) |
