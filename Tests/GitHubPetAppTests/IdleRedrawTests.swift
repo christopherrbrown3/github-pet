@@ -37,6 +37,15 @@ import Testing
                 "a settled spring holds")
     }
 
+    /// The memo must key on everything the width depends on: the same text at another size or role
+    /// is a different width (QA #168).
+    @Test func countWidthMemoKeysOnSizeAndRole() {
+        let small = Tag.textWidth("42", role: .count, size: 11), large = Tag.textWidth("42", role: .count, size: 22)
+        #expect(large > small * 1.8 && large < small * 2.2, "\(small) at 11 pt, \(large) at 22 pt")
+        #expect(Tag.textWidth("42", role: .count, size: 11) == small, "memoized")
+        #expect(Tag.textWidth("DEMO", role: .demo, size: 11) != Tag.textWidth("DEMO", role: .count, size: 11))
+    }
+
     /// The schedule SwiftUI reads: never faster than the pose changes, on the app clock.
     @Test(arguments: [0.0, 86_400.37])
     func scheduleEntriesAreFrameChanges(offset: TimeInterval) {
@@ -81,5 +90,27 @@ import Testing
         clock.now = Self.start.addingTimeInterval(60)
         app.tick()
         #expect(notified == 1, "a new minute reaches views (quiet hours)")
+    }
+
+    /// A snooze that ends mid-minute reaches views on the tick it ends, not at the next minute.
+    @Test func snoozeEndingMidMinuteNotifiesViews() async {
+        final class Clock: @unchecked Sendable { var now = Date(timeIntervalSince1970: 1_763_208_001) }
+        let clock = Clock()
+        var options = LaunchOptions.parse(arguments: ["GitHubPet", "--fixtures"], environment: [:])
+        options.userDefaultsOverride = EphemeralDefaults(name: "dev.github-pet.tests.idle-redraw.\(UUID().uuidString)")
+        _ = NSApplication.shared
+        let app = AppModel(options: options, runtime: AppModel.Runtime(now: { clock.now }, systemReducedMotion: { false },
+                                                                      schedulesTimers: false, features: .allOn))
+        app.settings.snoozeUntil = Self.start.addingTimeInterval(30.1)
+        app.tick()
+        await Task.yield()
+        var notified: [Date] = []
+        let observer = app.objectWillChange.sink { _ in notified.append(clock.now) }
+        defer { observer.cancel() }
+        for _ in 0..<160 {
+            clock.now += 0.25
+            app.tick()
+        }
+        #expect(notified == [Self.start.addingTimeInterval(30.25)], "once, on the first tick after the snooze ends")
     }
 }

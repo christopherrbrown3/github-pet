@@ -238,9 +238,11 @@ private func item(_ id: String, _ kind: ItemKind = .reviewRequest) -> InboxItem 
             var changes = 0
             // Several whole loops: every scheduled date shows a new frame, and nothing changes between them.
             while entry < start.addingTimeInterval(15) {
+                // Bounded: a schedule that stops advancing fails here instead of spinning forever.
+                try #require(changes < 500, "more redraws than 15 s of frames can hold")
                 let next = try #require(MascotAnimator.nextIdleFrameChange(after: entry, mood: .idle, reducedMotion: false,
                                                                            idleEpoch: .distantPast) { _ in durations })
-                #expect(next > entry)
+                try #require(next > entry, "the schedule must move forward")
                 #expect(pose(next, durations) != pose(entry, durations), "a redraw at \(next) repaints the same frame")
                 var probe = entry
                 while probe < next.addingTimeInterval(-0.001) {
