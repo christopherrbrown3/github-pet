@@ -32,6 +32,12 @@ Sheet 3 review: initial `exec-23e9a029-ddad-4669-88da-a56db399b24e` had an under
 
 Sheet 4 review: initial `exec-b69b9d2b-f2a5-419d-aad6-b6b045b2e38d` had four islands with objects joining grips; one regeneration gave seven islands, including an extra loop, and grip boxes overlap rather than having 40 px gaps. It is 1536 × 1024 and pieces are oversized and softer than the source. Corners clear, 17,689 faint pixels; no text. Rounded ends are indistinct. PM directed stopping this item and using sheet 1 tips instead; no edit pass.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/little-chris-v1/rig/sources/parts-sheet.png` | `exec-a3505502-4fd6-4517-8b1b-2919d605c153` | Edit regenerated Little Chris exploded view to round and fill joint ends and shoulders. | Regeneration `exec-f97c69a6-0068-4e03-80e3-8fc745608c53`: `10ec37a82d197b848890939438451c24d58d36eda439951aa467c46ece02651b`; its references in order: idle-00 `0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7`, poses `a87cd707e04e8f06ee110dab68d6d176e46ba459163ed317ccab33c32d1128b1`. |
+
+Sheet 5 review: initial `exec-895b3931-9208-4d0a-88bf-5ee77bdc1ad2` had narrow gaps and a 727 px assembled figure; one regeneration and an edit followed. Saved sheet has 10 expected islands, 14 specks, 50,389 faint pixels, and five box gaps below 40 px. The assembled figure is 666 px tall versus 400 requested. Blank head retains beard, nose and neck, with no facial features; shoulders are filled, but sleeve ends and trouser tops still show transverse shading or edges. Exact hidden overlap and assembly remain unverified. Sheet SHA-256 `4dc26a36cccfc73656390b8f940f2ffe6c8f8a782a3b7aca5808731a6479f654`.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
