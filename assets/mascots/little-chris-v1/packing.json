@@ -2326,15 +2326,18 @@
         "drop-01"
       ]
     },
-    "outsideBoundsNotBundled": [
-      "dizzy",
-      "doze",
-      "drag",
-      "idle-fidget",
-      "idle-look",
-      "idle-stretch",
-      "poke"
-    ],
+    "notBundled": {
+      "outsideBounds": [
+        "dizzy",
+        "doze",
+        "drag",
+        "idle-fidget",
+        "idle-look",
+        "idle-stretch",
+        "poke"
+      ],
+      "layoutChange": {}
+    },
     "sourceSha256": {
       "sources/ambient-a-sheet.png": "3759f65d047bbd8a44279642dd29913b06f0bdb403d01a46cffaff4d121966ea",
       "sources/ambient-b-sheet.png": "ab2978e307cdb774e10e9649908420bccd938f456922a4954f0ad851e5bcb2e5",

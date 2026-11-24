@@ -501,7 +501,7 @@ def build_skin(pack_id, config, work):
             bounds_report[path(name)] = found
     hat_box = alpha_box(hat)
     wearing = {n for names, _ in HELD.values() for n in names} | {n for names, _, acc in CLIPS.values() if acc != 'hide' for n in names}
-    for name in sorted(wearing - {'idle-00'}):
+    for name in sorted(wearing & set(frames) - {'idle-00'}):  # unpacked frames have no head point
         dx, dy = offset(name)
         found = violations([hat_box[0] + dx, hat_box[1] + dy, hat_box[2] + dx, hat_box[3] + dy], config['union'])
         if found:
