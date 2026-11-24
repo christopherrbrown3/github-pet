@@ -14,6 +14,12 @@ Sheet 1 review: initial generation `exec-b49f0ac8-58ee-4af4-abee-9dcc7458b5d4` f
 
 Sheet 2 review: initial `exec-3e10d024-65f5-48ed-bea0-b9b997be8a9e` and regeneration had oversized features; one edit reduced them. Cutter reports 24 expected islands, 7 specks and 15,042 faint alpha pixels, with clear corners and gaps. Head and features were regenerated rather than pixel-preserved; eye proportions are closer to idle but placement and exact match need assembly review. Blank head and content appear clean; joint and hidden-area checks are not applicable.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/mona-pet-v1/rig/sources/parts-sheet.png` (supersedes `d0ce36e`) | `exec-f431e77d-a53a-4498-ad00-25e6cf9e9f0d` | PM-requested edit to slim separate tentacles while preserving other parts. | Previous parts sheet `76f355fe69e87599a228372984b5caa5182119b23d572bf695778ca39d9e312d`; idle-00 `79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb`. |
+
+Tentacle edit review: the assembled reference's tentacles became slimmer, but the separate front and arm parts remain visibly broad and little changed; preservation is not pixel-identical. Cutter finds 16 islands, 3 specks and 25,298 faint pixels; grip gaps remain below 40 px. Rounded joints and blank face remain visually present. The requested change to separate parts did not clearly succeed.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
