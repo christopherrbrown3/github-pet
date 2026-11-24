@@ -75,9 +75,14 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public var accessories: [String: AccessorySpec]?
     public var points: Points?
     public var framePoints: [String: Points]?
+    /// Schema v3 (#138, docs/design/animation-v2-rig.md): a cutout rig whose clips play instead of
+    /// frame clips of the same name. States stay baked frames, so idle draws exactly as before.
+    public var rig: RigSpec?
 
     /// Whether the v2 additions apply (a v1 manifest ignores them).
     public var isV2: Bool { schemaVersion >= 2 }
+    /// Whether the rig applies (an older manifest's `rig` is ignored).
+    public var isV3: Bool { schemaVersion >= 3 }
 }
 
 /// Display-only sanitizing for strings a pack author controls (manifest `id`/`name`, state names
@@ -197,6 +202,8 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case badPoint(String)
     case tooManyImages(Int, limit: Int)
     case outsideArt(String)
+    // Schema v3 (#138).
+    case badRig(String)
 
     public var description: String {
         func q(_ value: String) -> String { PackLabel.sanitize(value, fallback: "(invalid)") }
@@ -237,6 +244,7 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
             return "pack has \(total) distinct images; at most \(limit) (\(MascotPack.maxFrames) frames per state or clip)"
         case .outsideArt(let p):
             return "'\(path(p))' draws outside the idle, attention and urgent art; clips and accessories must stay inside it"
+        case .badRig(let message): return "rig: \(q(message))"
         case .packTooLarge(let limit):
             return "pack images total more than \(limit / (1024 * 1024)) MiB (each image at most \(MascotPack.maxImageBytes / (1024 * 1024)) MiB, 256×256, up to \(MascotPack.maxFrames) frames per state)"
         }
@@ -273,7 +281,7 @@ public struct PackBudget: Equatable, Sendable {
 public struct MascotPack: Equatable, Sendable {
     public static let schemaVersion = 1
     /// Newest manifest schema this build reads (#138); every older one still loads.
-    public static let latestSchemaVersion = 2
+    public static let latestSchemaVersion = 3
     /// Pack bundled with the app (`assets/mascots/<id>` in the repository).
     public static let defaultPackID = MascotSkin.mona.rawValue
     public static let canvasSize = 256
@@ -291,6 +299,8 @@ public struct MascotPack: Equatable, Sendable {
     /// can't stall or exhaust memory. An image over `maxImageBytes` is rejected on its own
     /// (`tooLarge`) and is not added to the total: it is already an error and is never retained.
     public static let maxPackBytes = 16 * 1024 * 1024
+    /// Largest rig part image edge (v3): a 2× part of the whole canvas is 512.
+    public static let maxPartSide = 1024
     /// Largest attention lean (design storyboard #29), about the ground anchor.
     public static let attentionLeanDegrees = 5.0
 
@@ -313,6 +323,8 @@ public struct MascotPack: Equatable, Sendable {
     /// Clips and held poses synthesized from existing frames until the art lands (render-check and
     /// `--placeholder-clips` only); the renderer tags them "PH".
     public var placeholderClips: Set<MascotClipID> = []
+    /// v3 (#138): outline points and pixel size of every rig image, by path.
+    public var rigOutlines: [String: RigOutline] = [:]
 
     /// Validated bytes of a state's frames, in order.
     public func frameData(for state: MascotState) -> [Data] {
@@ -439,6 +451,7 @@ public struct MascotPack: Equatable, Sendable {
         // v2: every clip, held and accessory pixel stays inside the three states' art (#138), so the
         // label lane and hover placement never change.
         let artErrors = pack.measureClips(enforcingBounds: budget.enforcesArtBounds)
+            + pack.measureRig(enforcingBounds: budget.enforcesArtBounds)
         guard artErrors.isEmpty else { return .failure(MascotPackErrors(errors: artErrors)) }
         return .success(pack)
     }
@@ -472,7 +485,12 @@ public struct MascotPack: Equatable, Sendable {
         if manifest.isV2 {
             let v2Errors = validateV2Structure(manifest, budget: budget)
             if !v2Errors.isEmpty { return (errors + v2Errors, [:]) }
-            let images = manifest.imagePaths.count
+            if manifest.isV3 {
+                guard let rig = manifest.rig else { return (errors + [.badRig("schema 3 needs a rig section")], [:]) }
+                let rigErrors = RigLimits.validate(rig).map(MascotPackError.badRig)
+                if !rigErrors.isEmpty { return (errors + rigErrors, [:]) }
+            }
+            let images = manifest.imagePaths.count + (manifest.isV3 ? manifest.rig?.imagePaths.count ?? 0 : 0)
             if images > budget.maxImages { return (errors + [.tooManyImages(images, limit: budget.maxImages)], [:]) }
         }
         // State frames keep #123's total in both schemas (v2 clips have their own image budget).
@@ -519,6 +537,18 @@ public struct MascotPack: Equatable, Sendable {
             for path in manifest.v2ImagePaths where checked.insert(path).inserted {
                 let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:],
                                                       limit: budget.maxImageBytes)
+                errors += fileErrors
+                if fileErrors.isEmpty, let data { validated[path] = data }
+                totalBytes += data?.count ?? 0
+                if totalBytes > budget.maxBytes { return (errors + [.packTooLarge(budget.maxBytes)], [:]) }
+            }
+        }
+        // v3 rig parts: any size up to `maxPartSide`, with a little more room per image than frames.
+        if manifest.isV3 {
+            let limit = min(maxImageBytes, max(budget.maxImageBytes, 160 * 1024))
+            for path in manifest.rig?.imagePaths ?? [] where checked.insert(path).inserted {
+                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:],
+                                                      limit: limit, part: true)
                 errors += fileErrors
                 if fileErrors.isEmpty, let data { validated[path] = data }
                 totalBytes += data?.count ?? 0
@@ -601,8 +631,8 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// Validates one image and returns the bytes it checked (nil if it couldn't be read).
-    static func validateFile(_ path: String, root: Int32, checksums: [String: String], limit: Int = maxImageBytes)
-        -> (errors: [MascotPackError], data: Data?) {
+    static func validateFile(_ path: String, root: Int32, checksums: [String: String], limit: Int = maxImageBytes,
+                             part: Bool = false) -> (errors: [MascotPackError], data: Data?) {
         guard isSafeRelativePath(path) else { return ([.unsafePath(path)], nil) }
         let data: Data
         do {
@@ -619,7 +649,8 @@ public struct MascotPack: Equatable, Sendable {
         guard let size = pngSize(data) else { return ([.notPNG(path)], data) }
         // Header dimensions first: a small file can declare a huge image, and decoding it
         // would allocate the full pixel buffer.
-        if size.width != canvasSize || size.height != canvasSize {
+        if part ? !(1...maxPartSide).contains(size.width) || !(1...maxPartSide).contains(size.height)
+                : size.width != canvasSize || size.height != canvasSize {
             return ([.wrongSize(path, size.width, size.height)], data)
         }
         guard isDecodableRGBA(data) else { return ([.undecodable(path)], data) }

@@ -64,6 +64,14 @@ public struct ClipLibrary: Equatable, Sendable {
             durationsMs[MascotClipID(name)] = spec.durationMs
             if spec.accessories == .hide { hidesAccessories.insert(MascotClipID(name)) }
         }
+        // v3: a rig clip plays instead of a frame clip of the same name (one timeline "frame").
+        if manifest.isV3 {
+            for (name, clip) in manifest.rig?.clips ?? [:] {
+                let id = MascotClipID(name)
+                durationsMs[id] = [clip.durationMs]
+                if clip.accessories == .hide { hidesAccessories.insert(id) } else { hidesAccessories.remove(id) }
+            }
+        }
         accessories = Set((manifest.accessories ?? [:]).keys.map { MascotClipID($0) })
         leanLimit = pack?.clipLeanLimit ?? leanLimit
     }
@@ -133,6 +141,7 @@ extension MascotPack {
 
     /// Contour of a clip or held pose with any accessory it wears, rotated by the pose's lean.
     func clipContour(for pose: MascotPose) -> [Int?]? {
+        if let contour = rigContour(for: pose) { return contour }
         guard let path = imagePath(for: pose), let art = extraOutlines[path] else { return nil }
         let hats: [(ArtProfile, CGPoint)] = pose.accessories.compactMap { id in
             manifest.accessorySpec(id).flatMap { extraOutlines[$0.image] }.map { ($0, headOffset(for: path)) }

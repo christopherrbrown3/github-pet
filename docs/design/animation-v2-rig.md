@@ -188,7 +188,7 @@ All curves are closed-form, so every value is a pure function of `(clip start, n
 
 | State | Pose (offsets from rest) | Face |
 |---|---|---|
-| `idle` | rest | `neutral`, blink loop at today's cadence: `open` 3800 · `half` 125 · `closed` 125 · `half` 125 ms (4175 ms loop) |
+| `idle` | rest | `neutral`, blink loop baked to frames at the skin's current cadence (Mona `open` 2000 · `half` 200 · `closed` 200 · `open` 2000 ms; frame durations stay within 125 to 2000 ms) |
 | `attention` | `root.sy` 1.02, `head.rot` −3, `arm-r` −35 (raised a little, waving height), `fore-r` −20 | `notice` with `mouth: smile` |
 | `urgent` | `root.sy` 0.98, `head.rot` 0, both arms in toward the chest (`arm-l` +15, `arm-r` −15), `fore-*` +40 | Mona `open` + `flat`; Little Chris adds `worried` brows. Calm concern, never fear. |
 | `drag` (held) | `root.sy` 1.05, legs and tips dangle (procedural sway 8°, T 800 ms), arms out 20° | `notice` → `joy` after 400 ms |
@@ -197,16 +197,21 @@ All curves are closed-form, so every value is a pure function of `(clip start, n
 
 ### 5.4 Clip keyframes
 
-Notation: `t ms: value ease` (the ease is the curve used to arrive at that key). Unlisted bones stay at rest. `root.sy` implies `root.sx` by the squash rule. Arms: negative `arm-l` rotation raises the left arm outward and up; positive `arm-r` rotation raises the right arm (mirrored). Lengths match v1, within v1's per-clip caps.
+Notation: `t ms: value ease` (the ease is the curve used to arrive at that key). Unlisted bones stay at rest. `root.sy` implies `root.sx` by the squash rule. Lengths match v1, within v1's per-clip caps.
+
+**Arm signs.** Values for `arm-*` and `fore-*` in this section are written as "raise" angles: negative raises the left arm, positive raises the right. The engine's rotation is clockwise-positive (screen y down), which is the opposite for both arms, so **every `arm-*` and `fore-*` value below is negated when it is authored into a clip** (the placeholder rig's `arm-l` 165 is this section's −165). Everything else (root, body, head, legs) is written as the engine reads it.
+
+**Headroom.** The 0.96 rest scale leaves about 10 units under the y 20 line. Stretch plus hop must fit in it: `root.sy` up to 1.04 with `root.y` −3 at most, and the head counter-squashing (`head.sy` 0.96) at the peak. The validator samples every clip at 60 Hz and rejects anything past the reserve, so these limits are enforced, not advisory. The placeholder's `new-item` uses exactly these numbers and passes.
 
 **`new-item`, 1900 ms (perk up with an envelope).**
 
 | Track | Keys |
 |---|---|
-| `root.sy` | 0: 1 · 120: 1.05 `out` · 300: 0.90 `inOut` (anticipation crouch) · 460: 1.07 `out` (spring up) · 620: 0.95 `in` (land) · 900: 1 `spring` · 1900: 1 |
-| `root.y` | 0: 0 · 300: 0 · 460: −7 `out` · 620: 0 `in` |
+| `root.sy` | 0: 1 · 120: 1.03 `out` · 300: 0.90 `inOut` (anticipation crouch) · 460: 1.04 `out` (spring up) · 620: 0.95 `in` (land) · 900: 1 `spring` · 1900: 1 |
+| `root.y` | 0: 0 · 300: 0 · 460: −3 `out` · 620: 0 `in` |
+| `head.sy` | 0: 1 · 300: 1.04 · 460: 0.96 `out` · 620: 1.03 `in` · 900: 1 `spring` (counter-squash, keeps the top under the line) |
 | `head.rot` | 0: 0 · 120: −4 `out` · 460: 3 `inOut` · 900: 0 `spring` · 1000 to 1500: ±3 opposite phase to the waggle · 1900: 0 |
-| `arm-l` | 0: 0 · 300: 10 `inOut` (dip) · 560: −118 `back` (envelope up beside the head, viewer's left) · 1300: −118 · 1600: −45 `inOut` (down to the chest) |
+| `arm-l` | 0: 0 · 300: 10 `inOut` (dip) · 560: −118 `back` (envelope up beside the head, viewer's left) · 1300: −118 · 1600: −45 `inOut` (down to the chest). Foreshorten (`arm-l.sy` 0.45, `sx` held at 1) while the arm passes horizontal on the way up (300 to 600) and down (1300 to 1760), so the sweep stays inside the skin's width: a straight sideways swing of a long limb leaves the union. |
 | `fore-l` | follow arm-l (70 ms, 1.3) · 560 to 1300: waggle ±18° about −25°, period 260 ms, `inOut` (two and a half cycles) · 1600: 50 `inOut` |
 | `arm-r` | follow body sway; 1450: 0 · 1650: 40 `inOut` (comes in to hold the envelope with both) |
 | `envelope` | attached to `hand-l` from 240 ms: scale 0 → 1 `back` over 180 ms (pops in from behind), follow hand (40 ms, 0.4) |
@@ -238,7 +243,7 @@ Notation: `t ms: value ease` (the ease is the curve used to arrive at that key).
 
 ### 5.5 Timings and frame rate
 
-- 60 fps target while a clip, drag or spring runs (2 s bursts), falling back to 30 fps if D2 measurements show a frame costs more than 1.5 ms on the main thread at 128 pt. Doze and the placeholder breathing stay at 8 fps.
+- Rig clips run at 60 fps; drag (still frames), springs and frame clips keep 30, doze and the placeholder breathing 8 (section 7.4 has the measured cost).
 - Idle never runs a continuous timeline (section 7.4).
 
 ## 6. Codex art brief
@@ -382,131 +387,125 @@ After the PM's check the designer cuts and assembles (section 6.4) and judges th
 3. It proposes each part's rest offset by matching it against the assembled reference (and idle-00), then the designer adjusts pivots and offsets in `rig.json` and re-renders the rest pose next to idle-00 until they agree.
 4. Face anchors are measured on idle-00's eyes and mouth.
 
-## 7. Engine plan
+## 7. Engine (built in D2)
+
+Status: implemented on `design/138-rig` with a shape-only placeholder rig and one keyframed clip (`new-item`); the painted skins plug into the same format in D3. Where the build differs from the first plan, this section describes what was built.
 
 ### 7.1 Pack format: schema v3
 
-v1 and v2 manifests keep loading unchanged (frame packs, the current path). A v3 manifest adds a `rig` section and uses rig poses for its states and clips. A v3 pack has no frames.
+v1 and v2 manifests keep loading unchanged. **A v3 manifest is a v2 manifest plus a `rig` section.** Its states stay frames: the designer's builder **bakes** them from the rig (the rest pose with each idle blink face, the attention and urgent poses, the drag and doze poses), so idle, Reduce Motion, hover, the lane and every frame-pack rule work exactly as before. Rig clips play instead of frame clips of the same name. A v3 pack can still carry frame clips, for clips the rig does not cover yet.
 
 ```json
 {
   "schemaVersion": 3,
-  "id": "mona-pet-v1",
-  "name": "Mona-inspired Pet",
-  "canvas": { "width": 256, "height": 256 },
-  "anchor": [128, 232],
+  "id": "rig-placeholder",
+  "states": { "idle": { "frames": ["frames/idle-00.png", "..."], "durationMs": [2000, 125, 125, 125], "loop": true,
+                        "staticFallback": "frames/idle-00.png" }, "...": "attention, urgent as v1" },
   "rig": {
     "unitScale": 2,
     "restScale": 0.96,
-    "parts": {
-      "body":     { "image": "rig/body.png", "bone": "body", "origin": [72, 118] },
-      "head":     { "image": "rig/head.png", "bone": "head", "origin": [40, 14] },
-      "arm-l-tip":{ "image": "rig/arm-l-tip.png", "bone": "fore-l", "origin": [50, 186], "variant": "straight",
-                    "variants": { "curl": "rig/arm-l-tip-curl.png", "grip": "rig/arm-l-tip-grip-back.png" } }
-    },
+    "reserve": [48, 20, 208],
     "bones": {
       "root":   { "pivot": [128, 232] },
-      "body":   { "parent": "root", "pivot": [128, 196], "rot": [-6, 6] },
-      "head":   { "parent": "body", "pivot": [128, 136], "rot": [-12, 12], "points": { "crown": [128, 26] } },
-      "fore-l": { "parent": "arm-l", "pivot": [64, 196], "rot": [-70, 70] }
+      "body":   { "parent": "root", "pivot": [128, 200], "rot": [-8, 8] },
+      "head":   { "parent": "body", "pivot": [128, 138], "rot": [-14, 14] },
+      "arm-l":  { "parent": "body", "pivot": [88, 146], "rot": [-40, 175] },
+      "hand-l": { "parent": "arm-l", "pivot": [86, 190], "rot": [-60, 60] }
     },
-    "drawOrder": ["leg-l", "leg-r", "leg-c", "body", "arm-l", "arm-l-tip", "arm-r", "arm-r-tip",
-                  "helmet-back", "head", "@face", "helmet-front"],
-    "face": {
-      "anchors": { "eye-l": [102, 96], "eye-r": [154, 96], "mouth": [128, 118] },
-      "eyes":   { "open": ["rig/face/eye-l-open.png", "rig/face/eye-r-open.png"], "closed": ["...", "..."] },
-      "mouths": { "smile": "rig/face/mouth-smile.png" },
-      "presets": { "neutral": { "eyes": "open", "mouth": "smile" } }
-    },
-    "props": {
-      "helmet": { "front": "props/helmet-mona-front.png", "back": "props/helmet-mona-back.png",
-                  "worn": { "bone": "head", "point": "crown", "offset": [0, 0] } },
-      "envelope": { "image": "props/envelope.png", "grip": [24, 17] }
+    "parts": [
+      { "name": "body", "image": "rig/body.png", "bone": "body", "origin": [84, 122] },
+      { "name": "eyes", "image": "rig/eyes.png", "bone": "head", "origin": [96, 66],
+        "variants": { "half": "rig/eyes-half.png", "closed": "rig/eyes-closed.png", "happy": "rig/eyes-happy.png" } },
+      { "name": "envelope", "image": "rig/envelope.png", "bone": "hand-l", "origin": [74, 178], "hidden": true }
+    ],
+    "clips": {
+      "new-item": {
+        "durationMs": 1900,
+        "tracks": {
+          "root.sy": [[0, 1], [120, 1.03, "out"], [300, 0.9, "inOut"], [460, 1.04, "out"], [620, 0.95, "in"], [900, 1, "spring"]],
+          "arm-l.rot": [[0, 0], [300, -12], [560, 165, "back"], [1300, 165], [1600, 40], [1900, 0]]
+        },
+        "follow": [{ "bone": "hand-l", "of": "arm-l", "delayMs": 70, "gain": 0.3 }],
+        "sway": [{ "bones": ["arm-r"], "amp": 5, "periodMs": 1000 }],
+        "swaps": [{ "at": 240, "part": "envelope", "variant": "default" }, { "at": 460, "part": "eyes", "variant": "happy" }],
+        "accessories": "keep"
+      }
     }
   },
-  "states": {
-    "idle":      { "pose": {}, "faces": ["neutral", {"eyes": "half"}, {"eyes": "closed"}, {"eyes": "half"}],
-                   "durationMs": [3800, 125, 125, 125], "loop": true },
-    "attention": { "pose": { "root": { "sy": 1.02 }, "head": { "rot": -3 }, "arm-r": { "rot": -35 } }, "face": "notice" },
-    "urgent":    { "pose": { "...": "..." }, "face": "neutral" },
-    "drag":      { "pose": { "...": "..." }, "face": "notice", "procedural": [{ "sway": ["leg-l", "leg-c", "leg-r"], "amp": 8, "periodMs": 800 }] },
-    "doze":      { "...": "..." }
-  },
-  "clips": {
-    "new-item": {
-      "durationMs": 1900,
-      "tracks": {
-        "root.sy": [[0, 1], [120, 1.05, "out"], [300, 0.9, "inOut"], [460, 1.07, "out"], [620, 0.95, "in"], [900, 1, "spring"]],
-        "root.y":  [[0, 0], [300, 0], [460, -7, "out"], [620, 0, "in"]],
-        "arm-l.rot": [[0, 0], [300, 10, "inOut"], [560, -118, "back"], [1300, -118], [1600, -45, "inOut"]]
-      },
-      "follow": [{ "bone": "fore-l", "of": "arm-l", "delayMs": 70, "gain": 1.3 }],
-      "sway": [{ "bones": ["leg-l", "leg-c", "leg-r"], "amp": 5, "periodMs": 1000, "phaseStepMs": 120 }],
-      "faces": [[0, "notice"], [460, "joy"], [1300, { "preset": "neutral", "mouth": "grin" }]],
-      "props": [[240, { "envelope": { "attach": "hand-l", "in": "back", "inMs": 180 } }]],
-      "endsOn": "attention",
-      "accessories": "keep"
-    }
-  },
-  "fileSha256": { "...": "every referenced PNG" }
+  "frameSha256": { "...": "every PNG, frames and rig parts" }
 }
 ```
 
-**Semantics.**
+**Semantics** (enforced by `RigLimits.validate` and the loader):
 
-- Bones form a tree rooted at `root`, depth ≤ 6, ≤ 24 bones. Unknown parents, cycles, or a missing `root` are errors.
-- `origin` is where the part image's top-left sits in the rest pose, in canvas units (before `restScale`). A part's pixel size divided by `unitScale` is its size in units.
-- A pose is a map of bone → `{x, y, rot, sx, sy}` offsets from rest. A track key is `[ms, value, ease?]`; the first key has no ease. Values are clamped to the bone's declared ranges at load (out-of-range is an error in bundled packs, a clamp in custom packs).
-- Allowed eases: `linear`, `hold`, `inOut`, `out`, `in`, `back`, `spring`. Allowed procedural kinds: `follow`, `sway`. Nothing else is executable: a pack is data.
-- Clip keys must come from the v1 known set. Clip `durationMs` respects v1's per-clip caps. `endsOn` is `idle` (default) or the mood pose.
-- Budgets: ≤ 64 part, variant, face and prop images; each image ≤ 1024 × 1024 px and ≤ 4 MiB; pack ≤ 16 MiB (bundled: ≤ 48 images, ≤ 160 KiB each, ≤ 3 MiB). ≤ 40 tracks per clip, ≤ 48 keys per track.
-- `validate_pack.py` checks v3 too: the tree, ranges, image budgets, checksums, and the bounds rule by sampling every clip and state (section 7.5).
+- `parts` is an array **in draw order**, back to front. `origin` is the image's top-left in the rest pose, canvas units before `restScale`; a part's size is its pixel size ÷ `unitScale`.
+- Bones form one tree under a bone named `root` (≤ 24 bones, depth ≤ 8). Pivots are canvas units. `rot` is the joint's allowed range; a key outside it is an error, in custom packs too.
+- A track is `"bone.channel"` → keys `[ms, value]` or `[ms, value, "ease"]` (default `inOut`), times rising within the clip. Channels: `x`, `y`, `rot` (offsets from rest), `sx`, `sy` (0.3 to 1.5), `opacity` (0 to 1). If `sy` is keyed and `sx` is not, `sx = 1/√sy` (the squash rule); key `sx` to opt out (as the foreshortened arm does).
+- `follow` and `sway` are the only procedural kinds, both closed forms of time. Nothing in a pack is executable.
+- **Faces, tip and hand variants and props are swaps.** A part's `variants` are other images with the same placement; `swaps` pick one from an instant (`default` is the part's own image, `hide` hides it). `hidden: true` parts (props) are drawn only once a swap shows them. The face presets of section 3 become named groups of swaps when the skins are assembled.
+- `reserve` `[minX, top, maxX]` is the box every clip sample (with the hat where worn) must stay inside: the skin's v1 union, so the lane and hover never change. Without it, the baked states' outline.
+- Clip names are the v1 set; durations are 100 ms to the v1 cap (new-item ≤ 1900). `accessories` is `keep` (default) or `hide`.
+- Rig images: any size up to 1024 px a side, checksummed like frames. They count toward the image budget; the bundled per-image byte cap is 160 KiB for rig parts.
 
-### 7.2 Core (GitHubPetCore, pure and tested)
+### 7.2 Core (GitHubPetCore)
 
-- `Rig` (decoded, validated `rig` section) and `RigClip`.
-- `RigEvaluator.pose(rig:, state:, clip:, elapsed:, blendFrom:) -> RigPose`: evaluates tracks, `follow` and `sway`, composes world transforms down the tree, applies the edge blends, and returns per-part `(image key, CGAffineTransform, opacity)` in draw order plus face selection and prop attachments. A pure function of its inputs, so tests pin it at any millisecond.
-- `Easing` with the curves of section 5.1.
-- `RigContour`: each part keeps a precomputed outline (its alpha > 8 boundary, simplified to ≤ 48 points). The top contour of a pose is the transformed outlines' upper envelope over 256 columns: microseconds, no rasterizing. The count's near-touch tracking uses it per drawn frame, exactly like today's per-frame contours.
-- `MascotAnimator.pose` keeps choosing *what* plays (priorities, gating, drag, doze). For a rig pack, `ClipFrame` carries `elapsed` and the renderer evaluates the rig instead of looking up a frame image. `ClipLibrary` reads durations from rig clips, so `EventClipQueue` and `ClipScheduler` are unchanged.
+- `Rig.swift`: `RigSpec` (the manifest section), `RigEase` (section 5.1 curves, exact at 0 and 1), `RigEvaluator` (pure: channels at a millisecond with follow, sway and the squash rule; the 120 ms blend in and 150 ms blend out; world transforms down the bone tree; placed parts in draw order), `RigOutline` (each image's boundary points, any coverage), `RigRaster` (decoding, drawing and baking with CoreGraphics), `RigLimits` (validation).
+- `MascotPack+Rig.swift`: the rig on a loaded pack. `rigPose(for:)` evaluates the clip a `MascotPose` plays; `rigContour` is the pose's top contour from transformed outlines (no rasterizing), so the count tracks the moving art per drawn frame; `measureRig` samples every clip at 60 Hz at load for the lane, the hover outline and the bounds rule.
+- `ClipLibrary` reads rig clip durations, so `EventClipQueue`, `ClipScheduler`, priorities and gates are unchanged: a rig clip is just a clip with one long "frame" whose `elapsed` drives the rig.
+- `RigPlaceholder.swift`: the shape-only test rig. It writes a full v3 pack (parts drawn in code, states baked from the rig, `new-item` keyed from section 5.4). Tests, `--rig-placeholder` and render checks only; never bundled.
 
 ### 7.3 Renderer (app target)
 
-- `RigFigure` draws a `RigPose` in a SwiftUI `Canvas` (one `GraphicsContext`, resolved images cached per part, `concatenate` transform, `draw`). It sits where `PackFigure` sits now, inside the same `TimelineView`, so render-check and `ImageRenderer` snapshots work unchanged.
-- If D2 measurements show the Canvas path above the budget, the live window switches to a `CALayer` per part (GPU-composited transforms) while snapshots keep the Canvas path. Both read the same `RigPose`.
-- Part images are decoded once at load from the validated bytes (as `PackImageCache` does), about 1.5 MiB decoded per skin at 2×.
+- **Live window: one `CALayer` per part** (`RigLayerFigure`, an `NSViewRepresentable`). A frame only sets layer transforms, opacity and contents, and the GPU composites them.
+- **Snapshots and render-check: SwiftUI `Canvas`** (`RigFigure`), which `ImageRenderer` can draw. Both read the same `RigPose`, so they match.
+- Rig part images stay decoded for the pack's lifetime (`PackImageCache` treats them as resident, like state frames): a clip touches every part every frame.
+- Accessories (the v2 hat) ride the head bone: drawn with `headMotion` = the head's transform relative to its rest transform, so a hat authored on the baked idle head follows tilts and squashes. The painted helmet parts of section 4 replace this in D3.
 
-### 7.4 Clock, frame rate and idle cost
+### 7.4 Clock, frame rate and cost
 
-- One clock, unchanged: `TimelineView` dates plus `clockOffset`, the clip's `startedAt`. No timers, no physics state.
-- `MascotView.redraw` keeps its shape: continuous (60 fps, or 30) only while a clip, drag, spring or marker burst runs; 8 fps for doze; otherwise `idleFrames`.
-- **Idle stays as cheap as today.** At load, and when the accessories change, the engine bakes the idle rest pose for each idle face (4 images, plus 4 with the helmet when the marker shows) and the attention and urgent poses into `CGImage`s at the art's pixel size. Idle then draws exactly one baked image per `IdleFrameSchedule` entry: the same code path and cost as a frame pack (the ~0.8% idle CPU must not regress, and the existing `IdleRedrawTests` keep pinning it). The blink is that schedule's four entries.
-- Reduce Motion: no clips, ever (as v1). States show their baked static pose with the first face. Hat, drag and doze substitutions show their baked static poses.
+- One clock, unchanged: the `TimelineView` date plus `clockOffset`, from the clip's `startedAt`. No timers, no physics state.
+- `MascotView.redraw`: **60 fps while a rig clip plays**, 30 for frame clips, drag and springs, 8 for doze, and `idleFrames` otherwise. Idle with a rig pack is the frame-pack idle path, so it costs the same.
+- **Measured** (release `.rig138` build, Apple silicon, 1× 1920 × 1080 display, 128 pt mascot, placeholder rig, `new-item` replayed every 6 s, `top` 1 s samples; per-clip cost = (run mean − idle mean) × 6 s ÷ 1.9 s):
+
+| Configuration | CPU during a 1.9 s clip (% of one core) |
+|---|---|
+| Idle, rig pack, no clips (40 s) | 0.79 (mean), unchanged from the ~0.8% baseline |
+| Frame pack `new-item` at 30 fps (today's path, for comparison) | 5.2 |
+| Rig, Canvas at 60 fps | 13.0 |
+| Rig, Canvas + `drawingGroup` at 60 fps | 12.6 |
+| Rig, Canvas at 30 fps | 9.2 |
+| **Rig, CALayer at 60 fps (shipped default)** | **9.9** (two runs) |
+| Rig, CALayer at 30 fps | 6.7 |
+
+The profile (`sample`) shows Core Animation commits dominating the Canvas runs; with layers, most of what is left is SwiftUI re-evaluating the scene (labels, the count's contour) 60 times a second, not the rig. If 9.9% is too close to the 10% line, the next step is a display link inside `RigLayerView` that moves the layers at 60 fps while the SwiftUI scene stays at 30 (the count would then follow the art at 30 fps), or simply 30 fps at 6.7%.
+
+- Reduce Motion: no clips, ever (v1 rule); the baked static poses show.
 
 ### 7.5 Layout: hover, lane and badge
 
-- **Union.** At load the engine samples every state and clip at 60 Hz (about 1,000 samples per skin), takes each sample's transformed part outlines and builds the union outline. That is what `allContours`, `uprightContours` and `artProfile` use today, so lane height and hover placement come from the same code. Bundled rig packs must stay inside the skin's v1 union (validator); custom rig packs that exceed it get a taller lane or a wider hover offset, as custom frame packs do.
-- **Badge.** The count tracks the current pose's top contour (section 7.2). The rig's contour changes continuously, so the count moves smoothly instead of jumping per frame. It is quantized to whole points to avoid shimmer.
-- **Helmet and props** are part of every sample in which they show, so the union covers them.
+- **Lane.** Each rig clip adds one merged contour (its 60 Hz samples, with the hat where worn) to the upright contours, so the lane height covers the whole clip.
+- **Hover.** Every sample's row spans widen the hover outline, so hover never overlaps a moving part, for bundled and custom packs alike.
+- **Bounds.** Bundled packs fail to load if any sample leaves the `reserve` (`outsideArt("rig clip …")`); custom packs load with the wider outline instead, as custom frame packs do.
+- **Badge.** The count tracks the current pose's contour each drawn frame, so it moves smoothly with the art.
 - FX stay world-space sprites outside the contours, as v1.
 
 ### 7.6 Compatibility
 
-- v1 and v2 packs (custom or old bundled) render through `PackFigure` exactly as today. Schema 3 only adds a branch.
-- A v3 pack missing a clip behaves like v2 (no `new-item` → the #29 wave as a root-lean of the rest pose; no reaction or ambient clip → nothing).
-- Settings, skins and the pack picker do not change. `latestSchemaVersion` becomes 3.
+- v1 and v2 packs render through `PackFigure` exactly as before. A v2 manifest's `rig` key is ignored. `latestSchemaVersion` is 3.
+- A v3 pack without a rig clip falls back like v2 (frame clip, then the #29 wave for `new-item`).
 
-### 7.7 Tests (D2)
+### 7.7 Tests
 
-- Evaluator: key interpolation for each ease at exact milliseconds; `follow` and `sway` values; edge blends; clips end exactly on the hand-back pose.
-- Timing: rig clip durations feed `ClipLibrary` and `EventClipQueue` like frame clips (new-item = 1900 ms).
-- Bounds: placeholder rig clip samples stay within its union; the validator rejects an out-of-range key and a bone cycle.
-- Reduce Motion: no clip pose, static baked pose only.
-- Idle cost: `MascotView.redraw` for a rig pack at idle is `idleFrames` with the rig's blink schedule, never continuous.
-- CPU: measured with `top`/`ps` on a `.rig138` build during a replayed `new-item` and at idle, reported with the numbers.
+`Tests/GitHubPetCoreTests/RigTests.swift` and `IdleRedrawTests`: every ease exact at 0 and 1 with the intended shapes; key interpolation and holds; the squash rule; follow lag; blend in from the showing pose and exact rest at the clip's end; swaps on time (props hidden at rest); clockwise rotation about pivots; the placeholder loads under the bundled budget and bounds rule; `new-item` plays through `MascotAnimator` and the event queue at 1.9 s; Reduce Motion never shows a rig pose; the count's contour moves with the art and stays within the lane; a clip leaving the reserve fails bundled and widens custom hover; malformed rigs are rejected (no rig, cycle, unknown bone, out-of-range key, over-long clip, unknown clip, unsafe path, unordered keys); a schema 2 manifest ignores its rig; a rig pack idles on frame changes only and plays clips at 60 fps.
 
-## 8. Open questions for PM
+### 7.8 Not built yet (D3)
 
-1. The engine smooths preemption with a 120 ms transform blend instead of v1's hard cut (section 5.2). Priorities and timing are unchanged. I think that is in the spirit of "no blend" (which existed because frames could not blend), but it is a change to a v1 rule.
-2. 60 fps for 2-second clips is my default; I will report the measured CPU in D2 and drop to 30 fps if it is costly.
-3. The rest pose is 4% smaller than idle-00 to give the head headroom inside the unchanged union. The alternative is to keep it full size and forbid any upward stretch, which makes perk-ups and hops much flatter.
+- Preemption blend: `RigEvaluator.blendedChannels(from:)` exists and is tested; the animator does not yet pass the interrupted clip's channels, so a rig clip blends in from rest.
+- Face presets, prop re-parenting (helmet hand → head), the painted helmet parts, and `endsOn` (a clip blending into the attention pose rather than rest) arrive with the painted skins.
+- `validate_pack.py` does not read v3 yet; the Swift loader enforces every v3 rule today.
+
+## 8. Decisions (PM, 2026-11-24)
+
+1. Preemption uses the 120 ms transform blend; the v1 no-blend rule only existed because frames could not blend.
+2. 60 fps during clips if a clip costs under ~10% of a core on a release build, otherwise 30. Measured 9.9% with layers (section 7.4), so 60 ships, with 30 fps (6.7%) one constant away.
+3. The 0.96 rest scale is accepted: lively hops matter more than 4% size. In practice the headroom allows a 4% stretch plus a 3-unit hop (section 5.4).

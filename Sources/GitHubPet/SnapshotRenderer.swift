@@ -152,6 +152,7 @@ enum SnapshotRenderer {
         model.resolveServiceIncidents()
         await capture("10d-incidents-resolved")
         report += await clipRenders(model: model, directory: directory)
+        report += await rigRenders(model: model, directory: directory)
         // Counts above 99: the mascot shows "99+" (its slot's width), inbox and AX the full count.
         report.append("## count cap")
         model.refresh()

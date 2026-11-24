@@ -215,6 +215,7 @@ final class AppModel: ObservableObject {
     private(set) var simulatedPollLog: [ScopePollRequest] = []
     private var launchedScopePolls = 0
     private var clips = EventClipQueue()
+    private var replayTimer: Timer?
     // #138: one-shot clips beyond the event gesture, and the user's own reactions. Advanced by the
     // tick and by the events themselves; no timers of their own.
     private var scheduler = ClipScheduler(seed: 0)
@@ -331,6 +332,11 @@ final class AppModel: ObservableObject {
         switchSource()
         if let delay = options.injectEventAfter {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.injectEntitlementEvent() }
+        }
+        if let every = options.replayClipsEvery {
+            replayTimer = Timer.scheduledTimer(withTimeInterval: every, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.replayNewItem() }
+            }
         }
     }
 
@@ -1441,6 +1447,13 @@ final class AppModel: ObservableObject {
         // App clock, like workflow injections, so QA clock hooks order fixture items consistently.
         simulator.injectEntitlementEvent(now: clock())
         refresh()
+    }
+
+    /// #138 dev builds (`--replay-clips`): play new-item as a repository batch would, through the
+    /// same queue, gates and priorities, without adding an item or changing any source state.
+    func replayNewItem() {
+        enqueueEvents([InboxEvent(item: FixtureSimulator().injectEntitlementEvent(now: clock()), severity: .actionable)],
+                      at: clock(), kind: .newItem)
     }
 
     func injectWorkflowFailure() {

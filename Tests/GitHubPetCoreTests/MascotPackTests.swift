@@ -109,8 +109,8 @@ private struct PackFixture {
 
     @Test func wrongSchemaIsRejected() throws {
         let fixture = try PackFixture()
-        try fixture.manifest { $0["schemaVersion"] = 3 }
-        #expect(fixture.errors() == [.unsupportedSchema(3)])
+        try fixture.manifest { $0["schemaVersion"] = 4 }
+        #expect(fixture.errors() == [.unsupportedSchema(4)])
     }
 
     @Test func missingRequiredStateIsRejected() throws {

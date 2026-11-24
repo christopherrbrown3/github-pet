@@ -63,12 +63,15 @@ struct MascotView: View {
 
     static let gestureFPS = 30.0
     static let motionFPS = 8.0
+    /// A cutout rig (#138) moves every part on eased curves, so its clips draw at up to 60 fps; frame
+    /// packs only change image every 125 ms or more and keep 30.
+    static let rigFPS = 60.0
 
     /// Pure, so tests can pin the idle choice: the gesture condition is the one 30 fps always used.
     static func redraw(pack: Bool, clip: EventClipQueue.Clip?, stage: ClipStage, markerBursting: Bool,
-                       dozeHasClip: Bool, now: Date, idle: IdleFrameSchedule) -> Redraw {
+                       dozeHasClip: Bool, now: Date, idle: IdleFrameSchedule, rig: Bool = false) -> Redraw {
         if clip != nil || stage.scheduled != nil || stage.dragStart != nil || markerBursting {
-            return .continuous(fps: gestureFPS)
+            return .continuous(fps: rig && (clip != nil || stage.scheduled != nil) ? rigFPS : gestureFPS)
         }
         let dozing = stage.dozeStart != nil && dozeHasClip
         if !pack || dozing || stage.springAngle(at: now) != 0 { return .continuous(fps: motionFPS) }
@@ -83,7 +86,7 @@ struct MascotView: View {
         return Self.redraw(pack: pack != nil, clip: model.activeClip, stage: model.clipStage,
                            markerBursting: model.markerPhase(at: now, reduced: false).time != nil,
                            dozeHasClip: (packOverride.map { ClipLibrary(pack: $0) } ?? model.clipLibrary).has(.doze),
-                           now: now, idle: idle)
+                           now: now, idle: idle, rig: pack?.manifest.rig?.clips?.isEmpty == false && pack?.manifest.isV3 == true)
     }
 
     /// Art and labels for one instant, from one pose, so the count never lags the frame it tracks
@@ -176,7 +179,7 @@ struct MascotView: View {
     @ViewBuilder
     private func figure(pose: MascotPose, date: Date, reduced: Bool) -> some View {
         if let pack {
-            PackFigure(pack: pack, pose: pose)
+            PackFigure(pack: pack, pose: pose, live: renderDate == nil && poseOverride == nil && packOverride == nil)
         } else {
             PlaceholderFigure(pose: pose, date: date, reduced: reduced)
         }
@@ -341,8 +344,23 @@ struct PlaceholderFigure: View {
 struct PackFigure: View {
     let pack: MascotPack
     let pose: MascotPose
+    /// The on-screen mascot (not a snapshot or render-check still): rig clips use Core Animation layers.
+    var live = false
 
     var body: some View {
+        if let rigPose = pack.rigPose(for: pose) {
+            if live {
+                RigLayerFigure(pack: pack, pose: rigPose, accessories: pose.accessories)
+            } else {
+                RigFigure(pack: pack, pose: rigPose, accessories: pose.accessories)
+            }
+        } else {
+            frame
+        }
+    }
+
+    @ViewBuilder
+    private var frame: some View {
         let path = pack.imagePath(for: pose)
         let image = path.flatMap { PackImageCache.shared.image($0, in: pack) }
         // The common case (no accessory) is exactly the single image it was before #138: no extra
@@ -440,5 +458,7 @@ final class PackImageCache {
         MascotState.allCases.contains { state in
             pack.manifest.states[state.rawValue].map { $0.frames.contains(path) || $0.staticFallback == path } ?? false
         } || (pack.manifest.accessories ?? [:]).values.contains { $0.image == path }
+            // Rig parts (#138) are drawn on every frame of every rig clip: keep them all decoded.
+            || (pack.manifest.isV3 && pack.manifest.rig?.imagePaths.contains(path) == true)
     }
 }

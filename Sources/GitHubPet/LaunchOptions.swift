@@ -16,6 +16,9 @@ import GitHubPetCore
 ///   --placeholder                 draw the native placeholder instead of the bundled pack
 ///   --placeholder-clips           #138 QA: add "PH" placeholder clips, held poses and hat to the pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
+///   --rig-placeholder             #138 dev: load the shape-only cutout rig pack (written to a temp dir)
+///   --replay-clips <secs>         #138 dev: replay new-item every <secs> s without touching inbox data;
+///                                 ignored by the production bundle ID
 struct LaunchOptions {
     var defaultsSuite: String?
     var resetSettings = false
@@ -24,6 +27,8 @@ struct LaunchOptions {
     var packDirectory: URL?
     var forcePlaceholder = false
     var placeholderClips = false
+    var rigPlaceholder = false
+    var replayClipsEvery: TimeInterval?
     var snapshotDirectory: URL?
     /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
     var simulatesMonitoringScope = false
@@ -32,6 +37,9 @@ struct LaunchOptions {
     var qaOutput: String?
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
+
+    /// The shipping app's identifier: dev-only hooks stay off there.
+    static let productionBundleID = "dev.github-pet.GitHubPet"
 
     static func parse(arguments: [String] = CommandLine.arguments,
                       environment: [String: String] = ProcessInfo.processInfo.environment) -> LaunchOptions {
@@ -53,6 +61,9 @@ struct LaunchOptions {
             case "--reset-settings": options.resetSettings = true
             case "--placeholder": options.forcePlaceholder = true
             case "--placeholder-clips": options.placeholderClips = true
+            case "--rig-placeholder": options.rigPlaceholder = true
+            case "--replay-clips":
+                options.replayClipsEvery = iterator.next().flatMap(TimeInterval.init).map { max($0, 2) }
             case "--render-snapshots":
                 if let dir = iterator.next() { options.snapshotDirectory = URL(fileURLWithPath: dir, isDirectory: true) }
             case "--simulate-monitoring-scope": options.simulatesMonitoringScope = true
@@ -68,6 +79,15 @@ struct LaunchOptions {
                 if let offset = startOffset(iterator.next()) { options.clockOffset = offset }
             default: break
             }
+        }
+        if options.replayClipsEvery != nil, Bundle.main.bundleIdentifier == Self.productionBundleID {
+            options.replayClipsEvery = nil
+        }
+        if options.rigPlaceholder {
+            // A temp directory per launch: never the user's Library or the bundled packs.
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("github-pet-rig-placeholder-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
+            if (try? RigPlaceholder.write(to: directory)) != nil { options.packDirectory = directory }
         }
         // Snapshot evidence is shared, so it must never contain live GitHub data or touch the
         // user's preferences: force Demo fixtures and fresh settings in a throwaway suite,

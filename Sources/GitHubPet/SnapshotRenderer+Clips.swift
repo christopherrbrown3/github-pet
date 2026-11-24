@@ -88,3 +88,48 @@ extension SnapshotRenderer {
         return lines
     }
 }
+
+/// #138 cutout rig: the shape-only placeholder rig (schema v3) loaded under the bundled budget and
+/// bounds rule, and its keyframed new-item drawn at its key instants through the snapshot (Canvas) path.
+extension SnapshotRenderer {
+    static let rigInstantsMs: [Double] = [0, 120, 300, 400, 460, 560, 760, 1000, 1300, 1700, 1900]
+
+    static func rigRenders(model: AppModel, directory: URL) async -> [String] {
+        var lines = ["## cutout rig (#138, placeholder rig)"]
+        let packDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("github-pet-rig-render-\(ProcessInfo.processInfo.processIdentifier)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: packDirectory) }
+        guard (try? RigPlaceholder.write(to: packDirectory)) != nil else { return lines + ["FAIL rig: placeholder not written"] }
+        let pack: MascotPack
+        switch MascotPack.load(from: packDirectory, expectedID: RigPlaceholder.id, budget: .bundled) {
+        case .success(let loaded): pack = loaded
+        case .failure(let failure): return lines + ["FAIL rig: \(PackLabel.joined(failure.errors, separator: "; "))"]
+        }
+        let library = ClipLibrary(pack: pack)
+        lines.append("ok rig loaded: schema \(pack.manifest.schemaVersion), \(pack.manifest.rig?.parts.count ?? 0) parts, "
+                     + "\(pack.rigOutlines.count) images, bundled budget and reserve")
+        lines.append("rig new-item: length=\(Int((library.duration(.newItem) ?? 0) * 1000))ms instants="
+                     + rigInstantsMs.map { String(Int($0)) }.joined(separator: ","))
+        let poses = rigInstantsMs.map { ms in
+            MascotPose(state: .attention, frame: nil, clipElapsed: ms / 1000, clip: ClipFrame(id: .newItem, frame: 0, elapsed: ms / 1000))
+        }
+        let drawn = poses.filter { pack.rigPose(for: $0) != nil }.count
+        lines.append("\(drawn == poses.count ? "ok" : "FAIL") rig new-item: \(drawn)/\(poses.count) instants drawn by the rig")
+        let layout = model.layout(model.settings.mascotSize)
+        let sheet = VStack(alignment: .leading, spacing: 4) {
+            Text("Placeholder rig: new-item at \(rigInstantsMs.map { String(Int($0)) }.joined(separator: ", ")) ms").font(.caption.bold())
+            HStack(spacing: 4) {
+                ForEach(Array(poses.enumerated()), id: \.offset) { _, pose in
+                    MascotView(model: model, poseOverride: pose, badgeOverride: "2", drawsLabels: true,
+                               renderDate: Date(timeIntervalSinceReferenceDate: 0), packOverride: pack)
+                        .frame(width: layout.panelWidth, height: layout.panelSize.height)
+                        .background(Color.gray.opacity(0.12))
+                }
+            }
+        }
+        .padding(8)
+        .background(Color(nsColor: .windowBackgroundColor))
+        lines += await render(sheet, name: "rig-new-item", directory: directory, appearance: .aqua).filter { !$0.hasPrefix(" ") }
+        return lines
+    }
+}

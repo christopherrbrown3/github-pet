@@ -37,6 +37,19 @@ import Testing
                 "a settled spring holds")
     }
 
+    /// #138: a cutout rig idles exactly like a frame pack (its states are baked frames, the blink is
+    /// a frame change) and draws its clips at 60 fps; frame packs keep 30.
+    @Test func rigIdlesOnFrameChangesAndPlaysClipsAt60() {
+        func rig(clip: EventClipQueue.Clip? = nil, stage: ClipStage = .empty) -> MascotView.Redraw {
+            MascotView.redraw(pack: true, clip: clip, stage: stage, markerBursting: false, dozeHasClip: false,
+                              now: Self.start, idle: Self.idle, rig: true)
+        }
+        #expect(rig() == .idleFrames(Self.idle))
+        let event = InboxEvent(item: FixtureSimulator().injectEntitlementEvent())
+        #expect(rig(clip: EventClipQueue.Clip(event: event, startedAt: Self.start)) == .continuous(fps: 60))
+        #expect(rig(stage: ClipStage(dragStart: Self.start)) == .continuous(fps: 30), "drag shows frames")
+    }
+
     /// The memo must key on everything the width depends on: the same text at another size or role
     /// is a different width (QA #168).
     @Test func countWidthMemoKeysOnSizeAndRole() {
