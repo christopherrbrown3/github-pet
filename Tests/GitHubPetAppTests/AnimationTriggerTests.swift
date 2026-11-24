@@ -162,6 +162,109 @@ import Testing
         #expect(app.dataState == .stale && app.clipStage.dozeStart == nil)
     }
 
+    private func rows(_ count: Int, _ tag: String) -> [InboxItem] {
+        (0..<count).map {
+            InboxItem(id: "reviewRequest:zero-\(tag)-\($0)", kind: .reviewRequest, repository: "example/pet",
+                      title: "Fixture \($0)", url: nil, updatedAt: Date(timeIntervalSince1970: 1_763_200_000))
+        }
+    }
+
+    /// inbox-zero (#138, QA): only a fresh poll going from at least one shown item (ready or partial)
+    /// to verified empty plays it; never the launch baseline, all-dismissed or recovery from stale.
+    @Test func inboxZeroOnlyForAFreshPollFromItemsToVerifiedEmpty() async throws {
+        let clock = Clock(), app = model(clock)
+        await clearIncidents(app, clock)
+        func played() -> Bool { app.clipStage.scheduled?.id == .inboxZero }
+
+        // An empty launch baseline (Loading, then an empty first poll) plays nothing.
+        app.showLoadingForSnapshot()
+        #expect(app.dataState == .loading)
+        app.simulateFixtureItems([])
+        #expect(app.dataState == .empty && !played(), "empty baseline at launch")
+        await advance(app, clock, by: 10)
+
+        // Dismissing every row leaves a ready inbox, never the verified-empty state.
+        app.simulateFixtureItems(rows(2, "dismiss"))
+        await advance(app, clock, by: 10)
+        let context = try #require(app.inboxDismissalContext)
+        for row in app.items where app.canDismissInboxItem(row) { app.dismissInboxItem(row.id, in: context) }
+        await advance(app, clock, by: 10)
+        app.replaySnapshot()
+        #expect(app.items.isEmpty && app.dataState != .empty && !played(), "dismiss-all")
+
+        // Stale, then an empty poll: recovery, not a transition from shown items.
+        app.simulateFixtureItems(rows(3, "stale"))
+        await advance(app, clock, by: 10)
+        app.markStale()
+        app.tick()
+        #expect(app.dataState == .stale)
+        app.simulateFixtureItems([])
+        #expect(app.dataState == .empty && !played(), "stale to empty")
+        await advance(app, clock, by: 10)
+
+        // Partial with nothing shown, then empty: there were no items to clear.
+        let issue = InboxItem(id: "assignedIssue:zero-partial", kind: .assignedIssue, repository: "example/pet",
+                              title: "Fixture issue", url: nil, updatedAt: Date(timeIntervalSince1970: 1_763_200_000))
+        app.simulateFixtureItems([issue])
+        await advance(app, clock, by: 10)
+        app.setPartialPolls(true)
+        await advance(app, clock, by: 10)
+        #expect(app.dataState == .partial && app.items.isEmpty)
+        app.simulateFixtureItems([])
+        #expect(app.dataState == .partial && app.items.isEmpty)
+        app.setPartialPolls(false)   // polls: complete and empty
+        #expect(app.dataState == .empty && !played(), "partial with no items to empty")
+        await advance(app, clock, by: 10)
+
+        // Three fresh items, then a fresh empty poll: plays once.
+        app.simulateFixtureItems(rows(3, "zero"))
+        await advance(app, clock, by: 10)
+        #expect(app.dataState == .ready && app.items.count == 3)
+        app.simulateFixtureItems([])
+        #expect(app.dataState == .empty && played(), "3 items to empty")
+        await advance(app, clock, by: 10)
+        app.replaySnapshot()
+        #expect(!played(), "an unchanged empty poll doesn't replay")
+
+        // Within the 30-minute cooldown a second transition plays nothing; after it, it plays again.
+        app.simulateFixtureItems(rows(1, "cooldown"))
+        await advance(app, clock, by: 10)
+        app.simulateFixtureItems([])
+        #expect(app.dataState == .empty && !played(), "cooldown holds")
+        clock.now += 31 * 60
+        app.simulateFixtureItems(rows(1, "later"))
+        await advance(app, clock, by: 10)
+        app.simulateFixtureItems([])
+        #expect(played(), "after 30 minutes")
+    }
+
+    /// Ambient clips are suppressed while the incident marker shows (#138, QA).
+    @Test func noAmbientClipWhileTheIncidentMarkerShows() async {
+        let clock = Clock(), app = model(clock)
+        await clearIncidents(app, clock)
+        app.injectServiceIncident(.minor)
+        app.markAllSeen()
+        #expect(app.incidentMarker != nil && app.mascotState == .idle)
+        func ambient() -> Bool { app.clipStage.scheduled?.tier == .idleVariant }
+        var sawAmbient = false
+        for _ in 0..<(12 * 6) {
+            app.replaySnapshot()
+            await advance(app, clock, by: 10)
+            sawAmbient = sawAmbient || ambient()
+        }
+        #expect(!sawAmbient, "12 minutes with the marker shown: no ambient clip")
+        // Control: once the marker is gone, an ambient clip does play within the 2–5 minute gap.
+        app.resolveServiceIncidents()
+        app.mascotHover(true)
+        app.mascotHover(false)
+        for _ in 0..<(6 * 6) {
+            app.replaySnapshot()
+            await advance(app, clock, by: 10)
+            sawAmbient = sawAmbient || ambient()
+        }
+        #expect(app.incidentMarker == nil && sawAmbient, "without the marker, ambient clips play")
+    }
+
     @Test func dismissingANeedsYouRowPlaysItemCleared() async throws {
         let clock = Clock(), app = model(clock)
         await clearIncidents(app, clock)

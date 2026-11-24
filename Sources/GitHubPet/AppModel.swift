@@ -1506,6 +1506,13 @@ final class AppModel: ObservableObject {
         sync(now: clock())
     }
 
+    /// Demo/QA: replace the fixture inbox's own rows, then poll (e.g. #138 inbox-zero from N to 0).
+    func simulateFixtureItems(_ items: [InboxItem]) {
+        guard usingFixtures else { return }
+        simulator.replaceItems(items)
+        refresh()
+    }
+
     func simulateDisconnect() {
         guard usingFixtures else { return }
         simulator.disconnect()

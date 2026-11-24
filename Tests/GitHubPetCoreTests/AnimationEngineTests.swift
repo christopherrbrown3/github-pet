@@ -133,6 +133,21 @@ private func scheduler(idleGap: ClosedRange<TimeInterval> = 120...300, seed: UIn
         #expect(s.request(.poke, now: t0 + 2, permissions: allowed, duration: everyClip) == .started)
     }
 
+    @Test func anEqualPriorityArrivalNeverRestartsTheClip() {
+        var s = scheduler()
+        #expect(s.request(.dropped, now: t0, permissions: allowed, duration: everyClip) == .started)
+        // drop has no cooldown: a second quick drop is dropped by priority, not restarted.
+        #expect(s.request(.dropped, now: t0 + 0.1, permissions: allowed, duration: everyClip) == .outranked)
+        #expect(s.active(at: t0 + 0.2)?.startedAt == t0)
+        // The same for two different clips at one priority (ambient variants).
+        var a = scheduler(idleGap: 1...1)
+        a.tick(now: t0, permissions: allowed, idleAllowed: true, duration: everyClip)
+        let first = a.tick(now: t0 + 1, permissions: allowed, idleAllowed: true, duration: everyClip)
+        #expect(first?.tier == .idleVariant)
+        a.tick(now: t0 + 1.5, permissions: allowed, idleAllowed: true, duration: everyClip)
+        #expect(a.playing?.startedAt == first?.startedAt && a.playing?.id == first?.id)
+    }
+
     @Test func missingClipKeepsTodaysBehaviour() {
         var s = scheduler()
         #expect(s.request(.poke, now: t0, permissions: allowed, duration: { _ in nil }) == .unavailable)
