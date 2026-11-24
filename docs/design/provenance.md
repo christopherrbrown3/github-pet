@@ -137,6 +137,10 @@ FX review: retry separates eight sprites with clear cell gaps; smoke 01 has a de
 
 Incident-end A replacement review: 01 and 03 grip the nozzle and aim down-left; 02 squints but does not visibly hold the nozzle and lean is slight. No spray or visible motion marks. Nozzle extends left beyond idle silhouette in 01 and 03; bounds and baseline unverified. No retry.
 
+| `assets/mascots/mona-pet-v1/sources/ambient-b-sheet.png` (replacement; supersedes earlier ambient B above) | `exec-1cbad62b-d1fc-46cf-8e48-4b5cbd502fba` | Two upward compact closed-eye yawn stretches, then relax and fidget. | Same three Mona reference hashes as pilot above; prior ambient B: `44fa4b2d58c5985ecc81c6babe7af9ff181d53e983bc86692139e97873e603f0`. |
+
+Ambient B replacement review: both stretch poses have closed eyes and upward tentacles close to head; mouth is much larger in 02. No visible effect marks. Exact bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
