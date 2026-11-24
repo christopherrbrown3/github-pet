@@ -319,6 +319,34 @@ FX live in `assets/mascots/shared-fx-v1/`, bundled with the app like the siren S
 
 Until the art lands, the engine may draw simple vector stand-ins (circles, a four-point star, a "z" glyph).
 
+### Motion model (prototype, `new-item` only)
+
+Key poses alone are 3–5 drawings held 200–800 ms with hard cuts, which reads as a very low frame rate. The motion layer (`Sources/GitHubPetCore/ClipMotion.swift`) adds the in-betweens a drawing can't. It is a pure function of the clip's elapsed time on the app clock and is drawn at the 30 fps the view already uses during clips. It adds no timers.
+
+- **Whole-figure transforms:** scale about the ground anchor `[128, 232]` plus a lift, eased between keys with smoothstep, so every key is a peak with zero velocity. `new-item` uses these beats:
+  - a perk stretch out of idle;
+  - an anticipation squash, where the crouch pose lands;
+  - a launch stretch, where the tiptoe pose lands;
+  - an 8 px hop;
+  - a landing squash with overshoot;
+  - a settle squash, where the chest-held pose lands;
+  - a small beat into the mood pose.
+
+  The frame durations (220, 230, 380, 320, 750 ms) put every pose swap on a peak.
+- **Height match:** an incoming pose starts at the outgoing pose's height and eases to its own over 130 ms. The last pose eases to the mood pose's height over its final 360 ms, so a crouch or a smaller clip scale never pops.
+- **Dissolves only where silhouettes are close:**
+  - entry from the pose before the clip (110 ms);
+  - exit into the mood pose (150 ms);
+  - the 02 → 03 envelope waggle (140 ms).
+
+  Both layers are fully opaque mid-dissolve, so overlapping art never turns see-through.
+- **Never outside the layout:** the pack clamps each layer so it stays inside the states' art (or the frame's own bounds where the frame already reaches further). Lift goes first, then stretch. Load-time sampling at 30 fps adds the motion's contours to the lane and hover measurement. The count tracks the transformed contour on every frame.
+- **Gates:** Reduce Motion plays no clip, so nothing moves. Placeholder clips and clips without a catalog entry play exactly as before.
+- **One head size per clip:** the builder fits every frame of `new-item` to one face width, chosen so that the whole clip fits today's union:
+  - Little Chris: 0.876 × idle-00, head 12.4% smaller.
+  - Mona: 0.934 × idle-00, head 6.6% smaller. Fitting her whole clip would need 0.694, because the raised envelope overhangs the union's left edge by 28 px. The builder fits only the top when the whole-clip fit would shrink the head by more than 15%.
+- **No hat overlay on state frames:** helmets appear only where incident clips draw them.
+
 ## 5. Asset list for Codex
 
 Generate at the same scale and fixed camera as the existing packs, then pack with the builders. The sources are 1254 × 1254 RGBA sheets of 2 × 2 or 3 × 3 equal cells, like the v1 sheets. The runtime files are 256 × 256 RGBA PNGs, transparent background, feet on y 232, inside the bounds rule. Every sheet edit must reference the skin's identity source: Mona's `sources/probe.png` plus `frames/idle-00.png`, Little Chris's `source/little-chris-poses.png`, and the props reference (step 0). Record every generation in `docs/design/provenance.md` (artifact ID, prompt intent, source hash) as was done for v1.

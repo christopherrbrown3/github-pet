@@ -310,6 +310,9 @@ public struct MascotPack: Equatable, Sendable {
     /// Largest drag/dizzy lean (≤ the #29 lean) whose swept outline stays inside the lane the states
     /// already need, so a lean never changes the layout.
     public var clipLeanLimit: Double = MascotPack.attentionLeanDegrees
+    /// The states' art bounds [minX, maxX, top] (#138): the motion layer never draws beyond them,
+    /// or beyond a frame's own bounds where it already reaches further.
+    public var artLimit: [Int] = []
     /// Clips and held poses synthesized from existing frames until the art lands (render-check and
     /// `--placeholder-clips` only); the renderer tags them "PH".
     public var placeholderClips: Set<MascotClipID> = []

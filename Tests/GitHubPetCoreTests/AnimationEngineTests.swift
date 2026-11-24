@@ -761,7 +761,8 @@ private func repositoryRoot() -> URL {
                 // Placeholders fill only what the bundled art does not have.
                 #expect(placeholder.placeholderClips.contains(id) == !ClipLibrary(pack: original).has(id))
             }
-            #expect(library.accessories == [AccessoryPolicy.firefighterHat])
+            // The stand-in hat is for v1 packs; a v2 pack without one has no hat on purpose (#138).
+            #expect(library.accessories == (original.manifest.isV2 ? ClipLibrary(pack: original).accessories : [AccessoryPolicy.firefighterHat]))
             #expect(placeholder.measureClips() == [], "the placeholder hat and frames stay inside the art")
             for side in [64.0, 128, 256] {
                 let before = MascotLayout(artSide: side, pack: original), after = MascotLayout(artSide: side, pack: placeholder)

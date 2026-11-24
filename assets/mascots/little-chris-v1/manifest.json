@@ -54,28 +54,37 @@
       "staticFallback": "frames/urgent-02.png"
     }
   },
-  "clips": {},
-  "accessories": {
-    "firefighter-hat": {
-      "image": "accessories/firefighter-hat.png",
-      "attach": "head"
+  "clips": {
+    "new-item": {
+      "frames": [
+        "frames/new-item-00.png",
+        "frames/new-item-01.png",
+        "frames/new-item-02.png",
+        "frames/new-item-03.png",
+        "frames/new-item-04.png"
+      ],
+      "durationMs": [
+        220,
+        230,
+        380,
+        320,
+        750
+      ]
     }
-  },
-  "points": {
-    "head": [
-      128,
-      21
-    ]
   },
   "framePoints": {},
   "frameSha256": {
-    "accessories/firefighter-hat.png": "1193468902fa65e2004c9f4e690bcb2f6e00b720a74d4bc91d781ecd3b64c100",
     "frames/attention-00.png": "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
     "frames/attention-01.png": "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
     "frames/attention-02.png": "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
     "frames/idle-00.png": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
     "frames/idle-01.png": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
     "frames/idle-02.png": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
+    "frames/new-item-00.png": "af666cd1461c94dbfea281344686db89bef90abdafd0a8db74961cd5311b24d5",
+    "frames/new-item-01.png": "82ca476b400f60398c90ba42ba7dc07080c7b433187fa8d67bd66045734e770c",
+    "frames/new-item-02.png": "d66cc18cc20f0f247beb05529a8dd4124a2e62ab9c3b491f90611eaab270bc9b",
+    "frames/new-item-03.png": "b2628dbd2c4f31393a151bda768b6b8ad8bfa1004e005560992f125fe5d6c746",
+    "frames/new-item-04.png": "9a88c1395e850f0ce252b8ee511918236c8d1aee5eb9abe23afa6309a5219ecc",
     "frames/urgent-00.png": "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
     "frames/urgent-01.png": "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
     "frames/urgent-02.png": "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"

@@ -175,6 +175,7 @@ extension MascotPack {
         guard !v2Paths.isEmpty else { return [] }
         let core = MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }
         guard let union = ArtProfile.union(core), let limit = union.bounds else { return [] }
+        artLimit = [limit.minX, limit.maxX, limit.top]
         let baseTop = (MascotState.allCases.flatMap(poseContours) + leaningContours).flatMap { $0.compactMap { $0 } }.min() ?? 0
         var errors: [MascotPackError] = []
         extraOutlines = [:]
@@ -210,7 +211,8 @@ extension MascotPack {
                 upright.append(extraOutlines[path].map { Self.merge($0.columnTops, shifted) } ?? shifted)
             }
         }
-        extraUprightContours = upright
+        // The motion layer's in-betweens (#138), so the lane and the count's range include them.
+        extraUprightContours = upright + motionContours()
         // Drag and dizzy lean (#138): swept like the attention frames (#29), with the hat where worn,
         // at the largest angle whose sweep needs no taller lane.
         let leaning = Set((manifest.heldSpec(.drag).map { $0.frames + [$0.staticFallback] } ?? [])
@@ -303,7 +305,8 @@ extension MascotPack {
                                                  staticFallback: id == .doze ? paths[0] : base.staticFallback)
             pack.placeholderClips.insert(id)
         }
-        if manifest.accessories?[AccessoryPolicy.firefighterHat.rawValue] == nil, manifest.points?.head == nil,
+        // A v2 pack without a hat has none on purpose (#138 review: helmets only inside incident art).
+        if !self.manifest.isV2, manifest.accessories?[AccessoryPolicy.firefighterHat.rawValue] == nil, manifest.points?.head == nil,
            let union = ArtProfile.union(MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }),
            let limit = union.bounds, let hat = Self.placeholderHat(head: headPoint, limit: limit) {
             let path = "placeholder/firefighter-hat.png"

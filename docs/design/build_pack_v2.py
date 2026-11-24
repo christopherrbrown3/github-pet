@@ -71,8 +71,16 @@ EXCLUDED = {
 # of the bundled manifest (still in the preview) until the PM decides.
 LAYOUT_CHANGES = {
     'mona-pet-v1': {'item-cleared': 'raises the count lane at 256 pt from 13 to 18 pt '
-                                    '(HoverPlacementTests.nearTouchCountTracksEveryPoseAtTheGap)'},
+                                    '(HoverPlacementTests.nearTouchCountTracksEveryPoseAtTheGap)',
+                    'idle-look': 'raises the count lane at 256 pt from 17 to 19 pt and moves the count slot '
+                                 '(BadgeSlotTests.monaKeepsHerPlacementAtTheSampledSizes)'},
 }
+
+# One head size per clip (#138 review): every frame of these clips is fitted to the same face width,
+# CLIP_SCALE x idle-00's, the largest that keeps the whole clip inside the union. If that would shrink
+# the head by more than MIN_CLIP_SCALE allows, only the top is fitted and the side overhang is reported.
+CLIP_FIT = ['new-item']
+MIN_CLIP_SCALE = 0.85
 
 # Section 3 timings. Clip frames may repeat and reuse idle-00.
 HELD = {'drag': (['drag-00', 'drag-01'], [400, 400]), 'doze': (['doze-00', 'doze-01'], [1200, 1200])}
@@ -81,7 +89,8 @@ CLIPS = {
                         'incident-start-04', 'incident-start-05'], [250, 300, 300, 250, 500, 300], 'hide'),
     'incident-end': (['incident-end-00', 'incident-end-01', 'incident-end-02', 'incident-end-03', 'incident-end-02',
                       'incident-end-04', 'incident-end-05', 'idle-00'], [250, 250, 300, 300, 300, 300, 700, 300], 'hide'),
-    'new-item': (['new-item-00', 'new-item-01', 'new-item-02', 'new-item-03', 'new-item-04'], [200, 200, 350, 350, 800], None),
+    # Frame starts sit on the motion layer's peaks (Sources/GitHubPetCore/ClipMotion.swift).
+    'new-item': (['new-item-00', 'new-item-01', 'new-item-02', 'new-item-03', 'new-item-04'], [220, 230, 380, 320, 750], None),
     'item-cleared': (['item-cleared-00', 'item-cleared-01', 'item-cleared-02', 'idle-00'], [200, 300, 400, 300], None),
     'inbox-zero': (['inbox-zero-00', 'inbox-zero-01', 'inbox-zero-02', 'inbox-zero-01', 'inbox-zero-03', 'inbox-zero-04'],
                    [250, 300, 300, 300, 450, 400], None),
@@ -285,7 +294,7 @@ class Skin:
                     region[i * 4:i * 4 + 4] = b'\0\0\0\0'
         return region, side, fringe_before, dropped, foreign
 
-    def pack_frame(self, name):
+    def pack_frame(self, name, head_scale=1.0):
         stem, index = CELLS[name]
         cell, side, fringe_before, dropped, foreign = self.cell(stem, index)
         silhouette = alpha_box(cell, side)
@@ -293,7 +302,7 @@ class Skin:
         if margin < 2:
             raise ValueError(f'{self.id} {name}: art reaches the edge of the padded {stem} cell {index}')
         face = face_box(cell, side, self.config['face'])
-        scale = self.face_width / (face[2] - face[0])
+        scale = self.face_width * head_scale / (face[2] - face[0])
         size = round(side * scale)
         resized = resample(cell, side, side, size, size, self.work)
         dropped_after = clear_haze(resized)
@@ -423,6 +432,7 @@ def build_skin(pack_id, config, work):
             raise ValueError(f'{pack_id}: v1 frame {path} changed')
 
     frames, records = {}, {}
+    clip_scales = {}
     for name in CELLS:
         pixels, records[name] = skin.pack_frame(name)
         if pixels is None:
@@ -431,6 +441,26 @@ def build_skin(pack_id, config, work):
             frames[name] = pixels
         print(f'{pack_id} {name}: scale {records[name]["scale"]} head {records[name].get("headScale")} '
               f'bounds {records[name]["alphaBounds"]}', flush=True)
+    for clip in CLIP_FIT:
+        names = [n for n in CLIPS[clip][0] if n in CELLS]
+        cx = skin.face_cx
+        left, right, top = config['union']
+        fits = {'top': min((ANCHOR[1] - top) / (ANCHOR[1] - records[n]['alphaBounds'][1]) for n in names)}
+        sides = [(cx - left) / (cx - records[n]['alphaBounds'][0]) for n in names if records[n]['alphaBounds'][0] < left]
+        sides += [(right + 1 - cx) / (records[n]['alphaBounds'][2] - cx) for n in names if records[n]['alphaBounds'][2] - 1 > right]
+        fits['sides'] = min(sides, default=9.0)
+        whole = min(1.0, fits['top'], fits['sides'])
+        scale = whole if whole >= MIN_CLIP_SCALE else min(1.0, fits['top'])
+        clip_scales[clip] = {'scale': round(scale, 4), 'wholeClipFit': round(whole, 4), 'topFit': round(min(1.0, fits['top']), 4),
+                             'headSizeVsIdle': f'{(scale - 1) * 100:+.1f}%'}
+        for name in names:
+            pixels, records[name] = skin.pack_frame(name, head_scale=scale)
+            records[name]['clipScale'] = round(scale, 4)
+            if pixels is None:
+                frames.pop(name, None)
+            else:
+                frames[name] = pixels
+            print(f'{pack_id} {name}: clip scale {scale:.4f} bounds {records[name]["alphaBounds"]}', flush=True)
     hat, hat_record = skin.hat()
 
     def offset(name):
@@ -481,8 +511,7 @@ def build_skin(pack_id, config, work):
     used = {Path(p).stem for spec in [*states.values(), *clips.values()] for p in spec['frames']}
     frame_points = {}
     for name, record in sorted(records.items()):
-        if name in used and record['head'] != skin.head:
-            frame_points.setdefault(path(name), {})['head'] = record['head']
+        pass  # head points only placed the hat, which is no longer worn (#138 review); packing.json keeps them
     for name in ['incident-end-02', 'incident-end-03']:
         if name in frames:
             records[name]['nozzle'] = skin.nozzle(frames[name], records[name])
@@ -493,27 +522,17 @@ def build_skin(pack_id, config, work):
         if 'item-cleared-01' in used:
             frame_points.setdefault(path('item-cleared-01'), {})['hand'] = records['item-cleared-01']['hand']
 
-    # Bounds rule (section 3): every new frame, and the hat wherever it can show, at alpha > 0.
+    # Bounds rule (section 3): every new frame at alpha > 0 (no hat is worn, so none is checked).
     bounds_report = {}
     for name, record in sorted(records.items()):
         found = violations(record['alphaBounds'], config['union'])
         if found:
             bounds_report[path(name)] = found
-    hat_box = alpha_box(hat)
-    wearing = {n for names, _ in HELD.values() for n in names} | {n for names, _, acc in CLIPS.values() if acc != 'hide' for n in names}
-    for name in sorted(wearing & set(frames) - {'idle-00'}):  # unpacked frames have no head point
-        dx, dy = offset(name)
-        found = violations([hat_box[0] + dx, hat_box[1] + dy, hat_box[2] + dx, hat_box[3] + dy], config['union'])
-        if found:
-            bounds_report[f'{path(name)} + hat'] = found
-
     def manifest_for(states, clips):
         used = {p for spec in [*states.values(), *clips.values()] for p in spec['frames'] + spec.get('staticFallback', '').split()}
-        referenced = sorted(used | {'accessories/firefighter-hat.png'})
+        referenced = sorted(used)
         return {'schemaVersion': 2, 'id': manifest['id'], 'name': manifest['name'],
                 'canvas': {'width': CANVAS, 'height': CANVAS}, 'anchor': ANCHOR, 'states': states, 'clips': clips,
-                'accessories': {'firefighter-hat': {'image': 'accessories/firefighter-hat.png', 'attach': 'head'}},
-                'points': {'head': skin.head},
                 'framePoints': {p: v for p, v in sorted(frame_points.items()) if p in used},
                 'frameSha256': {p: hashes[p] for p in referenced}}
 
@@ -521,11 +540,11 @@ def build_skin(pack_id, config, work):
     # bundled manifest declares only sequences that meet the bounds rule (the rest fall back to
     # today's behaviour). The preview manifest declares every packed sequence for review with a
     # custom pack directory, where the app widens the lane instead.
-    def clean(spec, keeps_hat):
-        return not any(p in bounds_report or (keeps_hat and f'{p} + hat' in bounds_report) for p in spec['frames'])
+    def clean(spec):
+        return not any(p in bounds_report for p in spec['frames'])
 
-    bundled_states = {k: v for k, v in states.items() if k in core or clean(v, True)}
-    bundled_clips = {k: v for k, v in clips.items() if clean(v, v.get('accessories') != 'hide') and k not in LAYOUT_CHANGES.get(pack_id, {})}
+    bundled_states = {k: v for k, v in states.items() if k in core or clean(v)}
+    bundled_clips = {k: v for k, v in clips.items() if clean(v) and k not in LAYOUT_CHANGES.get(pack_id, {})}
     gated = sorted((set(states) - set(bundled_states)) | (set(clips) - set(bundled_clips)))
     (pack / 'manifest.json').write_text(json.dumps(manifest_for(bundled_states, bundled_clips), indent=2) + '\n')
     preview = manifest_for(states, clips)
@@ -543,7 +562,9 @@ def build_skin(pack_id, config, work):
         'union': {'x': list(config['union'][:2]), 'yMin': config['union'][2]},
         'excludedCells': EXCLUDED,
         'helmetReplacement': {'mode': HELMET_REPLACEMENT, 'applied': replace, 'frames': helmet},
-        'accessory': hat_record,
+        'accessory': dict(hat_record, worn=False, note='the hat overlay is not declared (#138 review): helmets '
+                                                     'appear only where incident clips draw them; this file feeds incident-start-05'),
+        'clipScales': clip_scales,
         'frames': records,
         'boundsViolations': bounds_report,
         'omittedFromManifest': omitted,

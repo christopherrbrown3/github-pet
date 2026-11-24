@@ -535,7 +535,17 @@
         20,
         194,
         94
-      ]
+      ],
+      "worn": false,
+      "note": "the hat overlay is not declared (#138 review): helmets appear only where incident clips draw them; this file feeds incident-start-05"
+    },
+    "clipScales": {
+      "new-item": {
+        "scale": 0.9339,
+        "wholeClipFit": 0.6936,
+        "topFit": 0.9339,
+        "headSizeVsIdle": "-6.6%"
+      }
     },
     "frames": {
       "incident-start-00": {
@@ -1016,28 +1026,28 @@
         ],
         "paddedCellMargin": 76,
         "neighbourPixelsDropped": 1305,
-        "scale": 0.38845,
-        "scaledCellSize": 281,
+        "scale": 0.36278,
+        "scaledCellSize": 262,
         "translation": [
-          -20,
-          -16
+          -10,
+          1
         ],
         "faceBounds": [
-          73,
-          65,
-          184,
-          142
+          76,
+          76,
+          180,
+          148
         ],
-        "headScale": 1.0,
+        "headScale": 0.9369,
         "alphaBounds": [
-          51,
-          13,
-          205,
+          56,
+          28,
+          199,
           232
         ],
         "hazePixelsDropped": [
           11021,
-          109
+          111
         ],
         "redFringePixels": [
           17,
@@ -1045,8 +1055,9 @@
         ],
         "head": [
           128,
-          28
-        ]
+          39
+        ],
+        "clipScale": 0.9339
       },
       "new-item-01": {
         "sourceSheet": "sources/new-item-sheet.png",
@@ -1066,37 +1077,38 @@
         ],
         "paddedCellMargin": 82,
         "neighbourPixelsDropped": 1418,
-        "scale": 0.38312,
-        "scaledCellSize": 277,
+        "scale": 0.35781,
+        "scaledCellSize": 259,
         "translation": [
-          -3,
-          -13
+          6,
+          3
         ],
         "faceBounds": [
-          73,
-          91,
-          184,
-          161
+          77,
+          100,
+          181,
+          166
         ],
-        "headScale": 1.0,
+        "headScale": 0.9369,
         "alphaBounds": [
-          53,
-          39,
-          203,
+          58,
+          52,
+          199,
           232
         ],
         "hazePixelsDropped": [
           6357,
-          79
+          93
         ],
         "redFringePixels": [
           7,
           0
         ],
         "head": [
-          128,
-          54
-        ]
+          129,
+          63
+        ],
+        "clipScale": 0.9339
       },
       "new-item-02": {
         "sourceSheet": "sources/new-item-sheet.png",
@@ -1116,37 +1128,38 @@
         ],
         "paddedCellMargin": 74,
         "neighbourPixelsDropped": 1527,
-        "scale": 0.39253,
-        "scaledCellSize": 284,
+        "scale": 0.3666,
+        "scaledCellSize": 265,
         "translation": [
-          -34,
-          -23
+          -24,
+          -6
         ],
         "faceBounds": [
-          73,
-          58,
-          185,
-          133
+          76,
+          70,
+          180,
+          140
         ],
-        "headScale": 1.009,
+        "headScale": 0.9369,
         "alphaBounds": [
-          12,
-          8,
-          208,
+          19,
+          23,
+          202,
           232
         ],
         "hazePixelsDropped": [
           10482,
-          106
+          107
         ],
         "redFringePixels": [
           75,
           0
         ],
         "head": [
-          129,
-          21
-        ]
+          128,
+          33
+        ],
+        "clipScale": 0.9339
       },
       "new-item-03": {
         "sourceSheet": "sources/new-item-sheet.png",
@@ -1166,28 +1179,28 @@
         ],
         "paddedCellMargin": 75,
         "neighbourPixelsDropped": 1986,
-        "scale": 0.39671,
-        "scaledCellSize": 287,
+        "scale": 0.3705,
+        "scaledCellSize": 268,
         "translation": [
-          -32,
-          -25
+          -22,
+          -8
         ],
         "faceBounds": [
-          73,
-          57,
-          184,
-          133
+          76,
+          68,
+          180,
+          140
         ],
-        "headScale": 1.0,
+        "headScale": 0.9369,
         "alphaBounds": [
-          11,
-          5,
-          205,
+          19,
+          20,
+          199,
           232
         ],
         "hazePixelsDropped": [
           7782,
-          128
+          107
         ],
         "redFringePixels": [
           84,
@@ -1195,8 +1208,9 @@
         ],
         "head": [
           128,
-          20
-        ]
+          31
+        ],
+        "clipScale": 0.9339
       },
       "new-item-04": {
         "sourceSheet": "sources/new-item-b-sheet.png",
@@ -1216,28 +1230,28 @@
         ],
         "paddedCellMargin": 56,
         "neighbourPixelsDropped": 0,
-        "scale": 0.38444,
-        "scaledCellSize": 278,
+        "scale": 0.35904,
+        "scaledCellSize": 260,
         "translation": [
-          -21,
-          -25
+          -12,
+          -8
         ],
         "faceBounds": [
-          73,
-          67,
-          184,
-          139
+          76,
+          78,
+          180,
+          146
         ],
-        "headScale": 1.0,
+        "headScale": 0.9369,
         "alphaBounds": [
-          52,
-          18,
-          201,
+          57,
+          32,
+          196,
           232
         ],
         "hazePixelsDropped": [
           5115,
-          119
+          84
         ],
         "redFringePixels": [
           9,
@@ -1245,8 +1259,9 @@
         ],
         "head": [
           128,
-          30
-        ]
+          41
+        ],
+        "clipScale": 0.9339
       },
       "item-cleared-00": {
         "sourceSheet": "sources/cleared-poke-sheet.png",
@@ -2826,74 +2841,15 @@
       "frames/incident-start-04.png": {
         "top": 14
       },
-      "frames/new-item-00.png": {
-        "top": 7
-      },
       "frames/new-item-02.png": {
-        "left": 35,
-        "top": 12
+        "left": 28
       },
       "frames/new-item-03.png": {
-        "left": 36,
-        "top": 15
-      },
-      "frames/new-item-04.png": {
-        "top": 2
+        "left": 28
       },
       "frames/poke-00.png": {
         "left": 3,
         "top": 1
-      },
-      "frames/dizzy-01.png + hat": {
-        "top": 4
-      },
-      "frames/drop-01.png + hat": {
-        "top": 7
-      },
-      "frames/idle-fidget-00.png + hat": {
-        "top": 8
-      },
-      "frames/idle-fidget-01.png + hat": {
-        "top": 4
-      },
-      "frames/idle-fidget-02.png + hat": {
-        "top": 4
-      },
-      "frames/idle-look-02.png + hat": {
-        "top": 7
-      },
-      "frames/idle-stretch-01.png + hat": {
-        "top": 14
-      },
-      "frames/idle-stretch-02.png + hat": {
-        "top": 15
-      },
-      "frames/idle-stretch-03.png + hat": {
-        "top": 9
-      },
-      "frames/inbox-zero-00.png + hat": {
-        "top": 2
-      },
-      "frames/inbox-zero-01.png + hat": {
-        "top": 12
-      },
-      "frames/inbox-zero-02.png + hat": {
-        "top": 9
-      },
-      "frames/inbox-zero-03.png + hat": {
-        "top": 1
-      },
-      "frames/new-item-00.png + hat": {
-        "top": 7
-      },
-      "frames/new-item-02.png + hat": {
-        "top": 14
-      },
-      "frames/new-item-03.png + hat": {
-        "top": 15
-      },
-      "frames/new-item-04.png + hat": {
-        "top": 5
       }
     },
     "omittedFromManifest": {
@@ -2916,14 +2872,14 @@
         "dizzy",
         "drop",
         "idle-fidget",
-        "idle-look",
         "idle-stretch",
         "inbox-zero",
         "new-item",
         "poke"
       ],
       "layoutChange": {
-        "item-cleared": "raises the count lane at 256 pt from 13 to 18 pt (HoverPlacementTests.nearTouchCountTracksEveryPoseAtTheGap)"
+        "item-cleared": "raises the count lane at 256 pt from 13 to 18 pt (HoverPlacementTests.nearTouchCountTracksEveryPoseAtTheGap)",
+        "idle-look": "raises the count lane at 256 pt from 17 to 19 pt and moves the count slot (BadgeSlotTests.monaKeepsHerPlacementAtTheSampledSizes)"
       }
     },
     "sourceSha256": {

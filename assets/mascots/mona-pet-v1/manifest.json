@@ -73,34 +73,8 @@
     }
   },
   "clips": {},
-  "accessories": {
-    "firefighter-hat": {
-      "image": "accessories/firefighter-hat.png",
-      "attach": "head"
-    }
-  },
-  "points": {
-    "head": [
-      128,
-      35
-    ]
-  },
-  "framePoints": {
-    "frames/doze-00.png": {
-      "head": [
-        129,
-        42
-      ]
-    },
-    "frames/doze-01.png": {
-      "head": [
-        128,
-        49
-      ]
-    }
-  },
+  "framePoints": {},
   "frameSha256": {
-    "accessories/firefighter-hat.png": "f26318992f4cddb4e26356a3fa234749c9637579897280f5428b989b8338abc3",
     "frames/attention-00.png": "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff",
     "frames/attention-01.png": "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691",
     "frames/attention-02.png": "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10",

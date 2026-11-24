@@ -279,8 +279,8 @@
       "heldStates": [
         "doze"
       ],
-      "images": 15,
-      "bytes": 587919,
+      "images": 14,
+      "bytes": 571843,
       "union": {
         "x": [
           47,
@@ -291,7 +291,7 @@
       "boundsRule": "pass",
       "boundsViolations": {}
     },
-    "manifestSha256": "a125772a4d6ae9a32e7c33f11d38ee97dd283397312e46ff46f75fd4d7fd6551",
+    "manifestSha256": "f1f07ec75cdac3ef132e65589717dd7d057be6714257b304716c8ae62d01a1d6",
     "limitations": [
       "Source sheets are generated; minor contour variation remains between poses.",
       "Browser design review is not native app, VoiceOver, or physical display verification."
@@ -513,10 +513,12 @@
     },
     "decodedRuntimeFrameBytes": 2359296,
     "v2": {
-      "clips": [],
+      "clips": [
+        "new-item"
+      ],
       "heldStates": [],
-      "images": 10,
-      "bytes": 446436,
+      "images": 14,
+      "bytes": 638997,
       "union": {
         "x": [
           62,
@@ -527,7 +529,7 @@
       "boundsRule": "pass",
       "boundsViolations": {}
     },
-    "manifestSha256": "7365f6b9ace190aa5f2b650b608547027caed9762b95fa85b8183d987c50a6b9",
+    "manifestSha256": "019b28283c5469793eb590a780033528f98868fee506dbc05193378d1d8608b5",
     "limitations": [
       "Source sheets are generated; minor contour variation remains between poses.",
       "Browser design review is not native app, VoiceOver, or physical display verification."

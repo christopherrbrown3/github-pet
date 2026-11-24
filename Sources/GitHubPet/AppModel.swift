@@ -224,6 +224,8 @@ final class AppModel: ObservableObject {
     private var lastActivity = Date.distantPast
     private var hovering = false
     private var pollTimer: Timer?
+    /// #138 review flag only (--repeat-event-every): the next fixture injection on the app tick.
+    private var repeatInjection: (every: TimeInterval, next: Date)?
     private var tickTimer: Timer?
     // GitHub Status (#11): fixtures by default; githubstatus.com only with the live source.
     private let serviceMonitor = ServiceStatusMonitor()
@@ -331,6 +333,7 @@ final class AppModel: ObservableObject {
         switchSource()
         if let delay = options.injectEventAfter {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.injectEntitlementEvent() }
+            if let every = options.repeatEventEvery { repeatInjection = (every, clock().addingTimeInterval(delay + every)) }
         }
     }
 
@@ -1033,6 +1036,10 @@ final class AppModel: ObservableObject {
 
     func tick() {
         let date = clock()
+        if let repeating = repeatInjection, date >= repeating.next {
+            repeatInjection = (repeating.every, date.addingTimeInterval(repeating.every))
+            injectEntitlementEvent()
+        }
         if engine.refreshFreshness(now: date) { persistBaseline() }
         serviceMonitor.refreshFreshness(now: date)
         if effectiveReducedMotion || !settings.alertsAllowed(at: date, features: features) {

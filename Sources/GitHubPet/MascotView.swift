@@ -91,10 +91,12 @@ struct MascotView: View {
     /// so its capsule stays `MascotLayout.nearTouchGap` above this pose's art.
     private func scene(at date: Date, reduced: Bool, layout: MascotLayout) -> some View {
         let pose = poseOverride ?? pose(at: date, reduced: reduced)
+        let motion = reduced ? nil : self.motion(for: pose, at: date)
         let badge = badgeOverride ?? model.mascotBadge
         let countWidth = badge.map { layout.count.width(text: Tag.textWidth($0, role: .count, size: layout.count.fontSize)) }
         let offset = countWidth.flatMap { width in
-            (packOverride.map { $0.contour(for: pose) } ?? model.contour(for: pose)).map {
+            // The count tracks the art as drawn, motion included (#138).
+            (pack?.contour(for: pose, motion: motion) ?? model.contour(for: pose)).map {
                 layout.countOffset(contour: $0, width: width, leaning: pose.angle != 0, displayScale: displayScale)
             }
         } ?? 0
@@ -104,7 +106,7 @@ struct MascotView: View {
                 IncidentMarkerView(marker: marker, layout: layout,
                                    phase: model.markerPhase(at: date, reduced: reduced))
             }
-            figure(pose: pose, date: date, reduced: reduced)
+            figure(pose: pose, motion: motion, date: date, reduced: reduced)
                 .frame(width: layout.artSide, height: layout.artSide)
                 // Art-layer lean about the ground anchor (#29); labels stay upright.
                 .rotationEffect(.degrees(pose.angle),
@@ -173,10 +175,22 @@ struct MascotView: View {
             .padding(side * 0.06)
     }
 
+    /// The clip's motion layer at this instant (#138), blending with the poses just before and after
+    /// the clip. Sampled from the clip clock, so it needs no timer of its own.
+    private func motion(for pose: MascotPose, at date: Date) -> ResolvedMotion? {
+        guard let pack, let clip = pose.clip, ClipMotion.catalog[clip.id] != nil,
+              let durations = pack.manifest.clipSpec(clip.id)?.durationMs else { return nil }
+        let start = date.addingTimeInterval(-clip.elapsed)
+        let end = start.addingTimeInterval(Double(durations.reduce(0, +)) / 1000)
+        let entry = pack.imagePath(for: self.pose(at: start.addingTimeInterval(-0.001), reduced: false))
+        let exit = pack.imagePath(for: self.pose(at: end.addingTimeInterval(0.001), reduced: false))
+        return pack.motion(for: pose, entryPath: entry, exitPath: exit)
+    }
+
     @ViewBuilder
-    private func figure(pose: MascotPose, date: Date, reduced: Bool) -> some View {
+    private func figure(pose: MascotPose, motion: ResolvedMotion?, date: Date, reduced: Bool) -> some View {
         if let pack {
-            PackFigure(pack: pack, pose: pose)
+            PackFigure(pack: pack, pose: pose, motion: motion)
         } else {
             PlaceholderFigure(pose: pose, date: date, reduced: reduced)
         }
@@ -341,8 +355,37 @@ struct PlaceholderFigure: View {
 struct PackFigure: View {
     let pack: MascotPack
     let pose: MascotPose
+    var motion: ResolvedMotion?
 
     var body: some View {
+        if let motion {
+            moving(motion)
+        } else {
+            still
+        }
+    }
+
+    /// The motion layer (#138): each layer scaled about the ground anchor and lifted, partner under
+    /// the current pose. Accessories are hidden while a moving clip plays.
+    private func moving(_ motion: ResolvedMotion) -> some View {
+        GeometryReader { geo in
+            let scale = min(geo.size.width, geo.size.height) / CGFloat(MascotPack.canvasSize)
+            ZStack {
+                ForEach(Array(motion.layers.enumerated()), id: \.offset) { _, item in
+                    if let image = PackImageCache.shared.image(item.path, in: pack) {
+                        layer(image)
+                            .scaleEffect(x: item.scaleX, y: item.scaleY,
+                                         anchor: UnitPoint(x: Double(MascotPack.anchor[0]) / 256, y: Double(MascotPack.anchor[1]) / 256))
+                            .offset(y: -item.lift * scale)
+                            .opacity(item.opacity)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var still: some View {
         let path = pack.imagePath(for: pose)
         let image = path.flatMap { PackImageCache.shared.image($0, in: pack) }
         // The common case (no accessory) is exactly the single image it was before #138: no extra

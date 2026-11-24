@@ -74,7 +74,17 @@
         20,
         186,
         87
-      ]
+      ],
+      "worn": false,
+      "note": "the hat overlay is not declared (#138 review): helmets appear only where incident clips draw them; this file feeds incident-start-05"
+    },
+    "clipScales": {
+      "new-item": {
+        "scale": 0.876,
+        "wholeClipFit": 0.876,
+        "topFit": 0.876,
+        "headSizeVsIdle": "-12.4%"
+      }
     },
     "frames": {
       "incident-start-00": {
@@ -465,37 +475,38 @@
         ],
         "paddedCellMargin": 75,
         "neighbourPixelsDropped": 6562,
-        "scale": 0.42533,
-        "scaledCellSize": 308,
+        "scale": 0.3726,
+        "scaledCellSize": 269,
         "translation": [
-          -42,
-          -31
+          -20,
+          3
         ],
         "faceBounds": [
-          95,
-          32,
-          159,
-          88
+          100,
+          58,
+          155,
+          107
         ],
-        "headScale": 1.0159,
+        "headScale": 0.873,
         "alphaBounds": [
-          72,
-          1,
-          177,
+          80,
+          31,
+          171,
           232
         ],
         "hazePixelsDropped": [
           22537,
-          132
+          125
         ],
         "redFringePixels": [
           2973,
-          8
+          14
         ],
         "head": [
-          127,
-          2
-        ]
+          128,
+          28
+        ],
+        "clipScale": 0.876
       },
       "new-item-01": {
         "sourceSheet": "sources/new-item-sheet.png",
@@ -515,37 +526,38 @@
         ],
         "paddedCellMargin": 106,
         "neighbourPixelsDropped": 6882,
-        "scale": 0.42251,
-        "scaledCellSize": 305,
+        "scale": 0.37013,
+        "scaledCellSize": 268,
         "translation": [
-          -9,
-          -28
+          8,
+          4
         ],
         "faceBounds": [
-          96,
-          51,
-          159,
-          106
+          100,
+          74,
+          156,
+          122
         ],
-        "headScale": 1.0,
+        "headScale": 0.8889,
         "alphaBounds": [
-          72,
-          19,
-          175,
+          80,
+          45,
+          170,
           232
         ],
         "hazePixelsDropped": [
           22871,
-          112
+          117
         ],
         "redFringePixels": [
           2558,
-          15
+          8
         ],
         "head": [
           128,
-          21
-        ]
+          44
+        ],
+        "clipScale": 0.876
       },
       "new-item-02": {
         "sourceSheet": "sources/new-item-sheet.png",
@@ -565,19 +577,38 @@
         ],
         "paddedCellMargin": 39,
         "neighbourPixelsDropped": 0,
-        "scale": 0.41428,
-        "scaledCellSize": 300,
+        "scale": 0.36292,
+        "scaledCellSize": 262,
         "translation": [
-          -42,
-          -26
+          -21,
+          7
         ],
-        "canvasOverflow": true,
+        "faceBounds": [
+          100,
+          48,
+          155,
+          95
+        ],
+        "headScale": 0.873,
         "alphaBounds": [
-          53,
-          -10,
-          177,
+          62,
+          21,
+          170,
           232
-        ]
+        ],
+        "hazePixelsDropped": [
+          19704,
+          143
+        ],
+        "redFringePixels": [
+          2465,
+          5
+        ],
+        "head": [
+          128,
+          18
+        ],
+        "clipScale": 0.876
       },
       "new-item-03": {
         "sourceSheet": "sources/new-item-sheet.png",
@@ -597,19 +628,38 @@
         ],
         "paddedCellMargin": 37,
         "neighbourPixelsDropped": 0,
-        "scale": 0.41161,
-        "scaledCellSize": 298,
+        "scale": 0.36058,
+        "scaledCellSize": 261,
         "translation": [
-          -13,
-          -24
+          4,
+          7
         ],
-        "canvasOverflow": true,
+        "faceBounds": [
+          99,
+          48,
+          155,
+          96
+        ],
+        "headScale": 0.8889,
         "alphaBounds": [
-          56,
-          -9,
-          180,
+          65,
+          20,
+          173,
           232
-        ]
+        ],
+        "hazePixelsDropped": [
+          22208,
+          120
+        ],
+        "redFringePixels": [
+          2879,
+          6
+        ],
+        "head": [
+          127,
+          18
+        ],
+        "clipScale": 0.876
       },
       "new-item-04": {
         "sourceSheet": "sources/new-item-b-sheet.png",
@@ -629,37 +679,38 @@
         ],
         "paddedCellMargin": 73,
         "neighbourPixelsDropped": 0,
-        "scale": 0.38666,
-        "scaledCellSize": 280,
+        "scale": 0.33873,
+        "scaledCellSize": 245,
         "translation": [
-          -16,
-          -20
+          2,
+          12
         ],
         "faceBounds": [
-          96,
-          42,
-          160,
-          97
+          100,
+          67,
+          156,
+          114
         ],
-        "headScale": 1.0159,
+        "headScale": 0.8889,
         "alphaBounds": [
-          74,
-          10,
-          173,
+          81,
+          38,
+          167,
           232
         ],
         "hazePixelsDropped": [
           5609,
-          102
+          95
         ],
         "redFringePixels": [
           1886,
-          5
+          3
         ],
         "head": [
           128,
-          12
-        ]
+          37
+        ],
+        "clipScale": 0.876
       },
       "item-cleared-00": {
         "sourceSheet": "sources/cleared-poke-sheet.png",
@@ -2199,100 +2250,11 @@
       "frames/item-cleared-02.png": {
         "top": 27
       },
-      "frames/new-item-00.png": {
-        "top": 19
-      },
-      "frames/new-item-01.png": {
-        "top": 1
-      },
-      "frames/new-item-02.png": {
-        "left": 9,
-        "top": 30
-      },
-      "frames/new-item-03.png": {
-        "left": 6,
-        "top": 29
-      },
-      "frames/new-item-04.png": {
-        "top": 10
-      },
       "frames/poke-00.png": {
         "top": 12
       },
       "frames/poke-01.png": {
         "top": 11
-      },
-      "frames/dizzy-00.png + hat": {
-        "top": 10
-      },
-      "frames/dizzy-01.png + hat": {
-        "top": 2
-      },
-      "frames/doze-00.png + hat": {
-        "top": 7
-      },
-      "frames/doze-01.png + hat": {
-        "top": 2
-      },
-      "frames/drag-00.png + hat": {
-        "top": 18
-      },
-      "frames/drag-01.png + hat": {
-        "top": 15
-      },
-      "frames/idle-fidget-00.png + hat": {
-        "top": 16
-      },
-      "frames/idle-fidget-01.png + hat": {
-        "top": 10
-      },
-      "frames/idle-fidget-02.png + hat": {
-        "top": 14
-      },
-      "frames/idle-look-00.png + hat": {
-        "top": 11
-      },
-      "frames/idle-look-01.png + hat": {
-        "top": 11
-      },
-      "frames/idle-look-02.png + hat": {
-        "top": 10
-      },
-      "frames/idle-stretch-00.png + hat": {
-        "top": 11
-      },
-      "frames/idle-stretch-01.png + hat": {
-        "top": 12
-      },
-      "frames/idle-stretch-02.png + hat": {
-        "top": 11
-      },
-      "frames/idle-stretch-03.png + hat": {
-        "top": 17
-      },
-      "frames/inbox-zero-01.png + hat": {
-        "top": 11
-      },
-      "frames/inbox-zero-02.png + hat": {
-        "top": 14
-      },
-      "frames/inbox-zero-03.png + hat": {
-        "top": 18
-      },
-      "frames/inbox-zero-04.png + hat": {
-        "top": 5
-      },
-      "frames/new-item-00.png + hat": {
-        "top": 19
-      },
-      "frames/new-item-04.png + hat": {
-        "top": 9
-      },
-      "frames/poke-00.png + hat": {
-        "top": 13
-      },
-      "frames/poke-01.png + hat": {
-        "top": 10
       }
     },
     "omittedFromManifest": {
@@ -2309,10 +2271,6 @@
         "incident-end-03",
         "incident-end-04",
         "incident-end-05"
-      ],
-      "new-item": [
-        "new-item-02",
-        "new-item-03"
       ],
       "item-cleared": [
         "item-cleared-00",

@@ -7,6 +7,8 @@ import GitHubPetCore
 ///   --reset-settings              start from default settings
 ///   --fixtures | --gh             force the data source for this launch
 ///   --inject-event-after <secs>   inject one fixture entitlement event after a delay
+///   --repeat-event-every <secs>   #138 review: with --inject-event-after and fixtures, inject another
+///                                 every <secs> on the app tick, so a clip can be watched repeatedly
 ///   --start-time <ISO8601>        app clock starts at this instant (or GITHUB_PET_START_TIME)
 ///   --clock-offset <secs>         shift the app clock (or GITHUB_PET_CLOCK_OFFSET)
 ///   GITHUB_PET_GH_PATH=<path>     use this gh executable (missing/fake gh testing)
@@ -21,6 +23,7 @@ struct LaunchOptions {
     var resetSettings = false
     var forcedSource: String?
     var injectEventAfter: TimeInterval?
+    var repeatEventEvery: TimeInterval?
     var packDirectory: URL?
     var forcePlaceholder = false
     var placeholderClips = false
@@ -62,6 +65,8 @@ struct LaunchOptions {
             case "--gh": options.forcedSource = "gh"
             case "--inject-event-after":
                 options.injectEventAfter = iterator.next().flatMap(TimeInterval.init)
+            case "--repeat-event-every":
+                options.repeatEventEvery = iterator.next().flatMap(TimeInterval.init).flatMap { $0 >= 5 ? $0 : nil }
             case "--clock-offset":
                 if let offset = iterator.next().flatMap(TimeInterval.init) { options.clockOffset = offset }
             case "--start-time":
