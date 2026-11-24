@@ -125,6 +125,10 @@ Little Chris ambient A review: gaze directions read clearly; 02 head is visibly 
 
 Little Chris ambient B review: retry keeps hands away from face, but stretch arms are low and still exceed idle width. First attempt `exec-e7e64d82-b3a8-4fa2-8272-6234886bce85` put hands on mouth in 02. Phone is visible and compact. Bounds and baseline unverified; one retry used.
 
+| `assets/mascots/little-chris-v1/sources/ambient-c-sheet.png` | `exec-bf7e504b-4abe-437d-a7c9-e253fda1f009` | Idle-fidget 01–02 with phone and doze 00–01. | Same three Little Chris reference hashes as incident-start A above. |
+
+Little Chris ambient C review: phone stays compact; doze head lowering and breathing difference are subtle and need measurement. No visible effect marks. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
