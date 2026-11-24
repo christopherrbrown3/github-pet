@@ -170,7 +170,17 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
         Self.show(popover, placement: placement, panelFrame: window.frame, anchor: hoverAnchor)
         self.popover = popover
         summaryInputs = inputs(popover: popover, panelFrame: window.frame)
+        // The content resizes after the model change that caused it has been delivered: follow its
+        // size directly rather than waiting for some later model change to notice (#166).
+        if let content = popover.contentViewController?.view {
+            content.postsFrameChangedNotifications = true
+            contentSizeObservation = NotificationCenter.default
+                .publisher(for: NSView.frameDidChangeNotification, object: content)
+                .receive(on: RunLoop.main)
+                .sink { [weak self] _ in self?.repositionSummaryIfNeeded() }
+        }
     }
+    private var contentSizeObservation: AnyCancellable?
 
     /// macOS can dismiss the semitransient summary itself (a click elsewhere, Esc, a Space
     /// change). Forget it then, or the next model change re-aimed and re-showed it while the
@@ -182,6 +192,7 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
             guard let popover, closed === popover else { return }
             self.popover = nil
             summaryInputs = nil
+            contentSizeObservation = nil
             hoverAnchor.orderOut(nil)
         }
     }
@@ -301,6 +312,7 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
         popover?.performClose(nil)
         popover = nil
         summaryInputs = nil
+        contentSizeObservation = nil
         hoverAnchor.orderOut(nil)
     }
 
