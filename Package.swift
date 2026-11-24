@@ -22,6 +22,8 @@ let package = Package(
         ]),
         // Designer tool (#138): builds a cutout-rig pack (schema v3) from its rig source. Not shipped.
         .executableTarget(name: "RigBake", dependencies: ["GitHubPetCore"]),
+        // Designer tool (#138): registers generated clip sheets into v2 frame clips. Not shipped.
+        .executableTarget(name: "FrameBake", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetCoreTests", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetAppTests", dependencies: ["GitHubPet"]),
     ]

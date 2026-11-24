@@ -7,7 +7,7 @@ import ImageIO
 extension MascotPackManifest {
     /// Held drag/doze states (v2 only; a v1 manifest's extra states are ignored as before).
     public func heldSpec(_ id: MascotClipID) -> StateSpec? {
-        guard isV2, MascotClipID.heldStates.contains(id) else { return nil }
+        guard isV2, MascotClipID.loopingStates.contains(id) else { return nil }
         return states[id.rawValue]
     }
 
@@ -19,7 +19,7 @@ extension MascotPackManifest {
     public var v2ImagePaths: [String] {
         guard isV2 else { return [] }
         var paths: [String] = []
-        for id in MascotClipID.heldStates { if let spec = states[id.rawValue] { paths += spec.frames + [spec.staticFallback] } }
+        for id in MascotClipID.loopingStates { if let spec = states[id.rawValue] { paths += spec.frames + [spec.staticFallback] } }
         for (_, spec) in (clips ?? [:]).sorted(by: { $0.key < $1.key }) { paths += spec.frames }
         for (_, spec) in (accessories ?? [:]).sorted(by: { $0.key < $1.key }) { paths.append(spec.image) }
         var seen: Set<String> = []
@@ -59,7 +59,9 @@ public struct ClipLibrary: Equatable, Sendable {
 
     public init(pack: MascotPack?) {
         guard let manifest = pack?.manifest, manifest.isV2 else { return }
-        for id in MascotClipID.heldStates { if let spec = manifest.heldSpec(id) { durationsMs[id] = spec.durationMs } }
+        for id in MascotClipID.loopingStates { if let spec = manifest.heldSpec(id) { durationsMs[id] = spec.durationMs } }
+        // The incident idle draws its own helmet.
+        if durationsMs[.incidentIdle] != nil { hidesAccessories.insert(.incidentIdle) }
         for (name, spec) in manifest.clips ?? [:] {
             durationsMs[MascotClipID(name)] = spec.durationMs
             if spec.accessories == .hide { hidesAccessories.insert(MascotClipID(name)) }
@@ -77,6 +79,11 @@ public struct ClipLibrary: Equatable, Sendable {
     }
 
     public func has(_ id: MascotClipID) -> Bool { durationsMs[id] != nil }
+
+    /// Whether any one-shot clip has frames shorter than a 30 fps redraw can time evenly (#138 sequences).
+    public var hasFastClips: Bool {
+        durationsMs.contains { id, durations in !MascotClipID.loopingStates.contains(id) && durations.count > 1 && (durations.min() ?? 1000) < 100 }
+    }
 
     /// A one-shot clip's length, or nil if the pack doesn't have it.
     public func duration(_ id: MascotClipID) -> TimeInterval? {

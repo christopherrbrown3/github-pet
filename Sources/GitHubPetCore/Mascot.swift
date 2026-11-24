@@ -331,10 +331,13 @@ public struct AttentionGesture: Equatable, Sendable {
 /// `mm_animation_frame`): reduced motion pins frame 0; one-shots hold the last frame.
 public enum FrameClock {
     public static let minimumDurationMs = 125
+    /// Clip and looping-state frames (#138 frame sequences) may be this short.
+    public static let minimumClipDurationMs = MascotPack.clipDurationRange.lowerBound
 
-    public static func frameIndex(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool) -> Int {
+    public static func frameIndex(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool,
+                                  minimumMs: Int = minimumDurationMs) -> Int {
         guard !reducedMotion, durationsMs.count > 1, elapsedMs >= 0 else { return 0 }
-        let durations = durationsMs.map { max($0, minimumDurationMs) }
+        let durations = durationsMs.map { max($0, minimumMs) }
         let total = durations.reduce(0, +)
         var t = elapsedMs
         if loop {
@@ -351,9 +354,10 @@ public enum FrameClock {
 
     /// #166: the first elapsed millisecond after `elapsedMs` at which `frameIndex` returns another
     /// frame, or nil once it never changes again (a single frame, reduced motion, a finished one-shot).
-    public static func nextChangeMs(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool) -> Int? {
+    public static func nextChangeMs(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool,
+                                    minimumMs: Int = minimumDurationMs) -> Int? {
         guard !reducedMotion, durationsMs.count > 1 else { return nil }
-        let durations = durationsMs.map { max($0, minimumDurationMs) }
+        let durations = durationsMs.map { max($0, minimumMs) }
         let total = durations.reduce(0, +)
         let t = max(elapsedMs, 0)
         let cycleStart = loop ? t - t % total : 0
@@ -429,7 +433,7 @@ public enum MascotAnimator {
             guard let durations = library.durationsMs[id] else { return nil }
             let elapsed = max(0, now.timeIntervalSince(start))
             let frame = FrameClock.frameIndex(durationsMs: durations, loop: loop, elapsedMs: Int(elapsed * 1000),
-                                              reducedMotion: false)
+                                              reducedMotion: false, minimumMs: FrameClock.minimumClipDurationMs)
             // Dizzy wobbles 0, −5°, +5°, −5°, 0 at its frame starts, eased like #29.
             var lean = angle
             if id == .dizzy { lean = DizzyLean.angle(durationsMs: durations, elapsedMs: elapsed * 1000) }
@@ -439,7 +443,8 @@ public enum MascotAnimator {
                                       clip: ClipFrame(id: id, frame: frame, elapsed: elapsed)))
         }
         if reducedMotion {
-            for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil)]
+            for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil),
+                                 (.incidentIdle, mood == .idle && !worn.isEmpty)]
             where active && library.has(id) {
                 return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: id, frame: nil, elapsed: 0)))
             }
@@ -463,6 +468,10 @@ public enum MascotAnimator {
         if event == nil, mood == .idle, let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
             return pose
         }
+        // During an incident the idle loop is the helmet-wearing one, when the pack draws it (#138).
+        if event == nil, mood == .idle, !worn.isEmpty, let pose = clipPose(.incidentIdle, since: idleEpoch, loop: true) {
+            return pose
+        }
         return wearing(legacyPose(mood: mood, clip: event, now: now, idleEpoch: idleEpoch, gesture: gesture,
                                   durationsMs: durationsMs))
     }
@@ -473,12 +482,13 @@ public enum MascotAnimator {
     /// or nil while it holds (reduced motion, attention and urgent). The view schedules its next
     /// redraw here instead of polling the idle loop at a fixed rate.
     public static func nextIdleFrameChange(after date: Date, mood: MascotState, reducedMotion: Bool, idleEpoch: Date,
+                                           minimumMs: Int = FrameClock.minimumDurationMs,
                                            durationsMs: (MascotState) -> [Int]) -> Date? {
         guard mood == .idle else { return nil }
         // The same millisecond `legacyPose` reads, so the boundary lands on its frame change.
         let elapsedMs = Int(max(0, date.timeIntervalSince(idleEpoch)) * 1000)
         guard let next = FrameClock.nextChangeMs(durationsMs: durationsMs(.idle), loop: true, elapsedMs: elapsedMs,
-                                                 reducedMotion: reducedMotion) else { return nil }
+                                                 reducedMotion: reducedMotion, minimumMs: minimumMs) else { return nil }
         // Half a millisecond in, so rounding at the epoch's magnitude can't land on the old frame.
         return idleEpoch.addingTimeInterval((Double(next) + 0.5) / 1000)
     }

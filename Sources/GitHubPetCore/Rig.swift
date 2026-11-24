@@ -699,6 +699,12 @@ public enum RigRaster {
         public var width: Int
         public var height: Int
         public var bytes: [UInt8]
+
+        public init(width: Int, height: Int, bytes: [UInt8]) {
+            self.width = width
+            self.height = height
+            self.bytes = bytes
+        }
     }
 
     public static func decode(_ data: Data) -> Pixels? {

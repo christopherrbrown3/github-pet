@@ -12,9 +12,11 @@ PACKS = {'mona-pet-v1': (47, 217, 20), 'little-chris-v1': (62, 205, 20)}
 FX = ROOT / 'assets/mascots/shared-fx-v1'
 # animation-v1.md section 4: clip keys and length caps (ms), held states, the bundled design budget.
 CLIP_CAPS = {'incident-start': 2200, 'incident-end': 3200, 'new-item': 1900, 'item-cleared': 1500, 'inbox-zero': 2400,
-             'drop': 600, 'poke': 900, 'dizzy': 1800, 'idle-look': 2600, 'idle-stretch': 2600, 'idle-fidget': 2600}
-HELD = {'drag', 'doze'}
-MAX_SEQUENCE, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_PACK_BYTES = 8, 64, 96 * 1024, 4 * 1024 * 1024
+             'drop': 1200, 'poke': 1200, 'dizzy': 1800, 'idle-look': 2600, 'idle-stretch': 2600, 'idle-fidget': 2600}
+HELD = {'drag', 'doze', 'incident-idle'}
+# Frame sequences (#138): 16-frame clips at ~70 ms per frame.
+MAX_SEQUENCE, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_PACK_BYTES = 16, 256, 96 * 1024, 16 * 1024 * 1024
+CLIP_FRAME_MS = (40, 2000)
 # animation-v2-rig.md section 7.1 (mirrors RigLimits in Sources/GitHubPetCore/Rig.swift).
 RIG_MAX_BONES, RIG_MAX_DEPTH, RIG_MAX_PARTS, RIG_MAX_TRACKS, RIG_MAX_KEYS = 24, 8, 48, 40, 48
 RIG_MAX_PART_SIDE, RIG_MAX_PART_BYTES, RIG_MIN_CLIP_MS = 1024, 160 * 1024, 100
@@ -114,7 +116,7 @@ def check_v2(pack, manifest, union, resolve):
         sequences[name] = spec
     for name, spec in sequences.items():
         assert 1 <= len(spec['frames']) <= MAX_SEQUENCE and len(spec['frames']) == len(spec['durationMs']), name
-        assert all(type(t) is int and 125 <= t <= 2000 for t in spec['durationMs']), name
+        assert all(type(t) is int and CLIP_FRAME_MS[0] <= t <= CLIP_FRAME_MS[1] for t in spec['durationMs']), name
     accessories = manifest.get('accessories', {})
     assert set(accessories) <= {'firefighter-hat'}
     assert all(spec['attach'] == 'head' for spec in accessories.values())

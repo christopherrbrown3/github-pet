@@ -1,0 +1,46 @@
+{
+  "id": "mona-pet-v1",
+  "reference": "frames/idle-00.png",
+  "anchor": {
+    "color": [
+      252,
+      232,
+      216
+    ],
+    "tolerance": 40
+  },
+  "clips": [
+    {
+      "name": "new-item",
+      "sheets": [
+        "sequences/new-item.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "item-cleared",
+      "sheets": [
+        "sequences/item-cleared.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true
+    },
+    {
+      "name": "poke",
+      "sheets": [
+        "sequences/poke.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    }
+  ]
+}

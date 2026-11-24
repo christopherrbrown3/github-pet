@@ -39,6 +39,11 @@ public struct MascotClipID: RawRepresentable, Hashable, Comparable, Codable, Sen
 
     /// Held poses live in the manifest's `states` and loop while their condition lasts.
     public static let heldStates: [Self] = [.drag, .doze]
+    /// The idle loop while the incident marker shows (frame sequences, #138): the helmet drawn as art
+    /// on a looping idle, in place of the idle loop plus the hat overlay.
+    public static let incidentIdle: Self = "incident-idle"
+    /// Every looping state a v2 pack may add to idle, attention and urgent.
+    public static let loopingStates: [Self] = heldStates + [incidentIdle]
 }
 
 /// Priority tiers (design #138), highest first: drag masks everything; event clips (tier 1) follow
@@ -168,9 +173,10 @@ public struct ClipCatalog: Equatable, Sendable {
                placeholder: (.attention, [0, 1, 2, 1, 2, 0], [250, 300, 300, 300, 450, 400])),
         policy(.itemCleared, .itemDismissed, .inbox, ClipPriority.itemCleared, cooldown: 8, gate: .always, maxMs: 1500,
                placeholder: (.attention, [0, 1, 2, 0], [200, 300, 400, 300])),
-        policy(.drop, .dropped, .reaction, ClipPriority.drop, gate: .always, maxMs: 600,
+        // 16 frames at 70 ms (#138 frame sequences) for drop and poke.
+        policy(.drop, .dropped, .reaction, ClipPriority.drop, gate: .always, maxMs: 1200,
                placeholder: (.attention, [0, 1], [200, 250])),
-        policy(.poke, .poke, .reaction, ClipPriority.poke, cooldown: 1.5, gate: .always, maxMs: 900,
+        policy(.poke, .poke, .reaction, ClipPriority.poke, cooldown: 1.5, gate: .always, maxMs: 1200,
                placeholder: (.attention, [1, 2, 0], [250, 300, 200])),
         policy(.dizzy, .rapidClicks, .reaction, ClipPriority.dizzy, cooldown: 60, gate: .always, maxMs: 1800,
                placeholder: (.urgent, [0, 1, 2, 1, 0], [300, 300, 300, 300, 400])),

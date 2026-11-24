@@ -1,119 +1,282 @@
 {
-  "schemaVersion": 2,
-  "id": "mona-pet-v1",
-  "name": "Mona-inspired Pet",
-  "canvas": {
-    "width": 256,
-    "height": 256
+  "accessories" : {
+    "firefighter-hat" : {
+      "attach" : "head",
+      "image" : "accessories\/firefighter-hat.png"
+    }
   },
-  "anchor": [
+  "anchor" : [
     128,
     232
   ],
-  "states": {
-    "idle": {
-      "frames": [
-        "frames/idle-00.png",
-        "frames/idle-01.png",
-        "frames/idle-02.png",
-        "frames/idle-03.png"
+  "canvas" : {
+    "height" : 256,
+    "width" : 256
+  },
+  "clips" : {
+    "item-cleared" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        2000,
-        200,
-        200,
-        2000
-      ],
-      "loop": true,
-      "staticFallback": "frames/idle-00.png"
+      "frames" : [
+        "frames\/item-cleared-00.png",
+        "frames\/item-cleared-01.png",
+        "frames\/item-cleared-02.png",
+        "frames\/item-cleared-03.png",
+        "frames\/item-cleared-04.png",
+        "frames\/item-cleared-05.png",
+        "frames\/item-cleared-06.png",
+        "frames\/item-cleared-07.png",
+        "frames\/item-cleared-08.png",
+        "frames\/item-cleared-09.png",
+        "frames\/item-cleared-10.png",
+        "frames\/item-cleared-11.png",
+        "frames\/item-cleared-12.png",
+        "frames\/item-cleared-13.png",
+        "frames\/item-cleared-14.png",
+        "frames\/item-cleared-15.png"
+      ]
     },
-    "attention": {
-      "frames": [
-        "frames/attention-00.png",
-        "frames/attention-01.png",
-        "frames/attention-02.png",
-        "frames/attention-03.png"
+    "new-item" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        300,
-        400,
-        400,
-        800
-      ],
-      "loop": false,
-      "staticFallback": "frames/attention-03.png"
+      "frames" : [
+        "frames\/new-item-00.png",
+        "frames\/new-item-01.png",
+        "frames\/new-item-02.png",
+        "frames\/new-item-03.png",
+        "frames\/new-item-04.png",
+        "frames\/new-item-05.png",
+        "frames\/new-item-06.png",
+        "frames\/new-item-07.png",
+        "frames\/new-item-08.png",
+        "frames\/new-item-09.png",
+        "frames\/new-item-10.png",
+        "frames\/new-item-11.png",
+        "frames\/new-item-12.png",
+        "frames\/new-item-13.png",
+        "frames\/new-item-14.png",
+        "frames\/new-item-15.png"
+      ]
     },
-    "urgent": {
-      "frames": [
-        "frames/urgent-00.png",
-        "frames/urgent-01.png",
-        "frames/urgent-02.png",
-        "frames/urgent-03.png"
+    "poke" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        300,
-        400,
-        400,
-        800
-      ],
-      "loop": false,
-      "staticFallback": "frames/urgent-00.png"
-    },
-    "doze": {
-      "frames": [
-        "frames/doze-00.png",
-        "frames/doze-01.png"
-      ],
-      "durationMs": [
-        1200,
-        1200
-      ],
-      "loop": true,
-      "staticFallback": "frames/doze-00.png"
+      "frames" : [
+        "frames\/poke-00.png",
+        "frames\/poke-01.png",
+        "frames\/poke-02.png",
+        "frames\/poke-03.png",
+        "frames\/poke-04.png",
+        "frames\/poke-05.png",
+        "frames\/poke-06.png",
+        "frames\/poke-07.png",
+        "frames\/poke-08.png",
+        "frames\/poke-09.png",
+        "frames\/poke-10.png",
+        "frames\/poke-11.png",
+        "frames\/poke-12.png",
+        "frames\/poke-13.png",
+        "frames\/poke-14.png",
+        "frames\/poke-15.png"
+      ]
     }
   },
-  "clips": {},
-  "accessories": {
-    "firefighter-hat": {
-      "image": "accessories/firefighter-hat.png",
-      "attach": "head"
-    }
-  },
-  "points": {
-    "head": [
-      128,
-      35
-    ]
-  },
-  "framePoints": {
-    "frames/doze-00.png": {
-      "head": [
+  "framePoints" : {
+    "frames\/doze-00.png" : {
+      "head" : [
         129,
         42
       ]
     },
-    "frames/doze-01.png": {
-      "head": [
+    "frames\/doze-01.png" : {
+      "head" : [
         128,
         49
       ]
     }
   },
-  "frameSha256": {
-    "accessories/firefighter-hat.png": "f26318992f4cddb4e26356a3fa234749c9637579897280f5428b989b8338abc3",
-    "frames/attention-00.png": "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff",
-    "frames/attention-01.png": "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691",
-    "frames/attention-02.png": "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10",
-    "frames/attention-03.png": "271776fe5995ec0d9ce40f497f0ead6fcb742d617ddc55cbc6fb89c1ed14b5bd",
-    "frames/doze-00.png": "a9f0f67734cf16665a8d35fcd190421f783ae51edb56ba4aa559ada05911862a",
-    "frames/doze-01.png": "a6a6365abafdf8ba03829cbc3c002c0982dc0f7a20b6d2ba975e464e0abb6456",
-    "frames/idle-00.png": "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb",
-    "frames/idle-01.png": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730",
-    "frames/idle-02.png": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409",
-    "frames/idle-03.png": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2",
-    "frames/urgent-00.png": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4",
-    "frames/urgent-01.png": "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d",
-    "frames/urgent-02.png": "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d",
-    "frames/urgent-03.png": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
+  "frameSha256" : {
+    "accessories\/firefighter-hat.png" : "f26318992f4cddb4e26356a3fa234749c9637579897280f5428b989b8338abc3",
+    "frames\/attention-00.png" : "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff",
+    "frames\/attention-01.png" : "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691",
+    "frames\/attention-02.png" : "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10",
+    "frames\/attention-03.png" : "271776fe5995ec0d9ce40f497f0ead6fcb742d617ddc55cbc6fb89c1ed14b5bd",
+    "frames\/doze-00.png" : "a9f0f67734cf16665a8d35fcd190421f783ae51edb56ba4aa559ada05911862a",
+    "frames\/doze-01.png" : "a6a6365abafdf8ba03829cbc3c002c0982dc0f7a20b6d2ba975e464e0abb6456",
+    "frames\/idle-00.png" : "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb",
+    "frames\/idle-01.png" : "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730",
+    "frames\/idle-02.png" : "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409",
+    "frames\/idle-03.png" : "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2",
+    "frames\/item-cleared-00.png" : "a74890072dfff87c635f0165babf8d756bcdb835cdb672ba4f67ed6249386d33",
+    "frames\/item-cleared-01.png" : "e58f4b4652b31b3f8236a508eea0ad16f9475cd94a210449ec4c78f08418e567",
+    "frames\/item-cleared-02.png" : "28dcb4150402bb56d205ca789a49e0bba6bf387f445f29a1658796e999be331e",
+    "frames\/item-cleared-03.png" : "e08c41c93c5af7ac43daeced3ab4e3c0a5451a13694281fda5e9682f48c783c3",
+    "frames\/item-cleared-04.png" : "2c2ccdc298cbaa8080865d7c5c42f38c6e1cb962b43e92a79cb98d4a9f8a4a72",
+    "frames\/item-cleared-05.png" : "ae5ed79b2403bbc657c6768a8324ef6b143e4daf37e142cdcdcb0e42bb3c4214",
+    "frames\/item-cleared-06.png" : "9772d81ccf4dafd85dfd5766818a45e61a5282d507e6f53b195344489f9176fe",
+    "frames\/item-cleared-07.png" : "9f78086cf5c7acc119ee4e0b2aad95634c3055db8c4b994fd4a2e353cbab11fa",
+    "frames\/item-cleared-08.png" : "ec5e031e1d433383b0518d64ccb8eb83cf3e369e3997b6eae65e1369687cc51c",
+    "frames\/item-cleared-09.png" : "4ec095e879d86da70557826078efcd2e6a403c46186843e385633d6b6608ab5f",
+    "frames\/item-cleared-10.png" : "d562146b634560c5cf36a93503afdb92f43941ebf816821e38ba572f24f86664",
+    "frames\/item-cleared-11.png" : "cce7eb80d1ad39c41cd3752891d08f5c7c9eec3238a44ae08fc904143c9dc53f",
+    "frames\/item-cleared-12.png" : "3cc27a341627eba95b478260de6aec9c9cd2f77f09fcc7913822044244e61467",
+    "frames\/item-cleared-13.png" : "d146705f825d81e47def077c1acc2b993d99cd6b34158a007d3b2825a2c5f65e",
+    "frames\/item-cleared-14.png" : "b65c3e2c3b18d8ac98039fa94ce4eb475538e402f1e30252a339cbaf401e5ed9",
+    "frames\/item-cleared-15.png" : "60f187ef495ce82958eec00a3c54648acf5994e966a9cbca218652bfb4d681fc",
+    "frames\/new-item-00.png" : "a74890072dfff87c635f0165babf8d756bcdb835cdb672ba4f67ed6249386d33",
+    "frames\/new-item-01.png" : "048be2e718b4fc7144e33483eca59b0a159554552c717c77287702bfcb6416b7",
+    "frames\/new-item-02.png" : "1d28e55d1193afc12c9b110fa129bf73f21a2f3dfcf38928fc9c0a50fedc6e00",
+    "frames\/new-item-03.png" : "8698b4f392788ca8ee9b2d57ac1ca7c2ecec0300fc4cbd43dd65100a038af18a",
+    "frames\/new-item-04.png" : "ab07695b3796dbfab5b004d6103227975676c3ee1aadac8cbc8a5b8ea449128a",
+    "frames\/new-item-05.png" : "3705fdc73ace0e1e9cad66a112defcade453dbe7518489fabad2e9ef33522bc7",
+    "frames\/new-item-06.png" : "0aecb6019a1d19fd1bbad036ff661f0066ce96c717397fead6eb8f4d38e16135",
+    "frames\/new-item-07.png" : "aa314f54379cf76e4472d8b8e1c62086a82d1badce3f93c10fd9b309b57d45dc",
+    "frames\/new-item-08.png" : "cd060501639bfc29ffc67cc64030266a23ae1d1d95b994b10c7848bb2777058a",
+    "frames\/new-item-09.png" : "e2fdf84c4a2afbbb2064e469ce38a4aca5932d253d3d8208bc78c35a53e7aca8",
+    "frames\/new-item-10.png" : "22ad90c9ea51d642fb60bda438d95fc4d3a6ff5e6ef7ab2abd07d31ab115bea9",
+    "frames\/new-item-11.png" : "4187b8d70a906e2413dfb023f8aa7e4bf221f8055b0bf6d16f2ba4f22bc061e3",
+    "frames\/new-item-12.png" : "ff1a21505b5f91440c54dd314f82f1b5957b2e6325b94d9112663fc7225f4e43",
+    "frames\/new-item-13.png" : "d967c1d6ca795a9473331db15ee8c294d39c2ebd1d9ca43e298f0e6164f9bdbb",
+    "frames\/new-item-14.png" : "69db238ad9357ab27534eb762b71690988f652c699c456c672522f9b23563ca7",
+    "frames\/new-item-15.png" : "63d022a1d5143eacb99044672a0ef827e54b9ba2887fdf32d2d3328156b2ad7c",
+    "frames\/poke-00.png" : "a74890072dfff87c635f0165babf8d756bcdb835cdb672ba4f67ed6249386d33",
+    "frames\/poke-01.png" : "95fde8ef724274c6aca74b6bfbf36fcd6a66afa00d3df8c3c8dc311bf2ea95bc",
+    "frames\/poke-02.png" : "e25d3da3550385f51baf206a3b0409018f30d2268aaf1c2d01dc0d98ae8a6ce3",
+    "frames\/poke-03.png" : "00720cdac3acba6ccfb2d70698f48117e0642434730d71660724038e049aeb8b",
+    "frames\/poke-04.png" : "8e9d154bec1779a77bd8a87b37392d60d7ab6394116327d456cbfb7610fc2e59",
+    "frames\/poke-05.png" : "1b6d34a43b36d91c05637695b6c68b956d95fe2a1a16083634bf720f61c387a3",
+    "frames\/poke-06.png" : "a161fbf4ac6daa6069021919c6c5dbc08560c8919d0de1fca505c0357a455351",
+    "frames\/poke-07.png" : "fe9ea8bae955dbd2cb080be93714c2935920114a69ccbe45400020fa81b94948",
+    "frames\/poke-08.png" : "214069caf424027ecf6a6502fd1b5d227db529eb5322f6fb713dd2f52aabeabf",
+    "frames\/poke-09.png" : "45a432bd124e6222836c5e0c9575301074e980ff6c534650635dd0274cb71625",
+    "frames\/poke-10.png" : "39dacb9af13b5a3ec04e557ad91a8cfcc699e1e13e4e7aa8a52675c1ed2cdce2",
+    "frames\/poke-11.png" : "cf29e74c968c8ff4bcd8dd8475068a696f1ee53fe9aca14293f0b6f7bd7fb885",
+    "frames\/poke-12.png" : "a38fed37dfea7e411eca15fdd9393d3e8083a6bacb5ac25132f32e901bef66c0",
+    "frames\/poke-13.png" : "3c0022483b53e372fee4d2605f06a491b4d3514de32375230345edb5da24ad3e",
+    "frames\/poke-14.png" : "430413533fe9015ee9d74fe49792657540e7649165d1fa89029bcfd76982404a",
+    "frames\/poke-15.png" : "d39dfba820cf475f6e909e7f0e77fe3c46f390feb8e2e9f09a04327ab919b60c",
+    "frames\/urgent-00.png" : "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4",
+    "frames\/urgent-01.png" : "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d",
+    "frames\/urgent-02.png" : "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d",
+    "frames\/urgent-03.png" : "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
+  },
+  "id" : "mona-pet-v1",
+  "name" : "Mona-inspired Pet",
+  "points" : {
+    "head" : [
+      128,
+      35
+    ]
+  },
+  "schemaVersion" : 2,
+  "states" : {
+    "attention" : {
+      "durationMs" : [
+        300,
+        400,
+        400,
+        800
+      ],
+      "frames" : [
+        "frames\/attention-00.png",
+        "frames\/attention-01.png",
+        "frames\/attention-02.png",
+        "frames\/attention-03.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/attention-03.png"
+    },
+    "doze" : {
+      "durationMs" : [
+        1200,
+        1200
+      ],
+      "frames" : [
+        "frames\/doze-00.png",
+        "frames\/doze-01.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/doze-00.png"
+    },
+    "idle" : {
+      "durationMs" : [
+        2000,
+        200,
+        200,
+        2000
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-01.png",
+        "frames\/idle-02.png",
+        "frames\/idle-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/idle-00.png"
+    },
+    "urgent" : {
+      "durationMs" : [
+        300,
+        400,
+        400,
+        800
+      ],
+      "frames" : [
+        "frames\/urgent-00.png",
+        "frames\/urgent-01.png",
+        "frames\/urgent-02.png",
+        "frames\/urgent-03.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/urgent-00.png"
+    }
   }
 }
