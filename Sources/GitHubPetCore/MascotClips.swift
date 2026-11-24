@@ -384,6 +384,15 @@ public struct ClipScheduler: Sendable {
 
     public func hasPlayed(key: String) -> Bool { playedKeys.contains(key) }
 
+    /// Dev replay (#138 `--replay-clips`): plays `id` as its trigger would, through the same gates and
+    /// priorities, but ignoring its cooldown so a reviewer can watch every clip on a short cycle.
+    @discardableResult
+    public mutating func replay(_ id: MascotClipID, now: Date, permissions: Permissions, length: TimeInterval) -> Outcome {
+        guard let policy = catalog[id] else { return .unavailable }
+        lastStarted[id] = nil
+        return start(policy, length: length, now: now, permissions: permissions)
+    }
+
     private func coolingDown(_ policy: ClipPolicy, now: Date) -> Bool {
         guard let last = lastStarted[policy.id] else { return false }
         return now.timeIntervalSince(last) < policy.cooldown

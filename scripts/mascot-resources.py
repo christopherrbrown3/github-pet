@@ -10,7 +10,9 @@ PACKS = {"mona-pet-v1": 12, "little-chris-v1": 9}
 STATES = {"idle", "attention", "urgent"}
 # Schema v2 (#138): optional held states, clips and accessories, under the bundled design budget.
 HELD = {"drag", "doze"}
-RUNTIME_DIRS = {"frames", "accessories"}
+RUNTIME_DIRS = {"frames", "accessories", "rig"}
+# Schema v3 (#138): cutout-rig part images (any size up to 1024 px a side, 160 KiB each).
+MAX_RIG_IMAGE_BYTES = 160 * 1024
 MAX_IMAGES = 64
 MAX_IMAGE_BYTES = 96 * 1024
 MAX_PACK_BYTES = 4 * 1024 * 1024
@@ -25,16 +27,21 @@ def runtime_paths(pack, expected_id, expected_frames):
         raise ValueError(f"{manifest}: missing or oversized runtime manifest")
     data = json.loads(manifest.read_text())
     version = data.get("schemaVersion")
-    if data.get("id") != expected_id or version not in (1, 2):
-        raise ValueError(f"{manifest}: expected {expected_id} schema v1 or v2")
+    if data.get("id") != expected_id or version not in (1, 2, 3):
+        raise ValueError(f"{manifest}: expected {expected_id} schema v1, v2 or v3")
     states = data["states"]
-    allowed = STATES | (HELD if version == 2 else set())
+    allowed = STATES | (HELD if version >= 2 else set())
     if not STATES <= set(states) or not set(states) <= allowed:
         raise ValueError(f"{manifest}: expected idle, attention and urgent states" + (" (plus drag, doze)" if version == 2 else ""))
     sequences = [[*state["frames"], state["staticFallback"]] for state in states.values()]
-    if version == 2:
+    if version >= 2:
         sequences += [clip["frames"] for clip in data.get("clips", {}).values()]
         sequences += [[accessory["image"]] for accessory in data.get("accessories", {}).values()]
+    rig_images = set()
+    if version == 3:
+        for part in data["rig"]["parts"]:
+            rig_images |= {part["image"], *part.get("variants", {}).values()}
+        sequences.append(sorted(rig_images))
     paths = set()
     for names in sequences:
         if not isinstance(names, list) or not names:
@@ -44,8 +51,9 @@ def runtime_paths(pack, expected_id, expected_frames):
             if len(relative.parts) != 2 or relative.parts[0] not in RUNTIME_DIRS or relative.suffix != ".png":
                 raise ValueError(f"{manifest}: invalid runtime frame path {name!r}")
             frame = pack / relative
-            if frame.is_symlink() or not frame.is_file() or frame.stat().st_size > MAX_IMAGE_BYTES:
-                raise ValueError(f"{manifest}: invalid runtime frame {name!r} (missing, a link, or over 96 KiB)")
+            limit = MAX_RIG_IMAGE_BYTES if name in rig_images else MAX_IMAGE_BYTES
+            if frame.is_symlink() or not frame.is_file() or frame.stat().st_size > limit:
+                raise ValueError(f"{manifest}: invalid runtime frame {name!r} (missing, a link, or over {limit // 1024} KiB)")
             paths.add(relative.as_posix())
     if len(paths) > MAX_IMAGES or sum((pack / path).stat().st_size for path in paths) > MAX_PACK_BYTES:
         raise ValueError(f"{manifest}: over the bundled budget ({MAX_IMAGES} images, 4 MiB)")
@@ -67,14 +75,16 @@ def verify(root):
         print(f"{pack_id}: verified manifest and {len(files) - 1} runtime images")
 
 
-def stage(source, destination):
-    packs = {pack_id: runtime_paths(source / pack_id, pack_id, count) for pack_id, count in PACKS.items()}
+def stage(source, destination, rig=False):
+    # --rig (#138 review builds only): stage each skin's cutout-rig pack (<pack>/rig/pack) instead.
+    roots = {pack_id: source / pack_id / "rig" / "pack" if rig else source / pack_id for pack_id in PACKS}
+    packs = {pack_id: runtime_paths(roots[pack_id], pack_id, count) for pack_id, count in PACKS.items()}
     destination.mkdir(parents=True)
     for pack_id, paths in packs.items():
         for directory in sorted({PurePosixPath(path).parent for path in paths} - {PurePosixPath(".")}):
             (destination / pack_id / directory).mkdir(parents=True, exist_ok=True)
         for relative in sorted(paths):
-            shutil.copyfile(source / pack_id / relative, destination / pack_id / relative)
+            shutil.copyfile(roots[pack_id] / relative, destination / pack_id / relative)
     verify(destination)
 
 
@@ -84,12 +94,13 @@ def main():
     copy = commands.add_parser("stage")
     copy.add_argument("source", type=Path)
     copy.add_argument("destination", type=Path)
+    copy.add_argument("--rig", action="store_true", help="stage the cutout-rig packs (review builds only)")
     check = commands.add_parser("verify")
     check.add_argument("root", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "stage":
-            stage(args.source, args.destination)
+            stage(args.source, args.destination, rig=args.rig)
         else:
             verify(args.root)
     except (OSError, ValueError, TypeError, AttributeError, KeyError) as error:

@@ -98,7 +98,13 @@ otool -l "$app/Contents/MacOS/$app_name" | grep -q '@executable_path/../Framewor
   || install_name_tool -add_rpath @executable_path/../Frameworks "$app/Contents/MacOS/$app_name"
 
 # Stage the built-in packs' manifests and referenced runtime frames.
-python3 scripts/mascot-resources.py stage assets/mascots "$app/Contents/Resources/MascotPacks"
+# RIG_PACKS=1 (#138 review builds with a BUNDLE_ID_SUFFIX only): bundle the cutout-rig packs.
+rig_packs=()
+if [[ ${RIG_PACKS:-} == 1 ]]; then
+  [[ -n $bundle_suffix ]] || { echo "RIG_PACKS=1 needs a BUNDLE_ID_SUFFIX (review builds only)" >&2; exit 65; }
+  rig_packs=(--rig)
+fi
+python3 scripts/mascot-resources.py stage assets/mascots "$app/Contents/Resources/MascotPacks" "${rig_packs[@]}"
 
 # Compile the committed iconset into the bundle's icon. The .icns is generated, never committed.
 iconutil -c icns assets/app-icon/AppIcon.iconset -o "$app/Contents/Resources/AppIcon.icns"

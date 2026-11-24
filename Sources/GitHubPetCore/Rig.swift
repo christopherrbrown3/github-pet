@@ -98,6 +98,12 @@ public struct RigSpec: Codable, Equatable, Sendable {
             self.channels = channels
             self.face = face
         }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            channels = try container.decodeIfPresent([String: Double].self, forKey: .channels) ?? [:]
+            face = try container.decodeIfPresent(String.self, forKey: .face)
+        }
     }
 
     /// `[ms, value]` or `[ms, value, "ease"]`: the ease shapes the approach to this key.
@@ -301,11 +307,13 @@ public enum RigEase: String, Codable, Sendable, CaseIterable {
 }
 
 public enum RigChannel: String, CaseIterable, Sendable {
-    case x, y, rot, sx, sy, opacity
+    /// `kx` shears horizontally (degrees) about the pivot: points below it move right, above it left.
+    /// A one-piece skirt sways with it while its root stays put.
+    case x, y, rot, sx, sy, kx, opacity
 
     public var rest: Double {
         switch self {
-        case .x, .y, .rot: return 0
+        case .x, .y, .rot, .kx: return 0
         case .sx, .sy, .opacity: return 1
         }
     }
@@ -411,6 +419,7 @@ public enum RigEvaluator {
             // Scale and rotate about the pivot, then offset: applied to points in that order.
             let local = CGAffineTransform(translationX: -pivot.x, y: -pivot.y)
                 .concatenating(CGAffineTransform(scaleX: sx, y: sy))
+                .concatenating(CGAffineTransform(a: 1, b: 0, c: tan(value(name, .kx) * .pi / 180), d: 1, tx: 0, ty: 0))
                 .concatenating(CGAffineTransform(rotationAngle: rot * .pi / 180))
                 .concatenating(CGAffineTransform(translationX: pivot.x + value(name, .x), y: pivot.y + value(name, .y)))
             let result = bone.parent.map { local.concatenating(transform($0, depth: depth + 1)) } ?? local
@@ -488,7 +497,7 @@ public enum RigEvaluator {
 
     /// Fills each placed part's rect from its image size (mounted parts sit at the origin of their
     /// own transform).
-    static func place(_ rig: RigSpec, _ pose: RigPose, sizes: [String: CGSize]) -> RigPose {
+    public static func place(_ rig: RigSpec, _ pose: RigPose, sizes: [String: CGSize]) -> RigPose {
         var result = pose
         let origins = Dictionary(rig.parts.map { ($0.name, $0.origin) }, uniquingKeysWith: { a, _ in a })
         for index in result.parts.indices {
@@ -523,7 +532,7 @@ public enum RigLimits {
     public static let maxKeys = 48
     public static let minClipMs = 100
     public static let channelRange: [RigChannel: ClosedRange<Double>] = [
-        .x: -64...64, .y: -64...64, .rot: -180...180, .sx: 0.3...1.5, .sy: 0.3...1.5, .opacity: 0...1,
+        .x: -64...64, .y: -64...64, .rot: -180...180, .sx: 0.3...1.5, .sy: 0.3...1.5, .kx: -30...30, .opacity: 0...1,
     ]
     /// Sampling rate for bounds and contours over a clip (design section 7.5).
     public static let sampleHz = 60.0

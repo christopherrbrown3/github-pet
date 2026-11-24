@@ -17,8 +17,11 @@ import GitHubPetCore
 ///   --placeholder-clips           #138 QA: add "PH" placeholder clips, held poses and hat to the pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
 ///   --rig-placeholder             #138 dev: load the shape-only cutout rig pack (written to a temp dir)
-///   --replay-clips <secs>         #138 dev: replay new-item every <secs> s without touching inbox data;
+///   --replay-clips <secs>         #138 dev: play the pack's clips in turn every <secs> s, without touching data;
 ///                                 ignored by the production bundle ID
+///   --dump-clip-frames <dir> <skin>  #138 dev: render every rig clip of a built-in skin at 60 Hz with the
+///                                 live renderer to PNGs and contact sheets, then quit (in-memory
+///                                 preferences; ignored by the production bundle ID)
 struct LaunchOptions {
     var defaultsSuite: String?
     var resetSettings = false
@@ -29,6 +32,7 @@ struct LaunchOptions {
     var placeholderClips = false
     var rigPlaceholder = false
     var replayClipsEvery: TimeInterval?
+    var dumpClipFrames: (directory: URL, skin: MascotSkin)?
     var snapshotDirectory: URL?
     /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
     var simulatesMonitoringScope = false
@@ -62,6 +66,10 @@ struct LaunchOptions {
             case "--placeholder": options.forcePlaceholder = true
             case "--placeholder-clips": options.placeholderClips = true
             case "--rig-placeholder": options.rigPlaceholder = true
+            case "--dump-clip-frames":
+                if let dir = iterator.next(), let skin = iterator.next().flatMap(MascotSkin.init(rawValue:)) {
+                    options.dumpClipFrames = (URL(fileURLWithPath: dir, isDirectory: true), skin)
+                }
             case "--replay-clips":
                 options.replayClipsEvery = iterator.next().flatMap(TimeInterval.init).map { max($0, 2) }
             case "--render-snapshots":
@@ -80,8 +88,15 @@ struct LaunchOptions {
             default: break
             }
         }
-        if options.replayClipsEvery != nil, Bundle.main.bundleIdentifier == Self.productionBundleID {
+        if Bundle.main.bundleIdentifier == Self.productionBundleID {
             options.replayClipsEvery = nil
+            options.dumpClipFrames = nil
+        }
+        if options.dumpClipFrames != nil {
+            // Nothing of the user's: fixtures and an in-memory preferences domain.
+            options.forcedSource = "fixtures"
+            options.defaultsSuite = Self.dumpDefaultsSuite
+            options.resetSettings = true
         }
         if options.rigPlaceholder {
             // A temp directory per launch: never the user's Library or the bundled packs.
@@ -127,6 +142,7 @@ struct LaunchOptions {
     }
 
     static let snapshotDefaultsSuite = "dev.github-pet.render-snapshots.\(ProcessInfo.processInfo.processIdentifier)"
+    static let dumpDefaultsSuite = "dev.github-pet.dump-clip-frames.\(ProcessInfo.processInfo.processIdentifier)"
 
     /// Test seam: an in-memory store for a normal (non-simulated) launch.
     var userDefaultsOverride: UserDefaults?
@@ -141,6 +157,9 @@ struct LaunchOptions {
         // render-snapshots.<pid>.plist behind on every run, even after removePersistentDomain.
         if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite {
             return EphemeralDefaults.named(Self.snapshotDefaultsSuite)
+        }
+        if dumpClipFrames != nil, defaultsSuite == Self.dumpDefaultsSuite {
+            return EphemeralDefaults.named(Self.dumpDefaultsSuite)
         }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {
             return suite

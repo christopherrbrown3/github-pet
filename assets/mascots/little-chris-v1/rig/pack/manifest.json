@@ -1,0 +1,2885 @@
+{
+  "accessories" : {
+    "firefighter-hat" : {
+      "attach" : "head",
+      "image" : "accessories\/rig-firefighter-hat.png"
+    }
+  },
+  "anchor" : [
+    128,
+    232
+  ],
+  "canvas" : {
+    "height" : 256,
+    "width" : 256
+  },
+  "frameSha256" : {
+    "accessories\/rig-firefighter-hat.png" : "4a0445850dff15836414b4546e6957271de110ef9112005794206d836488032f",
+    "frames\/rig-attention-00.png" : "d576ed9fd55df3989379fc1c4b41a4551bbe960f8e0d13869a05c0e27bbf903e",
+    "frames\/rig-idle-00.png" : "aafd558cb5bbb588c5677ba71492f443ff55f5a83ea202ffe5d45b3764750a8c",
+    "frames\/rig-idle-01.png" : "a8792696806a1e7df8af12b0ee4322b1d518a287078da6503453e0d2bf0c9d23",
+    "frames\/rig-idle-02.png" : "5d212e7f998651bf6d434de58200464c2c34edf6ed46748c7006491f28093dca",
+    "frames\/rig-urgent-00.png" : "82ad1ab766d1da7a573cc19246c75909c2b4d23f6addb6f487514f9aba529241",
+    "rig\/arm-l.png" : "9c533e9369f458790e07c22ced89309d2311bdb54a1ee59b56edaa212a0e029a",
+    "rig\/arm-r.png" : "547e776a6e13a1714a0d03f9662d24d09b2e6f466697d5137c2ddc3603530bcc",
+    "rig\/brow-l-focus.png" : "06f63102386bbf9ae629b5a4eed5a95cc2db3d4d44959d669d90147e784ea37e",
+    "rig\/brow-l-up.png" : "39a1f2140e425a24299f04c12d70905edafe58d3d98ce030c345a6ea4bee53c0",
+    "rig\/brow-l-worried.png" : "27b3c8bf63f237834746b8e92afe9cbe6d5aab8113286ec1af2c1b1b0e6de161",
+    "rig\/brow-l.png" : "87b87c445c018db50d12638857592ebb1be03e6ce5f62f0b11c8a223007764d6",
+    "rig\/brow-r-focus.png" : "e3d519de743125d6fa3245a44e903e5756295f325b07ab5843feaac35719368d",
+    "rig\/brow-r-up.png" : "3c9d5ad9de5a94ee6ef53d9da664c2dd88cf00a6bb435de3e6f687b4e2183f7f",
+    "rig\/brow-r-worried.png" : "cbab056f671cb5bdf1d1cab4cda65a3dea2297f0b282d55e47aa18d511de35c7",
+    "rig\/brow-r.png" : "f5ac316218d25c3952a85c532cb92e5b5899d5a6503cad4c948c9ec0221a98e7",
+    "rig\/envelope.png" : "b8312f0d01b9fe6b44a1bfa89247f896e02578bc78593e83c186d2d93a3413ce",
+    "rig\/eye-l-closed.png" : "2465acf016fbca9abefea24e06a94ccf1b6f9a54a3e5d763f2638e6e53186a94",
+    "rig\/eye-l-half.png" : "9a7a8d436f2c772054cb078d2c86e9d9c77632ce35288b7217dd8043f2bf3dfb",
+    "rig\/eye-l-happy.png" : "acc255392a99fddb078d12ffa8d3d683d250946752820da04bb53a9bff51b75c",
+    "rig\/eye-l-spiral.png" : "e632c3de89ef444f465cd831604bb95d191927556f940d9fbf3de12d51f0f5d1",
+    "rig\/eye-l-squeeze.png" : "afbd341b73c29df2b9bf4f71d10879b24db06b0054f7bf3aaa08675ff2ace374",
+    "rig\/eye-l-wide.png" : "8a601eb90b0a157194b977045e8b43406c31ad0e392e7135e3930825ccf4d24b",
+    "rig\/eye-l.png" : "02d0ec9ff366babda2066ff7f5d3291bc4196ffa45996d941d4fd228421ecee2",
+    "rig\/eye-r-closed.png" : "97e39093b02b9eb454c3e5da26fa502a575629c69ae8ba6b05d70286229d25c6",
+    "rig\/eye-r-half.png" : "c703ea8f6a03656751b15a87b76b985989ff35e956041f4394d6ff71f510a551",
+    "rig\/eye-r-happy.png" : "843cebe249ccd47e9c9a51ae40024c622bdc2f24947bb670588e81637f3c723f",
+    "rig\/eye-r-spiral.png" : "e0c33b90485c9ef4c68fabfd36845f2dde81401164a26cb2edf920ff09ad1ef2",
+    "rig\/eye-r-squeeze.png" : "301c690342ca8531183538c51a1d1da14c234f2f84e02a999d73a1713c854ce3",
+    "rig\/eye-r-wide.png" : "208990b41d07e13d4488ebec5c179b9e077321811f1cd3bd387a2ed39131b8e5",
+    "rig\/eye-r.png" : "274b08df2d9d338581bfa2f327bb24c7a010c3b7c4e913a67dbbcc0ea7e60f8c",
+    "rig\/fore-l.png" : "577c41c179213ada53bd77c5fb0a52bf5e3d62bdc135e3fee760dd96b38bb7e4",
+    "rig\/fore-r.png" : "6ee40115d15c9d7d8e22fd3bc45a84461e1dc166ea65509a8af6f1055336d172",
+    "rig\/hair.png" : "de327e1685a1f748ba89fdf56ea11c9a9cb27fa1c607972ac37aec1d314f322e",
+    "rig\/hand-l-giggle.png" : "79102cd03f81ebb387ed80a1edf3c627259be49f0301e2316b47ce8b40180a7c",
+    "rig\/hand-l-grip.png" : "36ec6070ee7c6f6cd81cc84b09572b433bb4c7a66ad181a4e23833c19ca94d2c",
+    "rig\/hand-l-open.png" : "1d1576c488eb7560974fd6ff7e005ec3deb304cee1e07c3138610bbb32b58b70",
+    "rig\/hand-l-thumb.png" : "f6aabca2cd4c9222847997a8acadb824ef01f0f3eca8c13979ad7c87c53d0e2a",
+    "rig\/hand-l.png" : "65f6c2949420cd73ccc8e9a44a9693dcfdd8c9f8794e9fe5c1f1c8a8d0970231",
+    "rig\/hand-r-giggle.png" : "78d4dbc6dc5d5b68a9b10ec3839266dbd2e0ff7dc7f6702ed7322153bfa68de4",
+    "rig\/hand-r-grip.png" : "4d53610a50fefd8f2790ea9c37cd808f9d9b5aa4ef26323eb085b6d73b821d7d",
+    "rig\/hand-r-open.png" : "8d6d60c492bfccb783523061ec6264da740927f1d11adc237aae95b82a22893a",
+    "rig\/hand-r-thumb.png" : "fcd546324017fa015e50a8643b28d2ee36c0a85f71eb6c7d744dee098f402002",
+    "rig\/hand-r.png" : "063413dbcd58daa6766a11b3d7de52b39b4b6abe32b4107f47812b548efa88c9",
+    "rig\/head.png" : "816a705b8bd28c5a2630487999afadf90e6a6e7c15bef5862b9880a50e5beade",
+    "rig\/helmet.png" : "757d6e17b1f0859e62d5cf1d85d2eddb4cdbf75f75d4476b27b0a47a1e2972f2",
+    "rig\/leg-l.png" : "2bb841b2d72601be2e13cb226506079f94aa16c0cc5007a988378071bf03e510",
+    "rig\/leg-r.png" : "dd9c26c802278f2cbbc50e6b80ef3f120a7afdf521c9b5a2632bdc8d65a2e697",
+    "rig\/mouth-flat.png" : "0feb36d11a36650f9c167c8a527ce1d5a726e35be5dffa54b03000cae713c115",
+    "rig\/mouth-giggle.png" : "d58520b49ff8167e45feb5be40c9b5cef9d7596b1316038c17633b2e5f4495ed",
+    "rig\/mouth-grin.png" : "91772674c16b548205f2bea1d0aa68dfa894d7070dbed2325c30a08c391fd683",
+    "rig\/mouth-o.png" : "f4666f42340d825abfa10159ea11383e6e1dc1e2d60dee047703338d83dd9c94",
+    "rig\/mouth-wavy.png" : "9a99b24eb1be608f1995278076e7f1d3177e1890544303cf355f5b32c4d92da5",
+    "rig\/mouth-yawn.png" : "e9cb8dffa4f6c4f4878480ec88f99ad86029fd74609f9ffd59de28c9781d7a14",
+    "rig\/mouth.png" : "e106676b57e53fd54ec0ed6ec10e058efa99a6f5630e489628594f218bcc4eff",
+    "rig\/phone.png" : "18f4478358746ef48942d768909d3df4831f994775954b7eb2431c26262f5d39",
+    "rig\/torso.png" : "673be96ed63941a48fc6319948545b5051bf3ff7c45a31371b7106f5ad4f7418"
+  },
+  "id" : "little-chris-v1",
+  "name" : "Little Chris",
+  "points" : {
+    "head" : [
+      121,
+      30
+    ]
+  },
+  "rig" : {
+    "bones" : {
+      "arm-l" : {
+        "parent" : "torso",
+        "pivot" : [
+          100,
+          127
+        ],
+        "rot" : [
+          -40,
+          150
+        ]
+      },
+      "arm-r" : {
+        "parent" : "torso",
+        "pivot" : [
+          156,
+          127
+        ],
+        "rot" : [
+          -150,
+          40
+        ]
+      },
+      "fore-l" : {
+        "parent" : "arm-l",
+        "pivot" : [
+          97,
+          152
+        ],
+        "rot" : [
+          -130,
+          130
+        ]
+      },
+      "fore-r" : {
+        "parent" : "arm-r",
+        "pivot" : [
+          159,
+          152
+        ],
+        "rot" : [
+          -130,
+          130
+        ]
+      },
+      "gaze" : {
+        "parent" : "head",
+        "pivot" : [
+          121,
+          80
+        ]
+      },
+      "hair" : {
+        "parent" : "head",
+        "pivot" : [
+          120,
+          60
+        ],
+        "rot" : [
+          -6,
+          6
+        ]
+      },
+      "hand-l" : {
+        "parent" : "fore-l",
+        "pivot" : [
+          96,
+          172
+        ],
+        "rot" : [
+          -40,
+          40
+        ]
+      },
+      "hand-r" : {
+        "parent" : "fore-r",
+        "pivot" : [
+          160,
+          172
+        ],
+        "rot" : [
+          -40,
+          40
+        ]
+      },
+      "head" : {
+        "parent" : "torso",
+        "pivot" : [
+          121,
+          118
+        ],
+        "rot" : [
+          -12,
+          12
+        ]
+      },
+      "leg-l" : {
+        "parent" : "root",
+        "pivot" : [
+          114,
+          182
+        ],
+        "rot" : [
+          -12,
+          12
+        ]
+      },
+      "leg-r" : {
+        "parent" : "root",
+        "pivot" : [
+          142,
+          182
+        ],
+        "rot" : [
+          -12,
+          12
+        ]
+      },
+      "root" : {
+        "pivot" : [
+          128,
+          232
+        ]
+      },
+      "torso" : {
+        "parent" : "root",
+        "pivot" : [
+          128,
+          185
+        ],
+        "rot" : [
+          -8,
+          8
+        ]
+      }
+    },
+    "clips" : {
+      "dizzy" : {
+        "durationMs" : 1600,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "dizzy"
+          },
+          {
+            "at" : 1250,
+            "preset" : "sheepish"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "head",
+            "delayMs" : 60,
+            "gain" : 1.3,
+            "of" : "root"
+          },
+          {
+            "bone" : "hair",
+            "delayMs" : 120,
+            "gain" : 1,
+            "of" : "root"
+          }
+        ],
+        "sway" : [
+          {
+            "amp" : 12,
+            "bones" : [
+              "arm-l",
+              "arm-r"
+            ],
+            "periodMs" : 600,
+            "phaseStepMs" : 150
+          }
+        ],
+        "tracks" : {
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              1250,
+              0,
+              "inOut"
+            ],
+            [
+              1370,
+              6,
+              "inOut"
+            ],
+            [
+              1490,
+              -6,
+              "inOut"
+            ],
+            [
+              1600,
+              0,
+              "inOut"
+            ]
+          ],
+          "root.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              -4,
+              "inOut"
+            ],
+            [
+              600,
+              4,
+              "inOut"
+            ],
+            [
+              900,
+              -4,
+              "inOut"
+            ],
+            [
+              1250,
+              0,
+              "inOut"
+            ]
+          ]
+        }
+      },
+      "drop" : {
+        "durationMs" : 450,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "flinch"
+          },
+          {
+            "at" : 220,
+            "preset" : "joy"
+          },
+          {
+            "at" : 420,
+            "preset" : "neutral"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "hair",
+            "delayMs" : 60,
+            "gain" : 0.8,
+            "of" : "head"
+          }
+        ],
+        "tracks" : {
+          "arm-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              25,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              -25,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "head.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              90,
+              1.04,
+              "inOut"
+            ],
+            [
+              220,
+              0.98,
+              "inOut"
+            ],
+            [
+              450,
+              1,
+              "inOut"
+            ]
+          ],
+          "leg-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              6,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "leg-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              -6,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1.03,
+              "inOut"
+            ],
+            [
+              90,
+              0.88,
+              "in"
+            ],
+            [
+              220,
+              1.03,
+              "out"
+            ],
+            [
+              450,
+              1,
+              "spring"
+            ]
+          ]
+        },
+        "worn" : {
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              90,
+              0.88,
+              "in"
+            ],
+            [
+              220,
+              1,
+              "out"
+            ],
+            [
+              450,
+              1,
+              "out"
+            ]
+          ]
+        }
+      },
+      "idle-fidget" : {
+        "durationMs" : 1800,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "neutral"
+          },
+          {
+            "at" : 1100,
+            "preset" : "content"
+          },
+          {
+            "at" : 1500,
+            "preset" : "neutral"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 350,
+            "part" : "phone",
+            "variant" : "default"
+          },
+          {
+            "at" : 350,
+            "part" : "hand-r",
+            "variant" : "grip"
+          },
+          {
+            "at" : 1450,
+            "part" : "phone",
+            "variant" : "hide"
+          },
+          {
+            "at" : 1450,
+            "part" : "hand-r",
+            "variant" : "default"
+          }
+        ],
+        "tracks" : {
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              -10,
+              "inOut"
+            ],
+            [
+              1100,
+              -10,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              -80,
+              "out"
+            ],
+            [
+              1100,
+              -80,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.x" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              3,
+              "inOut"
+            ],
+            [
+              1100,
+              3,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              3,
+              "inOut"
+            ],
+            [
+              1100,
+              3,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              5,
+              "inOut"
+            ],
+            [
+              1100,
+              5,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              2,
+              "inOut"
+            ],
+            [
+              1100,
+              2,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ]
+        }
+      },
+      "idle-look" : {
+        "durationMs" : 2000,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "neutral"
+          },
+          {
+            "at" : 980,
+            "preset" : "blink"
+          },
+          {
+            "at" : 1100,
+            "preset" : "neutral"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "hair",
+            "delayMs" : 80,
+            "gain" : 0.6,
+            "of" : "head"
+          }
+        ],
+        "tracks" : {
+          "gaze.x" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              -4,
+              "out"
+            ],
+            [
+              900,
+              -4,
+              "inOut"
+            ],
+            [
+              1100,
+              4,
+              "out"
+            ],
+            [
+              1400,
+              3,
+              "inOut"
+            ],
+            [
+              1800,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              1100,
+              0,
+              "inOut"
+            ],
+            [
+              1400,
+              -3,
+              "inOut"
+            ],
+            [
+              1800,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              -3,
+              "out"
+            ],
+            [
+              900,
+              -3,
+              "inOut"
+            ],
+            [
+              1100,
+              3,
+              "out"
+            ],
+            [
+              1400,
+              4,
+              "inOut"
+            ],
+            [
+              1800,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              1100,
+              0,
+              "inOut"
+            ],
+            [
+              1400,
+              -2,
+              "inOut"
+            ],
+            [
+              1800,
+              0,
+              "inOut"
+            ]
+          ]
+        }
+      },
+      "idle-stretch" : {
+        "durationMs" : 2400,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "yawn"
+          },
+          {
+            "at" : 1500,
+            "preset" : "sleepy"
+          },
+          {
+            "at" : 1900,
+            "preset" : "content"
+          },
+          {
+            "at" : 2250,
+            "preset" : "neutral"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 900,
+            "part" : "hand-l",
+            "variant" : "open"
+          },
+          {
+            "at" : 900,
+            "part" : "hand-r",
+            "variant" : "open"
+          },
+          {
+            "at" : 1800,
+            "part" : "hand-l",
+            "variant" : "default"
+          },
+          {
+            "at" : 1800,
+            "part" : "hand-r",
+            "variant" : "default"
+          }
+        ],
+        "tracks" : {
+          "arm-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              -5,
+              "inOut"
+            ],
+            [
+              1000,
+              65,
+              "inOut"
+            ],
+            [
+              1500,
+              68,
+              "inOut"
+            ],
+            [
+              1800,
+              -8,
+              "inOut"
+            ],
+            [
+              2300,
+              0,
+              "spring"
+            ]
+          ],
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              5,
+              "inOut"
+            ],
+            [
+              1000,
+              -65,
+              "inOut"
+            ],
+            [
+              1500,
+              -68,
+              "inOut"
+            ],
+            [
+              1800,
+              8,
+              "inOut"
+            ],
+            [
+              2300,
+              0,
+              "spring"
+            ]
+          ],
+          "fore-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              -20,
+              "inOut"
+            ],
+            [
+              1000,
+              -75,
+              "inOut"
+            ],
+            [
+              1500,
+              -78,
+              "inOut"
+            ],
+            [
+              1750,
+              -60,
+              "inOut"
+            ],
+            [
+              2000,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              400,
+              20,
+              "inOut"
+            ],
+            [
+              1000,
+              75,
+              "inOut"
+            ],
+            [
+              1500,
+              78,
+              "inOut"
+            ],
+            [
+              1750,
+              60,
+              "inOut"
+            ],
+            [
+              2000,
+              0,
+              "inOut"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              400,
+              0.96,
+              "inOut"
+            ],
+            [
+              1000,
+              1.02,
+              "out"
+            ],
+            [
+              1500,
+              1.02,
+              "inOut"
+            ],
+            [
+              1900,
+              0.97,
+              "in"
+            ],
+            [
+              2300,
+              1,
+              "spring"
+            ]
+          ]
+        },
+        "worn" : {
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              400,
+              0.96,
+              "inOut"
+            ],
+            [
+              1000,
+              1,
+              "out"
+            ],
+            [
+              1500,
+              1,
+              "inOut"
+            ],
+            [
+              1900,
+              0.97,
+              "in"
+            ],
+            [
+              2300,
+              1,
+              "out"
+            ]
+          ]
+        }
+      },
+      "inbox-zero" : {
+        "durationMs" : 2000,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "notice"
+          },
+          {
+            "at" : 250,
+            "preset" : "joy"
+          },
+          {
+            "at" : 1600,
+            "preset" : "content"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "hair",
+            "delayMs" : 80,
+            "gain" : 1.2,
+            "of" : "root"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 250,
+            "part" : "hand-r",
+            "variant" : "open"
+          },
+          {
+            "at" : 550,
+            "part" : "hand-l",
+            "variant" : "open"
+          },
+          {
+            "at" : 1600,
+            "part" : "hand-l",
+            "variant" : "default"
+          },
+          {
+            "at" : 1600,
+            "part" : "hand-r",
+            "variant" : "default"
+          }
+        ],
+        "tracks" : {
+          "arm-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              10,
+              "inOut"
+            ],
+            [
+              550,
+              45,
+              "out"
+            ],
+            [
+              850,
+              10,
+              "inOut"
+            ],
+            [
+              1150,
+              50,
+              "out"
+            ],
+            [
+              1600,
+              40,
+              "inOut"
+            ],
+            [
+              2000,
+              0,
+              "inOut"
+            ]
+          ],
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -45,
+              "out"
+            ],
+            [
+              550,
+              -10,
+              "inOut"
+            ],
+            [
+              850,
+              -45,
+              "out"
+            ],
+            [
+              1150,
+              -50,
+              "out"
+            ],
+            [
+              1600,
+              -40,
+              "inOut"
+            ],
+            [
+              2000,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -40,
+              "inOut"
+            ],
+            [
+              550,
+              -110,
+              "back"
+            ],
+            [
+              850,
+              -40,
+              "inOut"
+            ],
+            [
+              1150,
+              -115,
+              "back"
+            ],
+            [
+              1600,
+              -120,
+              "inOut"
+            ],
+            [
+              2000,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              110,
+              "back"
+            ],
+            [
+              550,
+              40,
+              "inOut"
+            ],
+            [
+              850,
+              110,
+              "back"
+            ],
+            [
+              1150,
+              115,
+              "back"
+            ],
+            [
+              1600,
+              120,
+              "inOut"
+            ],
+            [
+              2000,
+              0,
+              "inOut"
+            ]
+          ],
+          "leg-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              5,
+              "inOut"
+            ],
+            [
+              550,
+              -3,
+              "inOut"
+            ],
+            [
+              850,
+              5,
+              "inOut"
+            ],
+            [
+              1150,
+              0,
+              "inOut"
+            ]
+          ],
+          "leg-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              3,
+              "inOut"
+            ],
+            [
+              550,
+              -5,
+              "inOut"
+            ],
+            [
+              850,
+              3,
+              "inOut"
+            ],
+            [
+              1150,
+              0,
+              "inOut"
+            ]
+          ],
+          "root.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -3,
+              "inOut"
+            ],
+            [
+              550,
+              3,
+              "inOut"
+            ],
+            [
+              850,
+              -3,
+              "inOut"
+            ],
+            [
+              1150,
+              0,
+              "out"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              250,
+              0.94,
+              "inOut"
+            ],
+            [
+              400,
+              1.03,
+              "inOut"
+            ],
+            [
+              550,
+              0.94,
+              "inOut"
+            ],
+            [
+              700,
+              1.03,
+              "inOut"
+            ],
+            [
+              850,
+              0.94,
+              "inOut"
+            ],
+            [
+              1000,
+              1.03,
+              "inOut"
+            ],
+            [
+              1150,
+              0.95,
+              "inOut"
+            ],
+            [
+              1400,
+              1,
+              "spring"
+            ]
+          ]
+        },
+        "worn" : {
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              250,
+              0.94,
+              "inOut"
+            ],
+            [
+              400,
+              1,
+              "inOut"
+            ],
+            [
+              550,
+              0.94,
+              "inOut"
+            ],
+            [
+              700,
+              1,
+              "inOut"
+            ],
+            [
+              850,
+              0.94,
+              "inOut"
+            ],
+            [
+              1000,
+              1,
+              "inOut"
+            ],
+            [
+              1150,
+              0.95,
+              "inOut"
+            ],
+            [
+              1400,
+              1,
+              "out"
+            ]
+          ]
+        }
+      },
+      "incident-start" : {
+        "accessories" : "hide",
+        "durationMs" : 1900,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "notice"
+          },
+          {
+            "at" : 900,
+            "preset" : "flinch"
+          },
+          {
+            "at" : 1150,
+            "preset" : "determined"
+          },
+          {
+            "at" : 1600,
+            "preset" : "neutral"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "hair",
+            "delayMs" : 60,
+            "gain" : 0.8,
+            "of" : "head"
+          }
+        ],
+        "mounts" : [
+          {
+            "at" : 200,
+            "mount" : "hand",
+            "part" : "helmet"
+          },
+          {
+            "at" : 820,
+            "blendMs" : 260,
+            "mount" : "default",
+            "part" : "helmet"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 200,
+            "part" : "helmet",
+            "variant" : "default"
+          },
+          {
+            "at" : 200,
+            "part" : "hand-l",
+            "variant" : "grip"
+          },
+          {
+            "at" : 1050,
+            "part" : "hand-l",
+            "variant" : "default"
+          }
+        ],
+        "tracks" : {
+          "arm-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -8,
+              "inOut"
+            ],
+            [
+              550,
+              -25,
+              "back"
+            ],
+            [
+              820,
+              -20,
+              "inOut"
+            ],
+            [
+              1050,
+              -10,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              550,
+              10,
+              "inOut"
+            ],
+            [
+              850,
+              -20,
+              "inOut"
+            ],
+            [
+              1150,
+              5,
+              "back"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              550,
+              -90,
+              "inOut"
+            ],
+            [
+              820,
+              -110,
+              "inOut"
+            ],
+            [
+              1050,
+              -40,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              850,
+              90,
+              "inOut"
+            ],
+            [
+              1150,
+              20,
+              "inOut"
+            ],
+            [
+              1500,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.x" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -4,
+              "out"
+            ],
+            [
+              550,
+              -3,
+              "inOut"
+            ],
+            [
+              800,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              3,
+              "out"
+            ],
+            [
+              550,
+              2,
+              "inOut"
+            ],
+            [
+              800,
+              -2,
+              "inOut"
+            ],
+            [
+              1000,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -5,
+              "out"
+            ],
+            [
+              550,
+              -2,
+              "inOut"
+            ],
+            [
+              850,
+              4,
+              "inOut"
+            ],
+            [
+              1150,
+              0,
+              "spring"
+            ]
+          ],
+          "head.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              1150,
+              0,
+              "inOut"
+            ],
+            [
+              1300,
+              4,
+              "inOut"
+            ],
+            [
+              1450,
+              0,
+              "out"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              250,
+              0.97,
+              "inOut"
+            ],
+            [
+              850,
+              1,
+              "inOut"
+            ],
+            [
+              1000,
+              0.94,
+              "in"
+            ],
+            [
+              1300,
+              1,
+              "out"
+            ]
+          ]
+        }
+      },
+      "item-cleared" : {
+        "durationMs" : 1200,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "neutral"
+          },
+          {
+            "at" : 200,
+            "preset" : "joy"
+          },
+          {
+            "at" : 520,
+            "preset" : "wink"
+          },
+          {
+            "at" : 1000,
+            "preset" : "neutral"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 300,
+            "part" : "hand-r",
+            "variant" : "thumb"
+          },
+          {
+            "at" : 1050,
+            "part" : "hand-r",
+            "variant" : "default"
+          }
+        ],
+        "tracks" : {
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              120,
+              -6,
+              "in"
+            ],
+            [
+              380,
+              -60,
+              "back"
+            ],
+            [
+              1000,
+              -60,
+              "inOut"
+            ],
+            [
+              1200,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              380,
+              70,
+              "back"
+            ],
+            [
+              1000,
+              70,
+              "inOut"
+            ],
+            [
+              1200,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.x" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              200,
+              -3,
+              "out"
+            ],
+            [
+              500,
+              0,
+              "inOut"
+            ]
+          ],
+          "gaze.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              200,
+              2,
+              "out"
+            ],
+            [
+              500,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              200,
+              4,
+              "out"
+            ],
+            [
+              500,
+              -2,
+              "inOut"
+            ],
+            [
+              1100,
+              0,
+              "inOut"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              140,
+              0.96,
+              "inOut"
+            ],
+            [
+              360,
+              1.02,
+              "out"
+            ],
+            [
+              700,
+              1,
+              "spring"
+            ]
+          ]
+        },
+        "worn" : {
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              140,
+              0.96,
+              "inOut"
+            ],
+            [
+              360,
+              1,
+              "out"
+            ],
+            [
+              700,
+              1,
+              "out"
+            ]
+          ]
+        }
+      },
+      "new-item" : {
+        "durationMs" : 1900,
+        "endsOn" : "attention",
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "notice"
+          },
+          {
+            "at" : 460,
+            "preset" : "joy"
+          },
+          {
+            "at" : 1300,
+            "preset" : "alert"
+          },
+          {
+            "at" : 1700,
+            "preset" : "blink"
+          },
+          {
+            "at" : 1780,
+            "preset" : "alert"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "hair",
+            "delayMs" : 60,
+            "gain" : 0.8,
+            "of" : "head"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 240,
+            "part" : "envelope",
+            "variant" : "default"
+          },
+          {
+            "at" : 240,
+            "part" : "hand-l",
+            "variant" : "grip"
+          },
+          {
+            "at" : 1600,
+            "part" : "envelope",
+            "variant" : "hide"
+          },
+          {
+            "at" : 1600,
+            "part" : "hand-l",
+            "variant" : "default"
+          },
+          {
+            "at" : 560,
+            "part" : "hand-r",
+            "variant" : "open"
+          }
+        ],
+        "tracks" : {
+          "arm-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              -8,
+              "inOut"
+            ],
+            [
+              560,
+              55,
+              "out"
+            ],
+            [
+              1300,
+              55,
+              "inOut"
+            ],
+            [
+              1650,
+              0,
+              "inOut"
+            ]
+          ],
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              5,
+              "inOut"
+            ],
+            [
+              500,
+              -140,
+              "out"
+            ],
+            [
+              1300,
+              -140,
+              "inOut"
+            ]
+          ],
+          "fore-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              -30,
+              "inOut"
+            ],
+            [
+              560,
+              -115,
+              "back"
+            ],
+            [
+              690,
+              -100,
+              "inOut"
+            ],
+            [
+              820,
+              -122,
+              "inOut"
+            ],
+            [
+              950,
+              -100,
+              "inOut"
+            ],
+            [
+              1080,
+              -122,
+              "inOut"
+            ],
+            [
+              1300,
+              -110,
+              "inOut"
+            ],
+            [
+              1650,
+              0,
+              "inOut"
+            ]
+          ],
+          "fore-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              60,
+              "inOut"
+            ],
+            [
+              400,
+              100,
+              "inOut"
+            ],
+            [
+              480,
+              95,
+              "inOut"
+            ],
+            [
+              620,
+              -15,
+              "out"
+            ],
+            [
+              750,
+              10,
+              "inOut"
+            ],
+            [
+              880,
+              -25,
+              "inOut"
+            ],
+            [
+              1010,
+              10,
+              "inOut"
+            ],
+            [
+              1300,
+              -15,
+              "inOut"
+            ]
+          ],
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              120,
+              -4,
+              "out"
+            ],
+            [
+              460,
+              3,
+              "inOut"
+            ],
+            [
+              900,
+              0,
+              "spring"
+            ],
+            [
+              1030,
+              3,
+              "inOut"
+            ],
+            [
+              1160,
+              -3,
+              "inOut"
+            ],
+            [
+              1300,
+              -3,
+              "inOut"
+            ]
+          ],
+          "head.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              300,
+              1.03,
+              "inOut"
+            ],
+            [
+              460,
+              0.97,
+              "out"
+            ],
+            [
+              620,
+              1.02,
+              "in"
+            ],
+            [
+              900,
+              1,
+              "spring"
+            ]
+          ],
+          "leg-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              4,
+              "inOut"
+            ],
+            [
+              460,
+              -3,
+              "out"
+            ],
+            [
+              620,
+              0,
+              "spring"
+            ]
+          ],
+          "leg-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              -4,
+              "inOut"
+            ],
+            [
+              460,
+              3,
+              "out"
+            ],
+            [
+              620,
+              0,
+              "spring"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              120,
+              1.02,
+              "out"
+            ],
+            [
+              300,
+              0.92,
+              "inOut"
+            ],
+            [
+              460,
+              1.03,
+              "out"
+            ],
+            [
+              620,
+              0.96,
+              "in"
+            ],
+            [
+              900,
+              1,
+              "spring"
+            ]
+          ],
+          "root.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              300,
+              0,
+              "inOut"
+            ],
+            [
+              460,
+              -2,
+              "out"
+            ],
+            [
+              620,
+              0,
+              "in"
+            ]
+          ],
+          "torso.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              460,
+              2,
+              "out"
+            ],
+            [
+              900,
+              -2,
+              "spring"
+            ]
+          ]
+        },
+        "worn" : {
+          "head.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              300,
+              0.98,
+              "inOut"
+            ],
+            [
+              460,
+              1,
+              "out"
+            ],
+            [
+              900,
+              1,
+              "out"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              120,
+              0.98,
+              "out"
+            ],
+            [
+              300,
+              0.92,
+              "inOut"
+            ],
+            [
+              460,
+              1,
+              "out"
+            ],
+            [
+              620,
+              0.96,
+              "in"
+            ],
+            [
+              900,
+              1,
+              "out"
+            ]
+          ],
+          "root.y" : [
+            [
+              0,
+              0,
+              "inOut"
+            ]
+          ]
+        }
+      },
+      "poke" : {
+        "durationMs" : 750,
+        "faces" : [
+          {
+            "at" : 0,
+            "preset" : "flinch"
+          },
+          {
+            "at" : 250,
+            "preset" : "giggle"
+          },
+          {
+            "at" : 650,
+            "preset" : "neutral"
+          }
+        ],
+        "follow" : [
+          {
+            "bone" : "hair",
+            "delayMs" : 60,
+            "gain" : 0.8,
+            "of" : "head"
+          }
+        ],
+        "swaps" : [
+          {
+            "at" : 250,
+            "part" : "hand-l",
+            "variant" : "giggle"
+          },
+          {
+            "at" : 650,
+            "part" : "hand-l",
+            "variant" : "default"
+          }
+        ],
+        "tracks" : {
+          "arm-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              -8,
+              "out"
+            ],
+            [
+              250,
+              -30,
+              "inOut"
+            ],
+            [
+              650,
+              0,
+              "inOut"
+            ]
+          ],
+          "arm-r.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              8,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "fore-l.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              250,
+              -115,
+              "inOut"
+            ],
+            [
+              650,
+              0,
+              "inOut"
+            ]
+          ],
+          "head.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              3,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "root.rot" : [
+            [
+              0,
+              0,
+              "inOut"
+            ],
+            [
+              90,
+              3,
+              "out"
+            ],
+            [
+              450,
+              0,
+              "spring"
+            ]
+          ],
+          "root.sy" : [
+            [
+              0,
+              1,
+              "inOut"
+            ],
+            [
+              90,
+              0.94,
+              "out"
+            ],
+            [
+              300,
+              0.99,
+              "inOut"
+            ],
+            [
+              750,
+              1,
+              "inOut"
+            ]
+          ]
+        }
+      }
+    },
+    "faces" : {
+      "alert" : {
+        "brow-l" : "up",
+        "brow-r" : "up",
+        "eye-l" : "wide",
+        "eye-r" : "wide",
+        "mouth" : "default"
+      },
+      "blink" : {
+        "eye-l" : "closed",
+        "eye-r" : "closed"
+      },
+      "content" : {
+        "brow-l" : "default",
+        "brow-r" : "default",
+        "eye-l" : "happy",
+        "eye-r" : "happy",
+        "mouth" : "default"
+      },
+      "determined" : {
+        "brow-l" : "focus",
+        "brow-r" : "focus",
+        "eye-l" : "default",
+        "eye-r" : "default",
+        "mouth" : "flat"
+      },
+      "dizzy" : {
+        "brow-l" : "worried",
+        "brow-r" : "worried",
+        "eye-l" : "spiral",
+        "eye-r" : "spiral",
+        "mouth" : "wavy"
+      },
+      "flinch" : {
+        "brow-l" : "up",
+        "brow-r" : "up",
+        "eye-l" : "squeeze",
+        "eye-r" : "squeeze",
+        "mouth" : "grin"
+      },
+      "giggle" : {
+        "brow-l" : "up",
+        "brow-r" : "up",
+        "eye-l" : "happy",
+        "eye-r" : "happy",
+        "mouth" : "giggle"
+      },
+      "half" : {
+        "eye-l" : "half",
+        "eye-r" : "half"
+      },
+      "joy" : {
+        "brow-l" : "up",
+        "brow-r" : "up",
+        "eye-l" : "happy",
+        "eye-r" : "happy",
+        "mouth" : "grin"
+      },
+      "neutral" : {
+        "brow-l" : "default",
+        "brow-r" : "default",
+        "eye-l" : "default",
+        "eye-r" : "default",
+        "mouth" : "default"
+      },
+      "notice" : {
+        "brow-l" : "up",
+        "brow-r" : "up",
+        "eye-l" : "wide",
+        "eye-r" : "wide",
+        "mouth" : "o"
+      },
+      "sheepish" : {
+        "brow-l" : "worried",
+        "brow-r" : "worried",
+        "eye-l" : "half",
+        "eye-r" : "half",
+        "mouth" : "default"
+      },
+      "sleepy" : {
+        "brow-l" : "default",
+        "brow-r" : "default",
+        "eye-l" : "closed",
+        "eye-r" : "closed",
+        "mouth" : "default"
+      },
+      "wink" : {
+        "brow-l" : "up",
+        "brow-r" : "default",
+        "eye-l" : "default",
+        "eye-r" : "closed",
+        "mouth" : "grin"
+      },
+      "yawn" : {
+        "brow-l" : "up",
+        "brow-r" : "up",
+        "eye-l" : "closed",
+        "eye-r" : "closed",
+        "mouth" : "yawn"
+      }
+    },
+    "parts" : [
+      {
+        "bone" : "leg-l",
+        "image" : "rig\/leg-l.png",
+        "name" : "leg-l",
+        "origin" : [
+          96,
+          170.1
+        ]
+      },
+      {
+        "bone" : "leg-r",
+        "image" : "rig\/leg-r.png",
+        "name" : "leg-r",
+        "origin" : [
+          124.9,
+          169.8
+        ]
+      },
+      {
+        "bone" : "torso",
+        "image" : "rig\/torso.png",
+        "name" : "torso",
+        "origin" : [
+          94.5,
+          110.85
+        ]
+      },
+      {
+        "bone" : "head",
+        "image" : "rig\/head.png",
+        "name" : "head",
+        "origin" : [
+          78.05,
+          32.25
+        ]
+      },
+      {
+        "bone" : "gaze",
+        "image" : "rig\/eye-l.png",
+        "name" : "eye-l",
+        "origin" : [
+          95,
+          69
+        ],
+        "variants" : {
+          "closed" : "rig\/eye-l-closed.png",
+          "half" : "rig\/eye-l-half.png",
+          "happy" : "rig\/eye-l-happy.png",
+          "spiral" : "rig\/eye-l-spiral.png",
+          "squeeze" : "rig\/eye-l-squeeze.png",
+          "wide" : "rig\/eye-l-wide.png"
+        }
+      },
+      {
+        "bone" : "gaze",
+        "image" : "rig\/eye-r.png",
+        "name" : "eye-r",
+        "origin" : [
+          125.25,
+          69
+        ],
+        "variants" : {
+          "closed" : "rig\/eye-r-closed.png",
+          "half" : "rig\/eye-r-half.png",
+          "happy" : "rig\/eye-r-happy.png",
+          "spiral" : "rig\/eye-r-spiral.png",
+          "squeeze" : "rig\/eye-r-squeeze.png",
+          "wide" : "rig\/eye-r-wide.png"
+        }
+      },
+      {
+        "bone" : "head",
+        "image" : "rig\/brow-l.png",
+        "name" : "brow-l",
+        "origin" : [
+          93.25,
+          57.75
+        ],
+        "variants" : {
+          "focus" : "rig\/brow-l-focus.png",
+          "up" : "rig\/brow-l-up.png",
+          "worried" : "rig\/brow-l-worried.png"
+        }
+      },
+      {
+        "bone" : "head",
+        "image" : "rig\/brow-r.png",
+        "name" : "brow-r",
+        "origin" : [
+          125,
+          58
+        ],
+        "variants" : {
+          "focus" : "rig\/brow-r-focus.png",
+          "up" : "rig\/brow-r-up.png",
+          "worried" : "rig\/brow-r-worried.png"
+        }
+      },
+      {
+        "bone" : "head",
+        "image" : "rig\/mouth.png",
+        "name" : "mouth",
+        "origin" : [
+          111.25,
+          95
+        ],
+        "variants" : {
+          "flat" : "rig\/mouth-flat.png",
+          "giggle" : "rig\/mouth-giggle.png",
+          "grin" : "rig\/mouth-grin.png",
+          "o" : "rig\/mouth-o.png",
+          "wavy" : "rig\/mouth-wavy.png",
+          "yawn" : "rig\/mouth-yawn.png"
+        }
+      },
+      {
+        "bone" : "hair",
+        "image" : "rig\/hair.png",
+        "name" : "hair",
+        "origin" : [
+          72.25,
+          21.15
+        ]
+      },
+      {
+        "bone" : "hand-l",
+        "hidden" : true,
+        "image" : "rig\/envelope.png",
+        "name" : "envelope",
+        "origin" : [
+          75.5,
+          158.25
+        ]
+      },
+      {
+        "bone" : "hand-r",
+        "hidden" : true,
+        "image" : "rig\/phone.png",
+        "name" : "phone",
+        "origin" : [
+          148.75,
+          167
+        ]
+      },
+      {
+        "bone" : "arm-l",
+        "image" : "rig\/arm-l.png",
+        "name" : "arm-l",
+        "origin" : [
+          84.8,
+          120.75
+        ]
+      },
+      {
+        "bone" : "fore-l",
+        "image" : "rig\/fore-l.png",
+        "name" : "fore-l",
+        "origin" : [
+          85.85,
+          147.75
+        ]
+      },
+      {
+        "bone" : "hand-l",
+        "image" : "rig\/hand-l.png",
+        "name" : "hand-l",
+        "origin" : [
+          82.5,
+          164.25
+        ],
+        "variants" : {
+          "giggle" : "rig\/hand-l-giggle.png",
+          "grip" : "rig\/hand-l-grip.png",
+          "open" : "rig\/hand-l-open.png",
+          "thumb" : "rig\/hand-l-thumb.png"
+        }
+      },
+      {
+        "bone" : "arm-r",
+        "image" : "rig\/arm-r.png",
+        "name" : "arm-r",
+        "origin" : [
+          145.85,
+          120.75
+        ]
+      },
+      {
+        "bone" : "fore-r",
+        "image" : "rig\/fore-r.png",
+        "name" : "fore-r",
+        "origin" : [
+          149.85,
+          147.75
+        ]
+      },
+      {
+        "bone" : "hand-r",
+        "image" : "rig\/hand-r.png",
+        "name" : "hand-r",
+        "origin" : [
+          146.75,
+          164.5
+        ],
+        "variants" : {
+          "giggle" : "rig\/hand-r-giggle.png",
+          "grip" : "rig\/hand-r-grip.png",
+          "open" : "rig\/hand-r-open.png",
+          "thumb" : "rig\/hand-r-thumb.png"
+        }
+      },
+      {
+        "bone" : "head",
+        "hidden" : true,
+        "image" : "rig\/helmet.png",
+        "mounts" : {
+          "hand" : {
+            "bone" : "hand-l",
+            "origin" : [
+              72,
+              150
+            ]
+          }
+        },
+        "name" : "helmet",
+        "origin" : [
+          76,
+          15
+        ]
+      }
+    ],
+    "poses" : {
+      "attention" : {
+        "channels" : {
+          "arm-r.rot" : -140,
+          "fore-r.rot" : -15,
+          "head.rot" : -3,
+          "torso.rot" : -2
+        },
+        "face" : "alert"
+      },
+      "idle" : {
+        "channels" : {
+
+        },
+        "face" : "neutral"
+      },
+      "urgent" : {
+        "channels" : {
+          "arm-l.rot" : -8,
+          "arm-r.rot" : 8,
+          "fore-l.rot" : 30,
+          "fore-r.rot" : -30
+        },
+        "face" : "determined"
+      }
+    },
+    "reserve" : [
+      62,
+      20,
+      205
+    ],
+    "restScale" : 0.96,
+    "unitScale" : 2
+  },
+  "schemaVersion" : 3,
+  "states" : {
+    "attention" : {
+      "durationMs" : [
+        1900
+      ],
+      "frames" : [
+        "frames\/rig-attention-00.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/rig-attention-00.png"
+    },
+    "idle" : {
+      "durationMs" : [
+        2000,
+        125,
+        150,
+        125
+      ],
+      "frames" : [
+        "frames\/rig-idle-00.png",
+        "frames\/rig-idle-01.png",
+        "frames\/rig-idle-02.png",
+        "frames\/rig-idle-01.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/rig-idle-00.png"
+    },
+    "urgent" : {
+      "durationMs" : [
+        1900
+      ],
+      "frames" : [
+        "frames\/rig-urgent-00.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/rig-urgent-00.png"
+    }
+  }
+}

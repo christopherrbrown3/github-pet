@@ -222,6 +222,7 @@ final class AppModel: ObservableObject {
     private var launchedScopePolls = 0
     private var clips = EventClipQueue()
     private var replayTimer: Timer?
+    private var replayIndex = 0
     // #138: one-shot clips beyond the event gesture, and the user's own reactions. Advanced by the
     // tick and by the events themselves; no timers of their own.
     private var scheduler = ClipScheduler(seed: 0)
@@ -341,7 +342,7 @@ final class AppModel: ObservableObject {
         }
         if let every = options.replayClipsEvery {
             replayTimer = Timer.scheduledTimer(withTimeInterval: every, repeats: true) { [weak self] _ in
-                Task { @MainActor in self?.replayNewItem() }
+                Task { @MainActor in self?.replayNextClip() }
             }
         }
     }
@@ -1479,11 +1480,25 @@ final class AppModel: ObservableObject {
         refresh()
     }
 
-    /// #138 dev builds (`--replay-clips`): play new-item as a repository batch would, through the
-    /// same queue, gates and priorities, without adding an item or changing any source state.
-    func replayNewItem() {
-        enqueueEvents([InboxEvent(item: FixtureSimulator().injectEntitlementEvent(now: clock()), severity: .actionable)],
-                      at: clock(), kind: .newItem)
+    /// #138 dev builds (`--replay-clips`): play the pack's clips in turn, each as its trigger would
+    /// (event clips through the event queue, the rest through the scheduler without their cooldowns),
+    /// without adding an item or changing any source state.
+    func replayNextClip() {
+        let library = clipLibrary
+        let ids = ClipCatalog.v1.ordered.map(\.id).filter(library.has)
+        guard !ids.isEmpty else { return }
+        let id = ids[replayIndex % ids.count]
+        replayIndex += 1
+        let now = clock()
+        let event = InboxEvent(item: FixtureSimulator().injectEntitlementEvent(now: now), severity: .actionable)
+        switch id {
+        case .newItem: enqueueEvents([event], at: now, kind: .newItem)
+        case .incidentStart: enqueueEvents([event], at: now, origin: .serviceIncident, kind: .incidentStart)
+        case .incidentEnd: enqueueEvents([event], at: now, origin: .serviceIncident, kind: .incidentEnd)
+        default:
+            scheduler.replay(id, now: now, permissions: clipPermissions(at: now), length: library.duration(id) ?? 0)
+            updateClipStage(at: now)
+        }
     }
 
     func injectWorkflowFailure() {

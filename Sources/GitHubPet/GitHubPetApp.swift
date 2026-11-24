@@ -74,6 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in await QAScenarioRunner.run(plan, model: model) }
             return
         }
+        if let dump = options.dumpClipFrames {
+            let status = ClipFrameDump.run(skin: dump.skin, directory: dump.directory)
+            exit(status)
+        }
         if let directory = options.snapshotDirectory {
             Task { @MainActor in
                 await SnapshotRenderer.run(model: model, directory: directory)

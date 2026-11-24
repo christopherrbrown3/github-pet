@@ -1,0 +1,2806 @@
+{
+ "id": "mona-pet-v1",
+ "name": "Mona-inspired Pet",
+ "unitScale": 2,
+ "restScale": 0.94,
+ "reserve": [
+  47,
+  20,
+  217
+ ],
+ "sheets": {
+  "parts": "rig/sources/parts-sheet.png",
+  "face": "rig/sources/face-sheet.png",
+  "props": "../shared-fx-v1/sources/props-parts-sheet.png"
+ },
+ "bones": {
+  "root": {
+   "pivot": [
+    128,
+    232
+   ]
+  },
+  "body": {
+   "parent": "root",
+   "pivot": [
+    125.5,
+    200
+   ],
+   "rot": [
+    -6,
+    6
+   ]
+  },
+  "head": {
+   "parent": "body",
+   "pivot": [
+    126.5,
+    146
+   ],
+   "rot": [
+    -12,
+    12
+   ]
+  },
+  "leg-l": {
+   "parent": "body",
+   "pivot": [
+    99.5,
+    163.5
+   ],
+   "rot": [
+    -18,
+    18
+   ]
+  },
+  "leg-c": {
+   "parent": "body",
+   "pivot": [
+    125.5,
+    165.5
+   ],
+   "rot": [
+    -14,
+    14
+   ]
+  },
+  "leg-r": {
+   "parent": "body",
+   "pivot": [
+    153.5,
+    163.5
+   ],
+   "rot": [
+    -18,
+    18
+   ]
+  },
+  "arm-l": {
+   "parent": "body",
+   "pivot": [
+    97.5,
+    170
+   ],
+   "rot": [
+    -30,
+    60
+   ]
+  },
+  "fore-l": {
+   "parent": "arm-l",
+   "pivot": [
+    69.5,
+    204
+   ],
+   "rot": [
+    -70,
+    70
+   ]
+  },
+  "arm-r": {
+   "parent": "body",
+   "pivot": [
+    161.5,
+    168
+   ],
+   "rot": [
+    -60,
+    30
+   ]
+  },
+  "fore-r": {
+   "parent": "arm-r",
+   "pivot": [
+    197.5,
+    150
+   ],
+   "rot": [
+    -70,
+    70
+   ]
+  },
+  "gaze": {
+   "parent": "head",
+   "pivot": [
+    127.5,
+    103
+   ]
+  },
+  "prop-l": {
+   "parent": "fore-l",
+   "pivot": [
+    68.5,
+    210
+   ]
+  }
+ },
+ "parts": [
+  {
+   "name": "leg-l",
+   "bone": "leg-l",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     239,
+     485,
+     402,
+     739
+    ]
+   },
+   "scale": 0.62,
+   "stretch": [
+    0.78,
+    1
+   ],
+   "rot": 18,
+   "center": [
+    83.5,
+    186.5
+   ]
+  },
+  {
+   "name": "leg-r",
+   "bone": "leg-r",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     838,
+     485,
+     1000,
+     739
+    ]
+   },
+   "scale": 0.62,
+   "stretch": [
+    0.78,
+    1
+   ],
+   "rot": -18,
+   "center": [
+    172.5,
+    186.5
+   ]
+  },
+  {
+   "name": "leg-c",
+   "bone": "leg-c",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     550,
+     485,
+     677,
+     747
+    ]
+   },
+   "scale": 0.62,
+   "stretch": [
+    0.78,
+    1
+   ],
+   "center": [
+    125.5,
+    191.5
+   ]
+  },
+  {
+   "name": "body",
+   "bone": "body",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     866,
+     180,
+     1184,
+     426
+    ]
+   },
+   "scale": 0.72,
+   "center": [
+    125.5,
+    160
+   ]
+  },
+  {
+   "name": "arm-l",
+   "bone": "arm-l",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     133,
+     796,
+     324,
+     951
+    ]
+   },
+   "scale": 0.55,
+   "stretch": [
+    1,
+    0.82
+   ],
+   "rot": -10,
+   "center": [
+    79.5,
+    187
+   ]
+  },
+  {
+   "name": "tip-l",
+   "bone": "fore-l",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     378,
+     831,
+     502,
+     941
+    ]
+   },
+   "scale": 0.5,
+   "center": [
+    68.5,
+    210
+   ],
+   "variants": {
+    "curl": {
+     "island": {
+      "sheet": "parts",
+      "box": [
+       97,
+       1041,
+       263,
+       1208
+      ]
+     },
+     "scale": 0.4
+    }
+   }
+  },
+  {
+   "name": "arm-r",
+   "bone": "arm-r",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     736,
+     794,
+     921,
+     954
+    ]
+   },
+   "scale": 0.55,
+   "stretch": [
+    1,
+    0.82
+   ],
+   "rot": 200,
+   "center": [
+    182.5,
+    154
+   ]
+  },
+  {
+   "name": "tip-r",
+   "bone": "fore-r",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     954,
+     831,
+     1079,
+     941
+    ]
+   },
+   "scale": 0.5,
+   "rot": -40,
+   "center": [
+    202.5,
+    151
+   ],
+   "variants": {
+    "curl": {
+     "island": {
+      "sheet": "parts",
+      "box": [
+       717,
+       1040,
+       881,
+       1208
+      ]
+     },
+     "scale": 0.4,
+     "rot": 0
+    }
+   }
+  },
+  {
+   "name": "envelope",
+   "bone": "prop-l",
+   "island": {
+    "sheet": "props",
+    "box": [
+     612,
+     936,
+     901,
+     1138
+    ]
+   },
+   "scale": 0.36,
+   "rot": -12,
+   "center": [
+    94.5,
+    195
+   ],
+   "hidden": true
+  },
+  {
+   "name": "head",
+   "bone": "head",
+   "island": {
+    "sheet": "parts",
+    "box": [
+     434,
+     53,
+     796,
+     412
+    ]
+   },
+   "scale": 0.833,
+   "center": [
+    127.1,
+    93.6
+   ]
+  },
+  {
+   "name": "eye-l",
+   "bone": "gaze",
+   "island": {
+    "sheet": "face",
+    "box": [
+     438,
+     221,
+     484,
+     287
+    ]
+   },
+   "scale": 0.8,
+   "center": [
+    100.5,
+    103
+   ],
+   "variants": {
+    "half": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       701,
+       240,
+       752,
+       276
+      ]
+     },
+     "center": [
+      100.5,
+      109
+     ]
+    },
+    "closed": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       988,
+       244,
+       1062,
+       277
+      ]
+     },
+     "scale": 0.65,
+     "center": [
+      100.5,
+      108
+     ]
+    },
+    "happy": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       166,
+       485,
+       225,
+       515
+      ]
+     },
+     "center": [
+      100.5,
+      101
+     ]
+    },
+    "wide": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       536,
+       457,
+       593,
+       536
+      ]
+     },
+     "center": [
+      100.5,
+      102
+     ]
+    },
+    "squeeze": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       907,
+       475,
+       955,
+       522
+      ]
+     },
+     "center": [
+      101.5,
+      104
+     ]
+    },
+    "spiral": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       468,
+       664,
+       555,
+       745
+      ]
+     },
+     "scale": 0.65,
+     "center": [
+      100.5,
+      103
+     ]
+    }
+   }
+  },
+  {
+   "name": "eye-r",
+   "bone": "gaze",
+   "island": {
+    "sheet": "face",
+    "box": [
+     542,
+     221,
+     589,
+     287
+    ]
+   },
+   "scale": 0.8,
+   "center": [
+    154.5,
+    103
+   ],
+   "variants": {
+    "half": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       828,
+       240,
+       879,
+       276
+      ]
+     },
+     "center": [
+      154.5,
+      109
+     ]
+    },
+    "closed": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       1114,
+       245,
+       1188,
+       277
+      ]
+     },
+     "scale": 0.65,
+     "center": [
+      154.5,
+      108
+     ]
+    },
+    "happy": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       305,
+       484,
+       364,
+       514
+      ]
+     },
+     "center": [
+      154.5,
+      101
+     ]
+    },
+    "wide": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       671,
+       457,
+       727,
+       536
+      ]
+     },
+     "center": [
+      154.5,
+      102
+     ]
+    },
+    "squeeze": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       1047,
+       474,
+       1096,
+       523
+      ]
+     },
+     "center": [
+      153.5,
+      104
+     ]
+    },
+    "spiral": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       682,
+       666,
+       770,
+       748
+      ]
+     },
+     "scale": 0.65,
+     "center": [
+      154.5,
+      103
+     ]
+    }
+   }
+  },
+  {
+   "name": "mouth",
+   "bone": "head",
+   "island": {
+    "sheet": "face",
+    "box": [
+     66,
+     908,
+     143,
+     941
+    ]
+   },
+   "scale": 0.63,
+   "center": [
+    127.5,
+    118
+   ],
+   "variants": {
+    "grin": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       264,
+       905,
+       336,
+       958
+      ]
+     },
+     "center": [
+      127.5,
+      120
+     ]
+    },
+    "o": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       436,
+       905,
+       481,
+       951
+      ]
+     },
+     "center": [
+      127.5,
+      119
+     ]
+    },
+    "wavy": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       582,
+       916,
+       655,
+       940
+      ]
+     },
+     "center": [
+      127.5,
+      118
+     ]
+    },
+    "yawn": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       743,
+       885,
+       801,
+       968
+      ]
+     },
+     "center": [
+      127.5,
+      121
+     ]
+    },
+    "flat": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       919,
+       919,
+       986,
+       937
+      ]
+     },
+     "center": [
+      127.5,
+      118
+     ]
+    },
+    "giggle": {
+     "island": {
+      "sheet": "face",
+      "box": [
+       1106,
+       901,
+       1184,
+       959
+      ]
+     },
+     "center": [
+      127.5,
+      120
+     ]
+    }
+   }
+  },
+  {
+   "name": "blush-l",
+   "bone": "head",
+   "island": {
+    "sheet": "face",
+    "box": [
+     474,
+     1112,
+     537,
+     1155
+    ]
+   },
+   "scale": 0.55,
+   "center": [
+    88.5,
+    119
+   ],
+   "hidden": true
+  },
+  {
+   "name": "blush-r",
+   "bone": "head",
+   "island": {
+    "sheet": "face",
+    "box": [
+     710,
+     1111,
+     773,
+     1155
+    ]
+   },
+   "scale": 0.55,
+   "center": [
+    166.5,
+    119
+   ],
+   "hidden": true
+  },
+  {
+   "name": "helmet",
+   "bone": "head",
+   "island": {
+    "sheet": "props",
+    "box": [
+     146,
+     42,
+     601,
+     372
+    ]
+   },
+   "scale": 0.49,
+   "center": [
+    126.5,
+    55
+   ],
+   "hidden": true,
+   "mounts": {
+    "hand": {
+     "bone": "prop-l",
+     "origin": [
+      61.5,
+      150
+     ]
+    }
+   }
+  }
+ ],
+ "faces": {
+  "neutral": {
+   "eye-l": "default",
+   "eye-r": "default",
+   "mouth": "default",
+   "blush-l": "hide",
+   "blush-r": "hide"
+  },
+  "notice": {
+   "eye-l": "wide",
+   "eye-r": "wide",
+   "mouth": "o"
+  },
+  "alert": {
+   "eye-l": "wide",
+   "eye-r": "wide",
+   "mouth": "default"
+  },
+  "joy": {
+   "eye-l": "happy",
+   "eye-r": "happy",
+   "mouth": "grin",
+   "blush-l": "default",
+   "blush-r": "default"
+  },
+  "determined": {
+   "eye-l": "default",
+   "eye-r": "default",
+   "mouth": "flat"
+  },
+  "flinch": {
+   "eye-l": "squeeze",
+   "eye-r": "squeeze",
+   "mouth": "grin"
+  },
+  "giggle": {
+   "eye-l": "happy",
+   "eye-r": "happy",
+   "mouth": "giggle",
+   "blush-l": "default",
+   "blush-r": "default"
+  },
+  "wink": {
+   "eye-l": "default",
+   "eye-r": "closed",
+   "mouth": "grin"
+  },
+  "dizzy": {
+   "eye-l": "spiral",
+   "eye-r": "spiral",
+   "mouth": "wavy"
+  },
+  "sleepy": {
+   "eye-l": "closed",
+   "eye-r": "closed",
+   "mouth": "default"
+  },
+  "yawn": {
+   "eye-l": "closed",
+   "eye-r": "closed",
+   "mouth": "yawn"
+  },
+  "sheepish": {
+   "eye-l": "half",
+   "eye-r": "half",
+   "mouth": "default",
+   "blush-l": "default",
+   "blush-r": "default"
+  },
+  "blink": {
+   "eye-l": "closed",
+   "eye-r": "closed"
+  },
+  "half": {
+   "eye-l": "half",
+   "eye-r": "half"
+  },
+  "content": {
+   "eye-l": "happy",
+   "eye-r": "happy",
+   "mouth": "default",
+   "blush-l": "hide",
+   "blush-r": "hide"
+  }
+ },
+ "poses": {
+  "idle": {
+   "face": "neutral"
+  },
+  "attention": {
+   "channels": {
+    "arm-r.rot": -25,
+    "fore-r.rot": -20,
+    "head.rot": -3,
+    "body.rot": -2
+   },
+   "face": "alert"
+  },
+  "urgent": {
+   "channels": {
+    "arm-l.rot": -12,
+    "arm-r.rot": 15
+   },
+   "face": "determined"
+  }
+ },
+ "states": {
+  "idle": {
+   "frames": [
+    {
+     "pose": "idle"
+    },
+    {
+     "pose": "idle",
+     "face": "half"
+    },
+    {
+     "pose": "idle",
+     "face": "blink"
+    },
+    {
+     "pose": "idle",
+     "face": "half"
+    }
+   ],
+   "durationMs": [
+    2000,
+    125,
+    150,
+    125
+   ],
+   "loop": true
+  },
+  "attention": {
+   "frames": [
+    {
+     "pose": "attention"
+    }
+   ],
+   "durationMs": [
+    1900
+   ],
+   "loop": false
+  },
+  "urgent": {
+   "frames": [
+    {
+     "pose": "urgent"
+    }
+   ],
+   "durationMs": [
+    1900
+   ],
+   "loop": false
+  }
+ },
+ "accessories": {
+  "firefighter-hat": {
+   "part": "helmet"
+  }
+ },
+ "points": {
+  "head": [
+   127,
+   23
+  ]
+ },
+ "clips": {
+  "new-item": {
+   "durationMs": 1900,
+   "endsOn": "attention",
+   "tracks": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      120,
+      1.02,
+      "out"
+     ],
+     [
+      300,
+      0.93
+     ],
+     [
+      460,
+      1.03,
+      "out"
+     ],
+     [
+      620,
+      0.97,
+      "in"
+     ],
+     [
+      900,
+      1,
+      "spring"
+     ]
+    ],
+    "root.y": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      0
+     ],
+     [
+      460,
+      -2,
+      "out"
+     ],
+     [
+      620,
+      0,
+      "in"
+     ]
+    ],
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      120,
+      -4,
+      "out"
+     ],
+     [
+      460,
+      3
+     ],
+     [
+      900,
+      0,
+      "spring"
+     ],
+     [
+      1030,
+      3
+     ],
+     [
+      1160,
+      -3
+     ],
+     [
+      1300,
+      -3
+     ]
+    ],
+    "head.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      300,
+      1.04
+     ],
+     [
+      460,
+      0.96,
+      "out"
+     ],
+     [
+      620,
+      1.03,
+      "in"
+     ],
+     [
+      900,
+      1,
+      "spring"
+     ]
+    ],
+    "body.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      460,
+      2,
+      "out"
+     ],
+     [
+      900,
+      -2,
+      "spring"
+     ]
+    ],
+    "arm-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -10
+     ],
+     [
+      560,
+      15,
+      "out"
+     ],
+     [
+      1300,
+      15
+     ],
+     [
+      1650,
+      0
+     ]
+    ],
+    "fore-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      560,
+      -15,
+      "back"
+     ],
+     [
+      690,
+      0
+     ],
+     [
+      820,
+      -25
+     ],
+     [
+      950,
+      0
+     ],
+     [
+      1080,
+      -25
+     ],
+     [
+      1300,
+      -15
+     ],
+     [
+      1650,
+      0
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -5
+     ],
+     [
+      560,
+      -20,
+      "back"
+     ],
+     [
+      1300,
+      -25
+     ]
+    ],
+    "fore-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      560,
+      -25,
+      "back"
+     ],
+     [
+      1300,
+      -20
+     ]
+    ]
+   },
+   "follow": [
+    {
+     "bone": "prop-l",
+     "of": "arm-l",
+     "delayMs": 40,
+     "gain": 0.4
+    }
+   ],
+   "sway": [
+    {
+     "bones": [
+      "leg-l",
+      "leg-c",
+      "leg-r"
+     ],
+     "amp": 5,
+     "periodMs": 1000,
+     "phaseStepMs": 120
+    }
+   ],
+   "swaps": [
+    {
+     "at": 240,
+     "part": "envelope",
+     "variant": "default"
+    },
+    {
+     "at": 1600,
+     "part": "envelope",
+     "variant": "hide"
+    }
+   ],
+   "faces": [
+    {
+     "at": 0,
+     "preset": "notice"
+    },
+    {
+     "at": 460,
+     "preset": "joy"
+    },
+    {
+     "at": 1300,
+     "preset": "alert"
+    },
+    {
+     "at": 1700,
+     "preset": "blink"
+    },
+    {
+     "at": 1780,
+     "preset": "alert"
+    }
+   ],
+   "worn": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      120,
+      0.98,
+      "out"
+     ],
+     [
+      300,
+      0.93
+     ],
+     [
+      460,
+      1.0,
+      "out"
+     ],
+     [
+      620,
+      0.97,
+      "in"
+     ],
+     [
+      900,
+      1,
+      "out"
+     ]
+    ],
+    "root.y": [
+     [
+      0,
+      0
+     ]
+    ],
+    "head.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      300,
+      0.98
+     ],
+     [
+      460,
+      1.0,
+      "out"
+     ],
+     [
+      620,
+      0.98
+     ],
+     [
+      900,
+      1,
+      "out"
+     ]
+    ]
+   }
+  },
+  "item-cleared": {
+   "durationMs": 1200,
+   "tracks": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      140,
+      0.96
+     ],
+     [
+      360,
+      1.02,
+      "out"
+     ],
+     [
+      700,
+      1,
+      "spring"
+     ]
+    ],
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      200,
+      5,
+      "out"
+     ],
+     [
+      500,
+      -2
+     ],
+     [
+      1100,
+      0
+     ]
+    ],
+    "gaze.x": [
+     [
+      0,
+      0
+     ],
+     [
+      200,
+      -3,
+      "out"
+     ],
+     [
+      500,
+      0
+     ]
+    ],
+    "gaze.y": [
+     [
+      0,
+      0
+     ],
+     [
+      200,
+      2,
+      "out"
+     ],
+     [
+      500,
+      0
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      120,
+      -4,
+      "in"
+     ],
+     [
+      380,
+      -20,
+      "back"
+     ],
+     [
+      1000,
+      -20
+     ],
+     [
+      1200,
+      0
+     ]
+    ],
+    "fore-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      380,
+      -30,
+      "back"
+     ],
+     [
+      1000,
+      -30
+     ],
+     [
+      1200,
+      0
+     ]
+    ]
+   },
+   "swaps": [
+    {
+     "at": 300,
+     "part": "tip-r",
+     "variant": "curl"
+    },
+    {
+     "at": 1050,
+     "part": "tip-r",
+     "variant": "default"
+    }
+   ],
+   "faces": [
+    {
+     "at": 0,
+     "preset": "neutral"
+    },
+    {
+     "at": 200,
+     "preset": "joy"
+    },
+    {
+     "at": 520,
+     "preset": "wink"
+    },
+    {
+     "at": 1000,
+     "preset": "neutral"
+    }
+   ],
+   "worn": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      140,
+      0.96
+     ],
+     [
+      360,
+      1.0,
+      "out"
+     ],
+     [
+      700,
+      1,
+      "out"
+     ]
+    ],
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      200,
+      3,
+      "out"
+     ],
+     [
+      500,
+      -1
+     ],
+     [
+      1100,
+      0
+     ]
+    ]
+   }
+  },
+  "poke": {
+   "durationMs": 750,
+   "tracks": {
+    "root.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      2,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ],
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      90,
+      0.94,
+      "out"
+     ],
+     [
+      300,
+      0.99
+     ],
+     [
+      750,
+      1
+     ]
+    ],
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      2,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ],
+    "arm-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      -8,
+      "out"
+     ],
+     [
+      250,
+      30
+     ],
+     [
+      650,
+      0
+     ]
+    ],
+    "fore-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -50
+     ],
+     [
+      650,
+      0
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      -10,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ]
+   },
+   "faces": [
+    {
+     "at": 0,
+     "preset": "flinch"
+    },
+    {
+     "at": 250,
+     "preset": "giggle"
+    },
+    {
+     "at": 650,
+     "preset": "neutral"
+    }
+   ]
+  },
+  "dizzy": {
+   "durationMs": 1600,
+   "tracks": {
+    "root.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -3
+     ],
+     [
+      600,
+      3
+     ],
+     [
+      900,
+      -3
+     ],
+     [
+      1250,
+      0
+     ]
+    ],
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      1250,
+      0
+     ],
+     [
+      1370,
+      5
+     ],
+     [
+      1490,
+      -5
+     ],
+     [
+      1600,
+      0
+     ]
+    ]
+   },
+   "follow": [
+    {
+     "bone": "head",
+     "of": "root",
+     "delayMs": 60,
+     "gain": 1.2
+    }
+   ],
+   "sway": [
+    {
+     "bones": [
+      "arm-l",
+      "arm-r",
+      "leg-l",
+      "leg-c",
+      "leg-r"
+     ],
+     "amp": 10,
+     "periodMs": 600,
+     "phaseStepMs": 90
+    }
+   ],
+   "faces": [
+    {
+     "at": 0,
+     "preset": "dizzy"
+    },
+    {
+     "at": 1250,
+     "preset": "sheepish"
+    }
+   ]
+  },
+  "drop": {
+   "durationMs": 450,
+   "tracks": {
+    "root.sy": [
+     [
+      0,
+      1.03
+     ],
+     [
+      90,
+      0.88,
+      "in"
+     ],
+     [
+      220,
+      1.03,
+      "out"
+     ],
+     [
+      450,
+      1,
+      "spring"
+     ]
+    ],
+    "head.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      90,
+      1.04
+     ],
+     [
+      220,
+      0.98
+     ],
+     [
+      450,
+      1
+     ]
+    ],
+    "leg-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      9,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ],
+    "leg-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      -12,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ],
+    "arm-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      9,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      90,
+      15,
+      "out"
+     ],
+     [
+      450,
+      0,
+      "spring"
+     ]
+    ]
+   },
+   "faces": [
+    {
+     "at": 0,
+     "preset": "flinch"
+    },
+    {
+     "at": 220,
+     "preset": "joy"
+    },
+    {
+     "at": 420,
+     "preset": "neutral"
+    }
+   ],
+   "worn": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      90,
+      0.88,
+      "in"
+     ],
+     [
+      220,
+      1.0,
+      "out"
+     ],
+     [
+      450,
+      1,
+      "out"
+     ]
+    ]
+   }
+  },
+  "inbox-zero": {
+   "durationMs": 2000,
+   "tracks": {
+    "root.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -3
+     ],
+     [
+      550,
+      3
+     ],
+     [
+      850,
+      -3
+     ],
+     [
+      1150,
+      0,
+      "out"
+     ]
+    ],
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      250,
+      0.94
+     ],
+     [
+      400,
+      1.03
+     ],
+     [
+      550,
+      0.94
+     ],
+     [
+      700,
+      1.03
+     ],
+     [
+      850,
+      0.94
+     ],
+     [
+      1000,
+      1.03
+     ],
+     [
+      1150,
+      0.95
+     ],
+     [
+      1400,
+      1,
+      "spring"
+     ]
+    ],
+    "arm-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      6
+     ],
+     [
+      550,
+      22,
+      "out"
+     ],
+     [
+      850,
+      6
+     ],
+     [
+      1150,
+      25,
+      "out"
+     ],
+     [
+      1600,
+      8
+     ],
+     [
+      2000,
+      0
+     ]
+    ],
+    "fore-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      550,
+      -30
+     ],
+     [
+      850,
+      0
+     ],
+     [
+      1150,
+      -45,
+      "back"
+     ],
+     [
+      1600,
+      -20
+     ],
+     [
+      2000,
+      0
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -30,
+      "back"
+     ],
+     [
+      550,
+      5
+     ],
+     [
+      850,
+      -30,
+      "back"
+     ],
+     [
+      1150,
+      -35,
+      "back"
+     ],
+     [
+      1600,
+      -10
+     ],
+     [
+      2000,
+      0
+     ]
+    ],
+    "fore-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -30
+     ],
+     [
+      550,
+      0
+     ],
+     [
+      850,
+      -30
+     ],
+     [
+      1150,
+      -45,
+      "back"
+     ],
+     [
+      1600,
+      -15
+     ],
+     [
+      2000,
+      0
+     ]
+    ]
+   },
+   "sway": [
+    {
+     "bones": [
+      "leg-l",
+      "leg-c",
+      "leg-r"
+     ],
+     "amp": 4,
+     "periodMs": 600,
+     "phaseStepMs": 100
+    }
+   ],
+   "swaps": [
+    {
+     "at": 1600,
+     "part": "tip-l",
+     "variant": "curl"
+    },
+    {
+     "at": 1600,
+     "part": "tip-r",
+     "variant": "curl"
+    }
+   ],
+   "faces": [
+    {
+     "at": 0,
+     "preset": "notice"
+    },
+    {
+     "at": 250,
+     "preset": "joy"
+    },
+    {
+     "at": 1600,
+     "preset": "content"
+    }
+   ],
+   "worn": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      250,
+      0.94
+     ],
+     [
+      400,
+      1.0
+     ],
+     [
+      550,
+      0.94
+     ],
+     [
+      700,
+      1.0
+     ],
+     [
+      850,
+      0.94
+     ],
+     [
+      1000,
+      1.0
+     ],
+     [
+      1150,
+      0.95
+     ],
+     [
+      1400,
+      1,
+      "out"
+     ]
+    ]
+   }
+  },
+  "idle-look": {
+   "durationMs": 2000,
+   "tracks": {
+    "gaze.x": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -4,
+      "out"
+     ],
+     [
+      900,
+      -4
+     ],
+     [
+      1100,
+      4,
+      "out"
+     ],
+     [
+      1400,
+      3
+     ],
+     [
+      1800,
+      0
+     ]
+    ],
+    "gaze.y": [
+     [
+      0,
+      0
+     ],
+     [
+      1100,
+      0
+     ],
+     [
+      1400,
+      -3
+     ],
+     [
+      1800,
+      0
+     ]
+    ],
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -3,
+      "out"
+     ],
+     [
+      900,
+      -3
+     ],
+     [
+      1100,
+      3,
+      "out"
+     ],
+     [
+      1400,
+      4
+     ],
+     [
+      1800,
+      0
+     ]
+    ],
+    "head.y": [
+     [
+      0,
+      0
+     ],
+     [
+      1100,
+      0
+     ],
+     [
+      1400,
+      -2
+     ],
+     [
+      1800,
+      0
+     ]
+    ]
+   },
+   "faces": [
+    {
+     "at": 0,
+     "preset": "neutral"
+    },
+    {
+     "at": 980,
+     "preset": "blink"
+    },
+    {
+     "at": 1100,
+     "preset": "neutral"
+    }
+   ]
+  },
+  "idle-stretch": {
+   "durationMs": 2400,
+   "tracks": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      400,
+      0.96
+     ],
+     [
+      1000,
+      1.02,
+      "out"
+     ],
+     [
+      1500,
+      1.02
+     ],
+     [
+      1900,
+      0.97,
+      "in"
+     ],
+     [
+      2300,
+      1,
+      "spring"
+     ]
+    ],
+    "head.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      1000,
+      1.01,
+      "out"
+     ],
+     [
+      1500,
+      1.01
+     ],
+     [
+      1900,
+      1
+     ]
+    ],
+    "arm-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      400,
+      -5
+     ],
+     [
+      1000,
+      18
+     ],
+     [
+      1500,
+      20
+     ],
+     [
+      1900,
+      -8,
+      "in"
+     ],
+     [
+      2300,
+      0,
+      "spring"
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      400,
+      5
+     ],
+     [
+      1000,
+      20
+     ],
+     [
+      1500,
+      22
+     ],
+     [
+      1900,
+      8,
+      "in"
+     ],
+     [
+      2300,
+      0,
+      "spring"
+     ]
+    ],
+    "fore-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      1000,
+      -15
+     ],
+     [
+      1500,
+      -15
+     ],
+     [
+      1900,
+      0
+     ]
+    ],
+    "fore-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      1000,
+      -35
+     ],
+     [
+      1500,
+      -35
+     ],
+     [
+      1900,
+      0
+     ]
+    ],
+    "leg-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      1000,
+      6
+     ],
+     [
+      1500,
+      6
+     ],
+     [
+      1900,
+      0
+     ]
+    ],
+    "leg-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      1000,
+      -6
+     ],
+     [
+      1500,
+      -6
+     ],
+     [
+      1900,
+      0
+     ]
+    ]
+   },
+   "faces": [
+    {
+     "at": 0,
+     "preset": "yawn"
+    },
+    {
+     "at": 1500,
+     "preset": "sleepy"
+    },
+    {
+     "at": 1900,
+     "preset": "content"
+    },
+    {
+     "at": 2250,
+     "preset": "neutral"
+    }
+   ],
+   "worn": {
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      400,
+      0.96
+     ],
+     [
+      1000,
+      1.0,
+      "out"
+     ],
+     [
+      1500,
+      1.0
+     ],
+     [
+      1900,
+      0.97,
+      "in"
+     ],
+     [
+      2300,
+      1,
+      "out"
+     ]
+    ],
+    "head.sy": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
+  },
+  "idle-fidget": {
+   "durationMs": 1800,
+   "tracks": {
+    "fore-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -30,
+      "back"
+     ],
+     [
+      475,
+      0
+     ],
+     [
+      650,
+      -30
+     ],
+     [
+      825,
+      0
+     ],
+     [
+      1000,
+      -10
+     ],
+     [
+      1300,
+      0
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      -10
+     ],
+     [
+      1000,
+      -10
+     ],
+     [
+      1300,
+      0
+     ]
+    ],
+    "fore-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      1100,
+      0
+     ],
+     [
+      1250,
+      -35,
+      "back"
+     ],
+     [
+      1500,
+      0
+     ]
+    ],
+    "gaze.x": [
+     [
+      0,
+      0
+     ],
+     [
+      300,
+      3,
+      "out"
+     ],
+     [
+      1000,
+      3
+     ],
+     [
+      1100,
+      -3
+     ],
+     [
+      1500,
+      0
+     ]
+    ]
+   },
+   "swaps": [
+    {
+     "at": 300,
+     "part": "tip-r",
+     "variant": "curl"
+    },
+    {
+     "at": 1000,
+     "part": "tip-r",
+     "variant": "default"
+    },
+    {
+     "at": 1100,
+     "part": "tip-l",
+     "variant": "curl"
+    },
+    {
+     "at": 1500,
+     "part": "tip-l",
+     "variant": "default"
+    }
+   ],
+   "faces": [
+    {
+     "at": 0,
+     "preset": "neutral"
+    },
+    {
+     "at": 500,
+     "preset": "content"
+    },
+    {
+     "at": 1500,
+     "preset": "neutral"
+    }
+   ]
+  },
+  "incident-start": {
+   "durationMs": 1900,
+   "accessories": "hide",
+   "tracks": {
+    "head.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -5,
+      "out"
+     ],
+     [
+      550,
+      -2
+     ],
+     [
+      850,
+      4
+     ],
+     [
+      1150,
+      0,
+      "spring"
+     ]
+    ],
+    "gaze.x": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -4,
+      "out"
+     ],
+     [
+      550,
+      -3
+     ],
+     [
+      800,
+      0
+     ]
+    ],
+    "gaze.y": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      3,
+      "out"
+     ],
+     [
+      550,
+      2
+     ],
+     [
+      800,
+      -2
+     ],
+     [
+      1000,
+      0
+     ]
+    ],
+    "head.y": [
+     [
+      0,
+      0
+     ],
+     [
+      1150,
+      0
+     ],
+     [
+      1300,
+      4
+     ],
+     [
+      1450,
+      0,
+      "out"
+     ]
+    ],
+    "arm-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      250,
+      -8
+     ],
+     [
+      550,
+      20,
+      "back"
+     ],
+     [
+      820,
+      30
+     ],
+     [
+      1050,
+      15
+     ],
+     [
+      1500,
+      0
+     ]
+    ],
+    "fore-l.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      550,
+      -30
+     ],
+     [
+      820,
+      -50
+     ],
+     [
+      1050,
+      -10
+     ],
+     [
+      1500,
+      0
+     ]
+    ],
+    "arm-r.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      550,
+      -6
+     ],
+     [
+      850,
+      -25
+     ],
+     [
+      1150,
+      0,
+      "out"
+     ],
+     [
+      1500,
+      0
+     ]
+    ],
+    "root.sy": [
+     [
+      0,
+      1
+     ],
+     [
+      250,
+      0.97
+     ],
+     [
+      850,
+      1.0
+     ],
+     [
+      1000,
+      0.95,
+      "in"
+     ],
+     [
+      1300,
+      1,
+      "out"
+     ]
+    ],
+    "body.rot": [
+     [
+      0,
+      0
+     ],
+     [
+      550,
+      -2
+     ],
+     [
+      1000,
+      2
+     ],
+     [
+      1300,
+      0,
+      "spring"
+     ]
+    ]
+   },
+   "swaps": [
+    {
+     "at": 200,
+     "part": "helmet",
+     "variant": "default"
+    }
+   ],
+   "mounts": [
+    {
+     "at": 200,
+     "part": "helmet",
+     "mount": "hand"
+    },
+    {
+     "at": 820,
+     "part": "helmet",
+     "mount": "default",
+     "blendMs": 260
+    }
+   ],
+   "faces": [
+    {
+     "at": 0,
+     "preset": "notice"
+    },
+    {
+     "at": 900,
+     "preset": "flinch"
+    },
+    {
+     "at": 1150,
+     "preset": "determined"
+    },
+    {
+     "at": 1600,
+     "preset": "neutral"
+    }
+   ]
+  }
+ }
+}

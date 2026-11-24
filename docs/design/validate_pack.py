@@ -19,7 +19,7 @@ MAX_SEQUENCE, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_PACK_BYTES = 8, 64, 96 * 1024, 4 
 RIG_MAX_BONES, RIG_MAX_DEPTH, RIG_MAX_PARTS, RIG_MAX_TRACKS, RIG_MAX_KEYS = 24, 8, 48, 40, 48
 RIG_MAX_PART_SIDE, RIG_MAX_PART_BYTES, RIG_MIN_CLIP_MS = 1024, 160 * 1024, 100
 RIG_EASES = {'linear', 'hold', 'inOut', 'out', 'in', 'back', 'spring'}
-RIG_RANGES = {'x': (-64, 64), 'y': (-64, 64), 'rot': (-180, 180), 'sx': (0.3, 1.5), 'sy': (0.3, 1.5), 'opacity': (0, 1)}
+RIG_RANGES = {'x': (-64, 64), 'y': (-64, 64), 'rot': (-180, 180), 'sx': (0.3, 1.5), 'sy': (0.3, 1.5), 'kx': (-30, 30), 'opacity': (0, 1)}
 
 
 def check_pack(pack, union=PACKS['mona-pet-v1']):
@@ -70,7 +70,8 @@ def check_pack(pack, union=PACKS['mona-pet-v1']):
             checks.append({'path': relative, 'size': [width, height], 'alphaRange': [min(alpha), max(alpha)],
                            'fullyTransparentPixels': alpha.count(0), 'boundsAlphaOver8': bbox,
                            'visibleBottomAlphaOver0': visible_bbox[3], 'sha256': digest})
-        assert len(poses) >= 2, f'{state} must have visible animation keyframes'
+        # A rig pack's attention and urgent are still poses (its clips do the moving); idle still blinks.
+        assert len(poses) >= 2 or (manifest['schemaVersion'] >= 3 and state != 'idle'), f'{state} must have visible animation keyframes'
         resolve(clip['staticFallback'])
         results[state] = {'loop': clip['loop'], 'durationMs': sum(clip['durationMs']), 'distinctFrames': len(poses), 'files': checks}
     assert manifest['states']['idle']['loop']
@@ -78,7 +79,7 @@ def check_pack(pack, union=PACKS['mona-pet-v1']):
     assert not manifest['states']['urgent']['loop']
     assert sum(manifest['states']['attention']['durationMs']) <= 2000
     assert sum(manifest['states']['urgent']['durationMs']) <= 2000
-    packing = json.loads((pack / 'packing.json').read_text())
+    packing = json.loads((pack / 'packing.json').read_text()) if (pack / 'packing.json').exists() or manifest['schemaVersion'] < 3 else {}
     for relative, expected in packing.get('sourceSha256', {}).items():
         assert sha256_png(resolve(relative)) == expected
     for sheet in packing.get('sheets', {}).values():
@@ -352,6 +353,11 @@ def check_fx(directory=FX):
 
 if __name__ == '__main__':
     report = {pack_id: check_pack(ROOT / 'assets/mascots' / pack_id, union) for pack_id, union in PACKS.items()}
+    # #138 cutout-rig packs (review builds stage them with RIG_PACKS=1), under the same skin unions.
+    for pack_id, union in PACKS.items():
+        rig_pack = ROOT / 'assets/mascots' / pack_id / 'rig/pack'
+        if (rig_pack / 'manifest.json').exists():
+            report[f'{pack_id}/rig'] = check_pack(rig_pack, union)
     if FX.joinpath('fx-z.png').exists():
         report['shared-fx-v1'] = check_fx()
     output = json.dumps(report, indent=2) + '\n'

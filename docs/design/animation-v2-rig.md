@@ -380,12 +380,20 @@ Apply in order; a "no" on 1 to 4 means regenerate, on 5 to 8 means an edit pass.
 
 After the PM's check the designer cuts and assembles (section 6.4) and judges the assembled rest pose against idle-00 by eye on a contact sheet.
 
-### 6.4 Assembly (designer, D3)
+### 6.4 Assembly (designer, D3, as built)
 
-1. `rig_cut.py` splits each sheet into islands (alpha > 8, 8-connected), crops each with a 4 px margin and names them by layout order, which the designer confirms on a contact sheet.
-2. It normalizes the sheet's scale so the assembled reference matches idle-00 (head width), then resamples the parts to 2 px per unit.
-3. It proposes each part's rest offset by matching it against the assembled reference (and idle-00), then the designer adjusts pivots and offsets in `rig.json` and re-renders the rest pose next to idle-00 until they agree.
-4. Face anchors are measured on idle-00's eyes and mouth.
+Each skin has a rig source, `assets/mascots/<skin>/rig/source.json`. It lists every part as an island box on a sheet (from `rig_cut.py --check`) plus its scale, optional `stretch`, rotation, flip and rest-pose centre; then the bones, face presets, still poses, clips and accessories.
+
+`swift run -c release RigBake assets/mascots/<skin>/rig/source.json [--preview <png>]` does the rest:
+- cuts each island (largest component in the box; `alphaFloor` drops generated glow or fringe);
+- resamples it and pads a part's variants to one shared centre;
+- writes the part images at 2 px per unit;
+- bakes the states from the still poses with the app's own evaluator, and writes the v3 manifest with checksums into `assets/mascots/<skin>/rig/pack/`;
+- loads the result exactly as the app loads a bundled pack, and names any clip sample, and the part, that leaves the reserve.
+
+`--preview` draws the rest pose next to idle-00, every joint at both ends of its range with pivots marked, and each clip at 12 instants. Re-running after a sheet changes is the whole update.
+
+The rig packs are not the bundled art yet. `RIG_PACKS=1 BUNDLE_ID_SUFFIX=.x scripts/build-app.sh` bundles them for review builds (it is refused without a suffix). `validate_pack.py` checks them as well as the bundled packs.
 
 ## 7. Engine (built in D2)
 
@@ -524,3 +532,129 @@ Render-check draws `new-item` with and without the hat, and `incident-start`, at
 1. Preemption uses the 120 ms transform blend; the v1 no-blend rule only existed because frames could not blend.
 2. 60 fps during clips if a clip costs under ~10% of a core on a release build, otherwise 30. Measured 9.9% with layers (section 7.4), so 60 ships, with 30 fps (6.7%) one constant away.
 3. The 0.96 rest scale is accepted: lively hops matter more than 4% size. In practice the headroom allows a 4% stretch plus a 3-unit hop (section 5.4).
+
+## 9. D3 assembly findings
+
+- **Sheet scale.** Codex drew everything larger than asked, but consistently within a part. Per-part resampling (Mona head 0.83, tentacles 0.55 to 0.62, body 0.72; Little Chris head and hair 0.58, torso 0.50, sleeves 0.42, legs 0.46, hands 0.22) matches idle-00. The head lines up with idle-00's ears and face plate almost exactly. No re-generation was needed.
+- **Tentacles.** The slimming edit only changed the sheet's reference. Resampling the pieces across their axis (`stretch` 0.78) reads close to idle-00's tapered tentacles.
+- **Faces.** Features placed on idle-00's eye and mouth anchors, on the parts sheet's blank head, look right for both skins. Little Chris's head is front-on, so his features are level and symmetric.
+- **Headroom.** Mona's rest pose is nearly as wide as her union, and squash widens her (area rule), so she uses a 0.94 rest scale; Little Chris keeps 0.96. With the incident helmet worn the headroom is the helmet's: every clip that keeps accessories has `worn` tracks (no stretch above 1, no hop). Attention poses alert by leaning and waving, not by standing taller.
+- **Limbs and the union.** A long limb swung straight out sideways leaves both skins' unions. Raises go through bent elbows (Little Chris) or small base rotations plus tip curls (Mona), and props pop in once the limb is up. Mona's arm tentacles grow from under the head, so raising one past about 60° hides it behind the head.
+- **Ground.** `validate_pack.py` caught Mona's baked tentacle tips 8 units below the ground line; her legs now tuck further under the body.
+- **Dark backgrounds.** Mona's black body nearly disappears on a dark desktop (as with the v1 frames). A light rim on the parts, or a dark-mode outline, is the fix; it is a design follow-up.
+- **Frame dump for review.** `GitHubPet --dump-clip-frames <dir> <skin>` (dev builds only) renders every clip at 60 Hz with the live window's layer renderer, on light and dark, at 128 pt @2x, plus one contact sheet per clip, with and without the hat.
+
+## 10. Little Chris audit (after Chris's review: "the face is off and the neck is too long")
+
+Compared side by side with idle-00 at 64, 128 and 256 pt @2x, rest pose and four clip instants (new-item 500 ms, item-cleared 500 ms, poke 330 ms, inbox-zero 660 ms on dark).
+
+| Area | idle-00 | Rig (sheets cc90bd0, b1b32fa, 76a96d8) | Verdict |
+|---|---|---|---|
+| Expression | Big open smile with teeth, raised bold brows, bright wide eyes: cheerful | Sleepy, almost blank: tiny mouth buried in the beard, heavy-lidded eyes | Off-model |
+| Eyes | Large (≈17 × 15 units), dark brown, two highlights, close under the brows | Smaller, set high under the hairline; the eye images include a lid crease that reads as droopy | Off |
+| Brows | Thick, dark, arched, close to the eyes | Lighter and thinner; the right brow drifts toward the ear (placement and the head's front-on view disagree with idle-00's slight turn) | Off |
+| Mouth | Wide (≈22 units) open smile, white teeth, reads at 64 pt | Separate mouth layers at 0.2 scale vanish into the beard; the beard part has no mouth opening | Off |
+| Neck | None visible: the beard sits on the hood collar | A visible skin neck (the head part's long neck stub) plus the hood's dark neck hole | Off ("neck too long") |
+| Head shape and hair | Round head, hair tall and spiky, fused with the head; head ≈ 45% of height | Egg-shaped bald head with the hair as a separate cap that sits like a hat and bulges over the ears; head ≈ 40% of height | Off |
+| Beard | Full, dark, covers the jaw and frames the mouth | Thinner, more orange, no mouth opening | Off |
+| Torso | Compact hoodie, soft shoulders | Wider, puffy shoulders | Slightly off |
+| Sleeves | Smooth fleece | Ribbed, quilted bands, a visible break at the elbow joint | Off |
+| Hands | Chunky, warm skin matching the face | Smaller, paler, with a generated glow at the edges (cut, but the colour is lighter than the head) | Off |
+| Legs and shoes | Tan trousers, navy sneakers | Close match | OK |
+| Helmet | — | Fits, hair visible at the sides | OK |
+
+Root causes: (1) the blank-head plus separate-features approach. Every feature was drawn without the face around it, then scaled into place. Chris's look depends on how his eyes, brows, smile and beard work together, so the parts never reassemble into his face. (2) The parts sheet was a new drawing of him, not idle-00, so head shape, hair and beard drifted before assembly started.
+
+### 10.1 Redraw plan
+
+1. **One painted head, face included.** The head part is Chris's whole head, painted as in idle-00: hair, ears, beard, face and his slight turn, with a short neck stub (about 6 units) that tucks under the hood collar. No separate hair part (follow-through moves to the head and body instead).
+2. **Expressions as face-region variants of that exact head.** Codex edits the base head once per expression, with a strict preserve list, so only the eye, brow and mouth region changes. RigBake aligns each variant to the base head by its silhouette (hair, ears and beard outline) and keeps only a feathered face region (an ellipse over brows, eyes and mouth) as the variant image. Swapping it changes the expression on the same head; the head's outline, hair and beard never change, so nothing drifts at the edges.
+3. **Body redrawn to match idle-00.** A compact hoodie torso whose hood collar rises in front of the neck stub (the torso draws over the head's neck), smooth one-tone sleeves in two segments with rounded joints and no ribbing, and the chunky hands, with no glow and his face's skin tone. The legs and shoes stay.
+4. **Builder support.** RigBake gains silhouette alignment and a feathered face mask for variants. Draw order becomes legs, head, torso (collar over the neck), arms.
+
+### 10.2 Codex prompts (priority order)
+
+References: (A) `little-chris-v1/frames/idle-00.png`, (B) `little-chris-v1/source/little-chris-poses.png`. Each sheet is 1254 × 1254 with a fully transparent background.
+
+**C1. Base head (most important).** References A, B.
+
+> Paint the head of the character in reference image 1 exactly as it appears there, as a single large isolated piece on a fully transparent background, 1254 × 1254, the head about 700 pixels tall and centred. Copy it faithfully: the same warm brown spiky hair, the same face with his big bright brown eyes, thick dark arched eyebrows, wide open friendly smile with white teeth, full dark brown beard and moustache, ears, skin tone, and his slight turn toward the viewer's left. Same soft painted style, outline weight and upper-left lighting as reference image 1. Below the beard, continue a short neck of plain skin only a little way (about a tenth of the head's height) and end it with a rounded edge, as if it disappears into a collar. Head only: no hoodie, no collar, no shoulders. No cast shadow, no glow, no background, no text, no watermark.
+
+**C2. Expressions (edit of C1's output; one generation per sheet).** References: C1 output (image 1), A (image 2).
+
+> Edit reference image 1 into a 3 × 3 grid on a transparent background, 1254 × 1254. Every cell contains the head from reference image 1, copied exactly: the same size, the same position in the cell, the same hair, ears, head outline, beard and moustache outline, skin tone, lighting and turn. Only the eyes, eyebrows and mouth change, drawn in the same style as reference image 2, and the mouth always sits inside the beard as in reference image 2. Cells, left to right, top to bottom:
+> 1. neutral: exactly as reference image 1;
+> 2. blink: both eyes gently closed (curved lids), the same smile;
+> 3. half-closed: lids half down, the same smile;
+> 4. joy: eyes closed in happy upward arcs, big open grin, brows raised;
+> 5. surprise: eyes wide open and round, brows high, small round open mouth;
+> 6. flinch: eyes squeezed shut, brows up, grin;
+> 7. dizzy: two-turn spiral eyes, wavy closed mouth, brows tilted up in the middle;
+> 8. determined: eyes open, brows slightly lowered at the inner ends (calm, not angry), small closed straight mouth;
+> 9. yawn: eyes closed, mouth a tall open oval.
+>
+> Keep unchanged in every cell: hair, ears, head outline, beard outline, skin tone, scale and position. No shadows, glow, background, text or watermark.
+
+**C2b. More expressions (same edit).** The same preamble, then cells: 1 wink (left eye open, right eye closed, grin); 2 giggle (eyes closed happy, open laugh with tongue tip); 3 sheepish (eyes half-closed, brows tilted up in the middle, small closed smile); 4 content (eyes closed happy, gentle closed smile); 5 to 9 empty.
+
+**C3. Body.** References A, B, C1 output.
+
+> A transparent sprite sheet for 2D cutout animation, 1254 × 1254, of the body of the character in reference image 1, at the scale that fits the head in reference image 3. Same soft painted style, outline and lighting, matching reference image 1's proportions: a compact chibi body. Each piece is isolated with at least 40 pixels of clear space around it, none touching:
+> 1. the hoodie torso with no arms: navy fleece, white drawstrings, front pocket, soft rounded shoulders no wider than in reference image 1, and the hood bunched as a collar that rises at the front and sides so it would hide a short neck; the inside of the collar is dark navy; rounded filled armholes;
+> 2. two upper sleeves, smooth navy fleece in one tone with no ribbing or bands, rounded at the shoulder end and at the elbow end;
+> 3. two lower sleeves, smooth navy fleece with a ribbed cuff only at the wrist, rounded at the elbow end;
+> 4. two hands, chunky and cartoon-simple, the same warm skin tone as the face in reference image 3, each with a short wrist stub: relaxed, open palm waving, thumbs-up, a loose fist that could hold a small object, and fingertips raised (giggling), for the left and for the right.
+>
+> Hard edges against the transparent background: no glow, no shadow, no haze, no background, no text, no watermark.
+
+### 10.3 Validation checklist (in addition to section 6.3)
+
+1. **C1 is idle-00's head.** Next to idle-00, scaled to the same head height: the eyes, brows, smile, beard shape, hair shape and turn match. If it doesn't read as the same face at a glance, regenerate. Do not edit.
+2. **The neck is short:** at most about a tenth of the head's height below the beard, with a rounded end.
+3. **C2 cells share the head.** Overlay any cell on cell 1 (the builder prints the silhouette difference): the hair, ears and beard outline differ by no more than a few pixels, and only the face region changes. A cell whose head shifted or changed shape gets an edit pass for that cell.
+4. **Expressions read at 64 pt:** eyes and mouth are clearly visible, and the mouth is inside the beard.
+5. **C3 has no glow:** corners and the gaps between pieces are alpha 0, and no soft halo shows on a dark background. Hands match the face's skin tone. Sleeves have no ribbing except the cuff.
+6. **Proportions.** Assembled with C1, the head is about 45% of the character's height, as in idle-00.
+
+## 11. Mona audit (Chris: "the tentacles should look as good as before the puppet")
+
+| Area | idle-00 | Rig (sheet d0ce36e, resampled) | Verdict |
+|---|---|---|---|
+| Head, ears, face plate, face layers | — | Matches idle-00 closely at 128 pt | OK |
+| Front tentacles | Five tapered tentacles that curl outward at the tips, with a gloss highlight running along each, overlapping into one flowing skirt | Three uniform-thickness "sausages" with bulb ends, slimmed by resampling, which flattens the gloss; the skirt reads as separate sticks | Off |
+| Body | The mantle is hidden; tentacles flow straight out from under the head | A visible dome with two stubs between the legs | Off |
+| Arm tentacles | The raised right tentacle curls up with a tapered tip; the left one curls down and out | Bulb-ended banana shapes, chunky tips | Off |
+| Dark background | The black body nearly disappears | Same | Follow-up (rim light) |
+
+**Root cause.** Codex redrew the tentacles as generic separable pieces. idle-00's quality comes from how the five tentacles taper, curl and overlap as one painted skirt; separating them loses that, whatever they are scaled to.
+
+### 11.1 Options
+
+- **(a) Codex repaints each tentacle as a tapered curl.** Each would still be a separate painting, so the skirt's overlaps and gloss continuity would be approximations. The quality is uncertain, and it is several generations.
+- **(b) One painted lower-body piece plus separate arms.** The lower body matches idle-00's look, with whole-piece motion only.
+- **(c, chosen) Lower body cut from idle-00's own source painting.** `mona-pet-v1/sources/idle-sheet.png` cell 0 is the exact painting idle-00 was packed from, at about 2.45 px per canvas unit, more than the rig's 2×. Codex edits that cell only to remove the head and the raised right tentacle, repainting just the areas they covered (the mantle continues up under the head). Every other pixel, the five lower tentacles and the left curl, stays idle-00's. At rest, the rig is idle-00's painting: the head over this lower body, plus the right tentacle in its rest position.
+  - **Motion:** the lower body squashes and stretches with the root and sways with a new **shear** channel (`kx`, degrees) about the mantle top. Tips swing while the roots stay under the head, which reads as a soft skirt sway. It also gets small rotations for the lean.
+  - **Gestures** use the right tentacle, repainted by Codex as base, tip, curl and grip pieces, with idle-00's tentacle as the exact reference. It is one tentacle, so it is one consistent painting. The head keeps the parts-sheet head and the face layers, which already match.
+
+### 11.2 Codex prompts for Mona (priority order)
+
+**M1. Lower body from idle-00's painting (an edit).** Reference image 1: the top-left cell of `mona-pet-v1/sources/idle-sheet.png`, cropped to 627 × 627 (PM: crop x 0–627, y 0–627). Request the same size, transparent.
+
+> Edit reference image 1. Remove the head completely (the black hood with the ears and the cream face) and remove the single raised tentacle on the viewer's right that curls upward beside the head. Repaint only the areas they covered: the black body continues smoothly upward into a softly rounded top where the head was, in the same glossy near-black paint, soft gray highlight and dark outline, and the body's right edge is clean where the raised tentacle joined. Keep every other pixel exactly as it is: the five lower tentacles, their curls, gloss highlights, outline and the left tentacle. Transparent background. No head, no face, no new tentacles, no shadow, no glow, no text, no watermark.
+
+**M2. The right arm tentacle as gesture pieces.** References: (1) the same crop, (2) `mona-pet-v1/frames/idle-00.png`.
+
+> A transparent sprite sheet, 1254 × 1254, of the raised tentacle on the viewer's right in reference image 1 (the one that curls upward beside the head), painted exactly like it: the same taper, curl, glossy near-black paint, gray highlight and outline, at twice the size it has in reference image 1. Each piece isolated with at least 40 pixels of clear space:
+> 1. the whole tentacle exactly as in reference image 1, with its root extended a little into a rounded end that would tuck under the body;
+> 2. the same tentacle split at its bend into two pieces: the base (rounded root end, rounded end at the bend) and the tip (rounded end at the bend, the tapered curled tip);
+> 3. the tip piece curled into a neat round loop;
+> 4. the tip piece wrapped in a C shape as if gripping a small object, as two pieces (behind the object and in front of it).
+>
+> No shadow, no glow, no background, no text, no watermark.
+
+### 11.3 Validation (Mona)
+
+1. **M1 is pixel-faithful.** Overlay M1 on the crop: outside the removed head and tentacle, the difference is invisible. If Codex repainted the tentacles, regenerate with a smaller edit, or mask the head area for the edit if the tool allows it.
+2. **The mantle top is rounded and continuous**, and reaches high enough that the head covers it with 15 or more units of overlap.
+3. **M2 piece 1 overlays the original tentacle** in the crop, at half size, within a few pixels.
+4. **At rest, the assembled rig against idle-00 at 128 pt cannot be told apart** (RigBake's preview shows them side by side and as an overlay).

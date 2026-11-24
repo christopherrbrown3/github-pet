@@ -86,6 +86,15 @@ private func pose(_ ms: Double, angle: Double = 0) -> MascotPose {
         }
     }
 
+    @Test func shearSwingsWhatIsBelowThePivotAndKeepsThePivot() {
+        let sheared = RigEvaluator.pose(rig, channels: ["body.kx": 10]).bones["body"]!
+        let rest = RigEvaluator.pose(rig, channels: [:]).bones["body"]!
+        let pivot = CGPoint(x: 128, y: 200)
+        #expect(abs(pivot.applying(sheared).x - pivot.applying(rest).x) < 1e-9)
+        let below = CGPoint(x: 128, y: 230)
+        #expect(below.applying(sheared).x > below.applying(rest).x + 4, "a positive shear swings the hem right")
+    }
+
     @Test func facePresetsExpandAndAnExplicitSwapWinsAtTheSameInstant() {
         func image(_ part: String, _ ms: Double, _ clip: RigSpec.Clip) -> String? {
             RigEvaluator.pose(rig, clip: clip, at: ms).parts.first { $0.part == part }?.image
@@ -140,6 +149,21 @@ private func pose(_ ms: Double, angle: Double = 0) -> MascotPose {
         #expect(abs(shoulder.x - rest.x) < 1e-6 && abs(shoulder.y - rest.y) < 1e-6)
         let hand = CGPoint(x: 86, y: 190).applying(raised.bones["hand-l"]!)
         #expect(hand.x < shoulder.x - 30 && abs(hand.y - shoulder.y) < 4, "positive rotation is clockwise: down → left")
+    }
+}
+
+@Suite struct ClipReplayTests {
+    @Test func replayIgnoresCooldownsButKeepsGatesAndPriorities() {
+        var scheduler = ClipScheduler(seed: 1)
+        let allowed = ClipScheduler.Permissions(motion: true, alerts: true)
+        #expect(scheduler.replay(.inboxZero, now: t0, permissions: allowed, length: 2) == .started)
+        // inbox-zero's 30 min cooldown would block a second request; replay plays it again.
+        #expect(scheduler.request(.inboxZero, now: t0 + 3, permissions: allowed, duration: { _ in 2 }) == .coolingDown)
+        #expect(scheduler.replay(.inboxZero, now: t0 + 3, permissions: allowed, length: 2) == .started)
+        #expect(scheduler.replay(.poke, now: t0 + 3.5, permissions: allowed, length: 0.75) == .outranked, "priorities still apply")
+        #expect(scheduler.replay(.poke, now: t0 + 9, permissions: .init(motion: false, alerts: true), length: 0.75) == .suppressed,
+                "Reduce Motion still wins")
+        #expect(scheduler.replay("wave", now: t0 + 9, permissions: allowed, length: 1) == .unavailable)
     }
 }
 

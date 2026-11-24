@@ -13,6 +13,11 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public struct Canvas: Codable, Equatable, Sendable {
         public var width: Int
         public var height: Int
+
+        public init(width: Int, height: Int) {
+            self.width = width
+            self.height = height
+        }
     }
 
     public struct StateSpec: Codable, Equatable, Sendable {
@@ -20,6 +25,13 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
         public var durationMs: [Int]
         public var loop: Bool
         public var staticFallback: String
+
+        public init(frames: [String], durationMs: [Int], loop: Bool, staticFallback: String) {
+            self.frames = frames
+            self.durationMs = durationMs
+            self.loop = loop
+            self.staticFallback = staticFallback
+        }
     }
 
     /// A one-shot clip (v2): plays once and holds its last frame until it ends. No static fallback:
@@ -78,6 +90,23 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     /// Schema v3 (#138, docs/design/animation-v2-rig.md): a cutout rig whose clips play instead of
     /// frame clips of the same name. States stay baked frames, so idle draws exactly as before.
     public var rig: RigSpec?
+
+    public init(schemaVersion: Int, id: String, name: String, canvas: Canvas, anchor: [Int], states: [String: StateSpec],
+                frameSha256: [String: String]? = nil, clips: [String: ClipSpec]? = nil, accessories: [String: AccessorySpec]? = nil,
+                points: Points? = nil, framePoints: [String: Points]? = nil, rig: RigSpec? = nil) {
+        self.schemaVersion = schemaVersion
+        self.id = id
+        self.name = name
+        self.canvas = canvas
+        self.anchor = anchor
+        self.states = states
+        self.frameSha256 = frameSha256
+        self.clips = clips
+        self.accessories = accessories
+        self.points = points
+        self.framePoints = framePoints
+        self.rig = rig
+    }
 
     /// Whether the v2 additions apply (a v1 manifest ignores them).
     public var isV2: Bool { schemaVersion >= 2 }

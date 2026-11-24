@@ -20,6 +20,8 @@ let package = Package(
             "GitHubPetCore",
             .product(name: "Sparkle", package: "Sparkle"),
         ]),
+        // Designer tool (#138): builds a cutout-rig pack (schema v3) from its rig source. Not shipped.
+        .executableTarget(name: "RigBake", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetCoreTests", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetAppTests", dependencies: ["GitHubPet"]),
     ]
