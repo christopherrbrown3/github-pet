@@ -19,6 +19,10 @@ struct MascotView: View {
     /// QA runner only: draw one still at this app-clock instant instead of the live timeline,
     /// so the rendered phase matches the recorded scenario clock. Production leaves it nil.
     var renderDate: Date?
+    /// Render-check only (#138): draw this pack (e.g. with placeholder clips) instead of the model's.
+    var packOverride: MascotPack?
+
+    private var pack: MascotPack? { packOverride ?? model.pack }
 
     var body: some View {
         let reduced = model.effectiveReducedMotion
@@ -30,7 +34,8 @@ struct MascotView: View {
                 scene(at: model.clock(), reduced: true, layout: layout)
             } else {
                 // 30 fps while a gesture plays (smooth lean), 8 fps otherwise (frame-based idle loop).
-                TimelineView(.animation(minimumInterval: model.activeClip == nil
+                TimelineView(.animation(minimumInterval: model.activeClip == nil && model.clipStage.scheduled == nil
+                                        && model.clipStage.dragStart == nil
                                         && model.markerPhase(at: model.now, reduced: false).time == nil
                                         ? 1.0 / 8.0 : 1.0 / 30.0)) { context in
                     scene(at: context.date.addingTimeInterval(model.clockOffset), reduced: false, layout: layout)
@@ -50,7 +55,7 @@ struct MascotView: View {
         let badge = badgeOverride ?? model.mascotBadge
         let countWidth = badge.map { layout.count.width(text: Tag.textWidth($0, role: .count, size: layout.count.fontSize)) }
         let offset = countWidth.flatMap { width in
-            model.contour(for: pose).map {
+            (packOverride.map { $0.contour(for: pose) } ?? model.contour(for: pose)).map {
                 layout.countOffset(contour: $0, width: width, leaning: pose.angle != 0, displayScale: displayScale)
             }
         } ?? 0
@@ -67,6 +72,21 @@ struct MascotView: View {
                                 anchor: UnitPoint(x: AttentionGesture.pivot.x / 256, y: AttentionGesture.pivot.y / 256))
                 .offset(x: layout.artFrame.minX, y: layout.laneHeight)
                 .opacity(drawsArt ? 1 : 0)
+            if showsPlaceholderTag(pose) {
+                placeholderTag(side: layout.artSide)
+                    .frame(width: layout.artSide, height: layout.artSide, alignment: .topTrailing)
+                    .offset(x: layout.artFrame.minX, y: layout.laneHeight)
+            }
+            // Engine effects (#138): world space, so they don't lean; never in reduced motion.
+            if let pack, let clip = pose.clip, !reduced, drawsArt {
+                let path = pack.imagePath(for: pose)
+                ClipEffectsView(particles: ClipEffects.particles(clip: clip.id, elapsed: clip.elapsed, head: pack.head(for: path),
+                                                                 nozzle: pack.nozzle(for: path), hand: pack.hand(for: path)),
+                                side: layout.artSide)
+                    .frame(width: layout.artSide, height: layout.artSide)
+                    .offset(x: layout.artFrame.minX, y: layout.laneHeight)
+                    .allowsHitTesting(false)
+            }
             if model.isDemo, drawsLabels {
                 Tag(text: PrivacyText.demoLabel.uppercased(), role: .demo, metrics: layout.demo)
                     .frame(width: demo.width, height: demo.height)
@@ -88,15 +108,35 @@ struct MascotView: View {
     }
 
     func pose(at date: Date, reduced: Bool) -> MascotPose {
-        MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
-                            idleEpoch: .distantPast, gesture: model.pack?.attentionGesture) { state in
-            model.pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
+        let pack = self.pack
+        return MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
+                                   idleEpoch: .distantPast, gesture: pack?.attentionGesture, stage: model.clipStage,
+                                   library: packOverride.map { ClipLibrary(pack: $0) } ?? model.clipLibrary,
+                                   accessories: model.accessories) { state in
+            pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
         }
+    }
+
+    /// "PH" on any clip, held pose or accessory synthesized until the art lands (#138), so a
+    /// placeholder is never mistaken for final art.
+    private func showsPlaceholderTag(_ pose: MascotPose) -> Bool {
+        guard let pack, !pack.placeholderClips.isEmpty else { return false }
+        return pose.clip.map { pack.placeholderClips.contains($0.id) } == true
+            || pose.accessories.contains(where: pack.placeholderClips.contains)
+    }
+
+    private func placeholderTag(side: CGFloat) -> some View {
+        Text("PH")
+            .font(.system(size: max(7, side * 0.07), weight: .heavy, design: .monospaced))
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, 2)
+            .background(Color(red: 0.75, green: 0, blue: 0.6))
+            .padding(side * 0.06)
     }
 
     @ViewBuilder
     private func figure(pose: MascotPose, date: Date, reduced: Bool) -> some View {
-        if let pack = model.pack {
+        if let pack {
             PackFigure(pack: pack, pose: pose)
         } else {
             PlaceholderFigure(pose: pose, date: date, reduced: reduced)
@@ -230,34 +270,102 @@ struct PackFigure: View {
     let pose: MascotPose
 
     var body: some View {
-        if let image = currentImage() {
-            Image(nsImage: image)
-                .interpolation(.high)
-                .antialiased(true)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
+        let path = pack.imagePath(for: pose)
+        let image = path.flatMap { PackImageCache.shared.image($0, in: pack) }
+        // The common case (no accessory) is exactly the single image it was before #138: no extra
+        // layout work on the idle timeline.
+        if pose.accessories.isEmpty {
+            if let image { layer(image) }
+        } else {
+            ZStack {
+                if let image { layer(image) }
+                accessories(path: path)
+            }
         }
     }
 
-    private func currentImage() -> NSImage? {
-        guard let spec = pack.manifest.states[pose.state.rawValue] else { return nil }
-        guard let frame = pose.frame else { return PackImageCache.shared.image(spec.staticFallback, in: pack) }
-        return spec.frames.indices.contains(frame) ? PackImageCache.shared.image(spec.frames[frame], in: pack) : nil
+    /// Accessories sit above the art, below the labels, and lean with it (#138). Authored at the
+    /// default head point; a frame's own head point moves them.
+    private func accessories(path: String?) -> some View {
+        GeometryReader { geo in
+            let scale = min(geo.size.width, geo.size.height) / CGFloat(MascotPack.canvasSize)
+            let offset = pack.headOffset(for: path)
+            ForEach(pose.accessories, id: \.self) { id in
+                if let image = pack.manifest.accessorySpec(id).flatMap({ PackImageCache.shared.image($0.image, in: pack) }) {
+                    layer(image).offset(x: offset.x * scale, y: offset.y * scale)
+                }
+            }
+        }
+    }
+
+    private func layer(_ image: NSImage) -> some View {
+        Image(nsImage: image)
+            .interpolation(.high)
+            .antialiased(true)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+    }
+}
+
+/// Engine effect particles (#138), drawn in code until the 64×64 sprites land. Positions are canvas
+/// pixels scaled to the art square; effects never reach the label lane.
+struct ClipEffectsView: View {
+    let particles: [ClipEffects.Particle]
+    let side: CGFloat
+
+    var body: some View {
+        let scale = side / CGFloat(MascotPack.canvasSize)
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(particles.enumerated()), id: \.offset) { _, particle in
+                sprite(particle.kind)
+                    .frame(width: particle.size * scale, height: particle.size * scale)
+                    .opacity(particle.opacity)
+                    .position(x: particle.x * scale, y: particle.y * scale)
+            }
+        }
+        .frame(width: side, height: side, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private func sprite(_ kind: ClipEffects.Kind) -> some View {
+        switch kind {
+        case .mist: Circle().fill(Color.white.opacity(0.75)).overlay(Circle().stroke(Color.cyan.opacity(0.6)))
+        case .smoke: Circle().fill(Color.gray.opacity(0.5))
+        case .sparkle: Image(systemName: "sparkle").resizable().foregroundStyle(Color.yellow)
+        case .z: Text("z").font(.system(size: 100, weight: .bold, design: .rounded)).minimumScaleFactor(0.01)
+            .foregroundStyle(Color.secondary)
+        }
     }
 }
 
 /// Decoded frames keyed by pack directory and frame path, decoded from the bytes
-/// validated at load: no disk I/O at all after validation, and none per tick.
+/// validated at load: no disk I/O at all after validation, and none per tick. State frames and
+/// accessories stay resident; clip and held frames (#138, up to ~60 per pack) are kept to at most
+/// `clipLimit`, oldest dropped first, so a full pack doesn't hold ~15 MiB of decoded frames.
 @MainActor
 final class PackImageCache {
     static let shared = PackImageCache()
+    static let clipLimit = 24
     private var images: [String: NSImage] = [:]
+    private var clipOrder: [String] = []
 
     func image(_ path: String, in pack: MascotPack) -> NSImage? {
         let key = pack.directory.path + "/" + path
         if let cached = images[key] { return cached }
         let image = pack.imageData[path].flatMap(NSImage.init(data:))
         images[key] = image
+        if !Self.isResident(path, in: pack) {
+            clipOrder.append(key)
+            while clipOrder.count > Self.clipLimit { images.removeValue(forKey: clipOrder.removeFirst()) }
+        }
         return image
+    }
+
+    var clipImageCount: Int { clipOrder.count }
+
+    private static func isResident(_ path: String, in pack: MascotPack) -> Bool {
+        MascotState.allCases.contains { state in
+            pack.manifest.states[state.rawValue].map { $0.frames.contains(path) || $0.staticFallback == path } ?? false
+        } || (pack.manifest.accessories ?? [:]).values.contains { $0.image == path }
     }
 }

@@ -5,6 +5,10 @@ import ImageIO
 /// Mascot pack manifest, schema v1 (agreed with design):
 /// `<pack>/manifest.json` with 256×256 RGBA PNG frames per state, anchor at the bottom-centre
 /// ground point, per-frame durations and a static fallback used for reduced motion.
+///
+/// Schema v2 (#138, docs/design/animation-v1.md) adds, all optional: held `drag` and `doze` states
+/// (loop), one-shot `clips`, `accessories` drawn over the art, a default `head` point and per-frame
+/// `framePoints`. A v1 manifest loads exactly as before; v2 keys in a v1 manifest are ignored.
 public struct MascotPackManifest: Codable, Equatable, Sendable {
     public struct Canvas: Codable, Equatable, Sendable {
         public var width: Int
@@ -18,6 +22,48 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
         public var staticFallback: String
     }
 
+    /// A one-shot clip (v2): plays once and holds its last frame until it ends. No static fallback:
+    /// no clip ever plays under Reduce Motion.
+    public struct ClipSpec: Codable, Equatable, Sendable {
+        public var frames: [String]
+        public var durationMs: [Int]
+        public var loop: Bool?
+        /// Whether the incident hat stays on during the clip (default keep).
+        public var accessories: AccessoryVisibility?
+
+        public init(frames: [String], durationMs: [Int], loop: Bool? = nil, accessories: AccessoryVisibility? = nil) {
+            self.frames = frames
+            self.durationMs = durationMs
+            self.loop = loop
+            self.accessories = accessories
+        }
+    }
+
+    /// An overlay image (v2): a 256×256 canvas authored aligned to the pack's default head point.
+    public struct AccessorySpec: Codable, Equatable, Sendable {
+        public var image: String
+        public var attach: String
+
+        public init(image: String, attach: String = "head") {
+            self.image = image
+            self.attach = attach
+        }
+    }
+
+    /// Named canvas points: `head` places the hat, `nozzle` emits incident-end's spray and `hand`
+    /// places item-cleared's sparkle.
+    public struct Points: Codable, Equatable, Sendable {
+        public var head: [Int]?
+        public var nozzle: [Int]?
+        public var hand: [Int]?
+
+        public init(head: [Int]? = nil, nozzle: [Int]? = nil, hand: [Int]? = nil) {
+            self.head = head
+            self.nozzle = nozzle
+            self.hand = hand
+        }
+    }
+
     public var schemaVersion: Int
     public var id: String
     public var name: String
@@ -25,6 +71,13 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public var anchor: [Int]
     public var states: [String: StateSpec]
     public var frameSha256: [String: String]?
+    public var clips: [String: ClipSpec]?
+    public var accessories: [String: AccessorySpec]?
+    public var points: Points?
+    public var framePoints: [String: Points]?
+
+    /// Whether the v2 additions apply (a v1 manifest ignores them).
+    public var isV2: Bool { schemaVersion >= 2 }
 }
 
 /// Display-only sanitizing for strings a pack author controls (manifest `id`/`name`, state names
@@ -136,6 +189,14 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
     case clipTooLong(String, Int, Int)
     case packTooLarge(Int)
     case tooManyFrames(Int)
+    // Schema v2 (#138).
+    case unknownState(String)
+    case unknownClip(String)
+    case unknownAccessory(String)
+    case badAccessory(String)
+    case badPoint(String)
+    case tooManyImages(Int, limit: Int)
+    case outsideArt(String)
 
     public var description: String {
         func q(_ value: String) -> String { PackLabel.sanitize(value, fallback: "(invalid)") }
@@ -145,11 +206,14 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
         case .unexpectedID(let id, let expected): return "pack ID '\(q(id))' must be '\(q(expected))'"
         case .unsupportedSchema(let v): return "unsupported schemaVersion \(v)"
         case .wrongLoopFlag(let s, let expected):
+            guard !MascotClipID.heldStates.contains(MascotClipID(s)), ClipCatalog.v1[MascotClipID(s)] == nil else {
+                return "'\(q(s))' must declare \"loop\": \(expected) (drag and doze loop; clips play once)"
+            }
             return "state '\(q(s))' must declare \"loop\": \(expected) (idle loops; attention and urgent play once)"
         case .badCanvas: return "canvas must be 256×256"
         case .badAnchor: return "anchor must be [128, 232], the v1 ground point the renderer uses"
         case .missingState(let s): return "required state '\(q(s))' missing"
-        case .frameCount(let s): return "state '\(q(s))' needs 1–\(MascotPack.maxFrames) frames"
+        case .frameCount(let s): return "state or clip '\(q(s))' needs 1–\(MascotPack.maxFrames) frames"
         case .durationMismatch(let s): return "state '\(q(s))' durationMs count differs from frames"
         case .durationOutOfRange(let s, let d): return "state '\(q(s))' duration \(d)ms outside 125–2000"
         case .unsafePath(let p): return "unsafe path '\(path(p))'"
@@ -164,6 +228,15 @@ public enum MascotPackError: Error, Equatable, CustomStringConvertible {
             return "state '\(q(s))' plays \(total)ms once, longer than its \(limit)ms event clip"
         case .tooManyFrames(let total):
             return "pack has \(total) frames; at most \(MascotPack.maxPackFrames) in total (\(MascotPack.maxFrames) per state)"
+        case .unknownState(let s): return "unknown state '\(q(s))' (schema v2 adds only drag and doze)"
+        case .unknownClip(let s): return "unknown clip '\(q(s))'"
+        case .unknownAccessory(let s): return "unknown accessory '\(q(s))'"
+        case .badAccessory(let s): return "accessory '\(q(s))' must attach to \"head\""
+        case .badPoint(let s): return "point '\(path(s))' must be [x, y] inside the 256×256 canvas, for a frame the pack uses"
+        case .tooManyImages(let total, let limit):
+            return "pack has \(total) distinct images; at most \(limit) (\(MascotPack.maxFrames) frames per state or clip)"
+        case .outsideArt(let p):
+            return "'\(path(p))' draws outside the idle, attention and urgent art; clips and accessories must stay inside it"
         case .packTooLarge(let limit):
             return "pack images total more than \(limit / (1024 * 1024)) MiB (each image at most \(MascotPack.maxImageBytes / (1024 * 1024)) MiB, 256×256, up to \(MascotPack.maxFrames) frames per state)"
         }
@@ -177,8 +250,30 @@ public struct MascotPackErrors: Error, Equatable {
 }
 
 /// A validated pack: every referenced path resolved to a file inside the pack directory.
+/// Image limits for a pack. Custom packs keep #123's per-image and total byte caps with v2's larger
+/// image count; bundled packs have the tighter design budget (#138), so the app download stays small.
+public struct PackBudget: Equatable, Sendable {
+    /// Distinct images (frames, fallbacks, accessories) in a v2 pack. State frames keep the 24 rule.
+    public var maxImages: Int
+    public var maxBytes: Int
+    public var maxImageBytes: Int
+    /// Frames per state or clip.
+    public var maxSequenceFrames: Int
+    /// Bundled art must keep every clip, held and hat pixel inside the three states' art, so the
+    /// layout never changes. A custom pack that draws outside gets a taller lane instead.
+    public var enforcesArtBounds: Bool
+
+    public static let custom = PackBudget(maxImages: 96, maxBytes: MascotPack.maxPackBytes,
+                                          maxImageBytes: MascotPack.maxImageBytes, maxSequenceFrames: MascotPack.maxFrames,
+                                          enforcesArtBounds: false)
+    public static let bundled = PackBudget(maxImages: 64, maxBytes: 4 * 1024 * 1024, maxImageBytes: 96 * 1024,
+                                           maxSequenceFrames: 8, enforcesArtBounds: true)
+}
+
 public struct MascotPack: Equatable, Sendable {
     public static let schemaVersion = 1
+    /// Newest manifest schema this build reads (#138); every older one still loads.
+    public static let latestSchemaVersion = 2
     /// Pack bundled with the app (`assets/mascots/<id>` in the repository).
     public static let defaultPackID = MascotSkin.mona.rawValue
     public static let canvasSize = 256
@@ -205,6 +300,19 @@ public struct MascotPack: Equatable, Sendable {
     /// validation (outlines, rendering) uses these; image paths are never reopened, so a custom
     /// pack edited after loading (a FIFO, an oversized file) can't stall or exhaust the app.
     public var imageData: [String: Data] = [:]
+    /// v2 (#138): outline (any coverage) of every held-pose, clip and accessory image, by path.
+    public var extraOutlines: [String: ArtProfile] = [:]
+    /// Upright contours of v2 poses: every clip and held frame, and every frame that can wear the
+    /// hat composited with it (#138). Part of `uprightContours`, so the count tracks them.
+    public var extraUprightContours: [[Int?]] = []
+    /// Drag and dizzy frames (with the hat where worn) over their whole lean.
+    public var extraLeaningContours: [[Int?]] = []
+    /// Largest drag/dizzy lean (≤ the #29 lean) whose swept outline stays inside the lane the states
+    /// already need, so a lean never changes the layout.
+    public var clipLeanLimit: Double = MascotPack.attentionLeanDegrees
+    /// Clips and held poses synthesized from existing frames until the art lands (render-check and
+    /// `--placeholder-clips` only); the renderer tags them "PH".
+    public var placeholderClips: Set<MascotClipID> = []
 
     /// Validated bytes of a state's frames, in order.
     public func frameData(for state: MascotState) -> [Data] {
@@ -253,6 +361,7 @@ public struct MascotPack: Equatable, Sendable {
     /// Contour of a drawn pose: upright from `poseContours`, or the leaning attention frame
     /// rotated by exactly the pose's angle (callers add `MascotLayout.leanReserve` for it).
     public func contour(for pose: MascotPose) -> [Int?]? {
+        if pose.clip != nil || !pose.accessories.isEmpty { return clipContour(for: pose) }
         if pose.angle != 0, pose.state == .attention, let frame = pose.frame, leaningOutlines.indices.contains(frame) {
             return ArtProfile.rotatedContour(leaningOutlines[frame], canvas: MascotPack.canvasSize, from: pose.angle,
                                              to: pose.angle, pivot: AttentionGesture.pivot, margin: 0)
@@ -263,10 +372,10 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// Every upright pose's contour (static and frames of every state): where the head is (#116).
-    public var uprightContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) }
+    public var uprightContours: [[Int?]] { MascotState.allCases.flatMap(poseContours) + extraUprightContours }
 
     /// Every pose's contour, upright and leaning, for the fixed lane height and the count's range.
-    public var allContours: [[Int?]] { uprightContours + leaningContours }
+    public var allContours: [[Int?]] { uprightContours + leaningContours + extraLeaningContours }
 
     /// Outline across every state.
     public var artProfile: ArtProfile? { ArtProfile.union(MascotState.allCases.compactMap { artProfiles[$0] }) }
@@ -283,7 +392,8 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// Load and validate. A built-in pack must match its expected ID before any frames are read.
-    public static func load(from directory: URL, expectedID: String? = nil) -> Result<MascotPack, MascotPackErrors> {
+    public static func load(from directory: URL, expectedID: String? = nil,
+                            budget: PackBudget = .custom) -> Result<MascotPack, MascotPackErrors> {
         // Everything is read relative to one descriptor for the pack directory, never following a
         // symlink below it, so files can't be swapped for links out of the pack between a check
         // and the read: what is validated is what is read.
@@ -297,7 +407,7 @@ public struct MascotPack: Equatable, Sendable {
         if let expectedID, manifest.id != expectedID {
             return .failure(MascotPackErrors(errors: [.unexpectedID(manifest.id, expected: expectedID)]))
         }
-        let (errors, validated) = validateReading(manifest, root: root)
+        let (errors, validated) = validateReading(manifest, root: root, budget: budget)
         guard errors.isEmpty else { return .failure(MascotPackErrors(errors: errors)) }
         var pack = MascotPack(directory: directory, manifest: manifest)
         pack.imageData = validated
@@ -325,6 +435,10 @@ public struct MascotPack: Equatable, Sendable {
                 }
             }
         }
+        // v2: every clip, held and accessory pixel stays inside the three states' art (#138), so the
+        // label lane and hover placement never change.
+        let artErrors = pack.measureClips(enforcingBounds: budget.enforcesArtBounds)
+        guard artErrors.isEmpty else { return .failure(MascotPackErrors(errors: artErrors)) }
         return .success(pack)
     }
 
@@ -338,21 +452,30 @@ public struct MascotPack: Equatable, Sendable {
         let root = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard root >= 0 else { return [.unreadableManifest] }
         defer { close(root) }
-        return validateReading(manifest, root: root).errors
+        return validateReading(manifest, root: root, budget: .custom).errors
     }
 
     /// Validates the manifest and every image, returning the errors and the bytes that passed.
-    static func validateReading(_ manifest: MascotPackManifest, root: Int32)
+    static func validateReading(_ manifest: MascotPackManifest, root: Int32, budget: PackBudget)
         -> (errors: [MascotPackError], data: [String: Data]) {
         var errors: [MascotPackError] = []
         var validated: [String: Data] = [:]
-        guard manifest.schemaVersion == schemaVersion else { return ([.unsupportedSchema(manifest.schemaVersion)], [:]) }
+        guard (schemaVersion...latestSchemaVersion).contains(manifest.schemaVersion) else {
+            return ([.unsupportedSchema(manifest.schemaVersion)], [:])
+        }
         if manifest.canvas.width != canvasSize || manifest.canvas.height != canvasSize { errors.append(.badCanvas) }
         // Rendering, the attention lean and ground-preserving resizes all use the v1 ground point;
         // a pack declaring another one would be drawn and resized wrongly, so it is rejected.
         if manifest.anchor != anchor { errors.append(.badAnchor) }
-        let totalFrames = manifest.states.values.reduce(0) { $0 + $1.frames.count }
         // A state over its own limit gets that state's more specific error below.
+        if manifest.isV2 {
+            let v2Errors = validateV2Structure(manifest, budget: budget)
+            if !v2Errors.isEmpty { return (errors + v2Errors, [:]) }
+            let images = manifest.imagePaths.count
+            if images > budget.maxImages { return (errors + [.tooManyImages(images, limit: budget.maxImages)], [:]) }
+        }
+        // State frames keep #123's total in both schemas (v2 clips have their own image budget).
+        let totalFrames = manifest.states.filter { MascotState(rawValue: $0.key) != nil }.values.reduce(0) { $0 + $1.frames.count }
         if totalFrames > maxPackFrames, manifest.states.values.allSatisfy({ $0.frames.count <= maxFrames }) { return (errors + [.tooManyFrames(totalFrames)], [:]) }
         var checked: Set<String> = []
         var totalBytes = 0
@@ -362,7 +485,8 @@ public struct MascotPack: Equatable, Sendable {
                 continue
             }
             // An over-limit state is invalid already: never open or decode its paths.
-            guard !spec.frames.isEmpty, spec.frames.count <= maxFrames, spec.durationMs.count <= maxFrames else {
+            let frameLimit = min(maxFrames, budget.maxSequenceFrames)
+            guard !spec.frames.isEmpty, spec.frames.count <= frameLimit, spec.durationMs.count <= frameLimit else {
                 errors.append(.frameCount(state.rawValue))
                 continue
             }
@@ -381,14 +505,78 @@ public struct MascotPack: Equatable, Sendable {
                 if total > limit { errors.append(.clipTooLong(state.rawValue, total, limit)) }
             }
             for path in spec.frames + [spec.staticFallback] where checked.insert(path).inserted {
-                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:])
+                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:],
+                                                      limit: budget.maxImageBytes)
                 errors += fileErrors
                 if fileErrors.isEmpty, let data { validated[path] = data }
                 totalBytes += data?.count ?? 0
-                if totalBytes > maxPackBytes { return (errors + [.packTooLarge(maxPackBytes)], [:]) }
+                if totalBytes > budget.maxBytes { return (errors + [.packTooLarge(budget.maxBytes)], [:]) }
+            }
+        }
+        // v2 additions: held poses, clips and accessories, under the same image checks and budget.
+        if manifest.isV2 {
+            for path in manifest.v2ImagePaths where checked.insert(path).inserted {
+                let (fileErrors, data) = validateFile(path, root: root, checksums: manifest.frameSha256 ?? [:],
+                                                      limit: budget.maxImageBytes)
+                errors += fileErrors
+                if fileErrors.isEmpty, let data { validated[path] = data }
+                totalBytes += data?.count ?? 0
+                if totalBytes > budget.maxBytes { return (errors + [.packTooLarge(budget.maxBytes)], [:]) }
             }
         }
         return (errors, validated)
+    }
+
+    /// v2 manifest rules that need no file access: names, frame counts, durations, loop flags, points.
+    static func validateV2Structure(_ manifest: MascotPackManifest, budget: PackBudget) -> [MascotPackError] {
+        var errors: [MascotPackError] = []
+        let core = Set(MascotState.allCases.map(\.rawValue)), held = Set(MascotClipID.heldStates.map(\.rawValue))
+        func sequence(_ name: String, frames: [String], durations: [Int]) -> Bool {
+            let limit = min(maxFrames, budget.maxSequenceFrames)
+            guard !frames.isEmpty, frames.count <= limit, durations.count <= limit else {
+                errors.append(.frameCount(name)); return false
+            }
+            if frames.count != durations.count { errors.append(.durationMismatch(name)) }
+            for duration in durations where !durationRange.contains(duration) { errors.append(.durationOutOfRange(name, duration)) }
+            return true
+        }
+        for (name, spec) in manifest.states.sorted(by: { $0.key < $1.key }) where !core.contains(name) {
+            guard held.contains(name) else { errors.append(.unknownState(name)); continue }
+            guard sequence(name, frames: spec.frames, durations: spec.durationMs) else { continue }
+            if !spec.loop { errors.append(.wrongLoopFlag(name, expected: true)) }
+        }
+        for (name, spec) in (manifest.clips ?? [:]).sorted(by: { $0.key < $1.key }) {
+            guard let policy = ClipCatalog.v1[MascotClipID(name)] else { errors.append(.unknownClip(name)); continue }
+            guard sequence(name, frames: spec.frames, durations: spec.durationMs) else { continue }
+            if spec.loop == true { errors.append(.wrongLoopFlag(name, expected: false)) }
+            let total = saturatingSum(spec.durationMs)
+            if total > policy.maxDurationMs { errors.append(.clipTooLong(name, total, policy.maxDurationMs)) }
+        }
+        for (name, spec) in (manifest.accessories ?? [:]).sorted(by: { $0.key < $1.key }) {
+            if !AccessoryPolicy.all.contains(MascotClipID(name)) { errors.append(.unknownAccessory(name)) }
+            else if spec.attach != "head" { errors.append(.badAccessory(name)) }
+        }
+        func valid(_ point: [Int]?) -> Bool {
+            guard let point else { return true }
+            return point.count == 2 && point.allSatisfy { (0..<canvasSize).contains($0) }
+        }
+        func valid(_ points: MascotPackManifest.Points) -> Bool { valid(points.head) && valid(points.nozzle) && valid(points.hand) }
+        // The hat is authored for the default head point, so a pack with accessories must name it.
+        if let points = manifest.points, !valid(points) { errors.append(.badPoint("points")) }
+        else if !(manifest.accessories ?? [:]).isEmpty, manifest.points?.head == nil { errors.append(.badPoint("points")) }
+        let used = Set(manifest.imagePaths)
+        for (path, points) in (manifest.framePoints ?? [:]).sorted(by: { $0.key < $1.key })
+        where !used.contains(path) || !valid(points) {
+            errors.append(.badPoint(path))
+        }
+        // Mist is emitted only where a nozzle is named: incident-end's spray frames (02 and 03) need one.
+        if let end = manifest.clips?[MascotClipID.incidentEnd.rawValue] {
+            for path in Set(end.frames.dropFirst(2).prefix(2)).sorted()
+            where (manifest.framePoints?[path]?.nozzle ?? manifest.points?.nozzle) == nil {
+                errors.append(.badPoint(path))
+            }
+        }
+        return errors
     }
 
     /// Sum of manifest durations that saturates instead of trapping on overflow (a manifest may
@@ -412,12 +600,12 @@ public struct MascotPack: Equatable, Sendable {
     }
 
     /// Validates one image and returns the bytes it checked (nil if it couldn't be read).
-    static func validateFile(_ path: String, root: Int32, checksums: [String: String])
+    static func validateFile(_ path: String, root: Int32, checksums: [String: String], limit: Int = maxImageBytes)
         -> (errors: [MascotPackError], data: Data?) {
         guard isSafeRelativePath(path) else { return ([.unsafePath(path)], nil) }
         let data: Data
         do {
-            data = try readInPack(root: root, path: path, limit: maxImageBytes)
+            data = try readInPack(root: root, path: path, limit: min(limit, maxImageBytes))
         } catch ReadError.symlink, ReadError.unsafeComponent {
             return ([.unsafePath(path)], nil)
         } catch ReadError.tooLarge {

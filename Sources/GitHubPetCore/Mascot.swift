@@ -153,23 +153,58 @@ public enum AccessibilityText {
 /// most severe event; events arriving while it plays merge into it (no restart, no queue, no
 /// backlog). Each source retains at most one clip at its original time bounds. Urgency chooses
 /// the visible clip; a scope reset can remove repositories without restarting public incidents.
+///
+/// #138 adds a clip kind: tier-1 clips order by severity, then kind rank (urgent > incident-start >
+/// incident-end > new-item, the wave included), then the earlier start. A kind's length comes from
+/// the pack when it has that clip, else today's state duration.
 public struct EventClipQueue: Sendable {
     public enum Origin: Hashable, Sendable { case repository, serviceIncident }
+
+    /// What a tier-1 clip plays, low to high rank. `newItem` is the #29 wave when the pack has no
+    /// `new-item` clip; incident kinds are chosen only when the pack has those clips.
+    public enum Kind: Int, Comparable, CaseIterable, Sendable {
+        case newItem = 0, incidentEnd, incidentStart, urgent
+
+        public static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+
+        public var clipID: MascotClipID? {
+            switch self {
+            case .newItem: return .newItem
+            case .incidentEnd: return .incidentEnd
+            case .incidentStart: return .incidentStart
+            case .urgent: return nil
+            }
+        }
+
+        /// A repository event's kind: critical plays urgent, anything else the wave (or new-item).
+        public static func `default`(for event: InboxEvent) -> Self { event.severity == .critical ? .urgent : .newItem }
+    }
+
     public struct Clip: Equatable, Sendable {
         public var event: InboxEvent
         public var origin: Origin
+        public var kind: Kind
         public var startedAt: Date
         public var endsAt: Date
 
-        init(event: InboxEvent, startedAt: Date, origin: Origin = .repository) {
+        init(event: InboxEvent, startedAt: Date, origin: Origin = .repository, kind: Kind? = nil,
+             duration: TimeInterval? = nil) {
             self.event = event
             self.origin = origin
+            self.kind = kind ?? .default(for: event)
             self.startedAt = startedAt
-            self.endsAt = startedAt.addingTimeInterval(EventClipQueue.duration(of: event.severity == .critical ? .urgent : .attention))
+            self.endsAt = startedAt.addingTimeInterval(duration ?? EventClipQueue.duration(of: self.kind == .urgent ? .urgent : .attention))
         }
 
-        /// Pack state used to play this clip.
-        public var state: MascotState { event.severity == .critical ? .urgent : .attention }
+        /// Pack state used to play this clip (and its fallback).
+        public var state: MascotState { kind == .urgent ? .urgent : .attention }
+
+        /// Order between clips: severity, then kind rank, then the earlier start wins.
+        func outranks(_ other: Clip) -> Bool {
+            if event.severity != other.event.severity { return event.severity > other.event.severity }
+            if kind != other.kind { return kind > other.kind }
+            return startedAt < other.startedAt
+        }
     }
 
     /// Attention plays the finite double wave (1.9 s); urgent keeps its 2.0 s one-shot.
@@ -184,10 +219,7 @@ public struct EventClipQueue: Sendable {
         let repository = byOrigin[.repository], service = byOrigin[.serviceIncident]
         guard let repository else { return service }
         guard let service else { return repository }
-        if repository.event.severity != service.event.severity {
-            return repository.event.severity > service.event.severity ? repository : service
-        }
-        return repository.startedAt < service.startedAt ? repository : service
+        return service.outranks(repository) ? service : repository
     }
 
     public init() {}
@@ -195,15 +227,23 @@ public struct EventClipQueue: Sendable {
     /// Start a gesture for a batch of new events, or merge them into the one playing. With motion
     /// reduced or alerts disallowed nothing plays: the inbox and static mood still show the change,
     /// and nothing is replayed later.
-    public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool, origin: Origin = .repository) {
+    /// - Parameters:
+    ///   - kind: the clip kind for this batch (#138), or nil for today's (urgent or the wave).
+    ///   - duration: a kind's length from the pack, or nil for today's state duration.
+    public mutating func enqueue(_ events: [InboxEvent], now: Date, playable: Bool, origin: Origin = .repository,
+                                 kind: Kind? = nil, duration: (Kind) -> TimeInterval? = { _ in nil }) {
         tick(now: now)
         guard playable, let top = events.map(\.severity).max(),
               let lead = events.first(where: { $0.severity == top }) else { return }
+        // An incident is never urgent: its state comes from its kind, not its severity.
+        let resolved = kind ?? (origin == .serviceIncident ? .newItem : .default(for: lead))
+        let next = Clip(event: lead, startedAt: now, origin: origin, kind: resolved, duration: duration(resolved))
         if let current = byOrigin[origin] {
-            if lead.severity > current.event.severity { byOrigin[origin] = Clip(event: lead, startedAt: now, origin: origin) }
+            // Merge (#29): only a higher severity or kind restarts this source's clip.
+            if (lead.severity, resolved) > (current.event.severity, current.kind) { byOrigin[origin] = next }
             return
         }
-        byOrigin[origin] = Clip(event: lead, startedAt: now, origin: origin)
+        byOrigin[origin] = next
     }
 
     /// Advance time; returns the clip that should be showing, if any.
@@ -319,12 +359,20 @@ public struct MascotPose: Equatable, Sendable {
     public var clipElapsed: TimeInterval?
     /// Art-layer lean in degrees about the ground anchor (attention gesture); positive leans right.
     public var angle: Double
+    /// A v2 clip or held pose (#138) drawn instead of the state's own frame; `state` stays the mood
+    /// for everything that isn't the art.
+    public var clip: ClipFrame?
+    /// Accessory overlays worn in this pose (drawn above the art, leaning with it).
+    public var accessories: [MascotAccessoryID]
 
-    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0) {
+    public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0,
+                clip: ClipFrame? = nil, accessories: [MascotAccessoryID] = []) {
         self.state = state
         self.frame = frame
         self.clipElapsed = clipElapsed
         self.angle = angle
+        self.clip = clip
+        self.accessories = accessories
     }
 }
 
@@ -338,10 +386,85 @@ public struct MascotPose: Equatable, Sendable {
 public enum MascotAnimator {
     /// - Parameter gesture: the attention gesture to play when the pack supports it (its attention
     ///   state has the frames it uses); otherwise attention plays its manifest one-shot.
+    ///
+    /// #138 (all optional; a pack without a clip keeps today's behaviour):
+    /// - Drag masks everything while held (its clocks underneath keep running).
+    /// - The higher of the scheduler clip and the EventClipQueue clip plays; an actionable repository
+    ///   batch plays `new-item` in place of the wave when the pack has it.
+    /// - Doze holds when nothing else plays.
+    /// - Reduced motion shows static substitutions only: drag or doze's static pose, and accessories.
     public static func pose(mood: MascotState, clip: EventClipQueue.Clip?, now: Date, reducedMotion: Bool,
-                            idleEpoch: Date, gesture: AttentionGesture? = nil,
+                            idleEpoch: Date, gesture: AttentionGesture? = nil, stage: ClipStage = .empty,
+                            library: ClipLibrary = .empty, accessories: [MascotAccessoryID] = [],
                             durationsMs: (MascotState) -> [Int]) -> MascotPose {
-        if reducedMotion { return MascotPose(state: mood, frame: nil, clipElapsed: nil) }
+        let worn = accessories.filter(library.accessories.contains)
+        func wearing(_ pose: MascotPose) -> MascotPose {
+            var pose = pose
+            if let clip = pose.clip, library.hidesAccessories.contains(clip.id) { return pose }
+            pose.accessories = worn
+            return pose
+        }
+        let spring = stage.springAngle(at: now)
+        func clipPose(_ id: MascotClipID, since start: Date, loop: Bool, state: MascotState = mood,
+                      angle: Double = 0) -> MascotPose? {
+            guard let durations = library.durationsMs[id] else { return nil }
+            let elapsed = max(0, now.timeIntervalSince(start))
+            let frame = FrameClock.frameIndex(durationsMs: durations, loop: loop, elapsedMs: Int(elapsed * 1000),
+                                              reducedMotion: false)
+            // Dizzy wobbles 0, −5°, +5°, −5°, 0 at its frame starts, eased like #29.
+            var lean = angle
+            if id == .dizzy { lean = DizzyLean.angle(durationsMs: durations, elapsedMs: elapsed * 1000) }
+            let limit = library.leanLimit
+            return wearing(MascotPose(state: state, frame: nil, clipElapsed: loop ? nil : elapsed,
+                                      angle: min(max(lean + spring, -limit), limit),
+                                      clip: ClipFrame(id: id, frame: frame, elapsed: elapsed)))
+        }
+        if reducedMotion {
+            for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil)]
+            where active && library.has(id) {
+                return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: id, frame: nil, elapsed: 0)))
+            }
+            return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil))
+        }
+        if let start = stage.dragStart, let pose = clipPose(.drag, since: start, loop: true, angle: stage.dragAngle) {
+            return pose
+        }
+        let event = clip.flatMap { now >= $0.startedAt && now < $0.endsAt ? $0 : nil }
+        if let scheduled = stage.scheduled, now >= scheduled.startedAt, now < scheduled.endsAt,
+           scheduled.priority > event.map(ClipPriority.of) ?? .min,
+           let pose = clipPose(scheduled.id, since: scheduled.startedAt, loop: false) {
+            return pose
+        }
+        // Tier 1 by kind: incident-start/-end are only chosen when the pack has them; new-item
+        // replaces the wave for repository batches only (an incident escalation keeps the wave).
+        if let event, let id = event.kind.clipID, event.kind != .newItem || event.origin == .repository,
+           let pose = clipPose(id, since: event.startedAt, loop: false, state: .attention) {
+            return pose
+        }
+        if event == nil, mood == .idle, let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
+            return pose
+        }
+        return wearing(legacyPose(mood: mood, clip: event, now: now, idleEpoch: idleEpoch, gesture: gesture,
+                                  durationsMs: durationsMs))
+    }
+
+    /// Dizzy's wobble (#138): 0, −5°, +5°, −5°, 0 reached at its frame starts with the #29 easing.
+    enum DizzyLean {
+        static let angles: [Double] = [0, -5, 5, -5, 0]
+
+        static func angle(durationsMs: [Int], elapsedMs: Double) -> Double {
+            var start = 0
+            let steps = durationsMs.enumerated().map { index, duration -> AttentionGesture.Step in
+                defer { start += duration }
+                return AttentionGesture.Step(startMs: start, frame: index, angle: angles[min(index, angles.count - 1)])
+            }
+            guard !steps.isEmpty else { return 0 }
+            return AttentionGesture(steps: steps, durationMs: start).angle(atMs: elapsedMs)
+        }
+    }
+
+    static func legacyPose(mood: MascotState, clip: EventClipQueue.Clip?, now: Date, idleEpoch: Date,
+                           gesture: AttentionGesture?, durationsMs: (MascotState) -> [Int]) -> MascotPose {
         if let clip, now >= clip.startedAt, now < clip.endsAt {
             let elapsed = now.timeIntervalSince(clip.startedAt)
             if clip.state == .attention, let gesture {

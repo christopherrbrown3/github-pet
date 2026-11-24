@@ -79,6 +79,8 @@ import Testing
         await app.repositoryPollSettled()
         app.simulateScopeInject()
         await app.repositoryPollSettled()
+        // #138: an incident plays a clip only when the marker appears from none, so clear the fixture's first.
+        app.resolveServiceIncidents()
         app.injectServiceIncident(.major)
         await app.repositoryPollSettled()
         let incidents = app.serviceIncidents
