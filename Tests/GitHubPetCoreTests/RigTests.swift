@@ -65,19 +65,61 @@ private func pose(_ ms: Double, angle: Double = 0) -> MascotPose {
         #expect(abs(RigEvaluator.channels(follow, at: 300)["hand-l.rot"]! + 20) < 1e-9)
     }
 
-    @Test func clipsBlendInFromWhatWasShowingAndEndExactlyAtRest() {
+    @Test func clipsBlendInFromWhatWasShowingAndEndExactlyOnTheirPose() {
         let from = ["arm-r.rot": -35.0, "root.sy": 1.02]
         let start = RigEvaluator.blendedChannels(clip, at: 0, from: from)
         #expect(abs(start["arm-r.rot"]! + 35) < 1e-9)
         #expect(abs(start["root.sy"]! - 1.02) < 1e-9)
-        let end = RigEvaluator.blendedChannels(clip, at: Double(clip.durationMs))
-        for (name, value) in end { #expect(abs(value - RigEvaluator.channelRest(name)) < 1e-9, "\(name)") }
-        let rest = RigEvaluator.pose(rig, clip: nil, at: 0), last = RigEvaluator.pose(rig, clip: clip, at: 1900)
+        // new-item hands back to the attention frame, so it ends exactly on the attention pose.
+        let attention = rig.poses!["attention"]!.channels
+        let end = RigEvaluator.showing(rig, clip: clip, at: 1900)
+        for name in Set(end.keys).union(attention.keys) {
+            #expect(abs((end[name] ?? RigEvaluator.channelRest(name)) - (attention[name] ?? RigEvaluator.channelRest(name))) < 1e-9, "\(name)")
+        }
+        // incident-start ends on rest (idle with the hat).
+        let incident = RigPlaceholder.incidentStart
+        let rest = RigEvaluator.pose(rig, clip: nil, at: 0), last = RigEvaluator.pose(rig, clip: incident, at: 1900)
         for (bone, transform) in rest.bones {
             let other = last.bones[bone]!
             #expect(abs(transform.tx - other.tx) < 1e-6 && abs(transform.ty - other.ty) < 1e-6
                     && abs(transform.a - other.a) < 1e-6 && abs(transform.b - other.b) < 1e-6, "\(bone)")
         }
+    }
+
+    @Test func facePresetsExpandAndAnExplicitSwapWinsAtTheSameInstant() {
+        func image(_ part: String, _ ms: Double, _ clip: RigSpec.Clip) -> String? {
+            RigEvaluator.pose(rig, clip: clip, at: ms).parts.first { $0.part == part }?.image
+        }
+        #expect(image("eyes", 600, clip) == "rig/eyes-happy.png", "joy at 460")
+        #expect(image("mouth", 600, clip) == "rig/mouth-open.png")
+        #expect(image("eyes", 1740, clip) == "rig/eyes-closed.png", "blink preset touches only the eyes")
+        #expect(image("mouth", 1740, clip) == "rig/mouth.png", "the mouth keeps neutral's")
+        var both = clip
+        both.swaps = (both.swaps ?? []) + [.init(at: 460, part: "eyes", variant: "half")]
+        #expect(image("eyes", 600, both) == "rig/eyes-half.png")
+    }
+
+    @Test func theHelmetRidesTheHandThenEasesOntoTheHeadWithoutAJump() {
+        let incident = RigPlaceholder.incidentStart
+        func helmet(_ ms: Double) -> CGPoint? {
+            RigEvaluator.pose(rig, clip: incident, at: ms).parts.first { $0.part == "helmet" }
+                .map { CGPoint(x: $0.rect.minX, y: $0.rect.minY).applying($0.transform) }
+        }
+        #expect(helmet(100) == nil, "hidden until it is brought out")
+        // Held: it moves with the hand.
+        let hand = RigEvaluator.pose(rig, clip: incident, at: 500).bones["hand-l"]!
+        #expect(abs(helmet(500)!.x - CGPoint(x: 56, y: 176).applying(hand).x) < 1e-6)
+        // The hand-over at 820 ms is continuous: the mount change itself moves nothing.
+        let before = helmet(819.9)!, after = helmet(820.1)!
+        #expect(hypot(after.x - before.x, after.y - before.y) < 0.5)
+        // Mid-blend it is between the hand and the head.
+        let mid = helmet(950)!, seated = helmet(1100)!
+        #expect(hypot(mid.x - seated.x, mid.y - seated.y) > 1, "still easing at 950 ms")
+        // Worn at the end exactly where the hat accessory is baked: on the rest head.
+        let worn = RigEvaluator.pose(rig, still: "idle", swaps: [.init(at: 0, part: "helmet", variant: "default")])
+            .parts.first { $0.part == "helmet" }!
+        let end = helmet(1900)!, baked = CGPoint(x: worn.rect.minX, y: worn.rect.minY).applying(worn.transform)
+        #expect(abs(end.x - baked.x) < 1e-6 && abs(end.y - baked.y) < 1e-6)
     }
 
     @Test func swapsShowPropsAndFacesOnTime() {
@@ -109,6 +151,9 @@ private func pose(_ ms: Double, angle: Double = 0) -> MascotPose {
         let library = ClipLibrary(pack: pack)
         #expect(library.duration(.newItem) == 1.9, "fits the attention wave's EventClipQueue slot")
         #expect(!library.hidesAccessories.contains(.newItem))
+        #expect(library.duration(.incidentStart) == 1.9)
+        #expect(library.hidesAccessories.contains(.incidentStart), "the clip animates the helmet itself")
+        #expect(library.accessories.contains(AccessoryPolicy.firefighterHat))
     }
 
     @Test func newItemPlaysOnTheExistingEventPathAndReduceMotionNeverDoes() throws {
@@ -134,10 +179,11 @@ private func pose(_ ms: Double, angle: Double = 0) -> MascotPose {
         let pack = try placeholderPack().get()
         func top(_ ms: Double) -> Int { pack.contour(for: pose(ms))!.compactMap { $0 }.min()! }
         #expect(top(460) < top(300), "springing up raises the head above the crouch")
-        #expect(abs(top(0) - top(1900)) <= 1, "starts and ends on the rest pose")
-        // Rest pose contour matches the baked idle frame it hands back to.
+        // Starts on rest (the idle frame) and ends on the attention frame it hands back to.
         let idleTop = pack.poseContours(.idle)[0].compactMap { $0 }.min()!
-        #expect(abs(top(1900) - idleTop) <= 2)
+        let attentionTop = pack.poseContours(.attention)[0].compactMap { $0 }.min()!
+        #expect(abs(top(0) - idleTop) <= 2)
+        #expect(abs(top(1900) - attentionTop) <= 2)
         // Every sample's contour is inside what the lane was measured from.
         let laneTop = pack.allContours.flatMap { $0.compactMap { $0 } }.min()!
         for ms in stride(from: 0.0, through: 1900, by: 1000 / 60) { #expect(top(ms) >= laneTop) }
@@ -169,6 +215,36 @@ private func pose(_ ms: Double, angle: Double = 0) -> MascotPose {
         #expect(try !errors { $0.rig?.clips?["wave"] = RigPlaceholder.newItem }.isEmpty, "unknown clip")
         #expect(try !errors { $0.rig?.parts[0].image = "../escape.png" }.isEmpty, "unsafe path")
         #expect(try !errors { $0.rig?.clips?["new-item"]?.tracks["root.y"] = [K(500, 0), K(100, 1)] }.isEmpty, "keys out of order")
+        #expect(try !errors { $0.rig?.clips?["new-item"]?.endsOn = "dance" }.isEmpty, "endsOn names no pose")
+        #expect(try !errors { $0.rig?.clips?["new-item"]?.faces = [.init(at: 0, preset: "smirk")] }.isEmpty, "unknown face")
+        #expect(try !errors { $0.rig?.faces?["joy"] = ["eyes": "sparkly"] }.isEmpty, "preset names no variant")
+        #expect(try !errors { $0.rig?.clips?["incident-start"]?.mounts = [.init(at: 0, part: "helmet", mount: "foot")] }.isEmpty,
+                "unknown mount")
+        #expect(try !errors { $0.rig?.poses?["attention"]?.channels["head.rot"] = 40 }.isEmpty, "pose outside the joint")
+    }
+
+    @Test func preemptionHandsOverWhatWasShowing() throws {
+        let pack = try placeholderPack().get()
+        let rig = pack.manifest.rig!
+        func clipPose(_ id: MascotClipID, _ ms: Double, state: MascotState = .attention) -> MascotPose {
+            MascotPose(state: state, frame: nil, clipElapsed: ms / 1000, clip: ClipFrame(id: id, frame: 0, elapsed: ms / 1000))
+        }
+        // new-item mid-waggle is preempted by incident-start: the new clip starts from new-item's channels.
+        let handoff = try #require(RigHandoff.between(clipPose(.newItem, 800), clipPose(.incidentStart, 0), at: t0, pack: pack))
+        #expect(handoff.clip == .incidentStart && handoff.start == t0)
+        #expect(handoff.channels == RigEvaluator.showing(rig, clip: RigPlaceholder.newItem, at: 800))
+        let blended = handoff.apply(to: clipPose(.incidentStart, 0), at: t0)
+        let start = pack.rigPose(for: blended)!.bones["arm-l"]!, was = pack.rigPose(for: clipPose(.newItem, 800))!.bones["arm-l"]!
+        #expect(abs(start.a - was.a) < 1e-9 && abs(start.b - was.b) < 1e-9 && abs(start.tx - was.tx) < 1e-6, "no jump at the cut")
+        // From the attention frame: its baked pose.
+        let still = MascotPose(state: .attention, frame: nil, clipElapsed: nil)
+        #expect(RigHandoff.between(still, clipPose(.newItem, 0), at: t0, pack: pack)?.channels == rig.poses!["attention"]!.channels)
+        // Only for the clip it was recorded for, only at its start.
+        #expect(handoff.apply(to: clipPose(.newItem, 0), at: t0).rigBlendFrom == nil)
+        #expect(handoff.apply(to: clipPose(.incidentStart, 0), at: t0 + 5).rigBlendFrom == nil)
+        // A clip simply continuing is not a hand-off; a frame pack never has one.
+        #expect(RigHandoff.between(clipPose(.newItem, 110), clipPose(.newItem, 110), at: t0 + 0.11, pack: pack) == nil)
+        #expect(RigHandoff.between(still, clipPose(.newItem, 0), at: t0, pack: nil) == nil)
     }
 
     @Test func olderSchemasIgnoreARigAndKeepTheirFrames() throws {

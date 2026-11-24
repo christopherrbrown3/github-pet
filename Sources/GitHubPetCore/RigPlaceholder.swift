@@ -13,7 +13,7 @@ public enum RigPlaceholder {
 
     /// Parts in canvas units: name, bone, box, colour and shape. Drawn at `unitScale` px per unit.
     struct Shape {
-        enum Kind { case capsule, ellipse, rounded, eyes(Eyes), mouth(open: Bool), envelope }
+        enum Kind { case capsule, ellipse, rounded, eyes(Eyes), mouth(open: Bool), envelope, helmet }
         enum Eyes { case open, half, closed, happy }
         var name: String
         var bone: String
@@ -46,6 +46,28 @@ public enum RigPlaceholder {
         Shape(name: "eyes", bone: "head", box: CGRect(x: 96, y: 66, width: 64, height: 26), kind: .eyes(.open), color: dark),
         Shape(name: "mouth", bone: "head", box: CGRect(x: 112, y: 100, width: 32, height: 18), kind: .mouth(open: false), color: dark),
         Shape(name: "envelope", bone: "hand-l", box: CGRect(x: 74, y: 178, width: 34, height: 24), kind: .envelope, color: face),
+        // Worn on the head by default (its rest placement is the hat accessory); held by the hand mount.
+        Shape(name: "helmet", bone: "head", box: CGRect(x: 86, y: 17, width: 84, height: 40), kind: .helmet,
+              color: (0.84, 0.18, 0.14)),
+    ]
+
+    /// Face presets (design section 3), as swaps of the eyes and mouth parts.
+    static let faces: [String: [String: String]] = [
+        "neutral": ["eyes": "default", "mouth": "default"],
+        "notice": ["eyes": "default", "mouth": "open"],
+        "joy": ["eyes": "happy", "mouth": "open"],
+        "squeeze": ["eyes": "closed", "mouth": "open"],
+        "determined": ["eyes": "half", "mouth": "default"],
+        "blink": ["eyes": "closed"],
+        "half": ["eyes": "half"],
+    ]
+
+    /// The still poses the states are baked from, and clips end on.
+    static let poses: [String: RigSpec.Pose] = [
+        "idle": .init(face: "neutral"),
+        // Alert by waving and tilting, not by standing taller: the worn hat already uses the headroom.
+        "attention": .init(channels: ["arm-r.rot": -35, "head.rot": -3, "body.rot": -2], face: "joy"),
+        "urgent": .init(channels: ["arm-l.rot": -15, "arm-r.rot": 15], face: "determined"),
     ]
 
     /// The rig, with the `new-item` clip keyed from design section 5.4, adapted to these bones.
@@ -54,12 +76,14 @@ public enum RigPlaceholder {
             var variants: [String: String]?
             if shape.name == "eyes" { variants = ["half": "rig/eyes-half.png", "closed": "rig/eyes-closed.png", "happy": "rig/eyes-happy.png"] }
             if shape.name == "mouth" { variants = ["open": "rig/mouth-open.png"] }
+            let mounts: [String: RigSpec.Mount]? = shape.name == "helmet" ? ["hand": .init(bone: "hand-l", origin: [56, 176])] : nil
             return RigSpec.Part(name: shape.name, image: "rig/\(shape.name).png", bone: shape.bone,
                                 origin: [shape.box.minX, shape.box.minY], variants: variants,
-                                hidden: shape.name == "envelope" ? true : nil)
+                                hidden: ["envelope", "helmet"].contains(shape.name) ? true : nil, mounts: mounts)
         }
         return RigSpec(unitScale: unitScale, restScale: 0.96, bones: bones, parts: parts,
-                       clips: [MascotClipID.newItem.rawValue: newItem], reserve: [48, 20, 208])
+                       clips: [MascotClipID.newItem.rawValue: newItem, MascotClipID.incidentStart.rawValue: incidentStart],
+                       reserve: [48, 20, 208], faces: faces, poses: poses)
     }
 
     typealias K = RigSpec.Key
@@ -87,17 +111,46 @@ public enum RigPlaceholder {
         ],
         follow: [.init(bone: "hand-l", of: "arm-l", delayMs: 70, gain: 0.3)],
         sway: [.init(bones: ["arm-r"], amp: 5, periodMs: 1000)],
-        swaps: [.init(at: 0, part: "eyes", variant: "default"), .init(at: 0, part: "mouth", variant: "open"),
-                .init(at: 240, part: "envelope", variant: "default"), .init(at: 460, part: "eyes", variant: "happy"),
-                .init(at: 1300, part: "eyes", variant: "default"), .init(at: 1300, part: "mouth", variant: "default"),
-                .init(at: 1700, part: "eyes", variant: "closed"), .init(at: 1780, part: "eyes", variant: "default"),
-                .init(at: 1780, part: "envelope", variant: "hide")])
+        swaps: [.init(at: 240, part: "envelope", variant: "default"), .init(at: 1780, part: "envelope", variant: "hide")],
+        faces: [.init(at: 0, preset: "notice"), .init(at: 460, preset: "joy"), .init(at: 1300, preset: "neutral"),
+                .init(at: 1700, preset: "blink"), .init(at: 1780, preset: "joy")],
+        endsOn: "attention",
+        // With the helmet on (an incident is showing) the headroom is the helmet's: perk up by
+        // squashing and leaning, not by rising.
+        worn: [
+            "root.sy": [K(0, 1), K(120, 0.98, .out), K(300, 0.9), K(460, 1.0, .out), K(620, 0.95, .in), K(900, 1, .out)],
+            "root.y": [K(0, 0)],
+            "head.sy": [K(0, 1), K(300, 0.98), K(460, 1.0, .out), K(620, 0.98), K(900, 1, .out)],
+        ])
+
+    /// Notice, bring the helmet up in the left hand, hand it over to the head (an eased mount change),
+    /// pull it down with a squash, a determined nod, settle. Ends on rest with the helmet worn exactly
+    /// where the hat accessory draws it, so the hand-off to the held overlay is seamless.
+    public static let incidentStart = RigSpec.Clip(
+        durationMs: 1900,
+        tracks: [
+            "head.rot": [K(0, 0), K(250, -5, .out), K(550, -2), K(850, 4), K(1150, 0, .spring)],
+            "head.y": [K(0, 0), K(1150, 0), K(1300, 4), K(1450, 0, .out)],
+            // The helmet comes up to the chest with the arm turned in, then the mount blend lifts it onto
+            // the head while the hand follows up and lets go.
+            "arm-l.rot": [K(0, 0), K(250, 8), K(550, -32, .back), K(820, -38), K(1050, -20), K(1500, 0)],
+            "arm-r.rot": [K(0, 0), K(550, 6), K(850, 25), K(1150, -10, .back), K(1500, 0)],
+            "root.sy": [K(0, 1), K(250, 0.97), K(850, 1.0), K(1000, 0.92, .in), K(1300, 1, .out)],
+            "body.rot": [K(0, 0), K(550, -2), K(1000, 2), K(1300, 0, .spring)],
+        ],
+        follow: [.init(bone: "hand-l", of: "arm-l", delayMs: 60, gain: 0.4)],
+        swaps: [.init(at: 200, part: "helmet", variant: "default")],
+        faces: [.init(at: 0, preset: "notice"), .init(at: 900, preset: "squeeze"), .init(at: 1150, preset: "determined"),
+                .init(at: 1600, preset: "neutral")],
+        mounts: [.init(at: 200, part: "helmet", mount: "hand"), .init(at: 820, part: "helmet", mount: "default", blendMs: 260)],
+        accessories: .hide)
 
     /// Writes the pack (manifest, part images, baked state frames) into `directory`.
     public static func write(to directory: URL) throws {
         let fm = FileManager.default
         try fm.createDirectory(at: directory.appendingPathComponent("rig"), withIntermediateDirectories: true)
         try fm.createDirectory(at: directory.appendingPathComponent("frames"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: directory.appendingPathComponent("accessories"), withIntermediateDirectories: true)
         var files: [String: Data] = [:]
         for shape in shapes {
             files["rig/\(shape.name).png"] = try png(draw(shape))
@@ -117,23 +170,22 @@ public enum RigPlaceholder {
         let rig = self.rig
         let images = files.compactMapValues(RigRaster.image)
         let sizes = images.mapValues { CGSize(width: $0.width, height: $0.height) }
-        func bake(_ name: String, channels: [String: Double] = [:], swaps: [RigSpec.Swap] = []) throws {
-            var pose = RigEvaluator.pose(rig, channels: channels, swaps: swaps, at: 0)
-            let origins = Dictionary(uniqueKeysWithValues: rig.parts.map { ($0.name, $0.origin) })
-            for index in pose.parts.indices {
-                let origin = origins[pose.parts[index].part]!, size = sizes[pose.parts[index].image] ?? .zero
-                pose.parts[index].rect = CGRect(x: origin[0], y: origin[1], width: size.width / unitScale, height: size.height / unitScale)
-            }
+        // The builder's bake: each state frame is a still pose of the rig, so a clip that blends into
+        // that pose hands over to the frame without a jump.
+        func bake(_ path: String, _ still: String, face: String? = nil, only: String? = nil) throws {
+            var pose = RigEvaluator.pose(rig, still: still, sizes: sizes, swaps: rig.faceSwaps(face)
+                                         + (only.map { [RigSpec.Swap(at: 0, part: $0, variant: "default")] } ?? []))
+            if let only { pose.parts = pose.parts.filter { $0.part == only } }
             guard let image = RigRaster.render(pose, images: images, side: MascotPack.canvasSize) else { throw CocoaError(.fileWriteUnknown) }
-            files["frames/\(name).png"] = try png(image)
+            files[path] = try png(image)
         }
-        func eyes(_ variant: String) -> [RigSpec.Swap] { [.init(at: 0, part: "eyes", variant: variant)] }
-        try bake("idle-00")
-        try bake("idle-01", swaps: eyes("half"))
-        try bake("idle-02", swaps: eyes("closed"))
-        try bake("attention-00", channels: ["arm-r.rot": -35, "root.sy": 1.02, "head.rot": -3],
-                 swaps: eyes("happy") + [.init(at: 0, part: "mouth", variant: "open")])
-        try bake("urgent-00", channels: ["arm-l.rot": -15, "arm-r.rot": 15])
+        try bake("frames/idle-00.png", "idle")
+        try bake("frames/idle-01.png", "idle", face: "half")
+        try bake("frames/idle-02.png", "idle", face: "blink")
+        try bake("frames/attention-00.png", "attention")
+        try bake("frames/urgent-00.png", "urgent")
+        // The incident hat: the helmet part alone, worn on the rest head.
+        try bake("accessories/firefighter-hat.png", "idle", only: "helmet")
         for (path, data) in files { try data.write(to: directory.appendingPathComponent(path)) }
         let manifest = MascotPackManifest(
             schemaVersion: 3, id: id, name: "Rig placeholder", canvas: .init(width: 256, height: 256), anchor: MascotPack.anchor,
@@ -145,6 +197,8 @@ public enum RigPlaceholder {
                 "urgent": .init(frames: ["frames/urgent-00.png"], durationMs: [1900], loop: false, staticFallback: "frames/urgent-00.png"),
             ],
             frameSha256: files.mapValues { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() },
+            accessories: [AccessoryPolicy.firefighterHat.rawValue: .init(image: "accessories/firefighter-hat.png")],
+            points: .init(head: [128, 34]),
             rig: rig)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -162,7 +216,8 @@ public enum RigPlaceholder {
         context.setStrokeColor(CGColor(red: 0.1, green: 0.07, blue: 0.18, alpha: 1))
         context.setLineWidth(3)
         context.setLineCap(.round)
-        let inset = rect.insetBy(dx: 2, dy: 2)
+        // Strokes stay 2 px clear of the image edge, like cut parts' margin.
+        let inset = rect.insetBy(dx: 4, dy: 4)
         switch shape.kind {
         case .capsule:
             let path = CGPath(roundedRect: inset, cornerWidth: inset.width / 2, cornerHeight: inset.width / 2, transform: nil)
@@ -208,6 +263,15 @@ public enum RigPlaceholder {
                 context.addQuadCurve(to: CGPoint(x: CGFloat(width) - 8, y: CGFloat(height) - 10), control: CGPoint(x: rect.midX, y: 0))
                 context.strokePath()
             }
+        case .helmet:
+            // A dome over a brim, with a cream shield; CoreGraphics y is up.
+            context.addPath(CGPath(roundedRect: CGRect(x: 4, y: 4, width: CGFloat(width) - 8, height: 18), cornerWidth: 9,
+                                   cornerHeight: 9, transform: nil))
+            context.drawPath(using: .fillStroke)
+            context.addEllipse(in: CGRect(x: 22, y: 10, width: CGFloat(width) - 44, height: CGFloat(height) - 14))
+            context.drawPath(using: .fillStroke)
+            context.setFillColor(CGColor(red: 0.98, green: 0.93, blue: 0.8, alpha: 1))
+            context.fillEllipse(in: CGRect(x: rect.midX - 12, y: 22, width: 24, height: 28))
         case .envelope:
             context.addPath(CGPath(roundedRect: inset, cornerWidth: 6, cornerHeight: 6, transform: nil))
             context.drawPath(using: .fillStroke)

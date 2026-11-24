@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate real pack files against the developer-agreed v1 contract and the #138 schema v2 additions."""
+"""Validate real pack files against the developer-agreed v1 contract and the #138 schema v2 and v3 (rig) additions."""
 from pathlib import Path
 import hashlib
 import json
@@ -15,11 +15,16 @@ CLIP_CAPS = {'incident-start': 2200, 'incident-end': 3200, 'new-item': 1900, 'it
              'drop': 600, 'poke': 900, 'dizzy': 1800, 'idle-look': 2600, 'idle-stretch': 2600, 'idle-fidget': 2600}
 HELD = {'drag', 'doze'}
 MAX_SEQUENCE, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_PACK_BYTES = 8, 64, 96 * 1024, 4 * 1024 * 1024
+# animation-v2-rig.md section 7.1 (mirrors RigLimits in Sources/GitHubPetCore/Rig.swift).
+RIG_MAX_BONES, RIG_MAX_DEPTH, RIG_MAX_PARTS, RIG_MAX_TRACKS, RIG_MAX_KEYS = 24, 8, 48, 40, 48
+RIG_MAX_PART_SIDE, RIG_MAX_PART_BYTES, RIG_MIN_CLIP_MS = 1024, 160 * 1024, 100
+RIG_EASES = {'linear', 'hold', 'inOut', 'out', 'in', 'back', 'spring'}
+RIG_RANGES = {'x': (-64, 64), 'y': (-64, 64), 'rot': (-180, 180), 'sx': (0.3, 1.5), 'sy': (0.3, 1.5), 'opacity': (0, 1)}
 
 
 def check_pack(pack, union=PACKS['mona-pet-v1']):
     manifest = json.loads((pack / 'manifest.json').read_text())
-    assert manifest['schemaVersion'] in (1, 2)
+    assert manifest['schemaVersion'] in (1, 2, 3)
     assert manifest['canvas'] == {'width': 256, 'height': 256}
     assert manifest['anchor'] == [128, 232]
     results, decoded, unique = {}, 0, set()
@@ -81,9 +86,11 @@ def check_pack(pack, union=PACKS['mona-pet-v1']):
         width, height, _ = read_png(path)
         assert [width, height] == sheet['size'] == [1024, 256]
         assert sha256_png(path) == sheet['sha256']
-    v2 = check_v2(pack, manifest, union, resolve) if manifest['schemaVersion'] == 2 else None
-    return {'result': 'pass', 'contract': 'developer v1' + (' + schema v2' if v2 else ''), 'canvas': [256, 256], 'anchor': [128, 232],
-            'states': results, 'decodedRuntimeFrameBytes': decoded, **({'v2': v2} if v2 else {}),
+    v2 = check_v2(pack, manifest, union, resolve) if manifest['schemaVersion'] >= 2 else None
+    v3 = check_v3(manifest, union, resolve) if manifest['schemaVersion'] >= 3 else None
+    contract = 'developer v1' + (' + schema v2' if v2 else '') + (' + schema v3 rig' if v3 else '')
+    return {'result': 'pass', 'contract': contract, 'canvas': [256, 256], 'anchor': [128, 232],
+            'states': results, 'decodedRuntimeFrameBytes': decoded, **({'v2': v2} if v2 else {}), **({'v3': v3} if v3 else {}),
             'manifestSha256': hashlib.sha256((pack / 'manifest.json').read_bytes()).hexdigest(),
             'limitations': ['Source sheets are generated; minor contour variation remains between poses.',
                             'Browser design review is not native app, VoiceOver, or physical display verification.']}
@@ -167,6 +174,155 @@ def check_v2(pack, manifest, union, resolve):
     return {'clips': sorted(clips), 'heldStates': sorted(HELD & set(states)), 'images': len(referenced), 'bytes': total,
             'union': {'x': list(union[:2]), 'yMin': union[2]}, 'boundsRule': 'fail' if violations else 'pass',
             'boundsViolations': violations}
+
+
+def rig_errors(rig):
+    """Schema v3 rig rules that need no files; an empty list means valid. Mirrors RigLimits.validate."""
+    errors = []
+    number = lambda v: type(v) in (int, float) and v == v and abs(v) != float('inf')
+    pair = lambda v, limit=512: isinstance(v, list) and len(v) == 2 and all(number(x) and abs(x) <= limit for x in v)
+    if not (number(rig.get('unitScale')) and 1 <= rig['unitScale'] <= 8):
+        errors.append('unitScale must be 1-8')
+    if 'restScale' in rig and not (number(rig['restScale']) and 0.5 <= rig['restScale'] <= 1):
+        errors.append('restScale must be 0.5-1')
+    bones = rig.get('bones', {})
+    if len(bones) > RIG_MAX_BONES:
+        errors.append(f'more than {RIG_MAX_BONES} bones')
+    if [name for name, bone in bones.items() if bone.get('parent') is None] != ['root']:
+        errors.append('exactly one parentless bone, named root')
+    for name, bone in sorted(bones.items()):
+        if not pair(bone.get('pivot')):
+            errors.append(f'bone {name}: pivot must be [x, y]')
+        if bone.get('parent') is not None and bone['parent'] not in bones:
+            errors.append(f'bone {name}: unknown parent')
+        rot = bone.get('rot')
+        if rot is not None and not (pair(rot, 180) and rot[0] <= rot[1]):
+            errors.append(f'bone {name}: rot must be [min, max]')
+        current, depth = bone.get('parent'), 1
+        while current is not None and depth <= RIG_MAX_DEPTH + 1:
+            current, depth = bones.get(current, {}).get('parent'), depth + 1
+        if current is not None:
+            errors.append(f'bone {name}: cycle or deeper than {RIG_MAX_DEPTH}')
+    reserve = rig.get('reserve')
+    if reserve is not None and not (isinstance(reserve, list) and len(reserve) == 3 and all(type(v) is int for v in reserve)
+                                    and 0 <= reserve[0] < reserve[2] < 256 and 0 <= reserve[1] < 256):
+        errors.append('reserve must be [minX, top, maxX] inside the canvas')
+    parts = rig.get('parts', [])
+    if not 1 <= len(parts) <= RIG_MAX_PARTS:
+        errors.append(f'1-{RIG_MAX_PARTS} parts')
+    by_name = {}
+    for part in parts:
+        name = part.get('name')
+        if name in by_name:
+            errors.append(f'part {name}: duplicate name')
+        by_name[name] = part
+        if part.get('bone') not in bones:
+            errors.append(f'part {name}: unknown bone')
+        if not pair(part.get('origin')):
+            errors.append(f'part {name}: origin must be [x, y]')
+        if {'default', 'hide'} & set(part.get('variants', {})):
+            errors.append(f'part {name}: default and hide are reserved')
+        for mount_name, mount in sorted(part.get('mounts', {}).items()):
+            if mount_name == 'default' or mount.get('bone') not in bones or not pair(mount.get('origin')):
+                errors.append(f'part {name}: bad mount {mount_name}')
+
+    def variant_ok(part, variant):
+        return part in by_name and (variant in ('default', 'hide') or variant in by_name[part].get('variants', {}))
+
+    faces = rig.get('faces', {})
+    for preset, layers in sorted(faces.items()):
+        errors += [f'face {preset}: bad {part} variant' for part, variant in sorted(layers.items()) if not variant_ok(part, variant)]
+
+    def channel_errors(where, track, values):
+        bone, _, channel = track.partition('.')
+        if bone not in bones or channel not in RIG_RANGES or track.count('.') != 1:
+            return [f'{where}: unknown track {track}']
+        low, high = RIG_RANGES[channel]
+        if channel == 'rot' and 'rot' in bones[bone]:
+            low, high = bones[bone]['rot']
+        return [f'{where}: {track} value outside {low}..{high}'] if not all(number(v) and low <= v <= high for v in values) else []
+
+    poses = rig.get('poses', {})
+    for name, pose in sorted(poses.items()):
+        if pose.get('face') is not None and pose['face'] not in faces:
+            errors.append(f'pose {name}: unknown face')
+        for track, value in sorted(pose.get('channels', {}).items()):
+            errors += channel_errors(f'pose {name}', track, [value])
+    for name, clip in sorted(rig.get('clips', {}).items()):
+        if name not in CLIP_CAPS:
+            errors.append(f'unknown clip {name}')
+            continue
+        duration = clip.get('durationMs')
+        if not (type(duration) is int and RIG_MIN_CLIP_MS <= duration <= CLIP_CAPS[name]):
+            errors.append(f'clip {name}: durationMs must be {RIG_MIN_CLIP_MS}-{CLIP_CAPS[name]}')
+            continue
+        within = lambda t: number(t) and 0 <= t <= duration
+        tracks = list(clip.get('tracks', {}).items()) + list(clip.get('worn', {}).items())
+        if len(tracks) > RIG_MAX_TRACKS:
+            errors.append(f'clip {name}: more than {RIG_MAX_TRACKS} tracks')
+        for track, keys in tracks:
+            if not (isinstance(keys, list) and 1 <= len(keys) <= RIG_MAX_KEYS):
+                errors.append(f'clip {name}: {track} needs 1-{RIG_MAX_KEYS} keys')
+                continue
+            if not all(isinstance(k, list) and len(k) in (2, 3) and (len(k) == 2 or k[2] in RIG_EASES) for k in keys):
+                errors.append(f'clip {name}: {track} keys are [ms, value, ease?] with a known ease')
+                continue
+            times = [k[0] for k in keys]
+            if not all(within(t) for t in times) or times != sorted(times):
+                errors.append(f'clip {name}: {track} key times must rise within the clip')
+            errors += channel_errors(f'clip {name}', track, [k[1] for k in keys])
+        for follow in clip.get('follow', []):
+            if follow.get('bone') not in bones or follow.get('of') not in bones or not (number(follow.get('delayMs')) and 0 <= follow['delayMs'] <= 1000) \
+                    or not (number(follow.get('gain')) and -3 <= follow['gain'] <= 3):
+                errors.append(f'clip {name}: bad follow')
+        for sway in clip.get('sway', []):
+            if any(b not in bones for b in sway.get('bones', [])) or not (number(sway.get('amp')) and 0 <= sway['amp'] <= 45) \
+                    or not (number(sway.get('periodMs')) and 100 <= sway['periodMs'] <= 5000) or not 0 <= sway.get('phaseStepMs', 0) <= 2000:
+                errors.append(f'clip {name}: bad sway')
+        for swap in clip.get('swaps', []):
+            if not variant_ok(swap.get('part'), swap.get('variant')) or not within(swap.get('at')):
+                errors.append(f'clip {name}: bad swap')
+        for face in clip.get('faces', []):
+            if face.get('preset') not in faces or not within(face.get('at')):
+                errors.append(f'clip {name}: bad face')
+        for mount in clip.get('mounts', []):
+            part = by_name.get(mount.get('part'), {})
+            if not part or (mount.get('mount') != 'default' and mount.get('mount') not in part.get('mounts', {})) \
+                    or not within(mount.get('at')) or not 0 <= mount.get('blendMs', 0) <= 2000:
+                errors.append(f'clip {name}: bad mount')
+        if clip.get('endsOn') is not None and clip['endsOn'] not in poses:
+            errors.append(f'clip {name}: endsOn is not a pose')
+        if clip.get('accessories', 'keep') not in ('keep', 'hide'):
+            errors.append(f'clip {name}: accessories is keep or hide')
+    return errors
+
+
+def check_v3(manifest, union, resolve):
+    """Schema v3: rig structure, part images, and (bundled) a reserve equal to the skin's union, so the
+    lane and hover never change. The loader samples every clip at 60 Hz against the reserve (the
+    bounds rule); render-check loads the bundled packs with the bundled budget, so it enforces that."""
+    rig = manifest.get('rig')
+    assert isinstance(rig, dict), 'schema 3 needs a rig section'
+    errors = rig_errors(rig)
+    assert not errors, errors
+    reserve = rig.get('reserve')
+    assert reserve == [union[0], union[2], union[1]], f'reserve {reserve} must equal the skin union {list(union)} (minX, top, maxX)'
+    paths = list(dict.fromkeys(p for part in rig['parts'] for p in [part['image']] + sorted(part.get('variants', {}).values())))
+    total = 0
+    for relative in paths:
+        path = resolve(relative)
+        size = path.stat().st_size
+        assert size <= RIG_MAX_PART_BYTES, (relative, size)
+        total += size
+        width, height, pixels = read_png(path)
+        assert 1 <= width <= RIG_MAX_PART_SIDE and 1 <= height <= RIG_MAX_PART_SIDE, (relative, width, height)
+        assert manifest['frameSha256'][relative] == sha256_png(path), relative
+        # Parts are cut with a clear margin: an opaque edge would show a hard seam when rotated.
+        assert all(pixels[(y * width + x) * 4 + 3] == 0 for y in range(height) for x in range(width)
+                   if x in (0, width - 1) or y in (0, height - 1)), f'{relative} touches its edge'
+    return {'bones': len(rig['bones']), 'parts': len(rig['parts']), 'images': len(paths), 'bytes': total,
+            'clips': sorted(rig.get('clips', {})), 'poses': sorted(rig.get('poses', {})), 'faces': sorted(rig.get('faces', {})),
+            'reserve': reserve, 'boundsRule': 'sampled by the app loader (render-check)'}
 
 
 def outside(box, union):

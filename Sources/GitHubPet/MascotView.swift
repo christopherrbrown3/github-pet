@@ -151,12 +151,14 @@ struct MascotView: View {
 
     func pose(at date: Date, reduced: Bool) -> MascotPose {
         let pack = self.pack
-        return MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
+        let animated = MascotAnimator.pose(mood: model.mascotState, clip: model.activeClip, now: date, reducedMotion: reduced,
                                    idleEpoch: .distantPast, gesture: pack?.attentionGesture, stage: model.clipStage,
                                    library: packOverride.map { ClipLibrary(pack: $0) } ?? model.clipLibrary,
                                    accessories: model.accessories) { state in
             pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
         }
+        // A starting rig clip blends in from what was showing (#138); never in render-check stills.
+        return packOverride == nil ? model.rigHandoff?.apply(to: animated, at: date) ?? animated : animated
     }
 
     /// "PH" on any clip, held pose or accessory synthesized until the art lands (#138), so a

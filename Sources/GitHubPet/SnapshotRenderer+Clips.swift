@@ -90,9 +90,16 @@ extension SnapshotRenderer {
 }
 
 /// #138 cutout rig: the shape-only placeholder rig (schema v3) loaded under the bundled budget and
-/// bounds rule, and its keyframed new-item drawn at its key instants through the snapshot (Canvas) path.
+/// bounds rule, and its keyframed clips drawn at key instants through the snapshot (Canvas) path:
+/// new-item, new-item with the incident hat worn (its `worn` tracks), and incident-start's helmet hand-over.
 extension SnapshotRenderer {
     static let rigInstantsMs: [Double] = [0, 120, 300, 400, 460, 560, 760, 1000, 1300, 1700, 1900]
+
+    private struct RigRow: Identifiable {
+        let id: String
+        let clip: MascotClipID
+        let worn: Bool
+    }
 
     static func rigRenders(model: AppModel, directory: URL) async -> [String] {
         var lines = ["## cutout rig (#138, placeholder rig)"]
@@ -108,28 +115,35 @@ extension SnapshotRenderer {
         let library = ClipLibrary(pack: pack)
         lines.append("ok rig loaded: schema \(pack.manifest.schemaVersion), \(pack.manifest.rig?.parts.count ?? 0) parts, "
                      + "\(pack.rigOutlines.count) images, bundled budget and reserve")
-        lines.append("rig new-item: length=\(Int((library.duration(.newItem) ?? 0) * 1000))ms instants="
-                     + rigInstantsMs.map { String(Int($0)) }.joined(separator: ","))
-        let poses = rigInstantsMs.map { ms in
-            MascotPose(state: .attention, frame: nil, clipElapsed: ms / 1000, clip: ClipFrame(id: .newItem, frame: 0, elapsed: ms / 1000))
+        let rows = [RigRow(id: "new-item", clip: .newItem, worn: false), RigRow(id: "new-item + hat", clip: .newItem, worn: true),
+                    RigRow(id: "incident-start", clip: .incidentStart, worn: false)]
+        func pose(_ row: RigRow, _ ms: Double) -> MascotPose {
+            MascotPose(state: .attention, frame: nil, clipElapsed: ms / 1000, clip: ClipFrame(id: row.clip, frame: 0, elapsed: ms / 1000),
+                       accessories: row.worn ? [AccessoryPolicy.firefighterHat] : [])
         }
-        let drawn = poses.filter { pack.rigPose(for: $0) != nil }.count
-        lines.append("\(drawn == poses.count ? "ok" : "FAIL") rig new-item: \(drawn)/\(poses.count) instants drawn by the rig")
+        for row in rows {
+            let drawn = rigInstantsMs.filter { pack.rigPose(for: pose(row, $0)) != nil }.count
+            lines.append("\(drawn == rigInstantsMs.count ? "ok" : "FAIL") rig \(row.id): length="
+                         + "\(Int((library.duration(row.clip) ?? 0) * 1000))ms, \(drawn)/\(rigInstantsMs.count) instants drawn by the rig")
+        }
         let layout = model.layout(model.settings.mascotSize)
         let sheet = VStack(alignment: .leading, spacing: 4) {
-            Text("Placeholder rig: new-item at \(rigInstantsMs.map { String(Int($0)) }.joined(separator: ", ")) ms").font(.caption.bold())
-            HStack(spacing: 4) {
-                ForEach(Array(poses.enumerated()), id: \.offset) { _, pose in
-                    MascotView(model: model, poseOverride: pose, badgeOverride: "2", drawsLabels: true,
-                               renderDate: Date(timeIntervalSinceReferenceDate: 0), packOverride: pack)
-                        .frame(width: layout.panelWidth, height: layout.panelSize.height)
-                        .background(Color.gray.opacity(0.12))
+            Text("Placeholder rig at \(rigInstantsMs.map { String(Int($0)) }.joined(separator: ", ")) ms").font(.caption.bold())
+            ForEach(rows) { row in
+                HStack(spacing: 4) {
+                    Text(row.id).font(.caption2.monospaced()).frame(width: 96, alignment: .leading)
+                    ForEach(Array(rigInstantsMs.enumerated()), id: \.offset) { _, ms in
+                        MascotView(model: model, poseOverride: pose(row, ms), badgeOverride: "2", drawsLabels: true,
+                                   renderDate: Date(timeIntervalSinceReferenceDate: 0), packOverride: pack)
+                            .frame(width: layout.panelWidth, height: layout.panelSize.height)
+                            .background(Color.gray.opacity(0.12))
+                    }
                 }
             }
         }
         .padding(8)
         .background(Color(nsColor: .windowBackgroundColor))
-        lines += await render(sheet, name: "rig-new-item", directory: directory, appearance: .aqua).filter { !$0.hasPrefix(" ") }
+        lines += await render(sheet, name: "rig-clips", directory: directory, appearance: .aqua).filter { !$0.hasPrefix(" ") }
         return lines
     }
 }

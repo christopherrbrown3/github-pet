@@ -183,7 +183,12 @@ extension MascotPack {
         let v2Paths = manifest.v2ImagePaths
         guard !v2Paths.isEmpty else { return [] }
         let core = MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }
-        guard let union = ArtProfile.union(core), let limit = union.bounds else { return [] }
+        guard let union = ArtProfile.union(core), var limit = union.bounds else { return [] }
+        // v3: a rig's reserve is the skin's layout box (its rest pose is scaled down to leave headroom,
+        // which the worn hat uses), so the hat is checked against it rather than the baked states.
+        if manifest.isV3, let reserve = manifest.rig?.reserve, reserve.count == 3 {
+            limit = (minX: reserve[0], maxX: reserve[2], top: reserve[1], bottom: limit.bottom)
+        }
         let baseTop = (MascotState.allCases.flatMap(poseContours) + leaningContours).flatMap { $0.compactMap { $0 } }.min() ?? 0
         var errors: [MascotPackError] = []
         extraOutlines = [:]

@@ -442,7 +442,11 @@ v1 and v2 manifests keep loading unchanged. **A v3 manifest is a v2 manifest plu
 - Bones form one tree under a bone named `root` (≤ 24 bones, depth ≤ 8). Pivots are canvas units. `rot` is the joint's allowed range; a key outside it is an error, in custom packs too.
 - A track is `"bone.channel"` → keys `[ms, value]` or `[ms, value, "ease"]` (default `inOut`), times rising within the clip. Channels: `x`, `y`, `rot` (offsets from rest), `sx`, `sy` (0.3 to 1.5), `opacity` (0 to 1). If `sy` is keyed and `sx` is not, `sx = 1/√sy` (the squash rule); key `sx` to opt out (as the foreshortened arm does).
 - `follow` and `sway` are the only procedural kinds, both closed forms of time. Nothing in a pack is executable.
-- **Faces, tip and hand variants and props are swaps.** A part's `variants` are other images with the same placement; `swaps` pick one from an instant (`default` is the part's own image, `hide` hides it). `hidden: true` parts (props) are drawn only once a swap shows them. The face presets of section 3 become named groups of swaps when the skins are assembled.
+- **Faces, tip and hand variants and props are swaps.** A part's `variants` are other images with the same placement; `swaps` pick one from an instant (`default` is the part's own image, `hide` hides it). `hidden: true` parts (props) are drawn only once a swap shows them.
+- **Face presets.** `rig.faces` maps a preset name to part → variant (section 3's table). A clip's `faces` keys (`{"at", "preset"}`) expand to swaps; at the same instant an explicit swap wins. A preset may touch only some parts (`blink` changes just the eyes).
+- **Still poses.** `rig.poses` names still poses (`{"channels", "face"}`): the states the builder bakes (`idle`, `attention`, `urgent`, later `drag`, `doze`) and what clips blend from and into. A clip's `endsOn` names the pose its last 150 ms blend into (rest by default), so `new-item` lands exactly on the baked attention frame.
+- **Mounts (props moving between bones).** A part's `mounts` name other bones it can ride, each with its rest-pose origin. A clip's `mounts` keys (`{"at", "part", "mount", "blendMs"}`) move it; over `blendMs` the placement eases from the old mount's transform to the new one's, so the helmet glides from the hand onto the head with no jump. `default` is the part's own bone.
+- **Worn tracks.** While the incident hat is worn the rest pose's headroom belongs to the hat, so a clip's `worn` tracks replace its plain ones (smaller stretch, no hop). The loader samples both versions against the reserve, the worn one with the hat's outline.
 - `reserve` `[minX, top, maxX]` is the box every clip sample (with the hat where worn) must stay inside: the skin's v1 union, so the lane and hover never change. Without it, the baked states' outline.
 - Clip names are the v1 set; durations are 100 ms to the v1 cap (new-item ≤ 1900). `accessories` is `keep` (default) or `hide`.
 - Rig images: any size up to 1024 px a side, checksummed like frames. They count toward the image budget; the bundled per-image byte cap is 160 KiB for rig parts.
@@ -496,13 +500,24 @@ The profile (`sample`) shows Core Animation commits dominating the Canvas runs; 
 
 ### 7.7 Tests
 
-`Tests/GitHubPetCoreTests/RigTests.swift` and `IdleRedrawTests`: every ease exact at 0 and 1 with the intended shapes; key interpolation and holds; the squash rule; follow lag; blend in from the showing pose and exact rest at the clip's end; swaps on time (props hidden at rest); clockwise rotation about pivots; the placeholder loads under the bundled budget and bounds rule; `new-item` plays through `MascotAnimator` and the event queue at 1.9 s; Reduce Motion never shows a rig pose; the count's contour moves with the art and stays within the lane; a clip leaving the reserve fails bundled and widens custom hover; malformed rigs are rejected (no rig, cycle, unknown bone, out-of-range key, over-long clip, unknown clip, unsafe path, unordered keys); a schema 2 manifest ignores its rig; a rig pack idles on frame changes only and plays clips at 60 fps.
+`Tests/GitHubPetCoreTests/RigTests.swift` and `IdleRedrawTests`: every ease exact at 0 and 1 with the intended shapes; key interpolation and holds; the squash rule; follow lag; blend in from the showing pose and exact end on the clip's `endsOn` pose (or rest); swaps on time (props hidden at rest); clockwise rotation about pivots; the placeholder loads under the bundled budget and bounds rule; `new-item` plays through `MascotAnimator` and the event queue at 1.9 s; Reduce Motion never shows a rig pose; the count's contour moves with the art and stays within the lane; a clip leaving the reserve fails bundled and widens custom hover; malformed rigs are rejected (no rig, cycle, unknown bone, out-of-range key, over-long clip, unknown clip, unsafe path, unordered keys); a schema 2 manifest ignores its rig; a rig pack idles on frame changes only and plays clips at 60 fps. Also: face presets expand and explicit swaps win; the helmet rides the hand, then eases onto the head with no jump at the mount change, and ends exactly on the baked hat; preemption hands over the interrupted clip's channels (no jump at the cut) or the attention pose, only to the clip it was recorded for; malformed `endsOn`, face presets, mounts and poses are rejected. Python: `RigSchemaTests` covers each rule in `rig_errors`.
 
-### 7.8 Not built yet (D3)
+### 7.8 Preemption blend
 
-- Preemption blend: `RigEvaluator.blendedChannels(from:)` exists and is tested; the animator does not yet pass the interrupted clip's channels, so a rig clip blends in from rest.
-- Face presets, prop re-parenting (helmet hand → head), the painted helmet parts, and `endsOn` (a clip blending into the attention pose rather than rest) arrive with the painted skins.
-- `validate_pack.py` does not read v3 yet; the Swift loader enforces every v3 rule today.
+When the active clip or the scheduled clip changes, `AppModel` compares the pose that was showing with the new one (`RigHandoff.between`). If a rig clip has just started, it records the channels that were showing: a preempted rig clip mid-motion (`RigEvaluator.showing`), or the rig's still pose for the mood or held frame. The record is keyed to the new clip's ID and start. `MascotView` applies it only to that clip, as `MascotPose.rigBlendFrom`, and the first 120 ms ease from those channels. Render-check stills never use it.
+
+### 7.9 Designer validation (`validate_pack.py`)
+
+For schema 3, `check_v3` mirrors every `RigLimits` rule in Python (`rig_errors`): the tree, ranges (`worn` tracks and poses included), keys and eases, procedural kinds, swaps, presets, mounts and `endsOn`. It also checks each part image: up to 1024 px a side, 160 KiB or less, checksummed, with a clear 1 px border (an opaque edge would show a seam when the part rotates). For bundled packs, `reserve` must equal the skin's v1 union. The 60 Hz bounds sampling stays in the Swift loader, which render-check runs on the bundled packs with the bundled budget.
+
+### 7.10 Placeholder coverage
+
+The placeholder rig has 10 parts and 14 images, with face presets and baked `idle`, `attention` and `urgent` poses, plus two clips:
+
+- `new-item` ends on the attention pose and has `worn` tracks.
+- `incident-start` brings the helmet out at the chest, uses a 260 ms mount blend to lift it from the hand onto the head, squashes on the pull-down and nods. It ends worn exactly where the baked hat accessory draws it.
+
+Render-check draws `new-item` with and without the hat, and `incident-start`, at 11 instants each (`rig-clips.png`).
 
 ## 8. Decisions (PM, 2026-11-24)
 

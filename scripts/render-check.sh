@@ -438,12 +438,14 @@ if (( $(section "animation clips (#138, placeholder frames)" | grep -cE '^ok +cl
   echo "ok   clip layouts unchanged for both skins at 64/128/256"
 else echo "FAIL clip layout changed:"; section "animation clips (#138, placeholder frames)" | grep -E 'layout unchanged'; failures=$((failures + 1)); fi
 
-# #138 cutout rig: the placeholder rig loads under the bundled budget and reserve, and its new-item is
-# drawn by the rig at every key instant on one contact sheet.
+# #138 cutout rig: the placeholder rig loads under the bundled budget and reserve, and new-item (bare and
+# with the hat) and incident-start are drawn by the rig at every key instant on one contact sheet.
 check_in "cutout rig (#138, placeholder rig)" "rig placeholder loads (bundled budget, reserve)" "^ok rig loaded: schema 3"
-check_in "cutout rig (#138, placeholder rig)" "rig new-item drawn at every key instant" "^ok rig new-item: 11/11 instants"
-if [[ -s $out/rig-new-item.png ]]; then echo "ok   rig new-item contact sheet rendered"
-else echo "FAIL rig new-item contact sheet missing"; failures=$((failures + 1)); fi
+for row in "new-item" "new-item \\+ hat" "incident-start"; do
+  check_in "cutout rig (#138, placeholder rig)" "rig $row drawn at every key instant" "^ok rig $row: length=1900ms, 11/11 instants"
+done
+if [[ -s $out/rig-clips.png ]]; then echo "ok   rig contact sheet rendered"
+else echo "FAIL rig contact sheet missing"; failures=$((failures + 1)); fi
 
 (( failures == 0 )) || { echo "render-check: $failures failure(s); see $out" >&2; exit 1; }
 echo "render-check: all checks passed ($out)"

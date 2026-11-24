@@ -381,6 +381,8 @@ public struct MascotPose: Equatable, Sendable {
     public var clip: ClipFrame?
     /// Accessory overlays worn in this pose (drawn above the art, leaning with it).
     public var accessories: [MascotAccessoryID]
+    /// A rig clip (#138) blends in from these channels: whatever was showing when it started.
+    public var rigBlendFrom: [String: Double]?
 
     public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0,
                 clip: ClipFrame? = nil, accessories: [MascotAccessoryID] = []) {

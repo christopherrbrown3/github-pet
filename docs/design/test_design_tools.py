@@ -11,7 +11,7 @@ from pathlib import Path
 
 from png_rgba import MAX_EDGE, MAX_FILE_BYTES, bounds, read_png, sha256_png, write_png
 from rig_cut import cut, report
-from validate_pack import PACK, check_pack
+from validate_pack import PACK, check_pack, rig_errors
 
 
 def chunk(kind, data):
@@ -166,6 +166,58 @@ class RigCutTests(unittest.TestCase):
             self.assertEqual(read_png(root / 'out' / 'island-00.png')[:2], (58, 38))
             path = self.sheet(root, [(10, 10, 60, 60), (80, 10, 120, 60)])
             self.assertIn('within 20 px', report(path)[0])
+
+
+class RigSchemaTests(unittest.TestCase):
+    def rig(self):
+        return {
+            'unitScale': 2, 'restScale': 0.96, 'reserve': [47, 20, 217],
+            'bones': {'root': {'pivot': [128, 232]}, 'body': {'parent': 'root', 'pivot': [128, 200], 'rot': [-8, 8]},
+                      'head': {'parent': 'body', 'pivot': [128, 138], 'rot': [-14, 14]},
+                      'hand': {'parent': 'body', 'pivot': [86, 190]}},
+            'parts': [{'name': 'body', 'image': 'rig/body.png', 'bone': 'body', 'origin': [84, 122]},
+                      {'name': 'eyes', 'image': 'rig/eyes.png', 'bone': 'head', 'origin': [96, 66],
+                       'variants': {'closed': 'rig/eyes-closed.png'}},
+                      {'name': 'helmet', 'image': 'rig/helmet.png', 'bone': 'head', 'origin': [86, 17], 'hidden': True,
+                       'mounts': {'hand': {'bone': 'hand', 'origin': [56, 176]}}}],
+            'faces': {'blink': {'eyes': 'closed'}},
+            'poses': {'attention': {'channels': {'head.rot': -3}, 'face': 'blink'}},
+            'clips': {'new-item': {'durationMs': 1900, 'tracks': {'root.sy': [[0, 1], [460, 1.04, 'out'], [900, 1, 'spring']]},
+                                   'worn': {'root.y': [[0, 0]]}, 'follow': [{'bone': 'head', 'of': 'body', 'delayMs': 40, 'gain': 0.6}],
+                                   'sway': [{'bones': ['hand'], 'amp': 5, 'periodMs': 1000}],
+                                   'swaps': [{'at': 240, 'part': 'helmet', 'variant': 'default'}],
+                                   'faces': [{'at': 1700, 'preset': 'blink'}],
+                                   'mounts': [{'at': 200, 'part': 'helmet', 'mount': 'hand'},
+                                              {'at': 820, 'part': 'helmet', 'mount': 'default', 'blendMs': 260}],
+                                   'endsOn': 'attention'}},
+        }
+
+    def test_valid_rig_passes(self):
+        self.assertEqual(rig_errors(self.rig()), [])
+
+    def test_each_rule_is_enforced(self):
+        cases = [
+            (lambda r: r['bones']['root'].update(parent='head'), 'parentless'),
+            (lambda r: r['bones']['head'].update(parent='body2'), 'unknown parent'),
+            (lambda r: r['clips']['new-item']['tracks'].update({'tail.rot': [[0, 1]]}), 'unknown track'),
+            (lambda r: r['clips']['new-item']['tracks'].update({'head.rot': [[0, 0], [100, 40]]}), 'outside'),
+            (lambda r: r['clips']['new-item']['tracks'].update({'root.y': [[500, 0], [100, 1]]}), 'must rise'),
+            (lambda r: r['clips']['new-item']['tracks'].update({'root.y': [[0, 0, 'bounce']]}), 'known ease'),
+            (lambda r: r['clips']['new-item'].update(durationMs=2500), 'durationMs'),
+            (lambda r: r['clips'].update(wave=r['clips']['new-item']), 'unknown clip'),
+            (lambda r: r['clips']['new-item'].update(endsOn='dance'), 'endsOn'),
+            (lambda r: r['clips']['new-item'].update(faces=[{'at': 0, 'preset': 'smirk'}]), 'bad face'),
+            (lambda r: r['clips']['new-item'].update(mounts=[{'at': 0, 'part': 'helmet', 'mount': 'foot'}]), 'bad mount'),
+            (lambda r: r['faces'].update(blink={'eyes': 'sparkly'}), 'variant'),
+            (lambda r: r['poses']['attention']['channels'].update({'head.rot': 40}), 'outside'),
+            (lambda r: r['clips']['new-item']['worn'].update({'root.sy': [[0, 2]]}), 'outside'),
+            (lambda r: r.update(reserve=[217, 20, 47]), 'reserve'),
+        ]
+        for edit, expected in cases:
+            rig = self.rig()
+            edit(rig)
+            errors = rig_errors(rig)
+            self.assertTrue(any(expected in error for error in errors), (expected, errors))
 
 
 if __name__ == '__main__':

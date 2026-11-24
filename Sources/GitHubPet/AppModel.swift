@@ -73,9 +73,15 @@ final class AppModel: ObservableObject {
     /// "Show details" in the Inbox: names and titles for this app session only, never saved.
     /// Hover, mascot and menu-bar text stay generic while privacy mode is on.
     @Published var detailsRevealed = false
-    @Published private(set) var activeClip: EventClipQueue.Clip?
+    @Published private(set) var activeClip: EventClipQueue.Clip? {
+        didSet { if activeClip != oldValue { noteRigHandoff(clip: oldValue, stage: clipStage) } }
+    }
+    /// #138: what a starting rig clip blends in from (the preempted clip or the mood's pose).
+    @Published private(set) var rigHandoff: RigHandoff?
     /// #138: scheduler clip, drag and doze, sampled by the mascot view on its timeline.
-    @Published private(set) var clipStage = ClipStage()
+    @Published private(set) var clipStage = ClipStage() {
+        didSet { if clipStage.scheduled != oldValue.scheduled { noteRigHandoff(clip: activeClip, stage: oldValue) } }
+    }
     @Published private(set) var blockedLinkNote: String?
     /// App clock at the last tick (every 0.25 s). Readers always get the latest tick, but views are
     /// told only when something they show from it can change (#166): publishing every tick redrew
@@ -970,6 +976,30 @@ final class AppModel: ObservableObject {
     private func notePointer(at date: Date) {
         scheduler.noteActivity(now: date)
         noteActivity(at: date)
+    }
+
+    /// The live pose now, from the given clip and stage (the same inputs `MascotView.pose` uses).
+    func showingPose(clip: EventClipQueue.Clip?, stage: ClipStage, at date: Date) -> MascotPose {
+        let pose = MascotAnimator.pose(mood: mascotState, clip: clip, now: date, reducedMotion: effectiveReducedMotion,
+                                       idleEpoch: .distantPast, gesture: pack?.attentionGesture, stage: stage,
+                                       library: clipLibrary, accessories: accessories) { [pack] state in
+            pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
+        }
+        return rigHandoff?.apply(to: pose, at: date) ?? pose
+    }
+
+    /// A clip or scheduled clip just changed: if a rig clip starts now, remember what was showing for its
+    /// blend in (#138). Called with the values from before the change.
+    private func noteRigHandoff(clip: EventClipQueue.Clip?, stage: ClipStage) {
+        guard pack?.manifest.rig != nil else { return }
+        let now = clock()
+        let before = showingPose(clip: clip, stage: stage, at: now)
+        let after = MascotAnimator.pose(mood: mascotState, clip: activeClip, now: now, reducedMotion: effectiveReducedMotion,
+                                        idleEpoch: .distantPast, gesture: pack?.attentionGesture, stage: clipStage,
+                                        library: clipLibrary, accessories: accessories) { [pack] state in
+            pack?.manifest.states[state.rawValue]?.durationMs ?? PlaceholderFigure.durationsMs(state)
+        }
+        if let handoff = RigHandoff.between(before, after, at: now, pack: pack) { rigHandoff = handoff }
     }
 
     /// Accessory overlays worn now (#138): the hat only while a real incident marker shows.
