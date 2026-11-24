@@ -45,6 +45,10 @@ Inbox-zero review: 01 and 02 lean opposite ways; 02 eyes remain open and raised 
 
 Inbox-zero B review: the relaxed pose closely resembles idle; no visible effect marks. Bounds and baseline unverified. No retry.
 
+| `assets/mascots/mona-pet-v1/sources/drag-drop-sheet.png` | `exec-40afa2b5-2727-41d5-8a13-d865a8f50f75` | Drag 00–01 and drop 00–01, dangling, squash and rebound. | Same three reference hashes as pilot above. |
+
+Drag/drop review: lifted poses retain a raised tentacle rather than all limbs dangling; landing reads squashed. No visible effect marks. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
