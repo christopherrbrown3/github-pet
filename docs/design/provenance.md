@@ -145,6 +145,10 @@ Ambient B replacement review: both stretch poses have closed eyes and upward ten
 
 Little Chris ambient B replacement review: both yawns have hands raised close to head and closed eyes; lower cells preserve poses in intent but are regenerated, not pixel-identical. Exact bounds and baseline unverified. No visible effect marks; no retry.
 
+| `assets/mascots/mona-pet-v1/sources/incident-end-b-sheet.png` (replacement; supersedes earlier incident-end B above) | `exec-6beb8459-0dd5-47f9-baa1-284fd01d684c` | Small helmet between ears, lowered extinguisher and phew. | Same three Mona reference hashes as pilot above; prior incident-end B: `2df3b5b7c87d33404581465c2f936e47091efa404dee7425b7599ec836986126`; revised incident-end A: `5b03bcaa3fa2ff18fb6bd0c59984afa386818a14193379d1956ac1efd4601528`. |
+
+Incident-end B replacement review: 04 looks down-left with small helmet; phew pose is regenerated in same intent, not pixel-identical. No visible effect marks. Exact bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
