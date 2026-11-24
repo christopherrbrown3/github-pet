@@ -69,6 +69,10 @@ Ambient B review: stretched limbs extend well beyond idle width and 02 has open 
 
 Ambient C review: fidget curl changes are subtle; doze head lowering requires later measurement. No visible effect marks. Bounds and baseline unverified. No retry.
 
+| `assets/mascots/little-chris-v1/sources/incident-start-a-sheet.png` | `exec-4943e03f-54d3-4035-82a9-56788edf2a08` | Incident-start 00–03, notice and don helmet. | `little-chris-v1/source/little-chris-poses.png`: `a87cd707e04e8f06ee110dab68d6d176e46ba459163ed317ccab33c32d1128b1`; `little-chris-v1/frames/idle-00.png`: `0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7`; `shared-fx-v1/sources/props-reference.png`: `3d6c53d34522894af690c5bc83ce0db877fe353e2269c0264b2efe4917365888`. |
+
+Little Chris incident-start A review: retry makes 02 visibly in transit but helmet floats above hair and hands do not grip it; crown exceeds idle top. 00 looks down-right instead of down-left. First attempt `exec-d4d7830e-6d82-42c4-98b8-ddfbc2bc1317` seated 02 already. Bounds and baseline unverified; one retry used.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
