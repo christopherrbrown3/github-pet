@@ -38,6 +38,12 @@ Sheet 4 review: initial `exec-b69b9d2b-f2a5-419d-aad6-b6b045b2e38d` had four isl
 
 Sheet 5 review: initial `exec-895b3931-9208-4d0a-88bf-5ee77bdc1ad2` had narrow gaps and a 727 px assembled figure; one regeneration and an edit followed. Saved sheet has 10 expected islands, 14 specks, 50,389 faint pixels, and five box gaps below 40 px. The assembled figure is 666 px tall versus 400 requested. Blank head retains beard, nose and neck, with no facial features; shoulders are filled, but sleeve ends and trouser tops still show transverse shading or edges. Exact hidden overlap and assembly remain unverified. Sheet SHA-256 `4dc26a36cccfc73656390b8f940f2ffe6c8f8a782a3b7aca5808731a6479f654`.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/little-chris-v1/rig/sources/face-sheet.png` | `exec-45a8c940-a457-4ee7-bb33-815febf81454` | Edit regenerated facial features for front-on head and smaller idle-sized eyes, preserving brows and expressions. | Regeneration `exec-2801e607-a528-46c8-83ab-cc241a81b2cf`: `af4dab0a0fa2cff19e0b5a1b2b011baa082cec678038613d4e691ea6808ace02`; idle-00 `0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7`; regeneration references in order: sheet 5 `4dc26a36cccfc73656390b8f940f2ffe6c8f8a782a3b7aca5808731a6479f654`, idle-00 as above. |
+
+Sheet 6 review: initial `exec-199c4110-6ec2-41a6-8a3a-5135920857e6` had narrow gaps and large features; one regeneration and a sizing edit followed. Cutter reports 32 expected islands, 5 specks, 117,945 faint pixels and five gaps under 40 px. The head is front-facing and brows are present, but eyes and mouths remain large relative to the head and the edited head differs from sheet 5; facial fit requires assembly review. Joint and hidden-area checks do not apply.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
