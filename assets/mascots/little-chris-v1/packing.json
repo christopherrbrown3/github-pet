@@ -2270,6 +2270,24 @@
       "frames/idle-stretch-03.png + hat": {
         "top": 17
       },
+      "frames/inbox-zero-01.png + hat": {
+        "top": 11
+      },
+      "frames/inbox-zero-02.png + hat": {
+        "top": 14
+      },
+      "frames/inbox-zero-03.png + hat": {
+        "top": 18
+      },
+      "frames/inbox-zero-04.png + hat": {
+        "top": 5
+      },
+      "frames/new-item-00.png + hat": {
+        "top": 19
+      },
+      "frames/new-item-04.png + hat": {
+        "top": 9
+      },
       "frames/poke-00.png + hat": {
         "top": 13
       },
@@ -2308,6 +2326,15 @@
         "drop-01"
       ]
     },
+    "outsideBoundsNotBundled": [
+      "dizzy",
+      "doze",
+      "drag",
+      "idle-fidget",
+      "idle-look",
+      "idle-stretch",
+      "poke"
+    ],
     "sourceSha256": {
       "sources/ambient-a-sheet.png": "3759f65d047bbd8a44279642dd29913b06f0bdb403d01a46cffaff4d121966ea",
       "sources/ambient-b-sheet.png": "ab2978e307cdb774e10e9649908420bccd938f456922a4954f0ad851e5bcb2e5",

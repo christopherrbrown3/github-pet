@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Pack the #138 schema v2 art (animation-v1.md sections 4 and 5). macOS sips resamples; nothing is drawn.
 
-Run after the v1 builders, from any directory: python3 docs/design/build_pack_v2.py
+Run after the v1 builders, from any directory: python3 docs/design/build_pack_v2.py [pack ids | fx] [--preview DIR]
+--preview DIR also writes review-only packs declaring every packed clip (outside the repo; never bundled).
 Writes the v2 runtime frames, the hat accessory, the v2 manifest and the "v2" section of each pack's
 packing.json, plus the shared FX sprites. The generated sources and the v1 state frames are never changed.
 
@@ -19,6 +20,7 @@ the hat). Replacing generated helmets with it is evaluated, never painted (see H
 from pathlib import Path
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -484,29 +486,42 @@ def build_skin(pack_id, config, work):
         if 'item-cleared-01' in used:
             frame_points.setdefault(path('item-cleared-01'), {})['hand'] = records['item-cleared-01']['hand']
 
-    referenced = sorted({p for spec in states.values() for p in spec['frames'] + [spec['staticFallback']]}
-                        | {p for spec in clips.values() for p in spec['frames']} | {'accessories/firefighter-hat.png'})
-    manifest = {'schemaVersion': 2, 'id': manifest['id'], 'name': manifest['name'],
-                'canvas': {'width': CANVAS, 'height': CANVAS}, 'anchor': ANCHOR, 'states': states, 'clips': clips,
-                'accessories': {'firefighter-hat': {'image': 'accessories/firefighter-hat.png', 'attach': 'head'}},
-                'points': {'head': skin.head}, 'framePoints': dict(sorted(frame_points.items())),
-                'frameSha256': {p: hashes[p] for p in referenced}}
-    (pack / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-
     # Bounds rule (section 3): every new frame, and the hat wherever it can show, at alpha > 0.
-    wearing = {p for spec in states.values() for p in spec['frames']} | {p for spec in clips.values() if 'accessories' not in spec for p in spec['frames']}
     bounds_report = {}
     for name, record in sorted(records.items()):
         found = violations(record['alphaBounds'], config['union'])
         if found:
             bounds_report[path(name)] = found
     hat_box = alpha_box(hat)
-    for p in sorted(wearing):
-        name = Path(p).stem
+    wearing = {n for names, _ in HELD.values() for n in names} | {n for names, _, acc in CLIPS.values() if acc != 'hide' for n in names}
+    for name in sorted(wearing - {'idle-00'}):
         dx, dy = offset(name)
         found = violations([hat_box[0] + dx, hat_box[1] + dy, hat_box[2] + dx, hat_box[3] + dy], config['union'])
         if found:
-            bounds_report[f'{p} + hat'] = found
+            bounds_report[f'{path(name)} + hat'] = found
+
+    def manifest_for(states, clips):
+        used = {p for spec in [*states.values(), *clips.values()] for p in spec['frames'] + spec.get('staticFallback', '').split()}
+        referenced = sorted(used | {'accessories/firefighter-hat.png'})
+        return {'schemaVersion': 2, 'id': manifest['id'], 'name': manifest['name'],
+                'canvas': {'width': CANVAS, 'height': CANVAS}, 'anchor': ANCHOR, 'states': states, 'clips': clips,
+                'accessories': {'firefighter-hat': {'image': 'accessories/firefighter-hat.png', 'attach': 'head'}},
+                'points': {'head': skin.head},
+                'framePoints': {p: v for p, v in sorted(frame_points.items()) if p in used},
+                'frameSha256': {p: hashes[p] for p in referenced}}
+
+    # The bundled loader rejects a pack with any clip, held or hat pixel outside the union, so the
+    # bundled manifest declares only sequences that meet the bounds rule (the rest fall back to
+    # today's behaviour). The preview manifest declares every packed sequence for review with a
+    # custom pack directory, where the app widens the lane instead.
+    def clean(spec, keeps_hat):
+        return not any(p in bounds_report or (keeps_hat and f'{p} + hat' in bounds_report) for p in spec['frames'])
+
+    bundled_states = {k: v for k, v in states.items() if k in core or clean(v, True)}
+    bundled_clips = {k: v for k, v in clips.items() if clean(v, v.get('accessories') != 'hide')}
+    gated = sorted((set(states) - set(bundled_states)) | (set(clips) - set(bundled_clips)))
+    (pack / 'manifest.json').write_text(json.dumps(manifest_for(bundled_states, bundled_clips), indent=2) + '\n')
+    preview = manifest_for(states, clips)
 
     packing_path = pack / 'packing.json'
     packing = json.loads(packing_path.read_text()) if packing_path.exists() else {}
@@ -525,12 +540,13 @@ def build_skin(pack_id, config, work):
         'frames': records,
         'boundsViolations': bounds_report,
         'omittedFromManifest': omitted,
+        'outsideBoundsNotBundled': gated,
         'sourceSha256': {str(p.relative_to(pack)): sha256_png(p) for p in sorted((pack / 'sources').glob('*-sheet.png'))
                          if p.stem.removesuffix('-sheet') in {stem for stem, _ in CELLS.values()}}
                         | {'shared-fx-v1/sources/props-reference.png': sha256_png(MASCOTS / 'shared-fx-v1/sources/props-reference.png')},
     }
     packing_path.write_text(json.dumps(packing, indent=2) + '\n')
-    return packing['v2']
+    return preview
 
 
 # Shared FX (section 4): a 2 x 4 sheet in reading order, 64 x 64 with a 4 px clear margin.
@@ -586,15 +602,34 @@ def build_fx(work):
     return records
 
 
+def export_preview(pack_id, manifest, directory):
+    """Review only: the pack with every packed sequence, for GITHUB_PET_PACK_DIR. Never bundled."""
+    target = directory / pack_id
+    if target.exists():
+        shutil.rmtree(target)
+    for relative in manifest['frameSha256']:
+        (target / relative).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(MASCOTS / pack_id / relative, target / relative)
+    (target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+
+
 def main():
-    only = sys.argv[1:]
+    arguments = sys.argv[1:]
+    preview = None
+    if '--preview' in arguments:
+        index = arguments.index('--preview')
+        preview = Path(arguments[index + 1]).resolve()
+        del arguments[index:index + 2]
+    only = arguments
     with tempfile.TemporaryDirectory(prefix='pack-v2-') as temp:
         work = Path(temp)
         if not only or 'fx' in only:
             build_fx(work)
         for pack_id, config in SKINS.items():
             if not only or pack_id in only:
-                build_skin(pack_id, config, work)
+                full = build_skin(pack_id, config, work)
+                if preview:
+                    export_preview(pack_id, full, preview)
     print('Packed v2 art')
 
 
