@@ -41,6 +41,10 @@ Cleared/poke review: 00 gaze does not clearly read down-left; 03 leans only subt
 
 Inbox-zero review: 01 and 02 lean opposite ways; 02 eyes remain open and raised limbs may exceed idle width. No visible effect marks. Bounds and baseline unverified. No retry.
 
+| `assets/mascots/mona-pet-v1/sources/inbox-zero-b-sheet.png` | `exec-987664c0-0c56-46f8-aeaa-e2c0d64f9d5e` | Inbox-zero 04 relaxed with loosely curled tentacles; other cells empty. | Same three reference hashes as pilot above. |
+
+Inbox-zero B review: the relaxed pose closely resembles idle; no visible effect marks. Bounds and baseline unverified. No retry.
+
 Both images are 1254×1254 and have alpha channels. Visual review: the helmet in pose 02 is already seated rather than clearly in transit, pose 01 looks forward rather than alert down-left, and pose 00's gaze is not clearly down-left. Helmet-on poses change the apparent head silhouette and scale; the helmet crown and overall bounds require measurement during later packing and review. No runtime frame, baseline, or bounds validation is claimed here. The props sheet places the helmet close to the central cell boundary. No retry or retouch was performed.
 
 Generated on 2026-11-12 using the built-in `image_gen.imagegen` integration under the imagegen skill. The orchestration terminal was launched with `gpt-6.1-sol`; the image integration does not expose its image-model identifier. No alternative model, procedural mascot, downloaded Octocat artwork, official GitHub logo, or credential was used.
