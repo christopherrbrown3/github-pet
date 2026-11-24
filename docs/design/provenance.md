@@ -26,6 +26,12 @@ Tentacle edit review: the assembled reference's tentacles became slimmer, but th
 
 Sheet 3 review: initial `exec-23e9a029-ddad-4669-88da-a56db399b24e` had an undersized gap and oversized envelope; one regeneration retained both defects. Cutter finds eight expected islands, five specks, 47,102 faint pixels and a 33 px bounding-box gap between helmet fronts. The 283 px envelope is much larger than one third of the 356 px Mona head; other props and helmet fit require scaling and assembly review. Shields are blank, front brim edges curved, and hose separate; joint and blank-face checks are not applicable.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/mona-pet-v1/rig/sources/tips-sheet.png` | `exec-aa64fa46-d422-4960-a466-4557a16b1eca` | Left and right loop and two-piece grip tentacle variants. | Revised Mona parts `6c00567ab4d937ae4ad38929e56a89eaf4a5d1c57afc79b1fdcf1380ec3dda95`. |
+
+Sheet 4 review: initial `exec-b69b9d2b-f2a5-419d-aad6-b6b045b2e38d` had four islands with objects joining grips; one regeneration gave seven islands, including an extra loop, and grip boxes overlap rather than having 40 px gaps. It is 1536 × 1024 and pieces are oversized and softer than the source. Corners clear, 17,689 faint pixels; no text. Rounded ends are indistinct. PM directed stopping this item and using sheet 1 tips instead; no edit pass.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
