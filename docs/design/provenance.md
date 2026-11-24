@@ -20,6 +20,12 @@ Sheet 2 review: initial `exec-3e10d024-65f5-48ed-bea0-b9b997be8a9e` and regenera
 
 Tentacle edit review: the assembled reference's tentacles became slimmer, but the separate front and arm parts remain visibly broad and little changed; preservation is not pixel-identical. Cutter finds 16 islands, 3 specks and 25,298 faint pixels; grip gaps remain below 40 px. Rounded joints and blank face remain visually present. The requested change to separate parts did not clearly succeed.
 
+| Source | Generation artifact identifier | Prompt intent | References (SHA-256) |
+|---|---|---|---|
+| `assets/mascots/shared-fx-v1/sources/props-parts-sheet.png` | `exec-67a3843d-7479-4685-814b-77074559f31e` | Transparent separated helmet fronts and backs, extinguisher, hose, envelope and phone. | In order: revised Mona parts sheet `6c00567ab4d937ae4ad38929e56a89eaf4a5d1c57afc79b1fdcf1380ec3dda95`; Little Chris idle-00 `0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7`; props reference `3d6c53d34522894af690c5bc83ce0db877fe353e2269c0264b2efe4917365888`. |
+
+Sheet 3 review: initial `exec-23e9a029-ddad-4669-88da-a56db399b24e` had an undersized gap and oversized envelope; one regeneration retained both defects. Cutter finds eight expected islands, five specks, 47,102 faint pixels and a 33 px bounding-box gap between helmet fronts. The 283 px envelope is much larger than one third of the 356 px Mona head; other props and helmet fit require scaling and assembly review. Shields are blank, front brim edges curved, and hose separate; joint and blank-face checks are not applicable.
+
 ## v2 / #138 pilot
 
 Generated with the built-in `image_gen.imagegen` integration, requesting transparent backgrounds. The image integration does not expose its image-model identifier. These are unmodified source images, not packed runtime frames.
