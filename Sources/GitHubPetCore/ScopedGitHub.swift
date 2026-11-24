@@ -258,13 +258,17 @@ public struct ScopedPollResult: Equatable, Sendable {
     /// Fixed texts (#7): never gh's stderr or GitHub's message, which can name organizations.
     public static let accessDeniedMessage = "GitHub denied access: the GitHub CLI sign-in lacks a token scope or SAML single sign-on authorization. Run gh auth refresh, and authorize SSO if your organization requires it"
     public static let rateLimitedMessage = "GitHub rate limit reached. GitHub Pet will try again on the next refresh"
+    /// A client-level time limit before any viewer is known (#165): a slow network or busy Mac, not a scope problem.
+    public static let timeoutMessage = "GitHub took too long to answer. Retrying…"
+    public static let unverifiedMessage = "Monitoring scope could not be verified"
     public var outcome: FetchOutcome {
         if issues.contains(.ghMissing) { return .failure(.ghMissing) }
         if issues.contains(.signedOut) { return .failure(.unauthenticated) }
         guard viewer != nil, successfulSources > 0 else {
             if issues.contains(.rateLimited) { return .failure(.failed(Self.rateLimitedMessage)) }
             if issues.contains(.accessDenied) { return .failure(.failed(Self.accessDeniedMessage)) }
-            return .failure(.failed("Monitoring scope could not be verified"))
+            if issues.contains(.deadline) { return .failure(.failed(Self.timeoutMessage)) }
+            return .failure(.failed(Self.unverifiedMessage))
         }
         return .snapshot(items: items, complete: complete, hidden: complete ? hidden : 0)
     }
