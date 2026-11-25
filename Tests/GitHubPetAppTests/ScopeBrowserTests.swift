@@ -4,6 +4,18 @@ import Testing
 @testable import GitHubPetCore
 @testable import GitHubPet
 
+/// Owners never answer until released (no wall-clock timeout; the test's defer releases it).
+private final class StalledBrowsing: ScopeBrowsing, @unchecked Sendable {
+    private let gate = DispatchSemaphore(value: 0)
+    func release() { gate.signal() }
+    func owners(_ plan: ScopeOwnersPlan, budget: CommandBudget) -> ScopeOwnersResult {
+        gate.wait()
+        return ScopeOwnersResult(failure: .transport)
+    }
+    func repositories(_ plan: ScopeRepositoryPagePlan, budget: CommandBudget) -> ScopeRepositoryPage { fatalError("unused") }
+    func search(_ plan: ScopeRepositorySearchPlan, budget: CommandBudget) -> ScopeRepositoryPage { fatalError("unused") }
+}
+
 private final class FrozenBrowseClock: @unchecked Sendable {
     private let instant = ContinuousClock.now
     func now() -> ContinuousClock.Instant { instant }
@@ -12,7 +24,7 @@ private final class FrozenBrowseClock: @unchecked Sendable {
 /// #137: the Choose Repositories sheet's state, driven through the real AppModel in the offline
 /// simulated launch (browse answers go through the production parsers). Waits are bounded
 /// handshakes on observable state.
-@Suite(.serialized) @MainActor struct ScopeBrowserTests {
+@Suite(.serialized, .timeLimit(.minutes(5))) @MainActor struct ScopeBrowserTests {
     private final class Spoken { var messages: [String] = [] }
 
     private func model() -> AppModel {
@@ -27,9 +39,9 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         return app
     }
     private func wait(_ predicate: () -> Bool) async throws {
-        let end = ContinuousClock.now.advanced(by: .seconds(10))
-        while !predicate() && ContinuousClock.now < end { await Task.yield() }
-        try #require(predicate(), "bounded simulated completion")
+        // No wall-clock deadline (#171): starved CI runners outlast any fixed bound. The suite's
+        // time limit is the hang guard; the wait only ends when the observable state is reached.
+        while !predicate() { try await Task.sleep(nanoseconds: 1_000_000) }
     }
     private func settled(_ app: AppModel) async throws {
         try await wait { app.simulatedScopeQuiescent && !app.repositoryFetchInFlight && !app.scopeEditor.validationInFlight }
@@ -42,14 +54,30 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         let browser = app.makeScopeBrowser()
         browser.announce = { spoken.messages.append($0) }
         browser.sync()
-        await browser.settle()
+        await browser.settle(timeout: nil)
         return browser
     }
     private func open(_ browser: ScopeBrowser, _ login: String) async throws -> ScopeBrowseOwner {
         let owner = try #require(browser.owners.first { $0.login == login })
         browser.open(owner)
-        await browser.settle()
+        await browser.settle(timeout: nil)
         return owner
+    }
+
+    @Test func cancellingAnUnboundedSettleEndsTheWait() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        let stalled = StalledBrowsing()
+        defer { stalled.release() }
+        let browser = ScopeBrowser(editor: app.scopeEditor, now: { Date(timeIntervalSince1970: 1_763_208_000) }) { _ in stalled }
+        browser.announce = { _ in }
+        browser.sync()
+        #expect(!browser.isIdle, "the stalled owners request is in flight")
+        let waiting = Task { @MainActor in await browser.settle(timeout: nil) }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        waiting.cancel()
+        await waiting.value  // returns only because cancellation ends the wait
+        #expect(!browser.isIdle, "it stopped waiting; the request is still held")
     }
 
     @Test func openingListsOwnersAndShowsYourAccountFirst() async throws {
@@ -183,7 +211,7 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         }
         browser.announce = { spoken.messages.append($0) }
         browser.sync()
-        await browser.settle()
+        await browser.settle(timeout: nil)
         #expect(browser.ownersPhase == .loaded && browser.organizations.isEmpty)
         #expect(browser.ownersWarning == failure, "the failure is kept, not dropped")
         #expect(spoken.messages.contains { $0.hasSuffix("Your organizations may be incomplete.") })
@@ -193,7 +221,7 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         #expect(browser.presentation(viewer) != .empty)
         browser.loadOwners()
         #expect(browser.ownersWarning == nil, "Retry clears the warning until the answer arrives")
-        await browser.settle()
+        await browser.settle(timeout: nil)
         #expect(browser.ownersWarning == failure)
     }
 
@@ -203,10 +231,10 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         let owner = try await open(browser, "demo-example-org")
         #expect(browser.state(owner).repositories.count == 100 && browser.state(owner).cursor != nil)
         browser.loadPage(owner, more: true)
-        await browser.settle()
+        await browser.settle(timeout: nil)
         #expect(browser.state(owner).repositories.count == 200 && browser.presentation(owner) == .capped)
         browser.loadPage(owner, more: true)
-        await browser.settle()
+        await browser.settle(timeout: nil)
         #expect(browser.state(owner).repositories.count == 240 && browser.presentation(owner) == .rows)
         #expect(Set(browser.state(owner).repositories.map(\.id)).count == 240)
     }
@@ -220,7 +248,7 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         #expect(!local.rows.isEmpty && local.rows.allSatisfy { $0.name.contains("lantern") })
         #expect(browser.canSearchServer(owner))
         browser.searchServer(owner)
-        await browser.settle()
+        await browser.settle(timeout: nil)
         let state = browser.state(owner)
         #expect(state.searchedTerm == "lantern" && state.searchFailure == nil)
         #expect(!state.searchResults.isEmpty && Set(state.searchResults.map(\.id)).isDisjoint(with: state.repositories.map(\.id)))
@@ -247,7 +275,7 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         let editor = app.scopeEditor
         let owner = try await open(browser, "demo-example-org")
         browser.loadPage(owner, more: true)
-        await browser.settle()
+        await browser.settle(timeout: nil)
         let rows = browser.visibleRows(owner).rows.prefix(150)
         try #require(rows.count == 150)
         rows.forEach { browser.toggle($0, true) }
