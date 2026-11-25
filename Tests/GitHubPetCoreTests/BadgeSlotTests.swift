@@ -21,7 +21,8 @@ import Testing
 
     /// Panel x of the head's right edge.
     private func headEdge(_ layout: MascotLayout, _ pack: MascotPack) throws -> CGFloat {
-        let head = try #require(MascotLayout.headRight(pack.uprightContours))
+        // The slot follows the states' head (#138: clip poses never move it).
+        let head = try #require(MascotLayout.headRight(MascotState.allCases.flatMap(pack.poseContours)))
         return layout.artFrame.minX + CGFloat(head + 1) * layout.artSide / CGFloat(MascotPack.canvasSize)
     }
 
@@ -29,8 +30,12 @@ import Testing
         let pack = try Self.pack(.mona)
         for side in Self.sizes {
             let layout = MascotLayout(artSide: side, pack: pack)
-            let before = MascotLayout(artSide: side, contours: pack.allContours)
-            #expect(layout == before, "Mona's slot, lane and count range unchanged at \(side)")
+            // Before #116 and #138: her states and the attention lean only.
+            let states = MascotState.allCases.flatMap(pack.poseContours)
+            let before = MascotLayout(artSide: side, contours: states + pack.leaningContours)
+            #expect(layout.laneHeight == before.laneHeight && layout.countSlotX == before.countSlotX
+                    && abs(layout.maxCountOffset - before.maxCountOffset) < 0.001,
+                    "Mona's slot, lane and count range unchanged at \(side)")
             #expect(layout.countSlotX == layout.panelWidth - layout.inset - layout.widestCountWidth)
         }
     }
@@ -70,7 +75,8 @@ import Testing
                         let clear = layout.clearance(contour, frame, lane: layout.laneHeight)
                         let target = gap + MascotLayout.uprightReserve(displayScale: scale)
                         #expect(frame.maxY <= layout.panelSize.height, "\(skin) count inside the panel at \(side)")
-                        #expect(clear >= target - 0.001 && clear <= target + 2,
+                        // Near-touching, or at the bottom of its range over a clip pose that ducks lower (#138).
+                        #expect(clear >= target - 0.001 && (clear <= target + 2 || offset == 0 || abs(offset - layout.maxCountOffset) < 0.001),
                                 "\(skin) count near-touching at \(side) \(scale)x: \(clear)")
                     }
                 }

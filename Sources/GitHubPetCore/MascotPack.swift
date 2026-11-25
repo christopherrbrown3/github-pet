@@ -773,6 +773,10 @@ public struct MascotPack: Equatable, Sendable {
 extension MascotLayout {
     /// Layout for a loaded pack (nil: the placeholder, labels above the art square).
     public init(artSide: CGFloat, pack: MascotPack?) {
-        self.init(artSide: artSide, contours: pack?.allContours ?? [], headContours: pack?.uprightContours ?? [])
+        // The count's slot is anchored on the head of the states' own poses (#138): a clip pose that reaches
+        // past the head (an envelope held up, a lean) must not move it.
+        let states = pack.map { pack in MascotState.allCases.flatMap(pack.poseContours) } ?? []
+        self.init(artSide: artSide, contours: pack?.allContours ?? [], headContours: states,
+                  trackingContours: pack.map { states + $0.leaningContours })
     }
 }

@@ -29,7 +29,8 @@
       "durationMs": [
         70
       ],
-      "firstIsReference": true
+      "firstIsReference": true,
+      "fit": true
     },
     {
       "name": "poke",
@@ -41,6 +42,149 @@
       ],
       "firstIsReference": true,
       "fit": true
+    },
+    {
+      "name": "dizzy",
+      "sheets": [
+        "sequences/dizzy.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "inbox-zero",
+      "sheets": [
+        "sequences/inbox-zero.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "idle-look",
+      "sheets": [
+        "sequences/idle-look.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "idle-stretch",
+      "sheets": [
+        "sequences/idle-stretch.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "idle-fidget",
+      "sheets": [
+        "sequences/idle-fidget.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "drop",
+      "sheets": [
+        "sequences/drop.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true
+    },
+    {
+      "name": "incident-start",
+      "sheets": [
+        "sequences/incident-start.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "accessories": "hide",
+      "fit": true
+    },
+    {
+      "name": "incident-end",
+      "sheets": [
+        "sequences/incident-end.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "accessories": "hide",
+      "fit": true,
+      "nozzleFrames": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "name": "drag",
+      "sheets": [
+        "sequences/drag.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        200
+      ],
+      "loop": true,
+      "fit": true
+    },
+    {
+      "name": "doze",
+      "sheets": [
+        "sequences/doze.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        500
+      ],
+      "loop": true,
+      "fit": true
+    },
+    {
+      "name": "incident-idle",
+      "sheets": [
+        "sequences/helmet-idle.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        150
+      ],
+      "loop": true,
+      "fit": true
     }
+  ],
+  "quantize": true,
+  "dedupe": 0.004,
+  "union": [
+    47,
+    20,
+    217
   ]
 }

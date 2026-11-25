@@ -1,83 +1,792 @@
 {
-  "schemaVersion": 2,
-  "id": "little-chris-v1",
-  "name": "Little Chris",
-  "canvas": {
-    "width": 256,
-    "height": 256
+  "accessories" : {
+    "firefighter-hat" : {
+      "attach" : "head",
+      "image" : "accessories\/firefighter-hat.png"
+    }
   },
-  "anchor": [
+  "anchor" : [
     128,
     232
   ],
-  "states": {
-    "idle": {
-      "frames": [
-        "frames/idle-00.png",
-        "frames/idle-01.png",
-        "frames/idle-02.png"
+  "canvas" : {
+    "height" : 256,
+    "width" : 256
+  },
+  "clips" : {
+    "dizzy" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        2000,
-        125,
-        125
-      ],
-      "loop": true,
-      "staticFallback": "frames/idle-00.png"
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/dizzy-01.png",
+        "frames\/dizzy-02.png",
+        "frames\/dizzy-03.png",
+        "frames\/dizzy-04.png",
+        "frames\/dizzy-05.png",
+        "frames\/dizzy-06.png",
+        "frames\/dizzy-07.png",
+        "frames\/dizzy-08.png",
+        "frames\/dizzy-09.png",
+        "frames\/dizzy-10.png",
+        "frames\/dizzy-11.png",
+        "frames\/dizzy-12.png",
+        "frames\/dizzy-13.png",
+        "frames\/dizzy-14.png",
+        "frames\/dizzy-15.png"
+      ]
     },
-    "attention": {
-      "frames": [
-        "frames/attention-00.png",
-        "frames/attention-01.png",
-        "frames/attention-02.png"
+    "drop" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        350,
-        600,
-        350
-      ],
-      "loop": false,
-      "staticFallback": "frames/idle-00.png"
+      "frames" : [
+        "frames\/drop-00.png",
+        "frames\/drop-01.png",
+        "frames\/drop-02.png",
+        "frames\/drop-03.png",
+        "frames\/drop-04.png",
+        "frames\/drop-05.png",
+        "frames\/drop-06.png",
+        "frames\/drop-07.png",
+        "frames\/drop-08.png",
+        "frames\/drop-09.png",
+        "frames\/drop-10.png",
+        "frames\/drop-11.png",
+        "frames\/drop-12.png",
+        "frames\/drop-13.png",
+        "frames\/drop-14.png",
+        "frames\/drop-15.png"
+      ]
     },
-    "urgent": {
-      "frames": [
-        "frames/urgent-00.png",
-        "frames/urgent-01.png",
-        "frames/urgent-02.png"
+    "idle-fidget" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        300,
-        900,
-        500
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-fidget-01.png",
+        "frames\/idle-fidget-02.png",
+        "frames\/idle-fidget-03.png",
+        "frames\/idle-fidget-04.png",
+        "frames\/idle-fidget-05.png",
+        "frames\/idle-fidget-06.png",
+        "frames\/idle-fidget-07.png",
+        "frames\/idle-fidget-08.png",
+        "frames\/idle-fidget-09.png",
+        "frames\/idle-fidget-10.png",
+        "frames\/idle-fidget-11.png",
+        "frames\/idle-fidget-12.png",
+        "frames\/idle-fidget-13.png",
+        "frames\/idle-fidget-14.png",
+        "frames\/idle-fidget-15.png"
+      ]
+    },
+    "idle-look" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "loop": false,
-      "staticFallback": "frames/urgent-02.png"
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-look-01.png",
+        "frames\/idle-look-02.png",
+        "frames\/idle-look-03.png",
+        "frames\/idle-look-04.png",
+        "frames\/idle-look-05.png",
+        "frames\/idle-look-06.png",
+        "frames\/idle-look-07.png",
+        "frames\/idle-look-08.png",
+        "frames\/idle-look-09.png",
+        "frames\/idle-look-10.png",
+        "frames\/idle-look-11.png",
+        "frames\/idle-look-12.png",
+        "frames\/idle-look-13.png",
+        "frames\/idle-look-14.png",
+        "frames\/idle-look-15.png"
+      ]
+    },
+    "idle-stretch" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-stretch-01.png",
+        "frames\/idle-stretch-02.png",
+        "frames\/idle-stretch-03.png",
+        "frames\/idle-stretch-04.png",
+        "frames\/idle-stretch-05.png",
+        "frames\/idle-stretch-06.png",
+        "frames\/idle-stretch-07.png",
+        "frames\/idle-stretch-08.png",
+        "frames\/idle-stretch-09.png",
+        "frames\/idle-stretch-10.png",
+        "frames\/idle-stretch-11.png",
+        "frames\/idle-stretch-12.png",
+        "frames\/idle-stretch-13.png",
+        "frames\/idle-stretch-14.png",
+        "frames\/idle-stretch-15.png"
+      ]
+    },
+    "inbox-zero" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/inbox-zero-01.png",
+        "frames\/inbox-zero-02.png",
+        "frames\/inbox-zero-03.png",
+        "frames\/inbox-zero-04.png",
+        "frames\/inbox-zero-05.png",
+        "frames\/inbox-zero-06.png",
+        "frames\/inbox-zero-07.png",
+        "frames\/inbox-zero-08.png",
+        "frames\/inbox-zero-09.png",
+        "frames\/inbox-zero-10.png",
+        "frames\/inbox-zero-11.png",
+        "frames\/inbox-zero-12.png",
+        "frames\/inbox-zero-13.png",
+        "frames\/inbox-zero-14.png",
+        "frames\/inbox-zero-15.png"
+      ]
+    },
+    "incident-end" : {
+      "accessories" : "hide",
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/incident-end-00.png",
+        "frames\/incident-end-01.png",
+        "frames\/incident-end-02.png",
+        "frames\/incident-end-03.png",
+        "frames\/incident-end-04.png",
+        "frames\/incident-end-05.png",
+        "frames\/incident-end-06.png",
+        "frames\/incident-end-07.png",
+        "frames\/incident-end-08.png",
+        "frames\/incident-end-09.png",
+        "frames\/incident-end-10.png",
+        "frames\/incident-end-11.png",
+        "frames\/incident-end-12.png",
+        "frames\/incident-end-13.png",
+        "frames\/incident-end-14.png",
+        "frames\/incident-end-15.png"
+      ]
+    },
+    "incident-start" : {
+      "accessories" : "hide",
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/incident-start-01.png",
+        "frames\/incident-start-02.png",
+        "frames\/incident-start-03.png",
+        "frames\/incident-start-04.png",
+        "frames\/incident-start-05.png",
+        "frames\/incident-start-06.png",
+        "frames\/incident-start-07.png",
+        "frames\/incident-start-08.png",
+        "frames\/incident-start-09.png",
+        "frames\/incident-start-10.png",
+        "frames\/incident-start-11.png",
+        "frames\/incident-start-12.png",
+        "frames\/incident-start-13.png",
+        "frames\/incident-start-14.png",
+        "frames\/incident-start-15.png"
+      ]
+    },
+    "item-cleared" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/item-cleared-01.png",
+        "frames\/item-cleared-02.png",
+        "frames\/item-cleared-03.png",
+        "frames\/item-cleared-04.png",
+        "frames\/item-cleared-05.png",
+        "frames\/item-cleared-06.png",
+        "frames\/item-cleared-07.png",
+        "frames\/item-cleared-08.png",
+        "frames\/item-cleared-09.png",
+        "frames\/item-cleared-10.png",
+        "frames\/item-cleared-11.png",
+        "frames\/item-cleared-12.png",
+        "frames\/item-cleared-13.png",
+        "frames\/item-cleared-14.png",
+        "frames\/item-cleared-15.png"
+      ]
+    },
+    "new-item" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/new-item-01.png",
+        "frames\/new-item-02.png",
+        "frames\/new-item-03.png",
+        "frames\/new-item-04.png",
+        "frames\/new-item-05.png",
+        "frames\/new-item-06.png",
+        "frames\/new-item-07.png",
+        "frames\/new-item-08.png",
+        "frames\/new-item-09.png",
+        "frames\/new-item-10.png",
+        "frames\/new-item-11.png",
+        "frames\/new-item-12.png",
+        "frames\/new-item-13.png",
+        "frames\/new-item-14.png",
+        "frames\/new-item-15.png"
+      ]
+    },
+    "poke" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/poke-01.png",
+        "frames\/poke-02.png",
+        "frames\/poke-03.png",
+        "frames\/poke-04.png",
+        "frames\/poke-05.png",
+        "frames\/poke-06.png",
+        "frames\/poke-07.png",
+        "frames\/poke-08.png",
+        "frames\/poke-09.png",
+        "frames\/poke-10.png",
+        "frames\/poke-11.png",
+        "frames\/poke-12.png",
+        "frames\/poke-13.png",
+        "frames\/poke-14.png",
+        "frames\/poke-15.png"
+      ]
     }
   },
-  "clips": {},
-  "accessories": {
-    "firefighter-hat": {
-      "image": "accessories/firefighter-hat.png",
-      "attach": "head"
+  "framePoints" : {
+    "frames\/incident-end-02.png" : {
+      "nozzle" : [
+        118,
+        226
+      ]
+    },
+    "frames\/incident-end-03.png" : {
+      "nozzle" : [
+        116,
+        226
+      ]
+    },
+    "frames\/incident-end-04.png" : {
+      "nozzle" : [
+        115,
+        225
+      ]
+    },
+    "frames\/incident-end-05.png" : {
+      "nozzle" : [
+        114,
+        225
+      ]
+    },
+    "frames\/incident-end-06.png" : {
+      "nozzle" : [
+        118,
+        226
+      ]
+    },
+    "frames\/incident-end-07.png" : {
+      "nozzle" : [
+        116,
+        226
+      ]
+    },
+    "frames\/incident-end-08.png" : {
+      "nozzle" : [
+        115,
+        225
+      ]
+    },
+    "frames\/incident-end-09.png" : {
+      "nozzle" : [
+        117,
+        226
+      ]
+    },
+    "frames\/incident-end-10.png" : {
+      "nozzle" : [
+        112,
+        225
+      ]
+    },
+    "frames\/incident-end-11.png" : {
+      "nozzle" : [
+        116,
+        226
+      ]
     }
   },
-  "points": {
-    "head": [
+  "frameSha256" : {
+    "accessories\/firefighter-hat.png" : "1193468902fa65e2004c9f4e690bcb2f6e00b720a74d4bc91d781ecd3b64c100",
+    "frames\/attention-00.png" : "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
+    "frames\/attention-01.png" : "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
+    "frames\/attention-02.png" : "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
+    "frames\/dizzy-01.png" : "ad631f8b2757093f56f598a6b89b7d995e31a1ae9ca2441d215648ed3a1fc7b8",
+    "frames\/dizzy-02.png" : "c87642244b64d9e54f8f5d3550b8bcc05d0335591dbe6406fcbe050aa2843bcf",
+    "frames\/dizzy-03.png" : "675e517c5498361f11c72225c79a82578d9d5b0a3df66622da1253140765a138",
+    "frames\/dizzy-04.png" : "4491e756df788a33dd215298f85dff1a280a20f73ed33383157918b87cb2c17d",
+    "frames\/dizzy-05.png" : "91bb74ae1210f7d4caf657ccd190f952f0bc297a4f6d664d2c18abd1bb601046",
+    "frames\/dizzy-06.png" : "a6517d955191e943b470e173ddd64df62fc4cafa69c349b2a89fcb6b89776db0",
+    "frames\/dizzy-07.png" : "d2a41f3e4492b450da7effc44cfa023f70aef64bfd9c82fbdb5ffdaa004b4ad9",
+    "frames\/dizzy-08.png" : "144fae526ed704961e613aaeb680ab6ab54b10053d9d7d7e8d87b64fbba4af66",
+    "frames\/dizzy-09.png" : "7ae3b61a3d6ebb15b9eb0d93937c2581404341bac5dc8e51568e82cc3c59599f",
+    "frames\/dizzy-10.png" : "4f43d14a69f561cebc5cd63597fe40255fe53de1da79c8aa47be20d7ba1b6382",
+    "frames\/dizzy-11.png" : "5f6d90404dcff26204dde7d5860e09a5c28a81deabb1647a4ae87e9df1107893",
+    "frames\/dizzy-12.png" : "5901a7c996f8c577e7d2a86b3ed9575bff0f2acad887627d08d97b3107dfe96d",
+    "frames\/dizzy-13.png" : "a73b829b463d51ab9fb38d6691b5efad66c1681980f5857a9c1f25a97430c61f",
+    "frames\/dizzy-14.png" : "69d40fae17990052daf755ea7dfc63a7b9be4a50dbed958acbf32e295a6546de",
+    "frames\/dizzy-15.png" : "684c8b6fa57cccfc7be78198575a6dabfb2577f012e78c987c643941b08a9385",
+    "frames\/doze-00.png" : "0d9c453d15ffb9d338a6137ac8454ef28571ad9bdb9507cd43f09af1241a90b9",
+    "frames\/doze-01.png" : "7955ac26de167c345e3a30e95eedbd75ec7557606a01bfbf9002f8a35541f1e3",
+    "frames\/doze-02.png" : "189e1e8755d708412bb76cf0125541809b5d4654e1fb11222f86ab91821abe52",
+    "frames\/doze-03.png" : "6758f44702a539a68d18fb40fbbab14576cfec5587120be6c0a4628ba4830bbe",
+    "frames\/drag-00.png" : "547e0904626af3ef8c6a4fa5aec4155f753164f4cf8494e8228ec71ab29e24b7",
+    "frames\/drag-01.png" : "381ee07e31597a6602de8042c5e3181e4b58266d3498604630d5a21f13293400",
+    "frames\/drag-02.png" : "33978a23150efa9dc01f0b51ee4296f507d74730cd0c0ef04246642f5942d291",
+    "frames\/drag-03.png" : "20f73b4a2d65148a66223503b5895f4477512ef4534bbc829dcf58172a6aa9cc",
+    "frames\/drop-00.png" : "2a1321d0109075e29332e016acd94f8e9363533f296e7c0c15eed052fd43e429",
+    "frames\/drop-01.png" : "9325f1b7e9ad1df75794e2d457da3d5d94373b5951543f77c383ace159649fe9",
+    "frames\/drop-02.png" : "2683c40ed0c5b9b4257913e6f931a7acc0fc7681717ff00ca8868c4996e493e8",
+    "frames\/drop-03.png" : "375c7c47bf9cca20953887dd4eef1f9ed32cf7eef22ae374e9ec2fd4cfaf71de",
+    "frames\/drop-04.png" : "bc1b02d1926a6e637e1949f5c529b9925f984172249b04b2aec2065df6e85601",
+    "frames\/drop-05.png" : "2a682ead27ee382f3df1a4063850ed219107c5570fa6456d31f9cd09d1316642",
+    "frames\/drop-06.png" : "2864e07d2eaaaf19e928d01157291ade6eaaf2fd62b266755e9b5c645f1317fd",
+    "frames\/drop-07.png" : "c92a41328275f3ac55ec740f83e52ddbf0417bc154c9c6b87eadec45e46945ce",
+    "frames\/drop-08.png" : "6bafcac44661388fe61730c86936d6754740c7ee133373f74d7ff6a754d813e6",
+    "frames\/drop-09.png" : "8c6253c22f4de7f0a347df174eddfe53e812022a65f1cc33fa565796ca936622",
+    "frames\/drop-10.png" : "c0d8cc199a0228904eac9cc99b539406321ff843ae0565076a419c092ec9cc20",
+    "frames\/drop-11.png" : "de920bc075f82af13c219bdea89372883fb4801c44225348c54273420325d1ca",
+    "frames\/drop-12.png" : "af51e8f856a27de6aeb87beabeb2eb139cd2f08a47698d28032ba8e1c41148e9",
+    "frames\/drop-13.png" : "d3e7b08c87b48ebc1238026323e0cb024eb77f730c623d61df8c4cf283c214c2",
+    "frames\/drop-14.png" : "421bf6ba6b399853050ca49d5a42d22d9532cb060dee455a2247c69a8211c76d",
+    "frames\/drop-15.png" : "54cf99cf270579a15f5c753d97a9730808156ca330fcfe1c459a4c8ec4f519d9",
+    "frames\/idle-00.png" : "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
+    "frames\/idle-01.png" : "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
+    "frames\/idle-02.png" : "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
+    "frames\/idle-fidget-01.png" : "00a1ffdd15e126073a2387bff1fcce8810e86beacc4d460fbf2e479b48fce84a",
+    "frames\/idle-fidget-02.png" : "4340e22a79841233cec23d47a1117f2bd67f7509f7b2a7dc608cc1092bbacc0b",
+    "frames\/idle-fidget-03.png" : "f3a9707b2cfac795929bc55ccd68987e42b76e54e396fbcdb7c7f90c2458c8cc",
+    "frames\/idle-fidget-04.png" : "9f987087bc0104613d993c25a85162651d4ce48b2fd65a6a48fe8c376e112c95",
+    "frames\/idle-fidget-05.png" : "4324f21c7160030ac1d0a3777d5a3dc2f27612b098e56cecbc94366fe6fb0e45",
+    "frames\/idle-fidget-06.png" : "b3a2637f1e5bee0016aad6d5d4a75a89c5521a627d0282a3b9cf666fc51a7832",
+    "frames\/idle-fidget-07.png" : "ac033d03138f76196ef4a4a7b47bd7eae390eb78a6245dcc3a0ca2112ae521a3",
+    "frames\/idle-fidget-08.png" : "1c249acd88a5afe19b03ce1205dffa86a31294a03bdee68e0186f56a76496dc2",
+    "frames\/idle-fidget-09.png" : "a6536f06ee64678ae9c5e4f353d1004a56188051c4790d27945bc8808ad89df5",
+    "frames\/idle-fidget-10.png" : "d4751275a6015991f4a5710cd262497faf639a58c7c9f3917ce00b5d3c6419e3",
+    "frames\/idle-fidget-11.png" : "95c6b9ba007044f518ace63e7c2806255626b06ccf8c5d448643d8509417448c",
+    "frames\/idle-fidget-12.png" : "5582f15a4324145575cc4be9a61355b639c84e0276d4f5daca0f4022bee3d411",
+    "frames\/idle-fidget-13.png" : "01243325a64f923919c0b9a1a23d69fa89ca52635e081f55ff4e521b955f187b",
+    "frames\/idle-fidget-14.png" : "1ea331e8efe5f71b6b09ae99821c1181907727204ae135ccf2db82ca32f25cf7",
+    "frames\/idle-fidget-15.png" : "13eba2e7f207a0c8baa8ccda9c662bc875eacbfb46e12a7d5d781790faca64cc",
+    "frames\/idle-look-01.png" : "ccc3f2deec8365e698449287170b9f7a9b7ff1ce123ecd8318476e901855ab9a",
+    "frames\/idle-look-02.png" : "422e169ad7d63833ccf3c3e529023f64a94d652b858eb3741bb6cfcd04019d25",
+    "frames\/idle-look-03.png" : "392b244f2daed24913932b40b87d4a3ed6bfbc5f67211ad9c02f844e4b04f459",
+    "frames\/idle-look-04.png" : "6093bdb72986e3b5fccb838a1f995335f357757c71c17e05abcd9868892335dd",
+    "frames\/idle-look-05.png" : "f2971de3074c8fb63c87cb9f2562cce17229a842aad7ecad2686a474db234e42",
+    "frames\/idle-look-06.png" : "e9414b3433dbb5ad88faa10ebfa61509515854c2316b73c9d8eb7c5469eced8e",
+    "frames\/idle-look-07.png" : "fe6a3ca23d7a5c9fdb6fcce3f1ef2e659d3fcc390032a5177c01668f4a197246",
+    "frames\/idle-look-08.png" : "e7ea1e5a47ab0de49a94de89770572dabb16c3cde5a59cc0ddc0c010fe8b4eeb",
+    "frames\/idle-look-09.png" : "0448d4a67ef541cd957659048c6a49ecdbe3c1a352138cdc52f2d56862bc480d",
+    "frames\/idle-look-10.png" : "3bf694890ae4d08e66cd220d184d78a70ad862a447164f824f84b74715a13e45",
+    "frames\/idle-look-11.png" : "5f2ad891202d42a1d567b9bce1b402120b1a5e23ae8a42d6a815241e40b94381",
+    "frames\/idle-look-12.png" : "6478cf32280e81e2369d01ad8f63ec152fd0222783c79448103c9ecdb4e76bb6",
+    "frames\/idle-look-13.png" : "aedeebb1d7c5d7ee30f6df36a6b56570883c9317997d238fdfc7428f5fa3da26",
+    "frames\/idle-look-14.png" : "d229fc2a60e34e69d5bee30320546a00472a8a25c707279ff1b94286a187b21f",
+    "frames\/idle-look-15.png" : "e47e51462f49e7604cbb5b6d66c2b3bee9b966280ba6e74475466f8b6bfdabb8",
+    "frames\/idle-stretch-01.png" : "c41e5f9e39a1bc5e7ba1beec5959388e48fa55ef494033ad84f7fc75b03b386d",
+    "frames\/idle-stretch-02.png" : "7c52b9f2cb52d82750c1fbee68a22cb5f44e3544714e4be383d636325c869a6c",
+    "frames\/idle-stretch-03.png" : "d925fa503198aaf33320ef3c632912eb9f7614e7f2f35854ee1797e884951233",
+    "frames\/idle-stretch-04.png" : "76f2526fdf01f3a44b0c6b71a88d74667693d85552bd2c13d1a99181228effc2",
+    "frames\/idle-stretch-05.png" : "57ef099a9d8e93cd84951a097fa9aa23f931d5336d4286bc25c04a19a4c561ab",
+    "frames\/idle-stretch-06.png" : "d741565b9b08e16337039bbae48fd96d727df144df28b602416d5669a7a9c37e",
+    "frames\/idle-stretch-07.png" : "38501b7c6ae0297deb95c583f0f870811556409901060f6968a4989f01afcb12",
+    "frames\/idle-stretch-08.png" : "a04236b8672fb797076a47c944fa95ef63f0bb8c96959d90ca325936b67b11d7",
+    "frames\/idle-stretch-09.png" : "dd04a8a5bc7ee606f720209c98472a6d6ea3bf7eb959ef01d0686f11817c07df",
+    "frames\/idle-stretch-10.png" : "aab4eb59c84aff6aecf233a99819d56d041ecc7efe312e12c48f5a490b60b131",
+    "frames\/idle-stretch-11.png" : "5de70138b6ffb50214d59f9172b1e00f7bc017fe60c9d4650b40c839116abe42",
+    "frames\/idle-stretch-12.png" : "66d056c551be1fecf3ca13a48c6bce143c0bbb0b332913b249984c677d54bb43",
+    "frames\/idle-stretch-13.png" : "ad6b9e031faa8e927d269f5efa0bd2d8a4a3885aa8cbda53e39624be335e51ef",
+    "frames\/idle-stretch-14.png" : "fcd3d7cf43bdb108c2c9227cad6fbf6c268631a647bfd62b6052e06f99759ac5",
+    "frames\/idle-stretch-15.png" : "779cdbe36be2b54744b9ee36d243617fcb7f95183b55d6d46408dc0e83c31918",
+    "frames\/inbox-zero-01.png" : "60e79c20a9e62a4eef3b193382043b7898cb2f6cebbe54303278e6d9bddcb45e",
+    "frames\/inbox-zero-02.png" : "954b2f7fd3059cb53bc6f635fdc050dd016e66ac2a4ec2e1f88925ef9119d97c",
+    "frames\/inbox-zero-03.png" : "46fbf92e43ba9c4965681ace5cddaa75fc36e504fd8e29ec3810b254bc3943d1",
+    "frames\/inbox-zero-04.png" : "e63ebd80ac3d82e799135de66ae2a7803e0ca8706fa0242d001b23e72ea8061a",
+    "frames\/inbox-zero-05.png" : "fd3229b1dcb339d1a9dc4f2857e72a632df3a4bc981b01ec27006482743f575a",
+    "frames\/inbox-zero-06.png" : "de1034c19fe0f0d4b05af230fa9417a2e54a708b234c6ecc0455ed08a0413957",
+    "frames\/inbox-zero-07.png" : "a6aa611a98e8868b30e1394f7acee4cd753c0a9a588affe9254fc3d28d702f8f",
+    "frames\/inbox-zero-08.png" : "cc23092a2268066b3e31c962e1f399bd4fe6cb681781ce9553a3ba7b47ab0121",
+    "frames\/inbox-zero-09.png" : "04c1ba14aefced1d09b04e8a4a8b59194919911bc6b068dfc296171b502efcfa",
+    "frames\/inbox-zero-10.png" : "473cab37d2a43c91f738472de5977e280a33045cd002bffab0b060e27034bc6b",
+    "frames\/inbox-zero-11.png" : "28c24d22aeced151338be334b1ff3379405589c2e5f49e6454a41444aa82252f",
+    "frames\/inbox-zero-12.png" : "0441d48b829f15914cfa3f49424893b404214891c79f533740e51384de8ad3f7",
+    "frames\/inbox-zero-13.png" : "411683acac4a2bae16cb0282363cd5690a033e9655af43798c0514cd8a386840",
+    "frames\/inbox-zero-14.png" : "7ca4cf5476baafb2e1027edcffd2f2a8ae81a78139d942b7efe3e9e84234b3d8",
+    "frames\/inbox-zero-15.png" : "444429d45ad6dba57699c4499fd138ae0b1b84bd0d61de1ffd643d4d6b8c10da",
+    "frames\/incident-end-00.png" : "67216de04cf3a0862a89324a86ebb74679e2dff4216e7f3031b12d39ccb7ec6b",
+    "frames\/incident-end-01.png" : "2eef19fbdde8b33b353696451cf97c71e4af16e6ef488c64e5f7955a7763f52a",
+    "frames\/incident-end-02.png" : "082e72fd5673a232d97d482b24398cf01796bf47b3de471fb0c7321d4c425d08",
+    "frames\/incident-end-03.png" : "c7f2bfb4c0374c8e6fbcd795384b0a60e4f2118080fac42c8f668dc0f2239bf6",
+    "frames\/incident-end-04.png" : "4bc713bc63c813c9d9e0f8c14d3cb0d89207240b5fe5543f71a0be091fa251e6",
+    "frames\/incident-end-05.png" : "1759621eee4348c238f84dbcef797cbeee6b876a81ea5e62b22aec3dbb889985",
+    "frames\/incident-end-06.png" : "7779a1464ba7a7dec0f413554000ba47ef17148f454609d203e394230a6c2fe7",
+    "frames\/incident-end-07.png" : "7e6fc751a0dbd995ac88d3d63b699c59c9e36e9610ea03746c56f61c83fe5ee9",
+    "frames\/incident-end-08.png" : "efd845c9827a5f483743cde9c8d47d4e6f40d78ffecfd9da9f14b6d05b7aaace",
+    "frames\/incident-end-09.png" : "393ce857f89c476e1893ad539ea1008635f3b609820985bfe1edcd5496959669",
+    "frames\/incident-end-10.png" : "1a15052f6ef3c397594d51f40cd9af59666988b35e29f8656c192e9721fe0aca",
+    "frames\/incident-end-11.png" : "4e172d82274c31061fc225700b4fcfe5df1d04bbd6b30c8e4c01f4dac0e1c0a0",
+    "frames\/incident-end-12.png" : "776e9feb9feee1edf76c28a2e15128c22e026cd8e0eca7189b9c03ec0d49ad6e",
+    "frames\/incident-end-13.png" : "323cce95a96c904acb76d0ab4746f80312e44d66f2548d34e25d88df316b9e2c",
+    "frames\/incident-end-14.png" : "d96dda68fad7992477410f0b5da20e19c54b9d0e5617d02102515846c6c961a5",
+    "frames\/incident-end-15.png" : "3a59a68d87e0d945f3e56d284d7ec8a33bfac4237a38e63ed33d909d0b5c4f31",
+    "frames\/incident-idle-00.png" : "abd2a64ee98837c82b88c9721cab2cbdddad07ef85d654e3d137e6f1f79a9a2d",
+    "frames\/incident-idle-01.png" : "9e88a586ae3128d0368c3c5c085227e9fb54325ef18a86590db0a3dbeba36633",
+    "frames\/incident-idle-02.png" : "3ea202dadf9e568aed9b8379eb81d54887d55f29b98f065d8967f3bef56c68cf",
+    "frames\/incident-idle-03.png" : "393f584d652fd57f0de17a4b5e6e12fbdc027358eabb53b20bc7ad856bd34037",
+    "frames\/incident-start-01.png" : "88f50dda43c9f56a78903896e2ba603d26a8c64b426989bb5fc4e0b70415502f",
+    "frames\/incident-start-02.png" : "7522622913dd44f3080dd08a45ac28e23615016812bfc73f977fc484e5c5ea4e",
+    "frames\/incident-start-03.png" : "4e15d488ff26b671a9b82404ef274a47c5a61ab0719898fa3210f923646d5d53",
+    "frames\/incident-start-04.png" : "026dec22253cf7dc5c0dd0c788a37fbab2e95cf04646a588b310bc6b621bfe2d",
+    "frames\/incident-start-05.png" : "d2db2574629ccb8f8a991e5982fea5d934d810206a2da0aa653d2c4e3daabe9a",
+    "frames\/incident-start-06.png" : "29495da9499e7fe4b5096c8c6eb29865913eb92805642e7e1ea636cb51dd5366",
+    "frames\/incident-start-07.png" : "88017c3e68fe51e7c09f64301aff1d5679e79e39f2bd1076b58fbf57a4aaf4d6",
+    "frames\/incident-start-08.png" : "08f040495987e1b86c47c1ef401fe9404b5c4cfc1609cb774a1fcd3a3cb71476",
+    "frames\/incident-start-09.png" : "af6323614c2159034a348af7586f6bdff8a781c8ec880a1508252efdf4a65267",
+    "frames\/incident-start-10.png" : "28468091c3d1dc921b41a3fa0a672b7485b786391e8db9f28a3a755afa841bf0",
+    "frames\/incident-start-11.png" : "97c69911a5755929d0e385d960f0b1468b8a4c0a9b013a5db876736631c1d5c2",
+    "frames\/incident-start-12.png" : "c98d4eb474d96e962b87d62ebe9eaa4b3e93f44ccc165da2d3320731b3dad58b",
+    "frames\/incident-start-13.png" : "ea895350e41232820e0f90b67d62ac400b8105d1748315146d4a01bc105511e9",
+    "frames\/incident-start-14.png" : "3af2db72ebe6441ec3f62a36cc63d77c7a984b780dea37ab79f7ee55ed7259b0",
+    "frames\/incident-start-15.png" : "280f315ec2e7ae9a94cea1f09e1690da64bd0f18e3e9bfa75dcc9d3c469490c3",
+    "frames\/item-cleared-01.png" : "82a35adc68b876cfa778c1746a80be5c4560545f70d61eb4db75ca599c30c4b4",
+    "frames\/item-cleared-02.png" : "c94eaba479a90bf12b365ef45897c31b0837429f566a56d9fbd2dc4ad7607299",
+    "frames\/item-cleared-03.png" : "0cd7000c786fc8dd0ef4df7c9889862416dc98c16500d3ba3a60fe32e07e1e71",
+    "frames\/item-cleared-04.png" : "39fda2cb5a6943ae118c831a85d07ebac0a18bcafb591d76528130d5d5ef6691",
+    "frames\/item-cleared-05.png" : "60c3cebabd4399641ab5639b0eeb13f3d413d11ef1c88c5f5a56eda311584653",
+    "frames\/item-cleared-06.png" : "01e72cf35454edfda90625a6d759a64c78930a06d2cab995e20040d6837ce6be",
+    "frames\/item-cleared-07.png" : "383d6e8f8fd2862af3755c78fa4215a30bc1be8210b1154c357f78a1548a82a7",
+    "frames\/item-cleared-08.png" : "0308441371e55f6565d9d256a02bdd20a12d271de42a33d88202010a4b791dab",
+    "frames\/item-cleared-09.png" : "3689765b47f14eebfdf9455d47071298249112dd427fdf959c0d25c02907e70b",
+    "frames\/item-cleared-10.png" : "81f469aa1f5326222660dab17cc9689057b062a5539eaff70cad89a4c1433fa5",
+    "frames\/item-cleared-11.png" : "6ebeedcce4492586d212c62263b8b3c7c38fec6f515e43401ef99589a8c06a19",
+    "frames\/item-cleared-12.png" : "3ad771c323dcaeba59a3886f9afabbe0e76ca4e9d0439d27ce38b8c0ea3bdeac",
+    "frames\/item-cleared-13.png" : "b572e08f9a5fae218174325dd3d8ec13f36265499ea053253cdcc046f0085d17",
+    "frames\/item-cleared-14.png" : "a74acd66ad47d9169b3bda98f7753ff5e0e7765ef36ed99334306745a2c59842",
+    "frames\/item-cleared-15.png" : "f1f98f6acd83aeab23afa17ac0e992abfd5f6c2c493bd4a533a84fba5ef7bc6c",
+    "frames\/new-item-01.png" : "1e4a3377d2cb1d76a4065b0a6e2b3de0d67826dff4c70372aa0276d00bd1ed34",
+    "frames\/new-item-02.png" : "722e0ac0509c15a92f32cb6c3fc46530f659bb46e78f6d2b077c5a37dd9041e2",
+    "frames\/new-item-03.png" : "09a275c2f8f6c8a58001e9796aa5f6cc51513c7ec56ab4bc07dbf8a0433d3846",
+    "frames\/new-item-04.png" : "beace40d6db5792fa7cde2cf16fb327c11b54db4d3538be6d9b942b95401a325",
+    "frames\/new-item-05.png" : "d093dc4e29ea7ab4b64dfeedc698c57fdc0bed37131428f6261ec511355292f6",
+    "frames\/new-item-06.png" : "610f63d99f28af5e3a13bccb01da5950b39e51d543a39829c3cb98cc29a1bd88",
+    "frames\/new-item-07.png" : "9c14ecec997aa1b2ce2c388ae807586de3049bb1a937d50d22ee2c4ccb8faa51",
+    "frames\/new-item-08.png" : "8e8af275b57cebc34af8568774bbfc780d136c3d012530ae744de8eca8069184",
+    "frames\/new-item-09.png" : "b0f3567d3648a561da64b36a044ec055ceaa144ab109b79cdc1146a61ee42aa7",
+    "frames\/new-item-10.png" : "ee86c0f5f51aaac6ccb98651c68a51ece905a098539f7f70c8ecf51a54e8d02c",
+    "frames\/new-item-11.png" : "7ed70585bbccbb312005a5e9e744bfa97ad9dd9ca53cd7f67b7282bf5b7df3a4",
+    "frames\/new-item-12.png" : "2af3bd43bbb7cb3ea592c93fda212b7b3b2c9dcf508c81968af0b32c64101707",
+    "frames\/new-item-13.png" : "8c469e46cea7741e053129858683d36be924437aca22bd5c9f838dc218d06679",
+    "frames\/new-item-14.png" : "cc4ef44f3f53b9fdb22db368d5553493e81f01db56679fa9b71fb8e2de23cf0a",
+    "frames\/new-item-15.png" : "5042d1b3d94e09cb52307e7cd83e5d155799c59f9d5f8af2c36d4efeb78f35ad",
+    "frames\/poke-01.png" : "592220033aeb214aead46cd3fe0a44ff732e3e6c82da630bc5f6df1290d2ef1c",
+    "frames\/poke-02.png" : "1e5f8e671f7b3926384e8c986b199809b328b07bd025533e9ec982c5951a7ef2",
+    "frames\/poke-03.png" : "15a94737b503b723b18c594fe039e72c8286406be14e82bcf1b489cee4cf80f8",
+    "frames\/poke-04.png" : "eedf036b853489206d11076b1ae44a340f29bbceaf126201b53b599d0cf3ebf4",
+    "frames\/poke-05.png" : "e619aed1e6618c611f810963b4b2e33d62a8194d8d1a12989b8b676c3d5e0dbd",
+    "frames\/poke-06.png" : "b5af5a7049dad893eeb329adaf03781f2705c53ed38c7f05aabf3c72fbf59ed6",
+    "frames\/poke-07.png" : "34906534ad9770fce5f59ba3547b5171288a6ae5619a452efcfafb47c907c536",
+    "frames\/poke-08.png" : "1966098ca8a11389d5add51cfdb79cdc9374ec1e2dae56a2a75a8526f6bd16ef",
+    "frames\/poke-09.png" : "33a9afcba2569c4046fbfdab2a0ea29830d9121ef1b7234536d1ca2f332c9bcf",
+    "frames\/poke-10.png" : "94ecf92d74b3712b3460663cd11e7fa9a92fab6646b48c14d0f94c180c74e166",
+    "frames\/poke-11.png" : "e1ca36876d3271f1db4898d7330b1b6b1da8c5c49d33ef946cfada7d7f5270c1",
+    "frames\/poke-12.png" : "a9efd3315ab79b940d165b036ced10d27b56f614fca13ee7f78ae42ffd6435b7",
+    "frames\/poke-13.png" : "603b1f088130c8dd87da4b3d465238ca3da832558720a8af6baefde5473bc22d",
+    "frames\/poke-14.png" : "27ef0c563d843151d9bcce01155a181c53e6a1e50914325cc597159c96638a99",
+    "frames\/poke-15.png" : "110984da7dddf7c5a6e6f63b3d1ee98d0a3c4a05bc3bcce10ea9aa51cb09810d",
+    "frames\/urgent-00.png" : "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
+    "frames\/urgent-01.png" : "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
+    "frames\/urgent-02.png" : "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"
+  },
+  "id" : "little-chris-v1",
+  "name" : "Little Chris",
+  "points" : {
+    "head" : [
       128,
       21
     ]
   },
-  "framePoints": {},
-  "frameSha256": {
-    "accessories/firefighter-hat.png": "1193468902fa65e2004c9f4e690bcb2f6e00b720a74d4bc91d781ecd3b64c100",
-    "frames/attention-00.png": "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
-    "frames/attention-01.png": "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
-    "frames/attention-02.png": "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
-    "frames/idle-00.png": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
-    "frames/idle-01.png": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
-    "frames/idle-02.png": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
-    "frames/urgent-00.png": "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
-    "frames/urgent-01.png": "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
-    "frames/urgent-02.png": "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"
+  "schemaVersion" : 2,
+  "states" : {
+    "attention" : {
+      "durationMs" : [
+        350,
+        600,
+        350
+      ],
+      "frames" : [
+        "frames\/attention-00.png",
+        "frames\/attention-01.png",
+        "frames\/attention-02.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/idle-00.png"
+    },
+    "doze" : {
+      "durationMs" : [
+        500,
+        500,
+        500,
+        500
+      ],
+      "frames" : [
+        "frames\/doze-00.png",
+        "frames\/doze-01.png",
+        "frames\/doze-02.png",
+        "frames\/doze-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/doze-00.png"
+    },
+    "drag" : {
+      "durationMs" : [
+        200,
+        200,
+        200,
+        200
+      ],
+      "frames" : [
+        "frames\/drag-00.png",
+        "frames\/drag-01.png",
+        "frames\/drag-02.png",
+        "frames\/drag-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/drag-00.png"
+    },
+    "idle" : {
+      "durationMs" : [
+        2000,
+        125,
+        125
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-01.png",
+        "frames\/idle-02.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/idle-00.png"
+    },
+    "incident-idle" : {
+      "durationMs" : [
+        150,
+        150,
+        150,
+        150
+      ],
+      "frames" : [
+        "frames\/incident-idle-00.png",
+        "frames\/incident-idle-01.png",
+        "frames\/incident-idle-02.png",
+        "frames\/incident-idle-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/incident-idle-00.png"
+    },
+    "urgent" : {
+      "durationMs" : [
+        300,
+        900,
+        500
+      ],
+      "frames" : [
+        "frames\/urgent-00.png",
+        "frames\/urgent-01.png",
+        "frames\/urgent-02.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/urgent-02.png"
+    }
   }
 }

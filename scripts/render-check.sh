@@ -151,7 +151,7 @@ if section "attention gesture (#29, live model)" | grep -q 'system-reduce-motion
   echo "SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)"
 else
   check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
-    '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
+    '^gesture: started=true state=attention duration=(0\.[0-9]+|1\.[0-9]+) second-event-merged=true ended=true reduced-motion-plays=false'
   if [[ $snooze_shown == true ]]; then
     check_in "attention gesture (#29, live model)" "snooze stops a gesture at once, no replay" \
       '^gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false'

@@ -42,10 +42,21 @@ struct Source: Decodable {
         /// Fit the whole clip inside the union: shift it sideways within the slack, then (if that is not
         /// enough) scale it uniformly about the ground anchor. Off by default: violations are reported.
         var fit: Bool?
+        /// Frames (0-based, after skips) that spray: their `nozzle` point is the metal pixel furthest
+        /// down-left (the nozzle tip aimed at the ground), for the engine's mist.
+        var nozzleFrames: [Int]?
     }
     var id: String
     var reference: String
     var anchor: Anchor
+    /// Merge consecutive frames that differ in fewer than this fraction of their visible pixels into
+    /// one longer frame (end holds), default 0.004; 0 keeps every frame.
+    var dedupe: Double?
+    /// Write frames as 256-colour palette PNGs with alpha (much smaller), default false.
+    var quantize: Bool?
+    /// [minX, top, maxX] of the skin's design union (validate_pack.py's); the stricter of it and the
+    /// measured union applies.
+    var union: [Int]?
     var clips: [Clip]
 }
 
@@ -206,6 +217,144 @@ func fit(_ frames: [Pixels], union: [Int], reference: Pixels) throws -> (frames:
     return (moved, shift, scale)
 }
 
+/// The nozzle tip: among opaque grey-metal pixels (r ≈ g ≈ b, mid grey), the one furthest down-left.
+func nozzle(_ p: Pixels) -> (Int, Int)? {
+    var best: (Int, Int)?, score = Int.min
+    for y in 0..<p.height { for x in 0..<p.width {
+        let i = (y * p.width + x) * 4
+        guard p.bytes[i + 3] > 220 else { continue }
+        let r = Int(p.bytes[i]), g = Int(p.bytes[i + 1]), b = Int(p.bytes[i + 2])
+        guard max(r, g, b) - min(r, g, b) < 18, (110...215).contains((r + g + b) / 3) else { continue }
+        if y - x > score { score = y - x; best = (x, y) }
+    } }
+    return best
+}
+
+/// Fraction of visible pixels that differ by more than 10 in any channel.
+func difference(_ a: Pixels, _ b: Pixels) -> Double {
+    var changed = 0, visible = 0
+    for i in stride(from: 0, to: a.bytes.count, by: 4) {
+        guard a.bytes[i + 3] > 0 || b.bytes[i + 3] > 0 else { continue }
+        visible += 1
+        for c in 0..<4 where abs(Int(a.bytes[i + c]) - Int(b.bytes[i + c])) > 10 { changed += 1; break }
+    }
+    return visible == 0 ? 0 : Double(changed) / Double(visible)
+}
+
+/// A 256-colour palette PNG with per-entry alpha (colour type 3 with tRNS): median cut over the frame's
+/// unpremultiplied RGBA colours, each pixel mapped to its nearest entry, no dithering. Fully transparent
+/// pixels share entry 0.
+func palettePNG(_ p: Pixels) throws -> Data {
+    struct Color: Hashable { var r, g, b, a: UInt8 }
+    var counts: [Color: Int] = [:]
+    var colors = [Color](repeating: Color(r: 0, g: 0, b: 0, a: 0), count: p.width * p.height)
+    for i in 0..<(p.width * p.height) {
+        let a = p.bytes[i * 4 + 3]
+        guard a > 0 else { continue }
+        func un(_ v: UInt8) -> UInt8 { UInt8(min(255, (Int(v) * 255 + Int(a) / 2) / Int(a))) }
+        let c = Color(r: un(p.bytes[i * 4]), g: un(p.bytes[i * 4 + 1]), b: un(p.bytes[i * 4 + 2]), a: a)
+        colors[i] = c
+        counts[c, default: 0] += 1
+    }
+    // Median cut into 255 boxes (entry 0 is transparent).
+    var boxes: [[(Color, Int)]] = [Array(counts)]
+    func channel(_ c: Color, _ k: Int) -> Int { k == 0 ? Int(c.r) : k == 1 ? Int(c.g) : k == 2 ? Int(c.b) : Int(c.a) }
+    while boxes.count < 255 {
+        var best = -1, bestRange = 0, bestChannel = 0
+        for (index, box) in boxes.enumerated() where box.count > 1 {
+            for k in 0..<4 {
+                let values = box.map { channel($0.0, k) }
+                let range = (values.max() ?? 0) - (values.min() ?? 0)
+                if range > bestRange { bestRange = range; best = index; bestChannel = k }
+            }
+        }
+        guard best >= 0 else { break }
+        let sorted = boxes[best].sorted { channel($0.0, bestChannel) < channel($1.0, bestChannel) }
+        let total = sorted.reduce(0) { $0 + $1.1 }
+        var running = 0, cut = 1
+        for (i, item) in sorted.enumerated() { running += item.1; if running * 2 >= total { cut = max(1, min(sorted.count - 1, i + 1)); break } }
+        boxes[best] = Array(sorted[..<cut])
+        boxes.append(Array(sorted[cut...]))
+    }
+    var palette = [Color(r: 0, g: 0, b: 0, a: 0)]
+    for box in boxes {
+        let total = Double(box.reduce(0) { $0 + $1.1 })
+        func mean(_ k: Int) -> UInt8 { UInt8((box.reduce(0.0) { $0 + Double(channel($1.0, k) * $1.1) } / total).rounded()) }
+        palette.append(Color(r: mean(0), g: mean(1), b: mean(2), a: mean(3)))
+    }
+    var nearest: [Color: UInt8] = [:]
+    func index(_ c: Color) -> UInt8 {
+        if c.a == 0 { return 0 }
+        if let known = nearest[c] { return known }
+        var best = 1, bestDistance = Int.max
+        for (i, e) in palette.enumerated().dropFirst() {
+            let d = (Int(c.r) - Int(e.r)) * (Int(c.r) - Int(e.r)) + (Int(c.g) - Int(e.g)) * (Int(c.g) - Int(e.g))
+                + (Int(c.b) - Int(e.b)) * (Int(c.b) - Int(e.b)) + 2 * (Int(c.a) - Int(e.a)) * (Int(c.a) - Int(e.a))
+            if d < bestDistance { bestDistance = d; best = i }
+        }
+        nearest[c] = UInt8(best)
+        return UInt8(best)
+    }
+    var raw = Data(capacity: (p.width + 1) * p.height)
+    for y in 0..<p.height {
+        raw.append(0)
+        for x in 0..<p.width { raw.append(index(colors[y * p.width + x])) }
+    }
+    func chunk(_ type: String, _ body: Data) -> Data {
+        var out = Data()
+        withUnsafeBytes(of: UInt32(body.count).bigEndian) { out.append(contentsOf: $0) }
+        let typed = Data(type.utf8) + body
+        out.append(typed)
+        withUnsafeBytes(of: crc32(typed).bigEndian) { out.append(contentsOf: $0) }
+        return out
+    }
+    var header = Data()
+    withUnsafeBytes(of: UInt32(p.width).bigEndian) { header.append(contentsOf: $0) }
+    withUnsafeBytes(of: UInt32(p.height).bigEndian) { header.append(contentsOf: $0) }
+    header.append(contentsOf: [8, 3, 0, 0, 0])
+    let plte = Data(palette.flatMap { [$0.r, $0.g, $0.b] }), trns = Data(palette.map(\.a))
+    guard let deflated = try? (raw as NSData).compressed(using: .zlib) as Data else { throw Failure(description: "deflate") }
+    var zlib = Data([0x78, 0xDA])
+    zlib.append(deflated)
+    withUnsafeBytes(of: adler32(raw).bigEndian) { zlib.append(contentsOf: $0) }
+    return Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) + chunk("IHDR", header) + chunk("PLTE", plte)
+        + chunk("tRNS", trns) + chunk("IDAT", zlib) + chunk("IEND", Data())
+}
+
+func crc32(_ data: Data) -> UInt32 {
+    var crc: UInt32 = 0xFFFF_FFFF
+    for byte in data {
+        crc ^= UInt32(byte)
+        for _ in 0..<8 { crc = crc & 1 == 1 ? (crc >> 1) ^ 0xEDB8_8320 : crc >> 1 }
+    }
+    return crc ^ 0xFFFF_FFFF
+}
+
+func adler32(_ data: Data) -> UInt32 {
+    var a: UInt32 = 1, b: UInt32 = 0
+    for byte in data { a = (a + UInt32(byte)) % 65521; b = (b + a) % 65521 }
+    return b << 16 | a
+}
+
+/// First row with any coverage in each column (the art's top contour).
+func columnTops(_ p: Pixels) -> [Int?] {
+    (0..<p.width).map { x in (0..<p.height).first { p.bytes[($0 * p.width + x) * 4 + 3] > 0 } }
+}
+
+func merge(_ a: [Int?], _ b: [Int?]) -> [Int?] {
+    zip(a, b).map { x, y in x.flatMap { x in y.map { min(x, $0) } ?? x } ?? y }
+}
+
+/// The count's lane height and slot at the sizes the app offers, as the app computes them (the slot
+/// from the states' heads only).
+var headContours: [[Int?]] = []
+func layouts(_ contours: [[Int?]]) -> [[Double]] {
+    stride(from: 64.0, through: 256, by: 16).map { side in
+        let layout = MascotLayout(artSide: side, contours: contours, headContours: headContours)
+        return [Double(layout.laneHeight), Double(layout.countSlotX)]
+    }
+}
+
 /// The frame moved down by `rows` whole rows (up when negative), without resampling.
 func shifted(_ p: Pixels, rows: Int) -> Pixels {
     guard rows != 0 else { return p }
@@ -251,7 +400,24 @@ func run() throws {
             unionBox = (min(unionBox.0, b.0), min(unionBox.1, b.1), max(unionBox.2, b.2), max(unionBox.3, b.3))
         }
     }
-    let union = [unionBox.0, unionBox.1, unionBox.2]
+    // The layout today: the count's lane and slot from the states' contours (with the hat where worn).
+    var stateContours: [[Int?]] = []
+    let hatPixels = (manifest.accessories ?? [:]).values.first.flatMap { try? load(pack.appendingPathComponent($0.image)) }.flatMap(RigRaster.pixels(of:))
+    for state in MascotState.allCases {
+        guard let spec = manifest.states[state.rawValue] else { continue }
+        for path in Set(spec.frames + [spec.staticFallback]) {
+            guard let pixels = RigRaster.pixels(of: try load(pack.appendingPathComponent(path))) else { continue }
+            stateContours.append(columnTops(pixels))
+            if let hatPixels { stateContours.append(merge(columnTops(pixels), columnTops(hatPixels))) }
+        }
+    }
+    headContours = stateContours
+    let baseLayouts = layouts(stateContours)
+
+    var union = [unionBox.0, unionBox.1, unionBox.2]
+    if let design = source.union, design.count == 3 {
+        union = [max(union[0], design[0]), max(union[1], design[1]), min(union[2], design[2])]
+    }
     print("FrameBake: today's union x \(union[0])–\(union[2]), top \(union[1]) (any coverage of idle, attention, urgent)")
     var checksums = manifest.frameSha256 ?? [:]
     var clips = manifest.clips ?? [:]
@@ -265,9 +431,15 @@ func run() throws {
         }
         let skip = Set(clip.skip ?? [])
         cellImages = cellImages.enumerated().filter { !skip.contains($0.offset) }.map(\.element)
-        // Per-frame scale from the face, smoothed over neighbours so an expression can't make it jump.
+        // The clip's size: its first frame (drawn as the idle pose) is as tall as idle-00. Within the clip
+        // the face keeps every frame at that frame's size (removing the generator's drift), smoothed over
+        // neighbours so an expression can't make it jump.
         let faces = cellImages.map { face($0, source.anchor) }
-        let raw = faces.map { $0.map { refFace.width / $0.width } }
+        let referenceHeight = Double(box(reference).map { $0.3 - $0.1 + 1 } ?? 1)
+        let firstHeight = Double(cellImages.first.flatMap(box).map { $0.3 - $0.1 + 1 } ?? 1)
+        let clipScale = referenceHeight / firstHeight
+        let firstFace = faces.compactMap { $0 }.first?.width ?? refFace.width
+        let raw = faces.map { $0.map { clipScale * firstFace / $0.width } }
         let scales = raw.indices.map { i -> Double in
             let window = raw[max(0, i - 1)...min(raw.count - 1, i + 1)].compactMap { $0 }
             return window.isEmpty ? 1 : window.sorted()[window.count / 2]
@@ -288,18 +460,84 @@ func run() throws {
             }
             frames.append(registered)
         }
-        if clip.fit == true, let fitted = try fit(frames, union: union, reference: reference) {
-            frames = fitted.frames
-            print("  \(clip.name): fitted by shifting \(fitted.shift) px and scaling \(String(format: "%.3f", fitted.scale))")
+        if clip.fit == true {
+            // Grounding after a scale can lift a frame back over the top: fit again until it holds.
+            var shift = 0, scale = 1.0
+            for _ in 0..<4 {
+                guard let fitted = try fit(frames, union: union, reference: reference) else { break }
+                frames = fitted.frames
+                shift += fitted.shift
+                scale *= fitted.scale
+            }
+            if scale < 1 || shift != 0 {
+                print("  \(clip.name): fitted by shifting \(shift) px and scaling \(String(format: "%.3f", scale))")
+            }
         }
         if clip.firstIsReference == true, !frames.isEmpty { frames[0] = reference }
         if clip.lastIsReference == true, !frames.isEmpty { frames[frames.count - 1] = reference }
         guard !frames.isEmpty else { continue }
-        // Write, check against the union.
-        var paths: [String] = []
+        // The count's lane and slot must not move: art higher than any state under the count or DEMO
+        // grows the lane even inside the union box. With `fit`, shrink about the anchor until it doesn't.
+        func clipContours(_ frames: [Pixels]) -> [[Int?]] {
+            frames.flatMap { frame -> [[Int?]] in
+                let tops = columnTops(frame)
+                return clip.accessories != .hide && hatPixels != nil ? [tops, merge(tops, columnTops(hatPixels!))] : [tops]
+            }
+        }
+        func lanes(_ l: [[Double]]) -> [Double] { l.map { $0[0] } }
+        if lanes(layouts(stateContours + clipContours(frames))) != lanes(baseLayouts) {
+            if clip.fit == true {
+                var low = 0.5, high = 1.0, best: [Pixels]? = nil
+                for _ in 0..<10 {
+                    let mid = (low + high) / 2
+                    let candidate = try frames.map { frame -> Pixels in
+                        let isRef = frame.bytes == reference.bytes
+                        if isRef { return frame }
+                        var out = try register(frame, scale: mid, point: (128, 232), target: (128, 232))
+                        out = shifted(out, rows: bottom(reference) - bottom(out))
+                        return out
+                    }
+                    if lanes(layouts(stateContours + clipContours(candidate))) == lanes(baseLayouts) { low = mid; best = candidate } else { high = mid }
+                }
+                if let best {
+                    frames = best
+                    print("  \(clip.name): scaled \(String(format: "%.3f", low)) more to keep the count's lane and slot")
+                } else {
+                    print("  LAYOUT \(clip.name): cannot keep the lane even at half size"); problems += 1
+                }
+            } else {
+                let grown = layouts(stateContours + clipContours(frames))
+                print("  LAYOUT \(clip.name): lane \(lanes(baseLayouts)) -> \(lanes(grown))"); problems += 1
+            }
+        }
+        // The count's slot follows the leftmost head edge over all poses: report how far this clip moves it.
+        let slots = zip(baseLayouts, layouts(stateContours + clipContours(frames))).map { $1[1] - $0[1] }
+        if let worst = slots.min(), worst < 0 {
+            print("  SLOT \(clip.name): the count's slot moves left up to \(Int(-worst)) pt (64–256 pt sizes)")
+        }
+        var durations = clip.durationMs.count == frames.count ? clip.durationMs : Array(repeating: clip.durationMs.first ?? 70, count: frames.count)
+        let isReference = frames.map { $0.bytes == reference.bytes }
+        // End holds: a frame that barely differs from the one before extends it instead.
+        var kept: [(frame: Pixels, duration: Int, reference: Bool, source: Int)] = []
         for (i, frame) in frames.enumerated() {
+            if let last = kept.last, difference(last.frame, frame) < (source.dedupe ?? 0.004),
+               last.duration + durations[i] <= MascotPack.clipDurationRange.upperBound {
+                kept[kept.count - 1].duration += durations[i]
+            } else {
+                kept.append((frame, durations[i], isReference[i], i))
+            }
+        }
+        if kept.count < frames.count { print("  \(clip.name): \(frames.count - kept.count) held frame(s) merged into longer frames") }
+        durations = kept.map(\.duration)
+        // Write (idle-00 itself is referenced, not copied), check against the union.
+        var paths: [String] = []
+        var sources: [Int] = []
+        for (i, item) in kept.enumerated() {
+            let frame = item.frame
+            sources.append(item.source)
+            if item.reference { paths.append(source.reference); continue }
             let path = "frames/\(clip.name)-\(String(format: "%02d", i)).png"
-            let data = try png(image(frame))
+            let data = source.quantize == true ? try palettePNG(frame) : try png(image(frame))
             try data.write(to: pack.appendingPathComponent(path))
             checksums[path] = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             paths.append(path)
@@ -308,7 +546,17 @@ func run() throws {
                 problems += 1
             }
         }
-        let durations = clip.durationMs.count == paths.count ? clip.durationMs : Array(repeating: clip.durationMs.first ?? 70, count: paths.count)
+        var framePoints = manifest.framePoints ?? [:]
+        for path in paths { framePoints[path] = nil }
+        for i in clip.nozzleFrames ?? [] {
+            guard let k = sources.firstIndex(of: i) ?? sources.lastIndex(where: { $0 < i }) else { continue }
+            if let tip = nozzle(kept[k].frame) {
+                framePoints[paths[k]] = .init(nozzle: [tip.0, tip.1])
+            } else {
+                print("  \(clip.name) frame \(i): no nozzle found"); problems += 1
+            }
+        }
+        manifest.framePoints = framePoints.isEmpty ? nil : framePoints
         if clip.loop == true {
             manifest.states[clip.name] = .init(frames: paths, durationMs: durations, loop: true, staticFallback: paths[0])
         } else {
@@ -316,11 +564,13 @@ func run() throws {
         }
         let scaleList = scales.map { String(format: "%.2f", $0) }.joined(separator: " ")
         print("FrameBake: \(clip.name): \(paths.count) frames, \(durations.reduce(0, +)) ms; scales \(scaleList)")
-        previews.append((clip.name, frames.map(image)))
+        previews.append((clip.name, kept.map { image($0.frame) }))
     }
     manifest.schemaVersion = max(manifest.schemaVersion, 2)
     manifest.clips = clips
-    manifest.frameSha256 = checksums
+    // Only the images the manifest uses keep a checksum (earlier bakes' frames drop out).
+    let used = Set(manifest.imagePaths)
+    manifest.frameSha256 = checksums.filter { used.contains($0.key) }
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     try encoder.encode(manifest).write(to: manifestURL)

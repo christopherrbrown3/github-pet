@@ -603,7 +603,7 @@ private func repositoryRoot() -> URL {
             let bundled = try MascotPack.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
                                               expectedID: skin.rawValue, budget: .bundled).get()
             let declared = Set((bundled.manifest.clips ?? [:]).keys.map { MascotClipID($0) })
-                .union(MascotClipID.heldStates.filter { bundled.manifest.heldSpec($0) != nil })
+                .union(MascotClipID.loopingStates.filter { bundled.manifest.heldSpec($0) != nil })
             #expect(Set(ClipLibrary(pack: bundled).durationsMs.keys) == declared)
             let total = bundled.imageData.values.reduce(0) { $0 + $1.count }
             #expect(bundled.imageData.count <= PackBudget.bundled.maxImages && total <= PackBudget.bundled.maxBytes)

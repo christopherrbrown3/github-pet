@@ -15,7 +15,27 @@ import Testing
     private static let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent()
 
-    private func model(_ clock: Clock, placeholderClips: Bool = true) -> AppModel {
+    /// The bundled Mona without her incident clips (#138 frame sequences ship them), for the fallback.
+    private static let withoutIncidentClips: URL = {
+        let fm = FileManager.default
+        let source = root.appendingPathComponent("assets/mascots/mona-pet-v1")
+        let copy = fm.temporaryDirectory.appendingPathComponent("animation-tests-mona-\(UUID().uuidString)/mona-pet-v1")
+        try? fm.createDirectory(at: copy, withIntermediateDirectories: true)
+        for directory in ["frames", "accessories"] {
+            try? fm.copyItem(at: source.appendingPathComponent(directory), to: copy.appendingPathComponent(directory))
+        }
+        if let data = try? Data(contentsOf: source.appendingPathComponent("manifest.json")),
+           var manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            var clips = manifest["clips"] as? [String: Any] ?? [:]
+            clips["incident-start"] = nil
+            clips["incident-end"] = nil
+            manifest["clips"] = clips
+            try? JSONSerialization.data(withJSONObject: manifest).write(to: copy.appendingPathComponent("manifest.json"))
+        }
+        return copy.deletingLastPathComponent()
+    }()
+
+    private func model(_ clock: Clock, placeholderClips: Bool = true, packs: URL = root.appendingPathComponent("assets/mascots")) -> AppModel {
         var arguments = ["GitHubPet", "--fixtures"]
         if placeholderClips { arguments.append("--placeholder-clips") }
         var options = LaunchOptions.parse(arguments: arguments, environment: [:])
@@ -23,7 +43,7 @@ import Testing
         _ = NSApplication.shared
         return AppModel(options: options, runtime: AppModel.Runtime(
             now: { clock.now }, systemReducedMotion: { clock.reduced }, schedulesTimers: false,
-            mascotPackDirectory: { Self.root.appendingPathComponent("assets/mascots/\($0.rawValue)") }, clipSeed: 1))
+            mascotPackDirectory: { packs.appendingPathComponent($0.rawValue) }, clipSeed: 1))
     }
 
     /// Yields after each step so other main-actor suites running in parallel are never starved.
@@ -73,7 +93,7 @@ import Testing
     }
 
     @Test func withoutTheClipsAnIncidentWavesOnceAndNeverPlaysUrgent() async {
-        let clock = Clock(), app = model(clock, placeholderClips: false)
+        let clock = Clock(), app = model(clock, placeholderClips: false, packs: Self.withoutIncidentClips)
         await clearIncidents(app, clock)
         app.injectServiceIncident(.critical)
         #expect(app.activeClip?.kind == .newItem && app.activeClip?.state == .attention, "the wave, never urgent")

@@ -73,7 +73,10 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
                     let offset = layout.countOffset(contour: contour, width: width)
                     let clear = layout.clearance(contour, layout.countFrame(width: width, offset: offset), lane: layout.laneHeight)
                     #expect(clear >= gap - 0.001, "no closer than the gap at \(side)")
-                    #expect(offset == 0 || abs(clear - gap) < 0.001, "tracks to the gap at \(side): \(clear)")
+                    // The count tracks each pose down to the gap, except below its range (a clip pose that
+                    // ducks lower than the states, #138), where it stays at the bottom of the range.
+                    #expect(offset == 0 || abs(clear - gap) < 0.001 || abs(offset - layout.maxCountOffset) < 0.001,
+                            "tracks to the gap at \(side): \(clear)")
                     #expect(offset <= layout.maxCountOffset + 0.001)
                 }
             }

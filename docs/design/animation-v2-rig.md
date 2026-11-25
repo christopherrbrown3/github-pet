@@ -658,3 +658,39 @@ References: (A) `little-chris-v1/frames/idle-00.png`, (B) `little-chris-v1/sourc
 2. **The mantle top is rounded and continuous**, and reaches high enough that the head covers it with 15 or more units of overlap.
 3. **M2 piece 1 overlays the original tentacle** in the crop, at half size, within a few pixels.
 4. **At rest, the assembled rig against idle-00 at 128 pt cannot be told apart** (RigBake's preview shows them side by side and as an overlay).
+
+## 12. Direction change: frame sequences (Chris, after the 16-frame test)
+
+The rig is paused as a fallback (`design/138-rig` @ 3b768bd). Clips are now generated frame sequences: Codex paints each clip as a 4 × 4 sheet of 16 transparent frames (loops: 4), starting on idle-00. The engine plays them as ordinary v2 frame clips.
+
+### 12.1 Pipeline
+
+`swift run -c release FrameBake assets/mascots/<skin>/frames-source.json [--clip <name>] [--preview <png>]`
+
+- **Cells:** found by connected components (any sheet size), with props attached to the nearest character.
+- **Registration to idle-00:** a clip's first frame is scaled to idle-00's height. Every later frame is held at that frame's size by its face (Mona's cream face plate, Little Chris's skin), which removes the generator's zoom drift. The face centre aligns x, and the lowest pixel sits on idle-00's ground row.
+- **Frame 1 is idle-00 itself** (`firstIsReference`), referenced rather than copied.
+- **Clean-up:** faint fringe and specks are dropped.
+- **Bounds:** each frame is checked against today's union, measured exactly as the loader does. With `fit`, a clip is shifted, then scaled uniformly about the ground anchor until it fits.
+- **Layout:** each clip is also checked against the count's layout. The lane is computed exactly as the app does, and `fit` shrinks further if the lane would grow.
+- **Nozzle:** `incident-end`'s spray frames get `nozzle` points (the steel tip furthest down-left) for the mist.
+- **Size:** near-identical consecutive frames merge into longer frames. `quantize` writes 256-colour palette PNGs with alpha.
+- **Output:** v2 clips and loops in the pack's manifest, with checksums pruned to the images in use.
+
+### 12.2 Engine changes
+
+- 16 frames per clip; clip frames 40 to 2000 ms (states keep 125 ms); `poke` and `drop` caps raised to 1200 ms; bundled budget 256 images and 16 MiB.
+- 60 fps while a clip with frames under 100 ms plays.
+- `incident-idle`, a looping state: the idle loop with the helmet drawn in. It replaces the idle loop and the hat overlay during incidents (Reduce Motion shows its first frame).
+- **The count's slot and tracking range come from the states** (idle, attention and urgent, plus the attention lean), not from clip frames. A clip pose that reaches past the head or ducks lower no longer moves the count or enlarges the label band hover avoids. For packs without clips nothing changes; the bundled packs' lane, slot and count range equal `main`'s at every size.
+
+### 12.3 Size
+
+| Packs (both skins, staged in the app) | Size |
+|---|---|
+| `main` (v1 frames) | 0.93 MB |
+| Sequences, PNG as generated | 17.0 MB |
+| + end-hold dedupe (only 9 frames merge: Codex repaints holds) and idle-00 reuse | 16.2 MB |
+| **+ 256-colour palette quantization (shipped)** | **5.7 MB** (≈ 4.8 MB growth) |
+
+At 64, 128 and 256 pt @2x the quantized frames can't be told apart from the originals (gloss, hair and gradients hold up; no dithering needed). Frames stay 256 px: the mascot is up to 256 pt (512 px at 2×), so smaller frames would blur at the larger sizes. The `.frames138` app is 18.6 MB on disk.
