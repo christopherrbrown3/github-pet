@@ -704,7 +704,7 @@ private func repositoryRoot() -> URL {
         #expect(PackBudget.custom.maxBytes == 16 * 1024 * 1024 && MascotPack.maxImageBytes == 4 * 1024 * 1024)
     }
 
-    @Test func ninetySixImagePackLoadsWithinTheLimits() throws {
+    @Test(.timeLimit(.minutes(10))) func ninetySixImagePackLoadsWithinTheLimits() throws {
         let fixture = try V2Fixture()
         // 96 distinct 256×256 images: the most a custom pack may use. Byte limits have their own tests;
         // the load time of a maximal 14 MiB pack is measured on a release build (PR #163 evidence),
@@ -742,9 +742,10 @@ private func repositoryRoot() -> URL {
         let seconds = Date().timeIntervalSince(started)
         print("96-image custom pack (debug build): \(pack.imageData.count) images, \(total) bytes, loaded in \(String(format: "%.2f", seconds)) s")
         #expect(pack.manifest.imagePaths.count == 96)
-        // Debug test builds are far slower than the app; the release-build time is measured separately
-        // (PR evidence). This bound only catches a pathological regression.
-        #expect(seconds < 60)
+        // Debug builds on a loaded runner are far slower than the app (70 s with 48 busy loops; a few
+        // seconds idle), and the release-build time is measured separately (PR evidence). The bound is
+        // generous so load never fails it; it only catches a pathological regression.
+        #expect(seconds < 300)
     }
 
     @Test func placeholderClipsCoverTheDesignListWithoutChangingTheLayout() throws {

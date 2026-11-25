@@ -9,11 +9,12 @@ import Testing
 final class Gate: @unchecked Sendable {
     private let semaphore = DispatchSemaphore(value: 0)
     private let entered = DispatchSemaphore(value: 0)
-    /// A bounded park: a test that forgets or fails to open the gate can't hang the run (#127).
-    func wait() { entered.signal(); _ = semaphore.wait(timeout: .now() + 20) }
+    /// A bounded park: a test that forgets or fails to open the gate can't hang the run (#127). The
+    /// bound is generous (#171): a starved runner must not outlast it before the test reaches the gate.
+    func wait() { entered.signal(); _ = semaphore.wait(timeout: .now() + 300) }
     /// True once a loader has reached the gate (bounded, off the cooperative pool's async context).
     func waitUntilEntered() async -> Bool {
-        await Task.detached { [entered] in entered.wait(timeout: .now() + 20) == .success }.value
+        await Task.detached { [entered] in entered.wait(timeout: .now() + 300) == .success }.value
     }
     /// Releases every waiter, now and later (the background prewarm may ask for the same pack too).
     func open() { for _ in 0..<16 { semaphore.signal() } }
