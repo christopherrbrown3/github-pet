@@ -610,7 +610,9 @@ public struct MascotPack: Equatable, Sendable {
             if !spec.loop { errors.append(.wrongLoopFlag(name, expected: true)) }
         }
         for (name, spec) in (manifest.clips ?? [:]).sorted(by: { $0.key < $1.key }) {
-            guard let policy = ClipCatalog.v1[MascotClipID(name)] else { errors.append(.unknownClip(name)); continue }
+            // `<clip>-incident` helmet variants (#138) follow their clip's rules.
+            let id = MascotClipID(name)
+            guard let policy = ClipCatalog.v1[IncidentRule.base(of: id) ?? id] else { errors.append(.unknownClip(name)); continue }
             guard sequence(name, frames: spec.frames, durations: spec.durationMs, range: clipDurationRange) else { continue }
             if spec.loop == true { errors.append(.wrongLoopFlag(name, expected: false)) }
             let total = saturatingSum(spec.durationMs)

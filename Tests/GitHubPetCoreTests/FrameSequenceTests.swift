@@ -79,6 +79,34 @@ private func pose(_ library: ClipLibrary, at seconds: Double, accessories: [Masc
         #expect(pose(v1, at: 0.2, stage: scheduled(.itemCleared)).clip?.id == .itemCleared)
     }
 
+    @Test func reactionsWearTheHelmetWhenThePackDrawsAVariant() {
+        var lib = library()
+        lib.accessories = []
+        lib.durationsMs[.drag] = [200, 200]
+        lib.durationsMs[IncidentRule.variant(of: .poke)] = Array(repeating: 70, count: 16)
+        lib.durationsMs[IncidentRule.variant(of: .drag)] = [200, 200, 200, 200]
+        let policy = ClipCatalog.v1[.poke]!
+        let poke = ClipStage(scheduled: .init(id: .poke, tier: policy.tier, priority: policy.priority, gate: policy.gate,
+                                              startedAt: t0, endsAt: t0 + 1.12))
+        #expect(pose(lib, at: 0.2, stage: poke).clip?.id == "poke-incident")
+        #expect(pose(lib, at: 0.2, accessories: [], stage: poke).clip?.id == .poke, "no incident: the plain clip")
+        #expect(pose(lib, at: 0.5, stage: ClipStage(dragStart: t0)).clip?.id == "drag-incident")
+        #expect(pose(lib, at: 0.5, reduced: true, stage: ClipStage(dragStart: t0)).clip?.id == "drag-incident",
+                "Reduce Motion: the helmet drag still")
+        #expect(IncidentRule.base(of: "dizzy-incident") == .dizzy && IncidentRule.base(of: "new-item-incident") == nil)
+        // A variant validates under its clip's rules; an unknown one doesn't.
+        let frames = (0..<16).map { "frames/poke-incident-\($0).png" }
+        var manifest = MascotPackManifest(
+            schemaVersion: 2, id: "x", name: "x", canvas: .init(width: 256, height: 256), anchor: MascotPack.anchor, states: [:],
+            clips: ["poke-incident": .init(frames: frames, durationMs: Array(repeating: 70, count: 16))])
+        #expect(MascotPack.validateV2Structure(manifest, budget: .bundled).isEmpty)
+        manifest.clips?["new-item-incident"] = .init(frames: frames, durationMs: Array(repeating: 70, count: 16))
+        #expect(MascotPack.validateV2Structure(manifest, budget: .bundled).contains(.unknownClip("new-item-incident")))
+        manifest.clips = nil
+        manifest.states["drag-incident"] = .init(frames: ["frames/a.png"], durationMs: [200], loop: true, staticFallback: "frames/a.png")
+        #expect(MascotPack.validateV2Structure(manifest, budget: .bundled).isEmpty)
+    }
+
     @Test func clipFramesFasterThanStateFramesKeepTheirTiming() {
         let stage = ClipStage(scheduled: .init(id: .poke, tier: .reaction, priority: ClipPriority.poke, gate: .always,
                                                startedAt: t0, endsAt: t0 + 1.12))

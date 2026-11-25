@@ -13,7 +13,7 @@ FX = ROOT / 'assets/mascots/shared-fx-v1'
 # animation-v1.md section 4: clip keys and length caps (ms), held states, the bundled design budget.
 CLIP_CAPS = {'incident-start': 2200, 'incident-end': 3200, 'new-item': 1900, 'item-cleared': 1500, 'inbox-zero': 2400,
              'drop': 1200, 'poke': 1200, 'dizzy': 1800, 'idle-look': 2600, 'idle-stretch': 2600, 'idle-fidget': 2600}
-HELD = {'drag', 'doze', 'incident-idle'}
+HELD = {'drag', 'doze', 'incident-idle', 'drag-incident'}
 # Frame sequences (#138): 16-frame clips at ~70 ms per frame.
 MAX_SEQUENCE, MAX_IMAGES, MAX_IMAGE_BYTES, MAX_PACK_BYTES = 16, 256, 96 * 1024, 16 * 1024 * 1024
 CLIP_FRAME_MS = (40, 2000)
@@ -109,10 +109,12 @@ def check_v2(pack, manifest, union, resolve):
         assert spec['loop'] is True and spec['staticFallback'] in spec['frames'], name
         sequences[name] = spec
     for name, spec in clips.items():
-        assert name in CLIP_CAPS, f'unknown clip {name}'
+        # Helmet variants (#138) follow their clip's cap.
+        base = name[:-len('-incident')] if name.endswith('-incident') and name[:-len('-incident')] in ('poke', 'dizzy', 'drop') else name
+        assert base in CLIP_CAPS, f'unknown clip {name}'
         assert 'loop' not in spec and 'staticFallback' not in spec, name
         assert spec.get('accessories', 'keep') in ('keep', 'hide'), name
-        assert sum(spec['durationMs']) <= CLIP_CAPS[name], (name, sum(spec['durationMs']))
+        assert sum(spec['durationMs']) <= CLIP_CAPS[base], (name, sum(spec['durationMs']))
         sequences[name] = spec
     for name, spec in sequences.items():
         assert 1 <= len(spec['frames']) <= MAX_SEQUENCE and len(spec['frames']) == len(spec['durationMs']), name

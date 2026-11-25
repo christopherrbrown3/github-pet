@@ -437,15 +437,18 @@ public enum MascotAnimator {
             return pose
         }
         let spring = stage.springAngle(at: now)
-        func clipPose(_ id: MascotClipID, since start: Date, loop: Bool, state: MascotState = mood,
+        func clipPose(_ requested: MascotClipID, since start: Date, loop: Bool, state: MascotState = mood,
                       angle: Double = 0) -> MascotPose? {
+            // During an incident a reaction plays its helmet variant when the pack draws one.
+            let variant = IncidentRule.variant(of: requested)
+            let id = helmetLoop && library.has(variant) ? variant : requested
             guard let durations = library.durationsMs[id] else { return nil }
             let elapsed = max(0, now.timeIntervalSince(start))
             let frame = FrameClock.frameIndex(durationsMs: durations, loop: loop, elapsedMs: Int(elapsed * 1000),
                                               reducedMotion: false, minimumMs: FrameClock.minimumClipDurationMs)
             // Dizzy wobbles 0, −5°, +5°, −5°, 0 at its frame starts, eased like #29.
             var lean = angle
-            if id == .dizzy { lean = DizzyLean.angle(durationsMs: durations, elapsedMs: elapsed * 1000) }
+            if requested == .dizzy { lean = DizzyLean.angle(durationsMs: durations, elapsedMs: elapsed * 1000) }
             let limit = library.leanLimit
             return wearing(MascotPose(state: state, frame: nil, clipElapsed: loop ? nil : elapsed,
                                       angle: min(max(lean + spring, -limit), limit),
@@ -455,7 +458,9 @@ public enum MascotAnimator {
             for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil),
                                  (.incidentIdle, helmetLoop)]
             where active && library.has(id) {
-                return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: id, frame: nil, elapsed: 0)))
+                let variant = IncidentRule.variant(of: id)
+                let shown = helmetLoop && library.has(variant) ? variant : id
+                return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: shown, frame: nil, elapsed: 0)))
             }
             return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil))
         }

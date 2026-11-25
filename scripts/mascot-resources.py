@@ -9,7 +9,7 @@ import shutil
 PACKS = {"mona-pet-v1": 12, "little-chris-v1": 9}
 STATES = {"idle", "attention", "urgent"}
 # Schema v2 (#138): optional held states, clips and accessories, under the bundled design budget.
-HELD = {"drag", "doze", "incident-idle"}
+HELD = {"drag", "doze", "incident-idle", "drag-incident"}
 RUNTIME_DIRS = {"frames", "accessories", "rig"}
 # Schema v3 (#138): cutout-rig part images (any size up to 1024 px a side, 160 KiB each).
 MAX_RIG_IMAGE_BYTES = 160 * 1024

@@ -42,8 +42,8 @@ public struct MascotClipID: RawRepresentable, Hashable, Comparable, Codable, Sen
     /// The idle loop while the incident marker shows (frame sequences, #138): the helmet drawn as art
     /// on a looping idle, in place of the idle loop plus the hat overlay.
     public static let incidentIdle: Self = "incident-idle"
-    /// Every looping state a v2 pack may add to idle, attention and urgent.
-    public static let loopingStates: [Self] = heldStates + [incidentIdle]
+    /// Every looping state a v2 pack may add to idle, attention and urgent (drag's helmet variant too).
+    public static let loopingStates: [Self] = heldStates + [incidentIdle, "drag-incident"]
 }
 
 /// Priority tiers (design #138), highest first: drag masks everything; event clips (tier 1) follow
@@ -134,6 +134,15 @@ public enum ClipPriority {
 /// user's own reactions and the incident clips. Everything else gives way to the incident idle loop.
 public enum IncidentRule {
     public static let playsDuringIncident: Set<MascotClipID> = [.drag, .drop, .poke, .dizzy, .incidentStart, .incidentEnd]
+    /// The reactions a pack may also draw wearing the helmet, as `<clip>-incident` (a loop for drag).
+    public static let helmetVariants: [MascotClipID] = [.poke, .dizzy, .drop, .drag]
+
+    public static func variant(of id: MascotClipID) -> MascotClipID { MascotClipID(id.rawValue + "-incident") }
+
+    /// The clip a `<clip>-incident` name varies, if it is one.
+    public static func base(of id: MascotClipID) -> MascotClipID? {
+        helmetVariants.first { variant(of: $0) == id }
+    }
 }
 
 /// The clips the app knows (design v1, #138). Replacing this table is the only change needed for new
