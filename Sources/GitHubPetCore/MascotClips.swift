@@ -130,6 +130,12 @@ public enum ClipPriority {
     }
 }
 
+/// What plays while an incident is active, for a pack that draws the helmet (#138, Chris's rule): the
+/// user's own reactions and the incident clips. Everything else gives way to the incident idle loop.
+public enum IncidentRule {
+    public static let playsDuringIncident: Set<MascotClipID> = [.drag, .drop, .poke, .dizzy, .incidentStart, .incidentEnd]
+}
+
 /// The clips the app knows (design v1, #138). Replacing this table is the only change needed for new
 /// IDs, triggers, priorities and cooldowns.
 public struct ClipCatalog: Equatable, Sendable {
@@ -239,6 +245,15 @@ public struct ClipScheduler: Sendable {
         public var gate: ClipGate
         public var startedAt: Date
         public var endsAt: Date
+
+        public init(id: MascotClipID, tier: ClipTier, priority: Int, gate: ClipGate, startedAt: Date, endsAt: Date) {
+            self.id = id
+            self.tier = tier
+            self.priority = priority
+            self.gate = gate
+            self.startedAt = startedAt
+            self.endsAt = endsAt
+        }
 
         public static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.id == rhs.id && lhs.priority == rhs.priority && lhs.startedAt == rhs.startedAt && lhs.endsAt == rhs.endsAt

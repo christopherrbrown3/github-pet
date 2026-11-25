@@ -187,7 +187,7 @@ public struct EventClipQueue: Sendable {
         public var startedAt: Date
         public var endsAt: Date
 
-        init(event: InboxEvent, startedAt: Date, origin: Origin = .repository, kind: Kind? = nil,
+        public init(event: InboxEvent, startedAt: Date, origin: Origin = .repository, kind: Kind? = nil,
              duration: TimeInterval? = nil) {
             self.event = event
             self.origin = origin
@@ -421,6 +421,15 @@ public enum MascotAnimator {
                             library: ClipLibrary = .empty, accessories: [MascotAccessoryID] = [],
                             durationsMs: (MascotState) -> [Int]) -> MascotPose {
         let worn = accessories.filter(library.accessories.contains)
+        // An incident is showing (the marker's accessories are passed in), whether or not the pack draws
+        // the hat as an overlay: a pack with an incident idle loop draws the helmet itself (#138).
+        let incident = !accessories.isEmpty
+        // Chris's incident rule (#138): with a drawn-helmet loop, the pet wears the helmet throughout an
+        // incident. The loop replaces idle, attention and urgent; one-shots that would show the pet
+        // without it are suppressed; the user's own reactions (drag, drop, poke, dizzy) and the incident
+        // clips still play.
+        let helmetLoop = incident && library.has(.incidentIdle)
+        func allowed(_ id: MascotClipID) -> Bool { !helmetLoop || IncidentRule.playsDuringIncident.contains(id) }
         func wearing(_ pose: MascotPose) -> MascotPose {
             var pose = pose
             if let clip = pose.clip, library.hidesAccessories.contains(clip.id) { return pose }
@@ -444,32 +453,32 @@ public enum MascotAnimator {
         }
         if reducedMotion {
             for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil),
-                                 (.incidentIdle, mood == .idle && !worn.isEmpty)]
+                                 (.incidentIdle, helmetLoop)]
             where active && library.has(id) {
                 return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: id, frame: nil, elapsed: 0)))
             }
             return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil))
         }
-        if let start = stage.dragStart, let pose = clipPose(.drag, since: start, loop: true, angle: stage.dragAngle) {
+        if let start = stage.dragStart, allowed(.drag), let pose = clipPose(.drag, since: start, loop: true, angle: stage.dragAngle) {
             return pose
         }
         let event = clip.flatMap { now >= $0.startedAt && now < $0.endsAt ? $0 : nil }
         if let scheduled = stage.scheduled, now >= scheduled.startedAt, now < scheduled.endsAt,
-           scheduled.priority > event.map(ClipPriority.of) ?? .min,
+           scheduled.priority > event.map(ClipPriority.of) ?? .min, allowed(scheduled.id),
            let pose = clipPose(scheduled.id, since: scheduled.startedAt, loop: false) {
             return pose
         }
         // Tier 1 by kind: incident-start/-end are only chosen when the pack has them; new-item
         // replaces the wave for repository batches only (an incident escalation keeps the wave).
-        if let event, let id = event.kind.clipID, event.kind != .newItem || event.origin == .repository,
+        if let event, let id = event.kind.clipID, event.kind != .newItem || event.origin == .repository, allowed(id),
            let pose = clipPose(id, since: event.startedAt, loop: false, state: .attention) {
             return pose
         }
-        if event == nil, mood == .idle, let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
+        if event == nil, mood == .idle, allowed(.doze), let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
             return pose
         }
-        // During an incident the idle loop is the helmet-wearing one, when the pack draws it (#138).
-        if event == nil, mood == .idle, !worn.isEmpty, let pose = clipPose(.incidentIdle, since: idleEpoch, loop: true) {
+        // During an incident the helmet loop stands in for every mood and for suppressed gestures (#138).
+        if helmetLoop, let pose = clipPose(.incidentIdle, since: idleEpoch, loop: true) {
             return pose
         }
         return wearing(legacyPose(mood: mood, clip: event, now: now, idleEpoch: idleEpoch, gesture: gesture,

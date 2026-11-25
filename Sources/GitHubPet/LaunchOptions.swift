@@ -19,6 +19,8 @@ import GitHubPetCore
 ///   --rig-placeholder             #138 dev: load the shape-only cutout rig pack (written to a temp dir)
 ///   --replay-clips <secs>         #138 dev: play the pack's clips in turn every <secs> s, without touching data;
 ///                                 ignored by the production bundle ID
+///   --dump-incident-frames <dir>  #138 dev: what both skins show at every frame while an incident is
+///                                 active (overlay and helmet counts, contact sheets), then quit
 ///   --dump-clip-frames <dir> <skin>  #138 dev: render every rig clip of a built-in skin at 60 Hz with the
 ///                                 live renderer to PNGs and contact sheets, then quit (in-memory
 ///                                 preferences; ignored by the production bundle ID)
@@ -33,6 +35,7 @@ struct LaunchOptions {
     var rigPlaceholder = false
     var replayClipsEvery: TimeInterval?
     var dumpClipFrames: (directory: URL, skin: MascotSkin)?
+    var dumpIncidentFrames: URL?
     var snapshotDirectory: URL?
     /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
     var simulatesMonitoringScope = false
@@ -66,6 +69,8 @@ struct LaunchOptions {
             case "--placeholder": options.forcePlaceholder = true
             case "--placeholder-clips": options.placeholderClips = true
             case "--rig-placeholder": options.rigPlaceholder = true
+            case "--dump-incident-frames":
+                if let dir = iterator.next() { options.dumpIncidentFrames = URL(fileURLWithPath: dir, isDirectory: true) }
             case "--dump-clip-frames":
                 if let dir = iterator.next(), let skin = iterator.next().flatMap(MascotSkin.init(rawValue:)) {
                     options.dumpClipFrames = (URL(fileURLWithPath: dir, isDirectory: true), skin)
@@ -91,8 +96,9 @@ struct LaunchOptions {
         if Bundle.main.bundleIdentifier == Self.productionBundleID {
             options.replayClipsEvery = nil
             options.dumpClipFrames = nil
+            options.dumpIncidentFrames = nil
         }
-        if options.dumpClipFrames != nil {
+        if options.dumpClipFrames != nil || options.dumpIncidentFrames != nil {
             // Nothing of the user's: fixtures and an in-memory preferences domain.
             options.forcedSource = "fixtures"
             options.defaultsSuite = Self.dumpDefaultsSuite
@@ -158,7 +164,7 @@ struct LaunchOptions {
         if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite {
             return EphemeralDefaults.named(Self.snapshotDefaultsSuite)
         }
-        if dumpClipFrames != nil, defaultsSuite == Self.dumpDefaultsSuite {
+        if dumpClipFrames != nil || dumpIncidentFrames != nil, defaultsSuite == Self.dumpDefaultsSuite {
             return EphemeralDefaults.named(Self.dumpDefaultsSuite)
         }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {

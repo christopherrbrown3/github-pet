@@ -33,14 +33,50 @@ private func pose(_ library: ClipLibrary, at seconds: Double, accessories: [Masc
         #expect(playing.accessories.isEmpty, "the loop draws its own helmet")
         // No incident: the ordinary idle loop.
         #expect(pose(library(), at: 0.35, accessories: []).clip == nil)
+        // A sequence pack draws the helmet itself and has no hat overlay: the incident still plays the loop.
+        var drawn = library()
+        drawn.accessories = []
+        let loop = pose(drawn, at: 0.35)
+        #expect(loop.clip?.id == .incidentIdle && loop.accessories.isEmpty)
+        #expect(pose(drawn, at: 0.35, reduced: true).clip?.id == .incidentIdle)
+        #expect(pose(drawn, at: 0.35, mood: .attention).accessories.isEmpty, "no overlay anywhere")
         // A pack without the loop keeps idle plus the hat overlay.
         let overlay = pose(library(incidentIdle: nil), at: 0.35)
         #expect(overlay.clip == nil && overlay.accessories == hat)
-        // Attention and urgent keep their poses.
-        #expect(pose(library(), at: 0.35, mood: .attention).clip == nil)
+        // Attention and urgent wear it too (Chris's incident rule).
+        #expect(pose(library(), at: 0.35, mood: .attention).clip?.id == .incidentIdle)
         // Reduce Motion: the loop's still pose, no overlay.
         let still = pose(library(), at: 0.35, reduced: true)
         #expect(still.clip?.id == .incidentIdle && still.clip?.frame == nil && still.accessories.isEmpty)
+    }
+
+    @Test func duringAnIncidentTheHelmetLoopStandsInForEveryMoodAndSuppressedClip() {
+        var lib = library()
+        lib.accessories = []
+        for id in [MascotClipID.itemCleared, .inboxZero, .idleLook, .drop, .dizzy] { lib.durationsMs[id] = Array(repeating: 70, count: 16) }
+        lib.durationsMs[.drag] = [200, 200, 200, 200]
+        func scheduled(_ id: MascotClipID) -> ClipStage {
+            let policy = ClipCatalog.v1[id]!
+            return ClipStage(scheduled: .init(id: id, tier: policy.tier, priority: policy.priority, gate: policy.gate,
+                                              startedAt: t0, endsAt: t0 + 1.12))
+        }
+        for mood in MascotState.allCases {
+            #expect(pose(lib, at: 0.2, mood: mood).clip?.id == .incidentIdle, "\(mood) wears the helmet")
+            #expect(pose(lib, at: 0.2, reduced: true, mood: mood).clip?.id == .incidentIdle, "\(mood) still, Reduce Motion")
+        }
+        for id in [MascotClipID.itemCleared, .inboxZero, .idleLook] {
+            #expect(pose(lib, at: 0.2, stage: scheduled(id)).clip?.id == .incidentIdle, "\(id) suppressed")
+        }
+        for id in [MascotClipID.poke, .drop, .dizzy] {
+            #expect(pose(lib, at: 0.2, stage: scheduled(id)).clip?.id == id, "\(id) still plays")
+        }
+        #expect(pose(lib, at: 0.2, stage: ClipStage(dragStart: t0)).clip?.id == .drag)
+        // Without an incident the clips play as before.
+        #expect(pose(lib, at: 0.2, accessories: [], stage: scheduled(.itemCleared)).clip?.id == .itemCleared)
+        // A pack without the loop keeps v1 behaviour: the clips play and the overlay is drawn.
+        var v1 = library(incidentIdle: nil)
+        v1.durationsMs[.itemCleared] = [200, 200]
+        #expect(pose(v1, at: 0.2, stage: scheduled(.itemCleared)).clip?.id == .itemCleared)
     }
 
     @Test func clipFramesFasterThanStateFramesKeepTheirTiming() {

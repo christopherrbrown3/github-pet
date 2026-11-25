@@ -242,7 +242,8 @@ public struct MascotLayout: Equatable, Sendable {
     ///     Empty keeps the count at the trailing inset.
     /// - Parameter trackingContours: the poses whose count positions bound its tracking (default: all of
     ///   `contours`).
-    public init(artSide: CGFloat, contours: [[Int?]] = [], headContours: [[Int?]] = [], trackingContours: [[Int?]]? = nil) {
+    public init(artSide: CGFloat, contours: [[Int?]] = [], headContours: [[Int?]] = [], trackingContours: [[Int?]]? = nil,
+                measuresTracking: Bool = true) {
         let side = min(max(artSide, 64), 256)
         let (a, b) = side <= 128 ? (Self.stops[0], Self.stops[1]) : (Self.stops[1], Self.stops[2])
         let t = (side - a.side) / (b.side - a.side)
@@ -280,6 +281,8 @@ public struct MascotLayout: Equatable, Sendable {
             lane += 1
         }
         laneHeight = lane
+        // Lane-only layouts (the loader's lean check) skip the count's tracking range.
+        guard measuresTracking else { return }
         let tracked = trackingContours.map { $0.isEmpty ? poses : $0 } ?? poses
         maxCountOffset = tracked.map { countOffset(contour: $0, width: count.height) }.max() ?? 0
         trackingLimit = trackingContours == nil ? .infinity : maxCountOffset

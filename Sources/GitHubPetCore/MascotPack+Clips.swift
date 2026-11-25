@@ -295,6 +295,28 @@ extension MascotPack {
             }
             lean = limit
         }
+        // The lane is set by the art under the count and DEMO, not only the highest row: step the lean
+        // down until its sweep needs no taller lane at any size (#138: a drag pose leaning under the count).
+        let head = MascotState.allCases.flatMap(poseContours)
+        let base = head + leaningContours + extraUprightContours
+        // A lane fits a set of poses when it fits each, so the sweep grows it exactly when its own lane
+        // is taller than the base's.
+        func lanes(_ contours: [[Int?]]) -> [CGFloat] {
+            stride(from: 64.0, through: 256, by: 16).map {
+                MascotLayout(artSide: $0, contours: contours, headContours: head, measuresTracking: false).laneHeight
+            }
+        }
+        let baseLanes = lanes(base)
+        func growsLane(_ extra: [[Int?]]) -> Bool {
+            extra.isEmpty ? false : zip(lanes(extra), baseLanes).contains { $0 > $1 }
+        }
+        // The extremes of the lean are what can reach under the count: test those, then sweep once.
+        func extremes(_ lean: Double) -> [[Int?]] {
+            pointSets.flatMap { points in
+                [-lean, lean].map { ArtProfile.rotatedContour(points, canvas: Self.canvasSize, from: $0, to: $0, pivot: pivot) }
+            }
+        }
+        while lean > 0, growsLane(extremes(lean)) { lean -= 0.5 }
         clipLeanLimit = lean
         let contours = sweep(lean)
         // The sweep's own sampling can still reach a row the scan missed; never let it grow the lane.

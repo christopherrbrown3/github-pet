@@ -86,7 +86,8 @@ struct MascotView: View {
         // During an incident a pack with an incident idle loop (#138) idles on that loop's frames.
         let incident = !model.accessories.isEmpty && library.has(.incidentIdle)
         let idle = incident
-            ? IdleFrameSchedule(mood: model.mascotState, clockOffset: model.clockOffset,
+            // The helmet loop stands in for every mood during an incident, so it redraws like idle.
+            ? IdleFrameSchedule(mood: .idle, clockOffset: model.clockOffset,
                                 durationsMs: library.durationsMs[.incidentIdle] ?? [], minimumMs: FrameClock.minimumClipDurationMs)
             : IdleFrameSchedule(mood: model.mascotState, clockOffset: model.clockOffset,
                                 durationsMs: pack?.manifest.states[MascotState.idle.rawValue]?.durationMs ?? [])

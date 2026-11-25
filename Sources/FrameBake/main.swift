@@ -57,6 +57,9 @@ struct Source: Decodable {
     /// [minX, top, maxX] of the skin's design union (validate_pack.py's); the stricter of it and the
     /// measured union applies.
     var union: [Int]?
+    /// Keep the pack's accessory overlays (the v1 hat). False for sequence packs: the helmet is drawn
+    /// into their incident frames, and an overlay on top of them looks wrong.
+    var accessories: Bool?
     var clips: [Clip]
 }
 
@@ -402,7 +405,7 @@ func run() throws {
     }
     // The layout today: the count's lane and slot from the states' contours (with the hat where worn).
     var stateContours: [[Int?]] = []
-    let hatPixels = (manifest.accessories ?? [:]).values.first.flatMap { try? load(pack.appendingPathComponent($0.image)) }.flatMap(RigRaster.pixels(of:))
+    let hatPixels = source.accessories == false ? nil : (manifest.accessories ?? [:]).values.first.flatMap { try? load(pack.appendingPathComponent($0.image)) }.flatMap(RigRaster.pixels(of:))
     for state in MascotState.allCases {
         guard let spec = manifest.states[state.rawValue] else { continue }
         for path in Set(spec.frames + [spec.staticFallback]) {
@@ -572,6 +575,10 @@ func run() throws {
         previews.append((clip.name, kept.map { image($0.frame) }))
     }
     manifest.schemaVersion = max(manifest.schemaVersion, 2)
+    if source.accessories == false {
+        manifest.accessories = nil
+        manifest.points?.head = nil
+    }
     manifest.clips = clips
     // Only the images the manifest uses keep a checksum (earlier bakes' frames drop out).
     let used = Set(manifest.imagePaths)
