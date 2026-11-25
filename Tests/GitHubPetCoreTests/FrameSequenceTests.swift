@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Testing
 @testable import GitHubPetCore
@@ -50,6 +51,22 @@ private func pose(_ library: ClipLibrary, at seconds: Double, accessories: [Masc
         #expect(library().hasFastClips)
         #expect(!library(poke: [200, 200]).hasFastClips)
         #expect(!library(poke: nil).hasFastClips, "the incident loop alone does not need 60 fps")
+    }
+
+    @Test func theMistFollowsTheClipsNozzleFrames() {
+        let nozzle = CGPoint(x: 60, y: 200)
+        // Spraying 0.14–0.56 s: puffs from the start of the window, none before it.
+        #expect(ClipEffects.particles(clip: .incidentEnd, elapsed: 0.10, head: .zero, nozzle: nozzle, hand: .zero,
+                                      sprayWindow: 0.14...0.56).isEmpty)
+        #expect(!ClipEffects.particles(clip: .incidentEnd, elapsed: 0.20, head: .zero, nozzle: nozzle, hand: .zero,
+                                       sprayWindow: 0.14...0.56).isEmpty)
+        // Still drifting just after the window, gone half a second later.
+        #expect(!ClipEffects.particles(clip: .incidentEnd, elapsed: 0.70, head: .zero, nozzle: nozzle, hand: .zero,
+                                       sprayWindow: 0.14...0.56).isEmpty)
+        #expect(ClipEffects.particles(clip: .incidentEnd, elapsed: 1.10, head: .zero, nozzle: nozzle, hand: .zero,
+                                      sprayWindow: 0.14...0.56).isEmpty)
+        // v1 timing without a window.
+        #expect(ClipEffects.particles(clip: .incidentEnd, elapsed: 0.20, head: .zero, nozzle: nozzle, hand: .zero).isEmpty)
     }
 
     @Test func sixteenFrameClipsValidateAndStatesKeepTheirMinimum() {

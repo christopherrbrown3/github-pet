@@ -605,8 +605,10 @@ public enum ClipEffects {
     /// - Parameters:
     ///   - nozzle: incident-end's spray emitter for the current frame (no point: no mist).
     ///   - hand: item-cleared's sparkle point.
+    ///   - sprayWindow: when the clip sprays (seconds), from its nozzle frames (#138 sequences); the v1
+    ///     timing (0.5–1.45 s) when nil.
     public static func particles(clip: MascotClipID, elapsed t: TimeInterval, head: CGPoint, nozzle: CGPoint?,
-                                 hand: CGPoint) -> [Particle] {
+                                 hand: CGPoint, sprayWindow: ClosedRange<Double>? = nil) -> [Particle] {
         var out: [Particle] = []
         /// 0 → 1 → 0 over [start, start + length).
         func pulse(_ start: Double, _ length: Double) -> Double? {
@@ -615,12 +617,15 @@ public enum ClipEffects {
         }
         switch clip {
         case .incidentEnd:
-            // A puff every 60 ms from 500 to 1450 ms, each drifting 40–80 down-left over 500 ms.
+            // A puff every 60 ms through the spray (v1: 500 to 1450 ms), each drifting 40–80 down-left
+            // over 500 ms.
             if let nozzle {
-                for emit in stride(from: 0.5, through: 1.45, by: 0.06) {
+                let window = sprayWindow ?? 0.5...1.45
+                let span = max(window.upperBound - window.lowerBound, 0.06)
+                for emit in stride(from: window.lowerBound, through: window.upperBound, by: 0.06) {
                     let p = (t - emit) / 0.5
                     guard p >= 0, p < 1 else { continue }
-                    let distance = 40 + 40 * (emit - 0.5) / 0.95
+                    let distance = 40 + 40 * (emit - window.lowerBound) / span
                     out.append(Particle(kind: .mist, x: nozzle.x - distance * 0.8 * p, y: nozzle.y + distance * 0.6 * p,
                                         size: 34 * (0.6 + 0.8 * p), opacity: 1 - p))
                 }

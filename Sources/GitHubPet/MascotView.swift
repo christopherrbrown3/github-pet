@@ -130,8 +130,10 @@ struct MascotView: View {
             // Engine effects (#138): world space, so they don't lean; never in reduced motion.
             if let pack, let clip = pose.clip, !reduced, drawsArt {
                 let path = pack.imagePath(for: pose)
+                let spray = pack.spray(clip: clip.id, elapsed: clip.elapsed)
                 ClipEffectsView(particles: ClipEffects.particles(clip: clip.id, elapsed: clip.elapsed, head: pack.head(for: path),
-                                                                 nozzle: pack.nozzle(for: path), hand: pack.hand(for: path)),
+                                                                 nozzle: spray?.nozzle ?? pack.nozzle(for: path), hand: pack.hand(for: path),
+                                                                 sprayWindow: spray?.window),
                                 side: layout.artSide)
                     .frame(width: layout.artSide, height: layout.artSide)
                     .offset(x: layout.artFrame.minX, y: layout.laneHeight)

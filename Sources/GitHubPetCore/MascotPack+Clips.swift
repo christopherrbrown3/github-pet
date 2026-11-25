@@ -140,6 +140,25 @@ extension MascotPack {
     }
 
     /// The spray emitter for incident-end's frame, if the pack names one.
+    /// A frame clip's spray (#138 sequences): the span of its frames that name a nozzle, and the nozzle
+    /// of the current frame or, after it, the last one (puffs keep drifting from where the spray ended).
+    /// Nil when no frame of the clip names one.
+    public func spray(clip id: MascotClipID, elapsed: TimeInterval) -> (nozzle: CGPoint, window: ClosedRange<Double>)? {
+        guard let spec = manifest.clipSpec(id), let points = manifest.framePoints else { return nil }
+        var start = 0.0, first: Double?, last = 0.0, current: CGPoint?
+        for (path, ms) in zip(spec.frames, spec.durationMs) {
+            let end = start + Double(max(ms, FrameClock.minimumClipDurationMs)) / 1000
+            if let point = points[path]?.nozzle, point.count == 2 {
+                first = first ?? start
+                last = end
+                if start <= elapsed || current == nil { current = CGPoint(x: point[0], y: point[1]) }
+            }
+            start = end
+        }
+        guard let first, let current else { return nil }
+        return (current, first...last)
+    }
+
     public func nozzle(for path: String?) -> CGPoint? {
         let point = path.flatMap { manifest.framePoints?[$0]?.nozzle } ?? manifest.points?.nozzle
         guard let point, point.count == 2 else { return nil }
