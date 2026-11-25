@@ -92,6 +92,52 @@ import Testing
         #expect(app.activeClip == nil)
     }
 
+    /// Chris (#138): "sometimes it replays putting the hat back on". incident-start plays once per
+    /// incident whatever happens while it is open, and incident-end once when it resolves.
+    @Test func incidentStartPlaysOncePerIncidentAndEndOnceAtResolution() async {
+        let clock = Clock(), app = model(clock, placeholderClips: false)
+        await clearIncidents(app, clock)
+        var starts = 0, ends = 0, seen: Set<Date> = []
+        func observe() {
+            guard let clip = app.activeClip, !seen.contains(clip.startedAt) else { return }
+            if clip.kind == .incidentStart { starts += 1; seen.insert(clip.startedAt) }
+            if clip.kind == .incidentEnd { ends += 1; seen.insert(clip.startedAt) }
+        }
+        func step(_ seconds: TimeInterval, _ action: () -> Void) async {
+            action(); observe()
+            await advance(app, clock, by: seconds); observe()
+        }
+        await step(3) { app.injectServiceIncident(.minor) }
+        #expect(starts == 1)
+        // Mid-incident: polls, a second incident, escalation and back, a new inbox item (mood change),
+        // clicks after it, a fixture reload, a failed then recovered status fetch, stale status, the
+        // dev replay, and a long quiet spell (doze, then a click wakes).
+        await step(10) { app.setServiceFetchFails(false) }
+        await step(10) { app.injectServiceIncident(.minor) }
+        await step(10) { app.escalateServiceIncidentsOneLevel() }
+        await step(10) { app.deescalateServiceIncidentsOneLevel() }
+        await step(3) { app.injectEntitlementEvent() }
+        await step(3) { app.mascotClicked() }
+        await step(10) { app.replaySnapshot() }
+        await step(10) { app.setServiceFetchFails(true) }
+        await step(10) { app.setServiceFetchFails(false) }
+        await step(10) { app.markServiceStale() }
+        await step(10) { app.setServiceFetchFails(false) }
+        for _ in 0..<(2 * ClipCatalog.v1.ordered.count) { await step(3) { app.replayNextClip() } }
+        await step(20 * 60) {}
+        await step(3) { app.mascotClicked() }
+        await step(10) { app.setServiceFetchFails(false) }
+        #expect(starts == 1, "incident-start replayed mid-incident")
+        #expect(ends == 0)
+        await step(4) { app.resolveServiceIncidents() }
+        await step(10) { app.resolveServiceIncidents() }
+        await step(10) { app.setServiceFetchFails(false) }
+        #expect(starts == 1 && ends == 1)
+        // A new incident is a new start.
+        await step(3) { app.injectServiceIncident(.minor) }
+        #expect(starts == 2)
+    }
+
     @Test func withoutTheClipsAnIncidentWavesOnceAndNeverPlaysUrgent() async {
         let clock = Clock(), app = model(clock, placeholderClips: false, packs: Self.withoutIncidentClips)
         await clearIncidents(app, clock)

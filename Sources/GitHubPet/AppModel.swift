@@ -1482,10 +1482,14 @@ final class AppModel: ObservableObject {
 
     /// #138 dev builds (`--replay-clips`): play the pack's clips in turn, each as its trigger would
     /// (event clips through the event queue, the rest through the scheduler without their cooldowns),
-    /// without adding an item or changing any source state.
+    /// without adding an item or changing any source state. During an incident only the clips that
+    /// play over the helmet loop are cycled: incident-start/end make no sense mid-incident (#138).
     func replayNextClip() {
         let library = clipLibrary
-        let ids = ClipCatalog.v1.ordered.map(\.id).filter(library.has)
+        let incident = incidentMarker != nil
+        let ids = ClipCatalog.v1.ordered.map(\.id).filter(library.has).filter {
+            !incident || (IncidentRule.playsDuringIncident.contains($0) && $0 != .incidentStart && $0 != .incidentEnd)
+        }
         guard !ids.isEmpty else { return }
         let id = ids[replayIndex % ids.count]
         replayIndex += 1

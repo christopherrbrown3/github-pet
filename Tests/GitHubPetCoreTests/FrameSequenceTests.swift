@@ -107,6 +107,23 @@ private func pose(_ library: ClipLibrary, at seconds: Double, accessories: [Masc
         #expect(MascotPack.validateV2Structure(manifest, budget: .bundled).isEmpty)
     }
 
+    /// Chris (#138): the helmet loop blinks like the idle loop: eyes open 2 s, then half, closed, open.
+    @Test func helmetLoopBlinksAtTheIdleRhythm() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        for skin in ["mona-pet-v1", "little-chris-v1"] {
+            let data = try Data(contentsOf: root.appendingPathComponent("assets/mascots/\(skin)/manifest.json"))
+            let manifest = try JSONDecoder().decode(MascotPackManifest.self, from: data)
+            let durations = try #require(manifest.states["incident-idle"]?.durationMs)
+            #expect(durations == [2000, 125, 125, 125], "\(skin)")
+            var lib = library()
+            lib.durationsMs[.incidentIdle] = durations
+            // Open for the whole first two seconds of each 2.375 s cycle, then three quick frames.
+            for (t, frame) in [(0.1, 0), (1.9, 0), (2.05, 1), (2.2, 2), (2.3, 3), (2.4, 0), (4.3, 0)] {
+                #expect(pose(lib, at: t).clip?.frame == frame, "\(skin) at \(t) s")
+            }
+        }
+    }
+
     @Test func clipFramesFasterThanStateFramesKeepTheirTiming() {
         let stage = ClipStage(scheduled: .init(id: .poke, tier: .reaction, priority: ClipPriority.poke, gate: .always,
                                                startedAt: t0, endsAt: t0 + 1.12))

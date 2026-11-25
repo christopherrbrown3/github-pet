@@ -175,7 +175,10 @@
       ],
       "cells": 4,
       "durationMs": [
-        150
+        2000,
+        125,
+        125,
+        125
       ],
       "loop": true,
       "fit": true,
