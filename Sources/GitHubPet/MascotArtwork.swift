@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import GitHubPetCore
 
@@ -99,12 +100,44 @@ struct MascotArtworkLoader {
         let result: Result<MascotPack, MascotPackErrors>
         if let directory = builtInDirectory(skin) {
             // Bundled art has the tighter design budget (#138); custom packs keep #123's.
-            result = MascotPack.load(from: directory, expectedID: skin.rawValue, budget: .bundled).map(withClips)
+            result = BuiltInPackCache.load(from: directory, expectedID: skin.rawValue).map(withClips)
         } else {
             result = .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }
         builtIns[skin] = result
         return result
+    }
+}
+
+/// Built-in packs verified once per process (#138: the animated packs hold ~480 frames, so every model
+/// re-verifying them is slow, most of all in debug test runs). Keyed by the directory and a fingerprint
+/// of its files (manifest bytes, then every file's path, size and modification time), so a pack that
+/// changes on disk is verified again.
+enum BuiltInPackCache {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var packs: [String: MascotPack] = [:]
+
+    static func load(from directory: URL, expectedID: String) -> Result<MascotPack, MascotPackErrors> {
+        let key = fingerprint(directory)
+        if let key, let pack = lock.withLock({ packs[key] }) { return .success(pack) }
+        let result = MascotPack.load(from: directory, expectedID: expectedID, budget: .bundled)
+        if let key, case .success(let pack) = result { lock.withLock { packs[key] = pack } }
+        return result
+    }
+
+    private static func fingerprint(_ directory: URL) -> String? {
+        guard let manifest = try? Data(contentsOf: directory.appendingPathComponent("manifest.json")),
+              let walker = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey])
+        else { return nil }
+        var hash = SHA256()
+        hash.update(data: manifest)
+        var entries: [String] = []
+        for case let url as URL in walker {
+            let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+            entries.append("\(url.path)|\(values?.fileSize ?? -1)|\(values?.contentModificationDate?.timeIntervalSince1970 ?? 0)")
+        }
+        for entry in entries.sorted() { hash.update(data: Data(entry.utf8)) }
+        return directory.standardizedFileURL.path + "#" + hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 }
 

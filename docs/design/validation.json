@@ -1,281 +1,574 @@
 {
-  "result": "pass",
-  "contract": "developer v1",
-  "canvas": [
-    256,
-    256
-  ],
-  "anchor": [
-    128,
-    232
-  ],
-  "states": {
-    "idle": {
-      "loop": true,
-      "durationMs": 4400,
-      "distinctFrames": 4,
-      "files": [
-        {
-          "path": "frames/idle-00.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39563,
-          "boundsAlphaOver8": [
-            52,
-            23,
-            211,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb"
-        },
-        {
-          "path": "frames/idle-01.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39574,
-          "boundsAlphaOver8": [
-            52,
-            23,
-            211,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730"
-        },
-        {
-          "path": "frames/idle-02.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39434,
-          "boundsAlphaOver8": [
-            52,
-            22,
-            211,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409"
-        },
-        {
-          "path": "frames/idle-03.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39659,
-          "boundsAlphaOver8": [
-            52,
-            23,
-            211,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2"
-        }
-      ]
+  "mona-pet-v1": {
+    "result": "pass",
+    "contract": "developer v1 + schema v2",
+    "canvas": [
+      256,
+      256
+    ],
+    "anchor": [
+      128,
+      232
+    ],
+    "states": {
+      "idle": {
+        "loop": true,
+        "durationMs": 4400,
+        "distinctFrames": 4,
+        "files": [
+          {
+            "path": "frames/idle-00.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39563,
+            "boundsAlphaOver8": [
+              52,
+              23,
+              211,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb"
+          },
+          {
+            "path": "frames/idle-01.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39574,
+            "boundsAlphaOver8": [
+              52,
+              23,
+              211,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "96727065afea7d69c901aaf968d534e4447697cbaa93ed1edb11a724d7ce0730"
+          },
+          {
+            "path": "frames/idle-02.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39434,
+            "boundsAlphaOver8": [
+              52,
+              22,
+              211,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "db9202451b702590987c982a706790d0caf230e02566d1a2a44f41d789df9409"
+          },
+          {
+            "path": "frames/idle-03.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39659,
+            "boundsAlphaOver8": [
+              52,
+              23,
+              211,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "8999498d3224eacf7cebc2ac9c834f92d8d2c0cad1fc364844d9ac11301355a2"
+          }
+        ]
+      },
+      "attention": {
+        "loop": false,
+        "durationMs": 1900,
+        "distinctFrames": 4,
+        "files": [
+          {
+            "path": "frames/attention-00.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 40162,
+            "boundsAlphaOver8": [
+              52,
+              25,
+              211,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff"
+          },
+          {
+            "path": "frames/attention-01.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39756,
+            "boundsAlphaOver8": [
+              52,
+              25,
+              218,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691"
+          },
+          {
+            "path": "frames/attention-02.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39978,
+            "boundsAlphaOver8": [
+              52,
+              25,
+              212,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10"
+          },
+          {
+            "path": "frames/attention-03.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 40146,
+            "boundsAlphaOver8": [
+              52,
+              25,
+              209,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "271776fe5995ec0d9ce40f497f0ead6fcb742d617ddc55cbc6fb89c1ed14b5bd"
+          }
+        ]
+      },
+      "urgent": {
+        "loop": false,
+        "durationMs": 1900,
+        "distinctFrames": 3,
+        "files": [
+          {
+            "path": "frames/urgent-00.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39899,
+            "boundsAlphaOver8": [
+              51,
+              20,
+              205,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
+          },
+          {
+            "path": "frames/urgent-01.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39492,
+            "boundsAlphaOver8": [
+              49,
+              20,
+              207,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d"
+          },
+          {
+            "path": "frames/urgent-02.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39597,
+            "boundsAlphaOver8": [
+              47,
+              20,
+              209,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d"
+          },
+          {
+            "path": "frames/urgent-03.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 39899,
+            "boundsAlphaOver8": [
+              51,
+              20,
+              205,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
+          }
+        ]
+      }
     },
-    "attention": {
-      "loop": false,
-      "durationMs": 1900,
-      "distinctFrames": 4,
-      "files": [
-        {
-          "path": "frames/attention-00.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 40162,
-          "boundsAlphaOver8": [
-            52,
-            25,
-            211,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "2c810fcbcb5f1579ff8cab484cb25cebec2edb1485fb55fe84833d9b8ea77bff"
-        },
-        {
-          "path": "frames/attention-01.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39756,
-          "boundsAlphaOver8": [
-            52,
-            25,
-            218,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "cbb833077f2df4343d056e2668efb2df52eec0734dfa6379553eafffa7295691"
-        },
-        {
-          "path": "frames/attention-02.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39978,
-          "boundsAlphaOver8": [
-            52,
-            25,
-            212,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "ce7c0f6db5c22740f56307cb83a1786cab491a703aa843139873062102bb0d10"
-        },
-        {
-          "path": "frames/attention-03.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 40146,
-          "boundsAlphaOver8": [
-            52,
-            25,
-            209,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "271776fe5995ec0d9ce40f497f0ead6fcb742d617ddc55cbc6fb89c1ed14b5bd"
-        }
-      ]
+    "decodedRuntimeFrameBytes": 3145728,
+    "v2": {
+      "clips": [
+        "dizzy",
+        "dizzy-incident",
+        "drop",
+        "drop-incident",
+        "idle-fidget",
+        "idle-look",
+        "idle-stretch",
+        "inbox-zero",
+        "incident-end",
+        "incident-start",
+        "item-cleared",
+        "new-item",
+        "poke",
+        "poke-incident"
+      ],
+      "heldStates": [
+        "doze",
+        "drag",
+        "drag-incident",
+        "incident-idle"
+      ],
+      "images": 241,
+      "bytes": 3988353,
+      "union": {
+        "x": [
+          47,
+          217
+        ],
+        "yMin": 20
+      },
+      "boundsRule": "pass",
+      "boundsViolations": {}
     },
-    "urgent": {
-      "loop": false,
-      "durationMs": 1900,
-      "distinctFrames": 3,
-      "files": [
-        {
-          "path": "frames/urgent-00.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39899,
-          "boundsAlphaOver8": [
-            51,
-            20,
-            205,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
-        },
-        {
-          "path": "frames/urgent-01.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39492,
-          "boundsAlphaOver8": [
-            49,
-            20,
-            207,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "bf34d17b124a1d4c8a733c8fc492acd6cd9e4906df8b9f5758c12b193a34314d"
-        },
-        {
-          "path": "frames/urgent-02.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39597,
-          "boundsAlphaOver8": [
-            47,
-            20,
-            209,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "e9cd9cf217b2eac255591ca7aa1e97ba32903abbc34b930a2067b04ef7a5928d"
-        },
-        {
-          "path": "frames/urgent-03.png",
-          "size": [
-            256,
-            256
-          ],
-          "alphaRange": [
-            0,
-            255
-          ],
-          "fullyTransparentPixels": 39899,
-          "boundsAlphaOver8": [
-            51,
-            20,
-            205,
-            232
-          ],
-          "visibleBottomAlphaOver0": 232,
-          "sha256": "e3beac7d04218d67d334b6b05348d744f4353cac8e3dd6ff3047fc07af9095e4"
-        }
-      ]
-    }
+    "manifestSha256": "7b57df9e27227575ac15f840cf36cdb8b33899fff79c254a35c761eea1f48f55",
+    "limitations": [
+      "Source sheets are generated; minor contour variation remains between poses.",
+      "Browser design review is not native app, VoiceOver, or physical display verification."
+    ]
   },
-  "decodedRuntimeFrameBytes": 3145728,
-  "manifestSha256": "0270f39b5900bee537479504e0639c6a0564bfe0681c31fc65947d1ca0024ba6",
-  "limitations": [
-    "Source sheets are generated; minor contour variation remains between poses.",
-    "Browser design review is not native app, VoiceOver, or physical display verification."
-  ]
+  "little-chris-v1": {
+    "result": "pass",
+    "contract": "developer v1 + schema v2",
+    "canvas": [
+      256,
+      256
+    ],
+    "anchor": [
+      128,
+      232
+    ],
+    "states": {
+      "idle": {
+        "loop": true,
+        "durationMs": 2250,
+        "distinctFrames": 3,
+        "files": [
+          {
+            "path": "frames/idle-00.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50696,
+            "boundsAlphaOver8": [
+              74,
+              20,
+              173,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7"
+          },
+          {
+            "path": "frames/idle-01.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50687,
+            "boundsAlphaOver8": [
+              73,
+              20,
+              173,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f"
+          },
+          {
+            "path": "frames/idle-02.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50682,
+            "boundsAlphaOver8": [
+              73,
+              20,
+              173,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018"
+          }
+        ]
+      },
+      "attention": {
+        "loop": false,
+        "durationMs": 1300,
+        "distinctFrames": 3,
+        "files": [
+          {
+            "path": "frames/attention-00.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50902,
+            "boundsAlphaOver8": [
+              73,
+              20,
+              174,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56"
+          },
+          {
+            "path": "frames/attention-01.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50411,
+            "boundsAlphaOver8": [
+              62,
+              20,
+              174,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed"
+          },
+          {
+            "path": "frames/attention-02.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50749,
+            "boundsAlphaOver8": [
+              67,
+              20,
+              174,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2"
+          }
+        ]
+      },
+      "urgent": {
+        "loop": false,
+        "durationMs": 1700,
+        "distinctFrames": 3,
+        "files": [
+          {
+            "path": "frames/urgent-00.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50769,
+            "boundsAlphaOver8": [
+              74,
+              20,
+              172,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a"
+          },
+          {
+            "path": "frames/urgent-01.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50566,
+            "boundsAlphaOver8": [
+              72,
+              20,
+              206,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e"
+          },
+          {
+            "path": "frames/urgent-02.png",
+            "size": [
+              256,
+              256
+            ],
+            "alphaRange": [
+              0,
+              255
+            ],
+            "fullyTransparentPixels": 50656,
+            "boundsAlphaOver8": [
+              73,
+              20,
+              173,
+              232
+            ],
+            "visibleBottomAlphaOver0": 232,
+            "sha256": "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"
+          }
+        ]
+      }
+    },
+    "decodedRuntimeFrameBytes": 2359296,
+    "v2": {
+      "clips": [
+        "dizzy",
+        "dizzy-incident",
+        "drop",
+        "drop-incident",
+        "idle-fidget",
+        "idle-look",
+        "idle-stretch",
+        "inbox-zero",
+        "incident-end",
+        "incident-start",
+        "item-cleared",
+        "new-item",
+        "poke",
+        "poke-incident"
+      ],
+      "heldStates": [
+        "doze",
+        "drag",
+        "drag-incident",
+        "incident-idle"
+      ],
+      "images": 240,
+      "bytes": 3078351,
+      "union": {
+        "x": [
+          62,
+          205
+        ],
+        "yMin": 20
+      },
+      "boundsRule": "pass",
+      "boundsViolations": {}
+    },
+    "manifestSha256": "ca2cd09d518117897f57311e42ca892898e59f951b08cf1d34ab78afcb6004df",
+    "limitations": [
+      "Source sheets are generated; minor contour variation remains between poses.",
+      "Browser design review is not native app, VoiceOver, or physical display verification."
+    ]
+  }
 }

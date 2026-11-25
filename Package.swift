@@ -20,6 +20,8 @@ let package = Package(
             "GitHubPetCore",
             .product(name: "Sparkle", package: "Sparkle"),
         ]),
+        // Designer tool (#138): registers generated clip sheets into v2 frame clips. Not shipped.
+        .executableTarget(name: "FrameBake", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetCoreTests", dependencies: ["GitHubPetCore"]),
         .testTarget(name: "GitHubPetAppTests", dependencies: ["GitHubPet"]),
     ]

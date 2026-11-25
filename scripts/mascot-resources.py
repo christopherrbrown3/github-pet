@@ -9,11 +9,12 @@ import shutil
 PACKS = {"mona-pet-v1": 12, "little-chris-v1": 9}
 STATES = {"idle", "attention", "urgent"}
 # Schema v2 (#138): optional held states, clips and accessories, under the bundled design budget.
-HELD = {"drag", "doze"}
+HELD = {"drag", "doze", "incident-idle", "drag-incident"}
 RUNTIME_DIRS = {"frames", "accessories"}
-MAX_IMAGES = 64
+# Frame sequences (#138): 16-frame clips for about 13 clips and loops per skin.
+MAX_IMAGES = 256
 MAX_IMAGE_BYTES = 96 * 1024
-MAX_PACK_BYTES = 4 * 1024 * 1024
+MAX_PACK_BYTES = 16 * 1024 * 1024
 
 
 def runtime_paths(pack, expected_id, expected_frames):
@@ -48,7 +49,7 @@ def runtime_paths(pack, expected_id, expected_frames):
                 raise ValueError(f"{manifest}: invalid runtime frame {name!r} (missing, a link, or over 96 KiB)")
             paths.add(relative.as_posix())
     if len(paths) > MAX_IMAGES or sum((pack / path).stat().st_size for path in paths) > MAX_PACK_BYTES:
-        raise ValueError(f"{manifest}: over the bundled budget ({MAX_IMAGES} images, 4 MiB)")
+        raise ValueError(f"{manifest}: over the bundled budget ({MAX_IMAGES} images, {MAX_PACK_BYTES // (1024 * 1024)} MiB)")
     if version == 1 and len(paths) != expected_frames:
         raise ValueError(f"{manifest}: expected {expected_frames} runtime frames, found {len(paths)}")
     return {"manifest.json", *paths}

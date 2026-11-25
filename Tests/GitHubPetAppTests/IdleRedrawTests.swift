@@ -37,6 +37,19 @@ import Testing
                 "a settled spring holds")
     }
 
+    /// #138: a pack with frame-sequence clips (~70 ms frames) still idles on frame changes and draws
+    /// its clips at 60 fps; held poses and other packs keep 30.
+    @Test func fastClipsIdleOnFrameChangesAndPlayAt60() {
+        func fast(clip: EventClipQueue.Clip? = nil, stage: ClipStage = .empty) -> MascotView.Redraw {
+            MascotView.redraw(pack: true, clip: clip, stage: stage, markerBursting: false, dozeHasClip: false,
+                              now: Self.start, idle: Self.idle, fastClips: true)
+        }
+        #expect(fast() == .idleFrames(Self.idle))
+        let event = InboxEvent(item: FixtureSimulator().injectEntitlementEvent())
+        #expect(fast(clip: EventClipQueue.Clip(event: event, startedAt: Self.start)) == .continuous(fps: 60))
+        #expect(fast(stage: ClipStage(dragStart: Self.start)) == .continuous(fps: 30), "drag shows frames")
+    }
+
     /// The memo must key on everything the width depends on: the same text at another size or role
     /// is a different width (QA #168).
     @Test func countWidthMemoKeysOnSizeAndRole() {

@@ -39,6 +39,11 @@ public struct MascotClipID: RawRepresentable, Hashable, Comparable, Codable, Sen
 
     /// Held poses live in the manifest's `states` and loop while their condition lasts.
     public static let heldStates: [Self] = [.drag, .doze]
+    /// The idle loop while the incident marker shows (frame sequences, #138): the helmet drawn as art
+    /// on a looping idle, in place of the idle loop plus the hat overlay.
+    public static let incidentIdle: Self = "incident-idle"
+    /// Every looping state a v2 pack may add to idle, attention and urgent (drag's helmet variant too).
+    public static let loopingStates: [Self] = heldStates + [incidentIdle, "drag-incident"]
 }
 
 /// Priority tiers (design #138), highest first: drag masks everything; event clips (tier 1) follow
@@ -125,6 +130,21 @@ public enum ClipPriority {
     }
 }
 
+/// What plays while an incident is active, for a pack that draws the helmet (#138, Chris's rule): the
+/// user's own reactions and the incident clips. Everything else gives way to the incident idle loop.
+public enum IncidentRule {
+    public static let playsDuringIncident: Set<MascotClipID> = [.drag, .drop, .poke, .dizzy, .incidentStart, .incidentEnd]
+    /// The reactions a pack may also draw wearing the helmet, as `<clip>-incident` (a loop for drag).
+    public static let helmetVariants: [MascotClipID] = [.poke, .dizzy, .drop, .drag]
+
+    public static func variant(of id: MascotClipID) -> MascotClipID { MascotClipID(id.rawValue + "-incident") }
+
+    /// The clip a `<clip>-incident` name varies, if it is one.
+    public static func base(of id: MascotClipID) -> MascotClipID? {
+        helmetVariants.first { variant(of: $0) == id }
+    }
+}
+
 /// The clips the app knows (design v1, #138). Replacing this table is the only change needed for new
 /// IDs, triggers, priorities and cooldowns.
 public struct ClipCatalog: Equatable, Sendable {
@@ -168,9 +188,10 @@ public struct ClipCatalog: Equatable, Sendable {
                placeholder: (.attention, [0, 1, 2, 1, 2, 0], [250, 300, 300, 300, 450, 400])),
         policy(.itemCleared, .itemDismissed, .inbox, ClipPriority.itemCleared, cooldown: 8, gate: .always, maxMs: 1500,
                placeholder: (.attention, [0, 1, 2, 0], [200, 300, 400, 300])),
-        policy(.drop, .dropped, .reaction, ClipPriority.drop, gate: .always, maxMs: 600,
+        // 16 frames at 70 ms (#138 frame sequences) for drop and poke.
+        policy(.drop, .dropped, .reaction, ClipPriority.drop, gate: .always, maxMs: 1200,
                placeholder: (.attention, [0, 1], [200, 250])),
-        policy(.poke, .poke, .reaction, ClipPriority.poke, cooldown: 1.5, gate: .always, maxMs: 900,
+        policy(.poke, .poke, .reaction, ClipPriority.poke, cooldown: 1.5, gate: .always, maxMs: 1200,
                placeholder: (.attention, [1, 2, 0], [250, 300, 200])),
         policy(.dizzy, .rapidClicks, .reaction, ClipPriority.dizzy, cooldown: 60, gate: .always, maxMs: 1800,
                placeholder: (.urgent, [0, 1, 2, 1, 0], [300, 300, 300, 300, 400])),
@@ -233,6 +254,15 @@ public struct ClipScheduler: Sendable {
         public var gate: ClipGate
         public var startedAt: Date
         public var endsAt: Date
+
+        public init(id: MascotClipID, tier: ClipTier, priority: Int, gate: ClipGate, startedAt: Date, endsAt: Date) {
+            self.id = id
+            self.tier = tier
+            self.priority = priority
+            self.gate = gate
+            self.startedAt = startedAt
+            self.endsAt = endsAt
+        }
 
         public static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.id == rhs.id && lhs.priority == rhs.priority && lhs.startedAt == rhs.startedAt && lhs.endsAt == rhs.endsAt
@@ -383,6 +413,15 @@ public struct ClipScheduler: Sendable {
     }
 
     public func hasPlayed(key: String) -> Bool { playedKeys.contains(key) }
+
+    /// Dev replay (#138 `--replay-clips`): plays `id` as its trigger would, through the same gates and
+    /// priorities, but ignoring its cooldown so a reviewer can watch every clip on a short cycle.
+    @discardableResult
+    public mutating func replay(_ id: MascotClipID, now: Date, permissions: Permissions, length: TimeInterval) -> Outcome {
+        guard let policy = catalog[id] else { return .unavailable }
+        lastStarted[id] = nil
+        return start(policy, length: length, now: now, permissions: permissions)
+    }
 
     private func coolingDown(_ policy: ClipPolicy, now: Date) -> Bool {
         guard let last = lastStarted[policy.id] else { return false }
@@ -567,8 +606,7 @@ public struct ClipStage: Equatable, Sendable {
 
 /// Engine-owned effect sprites (mist, smoke, sparkle, Z): pure functions of a clip's elapsed time
 /// on the single clock, in canvas coordinates, from the design storyboards (#138 section 3). Never
-/// above canvas y 64 (the label lane) and never part of contours. Drawn code-side until the shared
-/// 64×64 sprites land (assets/mascots/shared-fx-v1).
+/// above canvas y 64 (the label lane) and never part of contours. Drawn code-side.
 public enum ClipEffects {
     public enum Kind: String, Sendable { case mist, smoke, sparkle, z }
 
@@ -590,8 +628,10 @@ public enum ClipEffects {
     /// - Parameters:
     ///   - nozzle: incident-end's spray emitter for the current frame (no point: no mist).
     ///   - hand: item-cleared's sparkle point.
+    ///   - sprayWindow: when the clip sprays (seconds), from its nozzle frames (#138 sequences); the v1
+    ///     timing (0.5–1.45 s) when nil.
     public static func particles(clip: MascotClipID, elapsed t: TimeInterval, head: CGPoint, nozzle: CGPoint?,
-                                 hand: CGPoint) -> [Particle] {
+                                 hand: CGPoint, sprayWindow: ClosedRange<Double>? = nil) -> [Particle] {
         var out: [Particle] = []
         /// 0 → 1 → 0 over [start, start + length).
         func pulse(_ start: Double, _ length: Double) -> Double? {
@@ -600,12 +640,15 @@ public enum ClipEffects {
         }
         switch clip {
         case .incidentEnd:
-            // A puff every 60 ms from 500 to 1450 ms, each drifting 40–80 down-left over 500 ms.
+            // A puff every 60 ms through the spray (v1: 500 to 1450 ms), each drifting 40–80 down-left
+            // over 500 ms.
             if let nozzle {
-                for emit in stride(from: 0.5, through: 1.45, by: 0.06) {
+                let window = sprayWindow ?? 0.5...1.45
+                let span = max(window.upperBound - window.lowerBound, 0.06)
+                for emit in stride(from: window.lowerBound, through: window.upperBound, by: 0.06) {
                     let p = (t - emit) / 0.5
                     guard p >= 0, p < 1 else { continue }
-                    let distance = 40 + 40 * (emit - 0.5) / 0.95
+                    let distance = 40 + 40 * (emit - window.lowerBound) / span
                     out.append(Particle(kind: .mist, x: nozzle.x - distance * 0.8 * p, y: nozzle.y + distance * 0.6 * p,
                                         size: 34 * (0.6 + 0.8 * p), opacity: 1 - p))
                 }

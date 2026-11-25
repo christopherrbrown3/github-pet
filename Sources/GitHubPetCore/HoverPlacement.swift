@@ -194,6 +194,9 @@ public struct MascotLayout: Equatable, Sendable {
     public private(set) var laneHeight: CGFloat = 0
     /// Furthest the count moves down for any pose (any count width).
     public private(set) var maxCountOffset: CGFloat = 0
+    /// The count never tracks lower than this (#138): a clip pose that ducks under it leaves the count
+    /// where the states would put it, so the label band (and hover around it) never grows.
+    private var trackingLimit: CGFloat = .infinity
     /// Leading edge of the reserved "99+" slot (top-left x).
     public private(set) var countSlotX: CGFloat = 0
 
@@ -237,7 +240,10 @@ public struct MascotLayout: Equatable, Sendable {
     ///     can show. Empty means unknown: the labels then stay above the art square.
     ///   - headContours: the upright poses' contours, which place the count over the head (#116).
     ///     Empty keeps the count at the trailing inset.
-    public init(artSide: CGFloat, contours: [[Int?]] = [], headContours: [[Int?]] = []) {
+    /// - Parameter trackingContours: the poses whose count positions bound its tracking (default: all of
+    ///   `contours`).
+    public init(artSide: CGFloat, contours: [[Int?]] = [], headContours: [[Int?]] = [], trackingContours: [[Int?]]? = nil,
+                measuresTracking: Bool = true) {
         let side = min(max(artSide, 64), 256)
         let (a, b) = side <= 128 ? (Self.stops[0], Self.stops[1]) : (Self.stops[1], Self.stops[2])
         let t = (side - a.side) / (b.side - a.side)
@@ -275,7 +281,11 @@ public struct MascotLayout: Equatable, Sendable {
             lane += 1
         }
         laneHeight = lane
-        maxCountOffset = poses.map { countOffset(contour: $0, width: count.height) }.max() ?? 0
+        // Lane-only layouts (the loader's lean check) skip the count's tracking range.
+        guard measuresTracking else { return }
+        let tracked = trackingContours.map { $0.isEmpty ? poses : $0 } ?? poses
+        maxCountOffset = tracked.map { countOffset(contour: $0, width: count.height) }.max() ?? 0
+        trackingLimit = trackingContours == nil ? .infinity : maxCountOffset
     }
 
     /// W = max(S, 96, labels): stable across the count's value, Demo, privacy and mood.
@@ -321,7 +331,7 @@ public struct MascotLayout: Equatable, Sendable {
             let mid = (low + high) / 2
             if clear(mid) >= gap { low = mid } else { high = mid }
         }
-        return low
+        return min(low, trackingLimit)
     }
 
     /// Nearest distance from a capsule (top-left rect, fully rounded ends) to the art below its

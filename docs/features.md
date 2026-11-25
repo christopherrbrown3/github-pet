@@ -55,6 +55,12 @@ Error text from `gh` or GitHub is classified rather than shown, so it can't leak
   saved.
 - **Calm by default.** A short animation plays once for a genuinely new item, not on every refresh or
   after a reconnect. **Reduce motion** (or macOS's own setting) keeps the pet still.
+- **Reactions.** The pet reacts when you clear a row or reach inbox zero, when you click it (five quick
+  clicks make it dizzy) and when you drag and drop it, looks around or stretches now and then, and dozes
+  after 15 quiet minutes.
+- **Firefighter during GitHub incidents.** When an incident appears the pet puts on a helmet and keeps it
+  on until the incident resolves, then sprays the fire out and takes it off. Clicks, drags and drops still
+  play, wearing the helmet; other animations wait until the incident is over.
 - **Count badge and hover summary.** The badge shows how many items need you; hover for the newest.
 - **Optional.** Hide the pet in Settings; monitoring and the Inbox keep working, and the menu-bar icon then
   shows the same count the badge would (`?`, `99+` and stale or partial rules included; nothing when

@@ -9,6 +9,7 @@ Sprint 1 design for [issue #3](https://github.com/christopherrbrown3/github-pet/
 - [Responsive badges and clearer finite attention gesture (#28/#29)](notifications/README.md): native size comparisons, proposed timing/storyboard and playable preview. These are design handoffs for later runtime implementation; the v1 pack below is unchanged.
 - [Monitoring scope browser (#137)](scope-browser.md): usability review of the type-in picker, gh data and library research, and the proposed browser spec with light/dark mockups.
 - [Animation v1 (#138)](animation-v1.md): pruned v1 clip set, storyboards, schema v2 pack proposal and the image-generation asset list for both skins.
+- [Animation v2 frame sequences (#138)](animation-v2-frames.md): what each clip shows and when, the incident helmet rule, the FrameBake pipeline, engine limits and pack size.
 - Validate: `python3 docs/design/validate_pack.py --report` from the repository root.
 - Rebuild from preserved generated sources on macOS: `python3 docs/design/build_pack.py`. Python standard library and macOS `sips` only. This packs/resamples existing image-generated art; it does not synthesize replacement artwork. Runtime builds do not require these design scripts or image-generation access.
 

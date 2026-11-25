@@ -1,68 +1,964 @@
 {
-  "schemaVersion": 1,
-  "id": "little-chris-v1",
-  "name": "Little Chris",
-  "canvas": {
-    "width": 256,
-    "height": 256
-  },
-  "anchor": [
+  "anchor" : [
     128,
     232
   ],
-  "states": {
-    "idle": {
-      "frames": [
-        "frames/idle-00.png",
-        "frames/idle-01.png",
-        "frames/idle-02.png"
+  "canvas" : {
+    "height" : 256,
+    "width" : 256
+  },
+  "clips" : {
+    "dizzy" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
-        2000,
-        125,
-        125
-      ],
-      "loop": true,
-      "staticFallback": "frames/idle-00.png"
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/dizzy-01.png",
+        "frames\/dizzy-02.png",
+        "frames\/dizzy-03.png",
+        "frames\/dizzy-04.png",
+        "frames\/dizzy-05.png",
+        "frames\/dizzy-06.png",
+        "frames\/dizzy-07.png",
+        "frames\/dizzy-08.png",
+        "frames\/dizzy-09.png",
+        "frames\/dizzy-10.png",
+        "frames\/dizzy-11.png",
+        "frames\/dizzy-12.png",
+        "frames\/dizzy-13.png",
+        "frames\/dizzy-14.png",
+        "frames\/dizzy-15.png"
+      ]
     },
-    "attention": {
-      "frames": [
-        "frames/attention-00.png",
-        "frames/attention-01.png",
-        "frames/attention-02.png"
+    "dizzy-incident" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
       ],
-      "durationMs": [
+      "frames" : [
+        "frames\/dizzy-incident-00.png",
+        "frames\/dizzy-incident-01.png",
+        "frames\/dizzy-incident-02.png",
+        "frames\/dizzy-incident-03.png",
+        "frames\/dizzy-incident-04.png",
+        "frames\/dizzy-incident-05.png",
+        "frames\/dizzy-incident-06.png",
+        "frames\/dizzy-incident-07.png",
+        "frames\/dizzy-incident-08.png",
+        "frames\/dizzy-incident-09.png",
+        "frames\/dizzy-incident-10.png",
+        "frames\/dizzy-incident-11.png",
+        "frames\/dizzy-incident-12.png",
+        "frames\/dizzy-incident-13.png",
+        "frames\/dizzy-incident-14.png",
+        "frames\/dizzy-incident-15.png"
+      ]
+    },
+    "drop" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/drop-00.png",
+        "frames\/drop-01.png",
+        "frames\/drop-02.png",
+        "frames\/drop-03.png",
+        "frames\/drop-04.png",
+        "frames\/drop-05.png",
+        "frames\/drop-06.png",
+        "frames\/drop-07.png",
+        "frames\/drop-08.png",
+        "frames\/drop-09.png",
+        "frames\/drop-10.png",
+        "frames\/drop-11.png",
+        "frames\/drop-12.png",
+        "frames\/drop-13.png",
+        "frames\/drop-14.png",
+        "frames\/drop-15.png"
+      ]
+    },
+    "drop-incident" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/drop-incident-00.png",
+        "frames\/drop-incident-01.png",
+        "frames\/drop-incident-02.png",
+        "frames\/drop-incident-03.png",
+        "frames\/drop-incident-04.png",
+        "frames\/drop-incident-05.png",
+        "frames\/drop-incident-06.png",
+        "frames\/drop-incident-07.png",
+        "frames\/drop-incident-08.png",
+        "frames\/drop-incident-09.png",
+        "frames\/drop-incident-10.png",
+        "frames\/drop-incident-11.png",
+        "frames\/drop-incident-12.png",
+        "frames\/drop-incident-13.png",
+        "frames\/drop-incident-14.png",
+        "frames\/drop-incident-15.png"
+      ]
+    },
+    "idle-fidget" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-fidget-01.png",
+        "frames\/idle-fidget-02.png",
+        "frames\/idle-fidget-03.png",
+        "frames\/idle-fidget-04.png",
+        "frames\/idle-fidget-05.png",
+        "frames\/idle-fidget-06.png",
+        "frames\/idle-fidget-07.png",
+        "frames\/idle-fidget-08.png",
+        "frames\/idle-fidget-09.png",
+        "frames\/idle-fidget-10.png",
+        "frames\/idle-fidget-11.png",
+        "frames\/idle-fidget-12.png",
+        "frames\/idle-fidget-13.png",
+        "frames\/idle-fidget-14.png",
+        "frames\/idle-fidget-15.png"
+      ]
+    },
+    "idle-look" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-look-01.png",
+        "frames\/idle-look-02.png",
+        "frames\/idle-look-03.png",
+        "frames\/idle-look-04.png",
+        "frames\/idle-look-05.png",
+        "frames\/idle-look-06.png",
+        "frames\/idle-look-07.png",
+        "frames\/idle-look-08.png",
+        "frames\/idle-look-09.png",
+        "frames\/idle-look-10.png",
+        "frames\/idle-look-11.png",
+        "frames\/idle-look-12.png",
+        "frames\/idle-look-13.png",
+        "frames\/idle-look-14.png",
+        "frames\/idle-look-15.png"
+      ]
+    },
+    "idle-stretch" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-stretch-01.png",
+        "frames\/idle-stretch-02.png",
+        "frames\/idle-stretch-03.png",
+        "frames\/idle-stretch-04.png",
+        "frames\/idle-stretch-05.png",
+        "frames\/idle-stretch-06.png",
+        "frames\/idle-stretch-07.png",
+        "frames\/idle-stretch-08.png",
+        "frames\/idle-stretch-09.png",
+        "frames\/idle-stretch-10.png",
+        "frames\/idle-stretch-11.png",
+        "frames\/idle-stretch-12.png",
+        "frames\/idle-stretch-13.png",
+        "frames\/idle-stretch-14.png",
+        "frames\/idle-stretch-15.png"
+      ]
+    },
+    "inbox-zero" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/inbox-zero-01.png",
+        "frames\/inbox-zero-02.png",
+        "frames\/inbox-zero-03.png",
+        "frames\/inbox-zero-04.png",
+        "frames\/inbox-zero-05.png",
+        "frames\/inbox-zero-06.png",
+        "frames\/inbox-zero-07.png",
+        "frames\/inbox-zero-08.png",
+        "frames\/inbox-zero-09.png",
+        "frames\/inbox-zero-10.png",
+        "frames\/inbox-zero-11.png",
+        "frames\/inbox-zero-12.png",
+        "frames\/inbox-zero-13.png",
+        "frames\/inbox-zero-14.png",
+        "frames\/inbox-zero-15.png"
+      ]
+    },
+    "incident-end" : {
+      "accessories" : "hide",
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/incident-end-00.png",
+        "frames\/incident-end-01.png",
+        "frames\/incident-end-02.png",
+        "frames\/incident-end-03.png",
+        "frames\/incident-end-04.png",
+        "frames\/incident-end-05.png",
+        "frames\/incident-end-06.png",
+        "frames\/incident-end-07.png",
+        "frames\/incident-end-08.png",
+        "frames\/incident-end-09.png",
+        "frames\/incident-end-10.png",
+        "frames\/incident-end-11.png",
+        "frames\/incident-end-12.png",
+        "frames\/incident-end-13.png",
+        "frames\/incident-end-14.png",
+        "frames\/incident-end-15.png"
+      ]
+    },
+    "incident-start" : {
+      "accessories" : "hide",
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/incident-start-01.png",
+        "frames\/incident-start-02.png",
+        "frames\/incident-start-03.png",
+        "frames\/incident-start-04.png",
+        "frames\/incident-start-05.png",
+        "frames\/incident-start-06.png",
+        "frames\/incident-start-07.png",
+        "frames\/incident-start-08.png",
+        "frames\/incident-start-09.png",
+        "frames\/incident-start-10.png",
+        "frames\/incident-start-11.png",
+        "frames\/incident-start-12.png",
+        "frames\/incident-start-13.png",
+        "frames\/incident-start-14.png",
+        "frames\/incident-start-15.png"
+      ]
+    },
+    "item-cleared" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/item-cleared-01.png",
+        "frames\/item-cleared-02.png",
+        "frames\/item-cleared-03.png",
+        "frames\/item-cleared-04.png",
+        "frames\/item-cleared-05.png",
+        "frames\/item-cleared-06.png",
+        "frames\/item-cleared-07.png",
+        "frames\/item-cleared-08.png",
+        "frames\/item-cleared-09.png",
+        "frames\/item-cleared-10.png",
+        "frames\/item-cleared-11.png",
+        "frames\/item-cleared-12.png",
+        "frames\/item-cleared-13.png",
+        "frames\/item-cleared-14.png",
+        "frames\/item-cleared-15.png"
+      ]
+    },
+    "new-item" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/new-item-01.png",
+        "frames\/new-item-02.png",
+        "frames\/new-item-03.png",
+        "frames\/new-item-04.png",
+        "frames\/new-item-05.png",
+        "frames\/new-item-06.png",
+        "frames\/new-item-07.png",
+        "frames\/new-item-08.png",
+        "frames\/new-item-09.png",
+        "frames\/new-item-10.png",
+        "frames\/new-item-11.png",
+        "frames\/new-item-12.png",
+        "frames\/new-item-13.png",
+        "frames\/new-item-14.png",
+        "frames\/new-item-15.png"
+      ]
+    },
+    "poke" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/poke-01.png",
+        "frames\/poke-02.png",
+        "frames\/poke-03.png",
+        "frames\/poke-04.png",
+        "frames\/poke-05.png",
+        "frames\/poke-06.png",
+        "frames\/poke-07.png",
+        "frames\/poke-08.png",
+        "frames\/poke-09.png",
+        "frames\/poke-10.png",
+        "frames\/poke-11.png",
+        "frames\/poke-12.png",
+        "frames\/poke-13.png",
+        "frames\/poke-14.png",
+        "frames\/poke-15.png"
+      ]
+    },
+    "poke-incident" : {
+      "durationMs" : [
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70,
+        70
+      ],
+      "frames" : [
+        "frames\/poke-incident-00.png",
+        "frames\/poke-incident-01.png",
+        "frames\/poke-incident-02.png",
+        "frames\/poke-incident-03.png",
+        "frames\/poke-incident-04.png",
+        "frames\/poke-incident-05.png",
+        "frames\/poke-incident-06.png",
+        "frames\/poke-incident-07.png",
+        "frames\/poke-incident-08.png",
+        "frames\/poke-incident-09.png",
+        "frames\/poke-incident-10.png",
+        "frames\/poke-incident-11.png",
+        "frames\/poke-incident-12.png",
+        "frames\/poke-incident-13.png",
+        "frames\/poke-incident-14.png",
+        "frames\/poke-incident-15.png"
+      ]
+    }
+  },
+  "framePoints" : {
+    "frames\/incident-end-02.png" : {
+      "nozzle" : [
+        108,
+        223
+      ]
+    },
+    "frames\/incident-end-03.png" : {
+      "nozzle" : [
+        105,
+        222
+      ]
+    },
+    "frames\/incident-end-04.png" : {
+      "nozzle" : [
+        104,
+        221
+      ]
+    },
+    "frames\/incident-end-05.png" : {
+      "nozzle" : [
+        105,
+        227
+      ]
+    },
+    "frames\/incident-end-06.png" : {
+      "nozzle" : [
+        104,
+        221
+      ]
+    },
+    "frames\/incident-end-07.png" : {
+      "nozzle" : [
+        104,
+        221
+      ]
+    },
+    "frames\/incident-end-08.png" : {
+      "nozzle" : [
+        104,
+        222
+      ]
+    },
+    "frames\/incident-end-09.png" : {
+      "nozzle" : [
+        103,
+        222
+      ]
+    },
+    "frames\/incident-end-10.png" : {
+      "nozzle" : [
+        103,
+        222
+      ]
+    },
+    "frames\/incident-end-11.png" : {
+      "nozzle" : [
+        101,
+        222
+      ]
+    }
+  },
+  "frameSha256" : {
+    "frames\/attention-00.png" : "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
+    "frames\/attention-01.png" : "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
+    "frames\/attention-02.png" : "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
+    "frames\/dizzy-01.png" : "5d5dbceaa13f41636da37e3404efd26e715a9614a32845eeff262845fc4dcce2",
+    "frames\/dizzy-02.png" : "05f58758954d1822b47384dc035826901792a1dc900061f630224f98a3321d28",
+    "frames\/dizzy-03.png" : "1dc46681f5dd9df0db7cb7248375566cd50ab683632b8023725a2d55971b47cc",
+    "frames\/dizzy-04.png" : "91864d9515da9c9ef0c0220c51067ade7d97443aeb672d35f39a1cf0947a67fc",
+    "frames\/dizzy-05.png" : "d4825a7681b5040cb7205358d8b0adec56460e261bd9d9ef13ef1b63e0cf15fc",
+    "frames\/dizzy-06.png" : "610cbd608131841244a5af1d437b9cbcbf6ed43031bfe450f03f32f88a80092d",
+    "frames\/dizzy-07.png" : "1fd30eda2b2daa2a16aa2db9f297adec654d5adf980dcb721e21ae5546594824",
+    "frames\/dizzy-08.png" : "29025c532c418edd6bde3d66e00ef00b8b8e94a860bdfa03db8244a3aa29a17b",
+    "frames\/dizzy-09.png" : "3b67c684d7f6d1d3a776161578ac2e19f1e91ed318c2e08e5acbe4e3f45b70ae",
+    "frames\/dizzy-10.png" : "88fcc03f21516000aae68d4e1993f95ef6a67241eef2b95464daa88e2f9b6291",
+    "frames\/dizzy-11.png" : "84009497de95f167e931a2ffb01fb19eca741a5fe8f94ddfb1a45382b4d481d6",
+    "frames\/dizzy-12.png" : "baf3d132d8a138fe34308890d138fb2bb3f076be40de4000e182dddb86b334c1",
+    "frames\/dizzy-13.png" : "b289affbe1bd1f07c79d400f15eb4cc693216b3e35ad678f0db1e5d065eef0fc",
+    "frames\/dizzy-14.png" : "8e994ba5d2d548efcffbd5af2b2f32acd94b4089fd51280f7c2abe426ea6547b",
+    "frames\/dizzy-15.png" : "ebb5faf2a5fa02515fd6db5bcb222d7f1ee44a7e6c3822192b917c10e29ec95b",
+    "frames\/dizzy-incident-00.png" : "a4af605f2718adf1d881c14f552f756cd0967a714ee2e3953fa7f6153204f04c",
+    "frames\/dizzy-incident-01.png" : "271d3e89f959b3a140609b7d12cc6c890c249d4502e73c51cf05ed2675c05476",
+    "frames\/dizzy-incident-02.png" : "4faaed321bea47e4fb39a47b692d7f490bedaa247df5976b045ad252b4ede7c2",
+    "frames\/dizzy-incident-03.png" : "61378be1f8ffe5b22d6e4233d9e9c247b7d3ed19a6ff883cde07a88add15a8eb",
+    "frames\/dizzy-incident-04.png" : "6d48c457549f4f31de2ba6837c704c3b1e87c39a14fa984a37ef2722d63f25f0",
+    "frames\/dizzy-incident-05.png" : "8db9388a440d68c1d4d22b8d762c18003667a64a998abf58a9c6ba77249d9380",
+    "frames\/dizzy-incident-06.png" : "5aeb57d25c5a38243814d3debb7b5187436ccb3b0783718e563c0ca588c6700e",
+    "frames\/dizzy-incident-07.png" : "8d49475767592d13a6da21e912ccee5e0cde3155fb2dbdcdef1d0b477e4071e3",
+    "frames\/dizzy-incident-08.png" : "3bdefebcaeeee38870949a6c3d394a37364d1ef0206d38eea53e9d0aeaf351cd",
+    "frames\/dizzy-incident-09.png" : "36021c08a17508f7356c762c767a6c30be46f52cc13f4886c43857c81978b7a4",
+    "frames\/dizzy-incident-10.png" : "29090ab6747490e42b2ec64caa9ea5bb19de752a248ff1924789ad16df14fb3e",
+    "frames\/dizzy-incident-11.png" : "bb14034aeed53144daf9ab861a3f70ae41f15f9ea2bc3b55fed7f3ee68117cc0",
+    "frames\/dizzy-incident-12.png" : "4d22b500c8adbe7c8be4af9e863524ff2c691ee863fdb9e371bfe5ac20a4090f",
+    "frames\/dizzy-incident-13.png" : "87a0dd03f5d0502b92003b4b80c05633ed84c9b20f8387cf24b38b09f972f1c8",
+    "frames\/dizzy-incident-14.png" : "bd27f739aa781d10bb40f80ab109fb2ca33bbf6a32866a92394b5f6b4b50377c",
+    "frames\/dizzy-incident-15.png" : "15ca051d19a3d65c17b55993799c2c0fcbca54fa9a948037b741fecdf9c5e639",
+    "frames\/doze-00.png" : "105089a5457b09c2ccf89274538278123b57357c354d34a418e67dd0f351cb7e",
+    "frames\/doze-01.png" : "3a2575305560d8d9b1c7481bfbf6ccca23493ad48c28506e743c3d4807db2b0b",
+    "frames\/doze-02.png" : "52c9e55e1bfbee0bcef0919a9783d55e20fb8bc3ef2acbd50f6a45c62afa1ff9",
+    "frames\/doze-03.png" : "cf21f10d2562ae3dc88f51a04983c723b7da68e956dde8afa0886940460fff44",
+    "frames\/drag-00.png" : "77a9a56284e89c7ba0ac57bac815a95ea745e59f705d653b69ed7f63b6f24d41",
+    "frames\/drag-01.png" : "dba51f1145a8ba7b3d8c52277a10c2f4e6a1e71377a22b97e690e71001c9de4f",
+    "frames\/drag-02.png" : "da2ca62fa5f58ec2ade8e3030ec75c67c7780e5f629d345b9549e42985a3058e",
+    "frames\/drag-03.png" : "359ffca8a621fb44e7277ff1e4b7566674fdb9f998d9361e39a8ba3550b38aef",
+    "frames\/drag-incident-00.png" : "2bc56cbeb6f5a4f7c9abc4c621ce1bce2aad757cf9c57d22958ae624d7976aef",
+    "frames\/drag-incident-01.png" : "06ed87962a96a26d9f0ca84f600f5e35b847731888d1ce14b2c92f53f87a67c7",
+    "frames\/drag-incident-02.png" : "803bc630382e442bf85149f43ab3537f1a69b02f6ed6eb792ae5baf2bc3012aa",
+    "frames\/drag-incident-03.png" : "5be978c4e8bb584316ac6599893bf5e87b1e29a080ba3f67e90a87302eeebb3b",
+    "frames\/drop-00.png" : "060864ebc82045ac4c463f3b9b890e68b3d4bfca0fe67171bd46c507fd055258",
+    "frames\/drop-01.png" : "468aec1d77de2bf769838aae979b5f2d086868a2fb20c855bbf108cba5f16903",
+    "frames\/drop-02.png" : "c59af1aeadca54ff613a0e00a930afe799d654acbc238d0cfc9e459aae3c6126",
+    "frames\/drop-03.png" : "88400c9878188ece9cfdd389022ef0f4af038ad1a402e2ca0ddd4d8477e5b1d7",
+    "frames\/drop-04.png" : "bc4edb77a33fe7511a4937b777f7f2d1defe252bc6decc4e88881a3836d030b9",
+    "frames\/drop-05.png" : "7fe93361e8e58023506ae491301073ee61dbee75bc3c549b09531327f7fa3863",
+    "frames\/drop-06.png" : "0b6d0c96ddf323ae521a92ee204cbfdf9b3a3ae2c2473b7c474711109f499a31",
+    "frames\/drop-07.png" : "5a7e828b09357a31cd12d70246c45d1cc4553b7c13c71423977cc5984d1f8b75",
+    "frames\/drop-08.png" : "4cb0016301ad3d60efbc759fdee391fab911037a5eccd878e6be51c43390ae73",
+    "frames\/drop-09.png" : "e87c98851d8e915b5d36bd38d1c67dd293f69d1318863984671d34cf8a97e8cd",
+    "frames\/drop-10.png" : "28edc8a494d61571330cd76fbdc79842863f13cb0a81d7496259aafd9cb9b701",
+    "frames\/drop-11.png" : "a71142fc487cc8f175093ba9e234e3445f918b398938255c78379957766db54c",
+    "frames\/drop-12.png" : "0cfae7e39196165a5d7945c40e541c23310cf3c310ccf7a705437aae2cee0ea1",
+    "frames\/drop-13.png" : "7f77c47d2fa7ad02cc4a0ee9fe7601e1fe9ea21cee35b27882e58d689ec5abe7",
+    "frames\/drop-14.png" : "91756f3267a73c9593e155370495f0908af2a03c4d5463b4a03eb01cf69a4fa9",
+    "frames\/drop-15.png" : "de5d39663f68958f636a99ebe2844595e51637aa323a5ac5e0d82f17e2f5c634",
+    "frames\/drop-incident-00.png" : "ea8f37c1c7ae3e1c5cf8a198890846fcb930c176a398261555f7ee7fd04a7e7e",
+    "frames\/drop-incident-01.png" : "4ef834f57ef09974904c38ae7240628eabf964c290db3cc53e496fb702210e6d",
+    "frames\/drop-incident-02.png" : "8ba34ed1249345f7feb838d4cbe4b0e50511f8bfdbc220dac02d616afa0d0536",
+    "frames\/drop-incident-03.png" : "f89696587d351ca2b9e5180e7980b2deaa559736fe2cb3423552eee648f42cdc",
+    "frames\/drop-incident-04.png" : "06ee51442bb127da8eb5df6f9b4d57a759cb3e150bd2a2039c3c7f82c3b13d77",
+    "frames\/drop-incident-05.png" : "58985d9a3106eee47e45e9c10389da1c4179d244fdfbf0c16ee9be018d6d594e",
+    "frames\/drop-incident-06.png" : "d23bb39829c2b34202db31365ad9f9e8752fa00f3ae6798757b11ea5c81e1079",
+    "frames\/drop-incident-07.png" : "90634ffbedc5d5c616d63bb1f69d63edcfcbc9801a5acbc9c5bfbadc787d718e",
+    "frames\/drop-incident-08.png" : "9c39dfd75d6c3a187a99d8233e2495f5c461748f37aace119acfe414969ae6c9",
+    "frames\/drop-incident-09.png" : "ac9c61371fef94c74d3469b63c2406406adf2de1ec0821ef6e50dd9f3572a2c3",
+    "frames\/drop-incident-10.png" : "d7d17dd606aade1200182744587cbfb18241014413fa00d5d0c086dea27e9d33",
+    "frames\/drop-incident-11.png" : "8f1c21d23519eaeb1995242e27d8cec96ef5142821350b6d299c52d7002c7d93",
+    "frames\/drop-incident-12.png" : "0a4d8955e5f24c2fe1dcccb891324c4b65c1242bed61d4cfca592d7f43cc8a7b",
+    "frames\/drop-incident-13.png" : "6c65de67a0018d742ce3bfabde3bf95fe8d6045fabb8353858bbab138693a610",
+    "frames\/drop-incident-14.png" : "055880a6a88acaa52b44b0548118a390d4c5b36d43d70185936662ee50338705",
+    "frames\/drop-incident-15.png" : "7213465aff00b81e8a43494ce103d18e3c477d217d825af0ef1af6180c2b63b0",
+    "frames\/idle-00.png" : "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
+    "frames\/idle-01.png" : "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
+    "frames\/idle-02.png" : "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
+    "frames\/idle-fidget-01.png" : "88860562c84e4f77b5054c4c4b4461e0356fa95f292aefaea1ee2fb83f014b18",
+    "frames\/idle-fidget-02.png" : "de0c5b7062541f5fb8accd260ae5a7fb67964fa3da676eda947e0fb981b7d019",
+    "frames\/idle-fidget-03.png" : "6f7f25d8c079657b202d106732672d63e8413805d9187f2067730de6d1da12a4",
+    "frames\/idle-fidget-04.png" : "c0d5e687dd389d8be051c52a6145ca3b94635edff7b9fc123cb58cd1d8ff2290",
+    "frames\/idle-fidget-05.png" : "33e31770bdf7feb45b92a2aa7751ab394119c7894881c8279497b22366f519e9",
+    "frames\/idle-fidget-06.png" : "cb75e74da8b79262879424062fb889962bc456df0fa1cd5ef47c315529ed9a8a",
+    "frames\/idle-fidget-07.png" : "b7c8ae9e82a89ff9400d150de13f8201660c5266fd488a8fc2d668217a9f59eb",
+    "frames\/idle-fidget-08.png" : "3b14760a0b5c17f46b7805431625dfbce9f2b2de7b281ea0181dd1ee1181dc86",
+    "frames\/idle-fidget-09.png" : "b00ed1c9ee866597c8655feb73d8360a5f04fec9e58f6ea986c7e753c78a573a",
+    "frames\/idle-fidget-10.png" : "f7bfce73d7664d4d3edc4bddbda0f59c62558bef02686b91ba03d28d7a9ad7b7",
+    "frames\/idle-fidget-11.png" : "359b95c174b17543d58f25e39b287274264e8f07d42362f8ce878ddc04faaa91",
+    "frames\/idle-fidget-12.png" : "d60ab7f0eebe3cc9409a8b50eadeb82101be37b537c3a6861e0103b9ad5376ab",
+    "frames\/idle-fidget-13.png" : "981799496ed812845633eb667adfcdd5d021343cb191c9e6c1601d099d84ee81",
+    "frames\/idle-fidget-14.png" : "4c82b9fc3bb794106393fdccc53a14be5fff3ea1a18c62b8875bb7399d318ddb",
+    "frames\/idle-fidget-15.png" : "2e58527d92a7c543cce962022ade522ed83a0a62e42e22f2f4f4a789fc3f7b4c",
+    "frames\/idle-look-01.png" : "ac9fffc0c91db162cf57d3c7d8b121feaac0af0241036cc84d0b29bb886ee442",
+    "frames\/idle-look-02.png" : "677f02d8e91e00dab23a0869e9985f71f97dbbdefb9d0d0f4bdfa1b57cd92e6b",
+    "frames\/idle-look-03.png" : "8f8534674e905d3ae97a81ca3070846f338936c9f5c49eccc69ea123748a074e",
+    "frames\/idle-look-04.png" : "46af802013a918470d39a3bb4e1a953880e01da0c4ce1690f7e35339add2775b",
+    "frames\/idle-look-05.png" : "9045e175c38bfb8736da2c0e1716bcdd1dfaece1be117a419c2358e7a9cbe87c",
+    "frames\/idle-look-06.png" : "00c90695bb2f6b497b35fbdf9fd66e6fabdbb9bc9eb78b64db3a9c7dd8861bde",
+    "frames\/idle-look-07.png" : "7884a3cf17dc57afdbf759c41dfe88880c56597d0cdc614b52e0899cb149c62a",
+    "frames\/idle-look-08.png" : "acf73ef7058759e8778cdf618e6a912af08f272189969bc027c58f9fc4fbfdd0",
+    "frames\/idle-look-09.png" : "951916a16dfdcba5634b06b7b9135f0a1fb894092e96c3b38633cc3f1385479a",
+    "frames\/idle-look-10.png" : "93eaec4fa0c0526d3e1f59227ec2c1ce595b253cd25c09cac5d009e13b8d84e5",
+    "frames\/idle-look-11.png" : "c87715483c5bbbd37292059b96ebf4767ba0fbb2c0dd629af5a528bc2415d2c2",
+    "frames\/idle-look-12.png" : "c5c9fd80111a3c67fde1bcafd94ccb4128dc55689f4f68f3e71f5ad109f2468b",
+    "frames\/idle-look-13.png" : "e7ffe76da8f790bbb9153fffc8c0f44763ab3c3d832929ba23bbc2276e625b05",
+    "frames\/idle-look-14.png" : "427941f5362d6cf5a357a8a25b7b95e47e5b832eddd842ab729fb73d06eddd23",
+    "frames\/idle-look-15.png" : "345f2c664eb41094d5f7dd274ecb6f38b87fc4f9be81e981a4f6845be559752d",
+    "frames\/idle-stretch-01.png" : "9be50bbb75bd61b8b4a978224a0d3fc477788597a2915638bdd4fa1d0c9c44d6",
+    "frames\/idle-stretch-02.png" : "f3f5ca2f124f1830d97ce4e62ad1365749b8a287199638d2e9089e7dc312c5a0",
+    "frames\/idle-stretch-03.png" : "97841c351112e95b1c22a64a078b556abac53dca653032762f932395bb0cd861",
+    "frames\/idle-stretch-04.png" : "0d9c15f0bf6d9bddb60ebe9ce2d6f8ed927a87ffc0ab34a612b784357e49d60b",
+    "frames\/idle-stretch-05.png" : "18d2fc67de4b671f0746385014e7dc7f126dc6984c9a06dd6e535a8858ee9651",
+    "frames\/idle-stretch-06.png" : "9655e57061653894b546c69ca2d33c74d70ec2abb9859832173b8c2d98e04ca0",
+    "frames\/idle-stretch-07.png" : "6ad2ca8e15470b195addb5ecf63184e3d2c051df6cdbe12825ac03743f31d405",
+    "frames\/idle-stretch-08.png" : "7bf6442e5f856c00de4cf9aa148b23b5e98d53a4f9c253ff8d93d1c37ad3c2ba",
+    "frames\/idle-stretch-09.png" : "c59d39e647d9484833c5b18d5954f85b157ed7754a8903915edf5f50ee65ef51",
+    "frames\/idle-stretch-10.png" : "b1e6bc084f545a8d7aefd015c8487937ecdb2893406d27c8ab48fe7cad14c7e1",
+    "frames\/idle-stretch-11.png" : "57a87979a3bb779ba5468b48e9830cfcbd7ebbd8345488e528e8b479ce903d70",
+    "frames\/idle-stretch-12.png" : "cd3147994be6532e102bb19d49414d15942c515f41031e11e5ba23d65f335ccd",
+    "frames\/idle-stretch-13.png" : "881add4c30e7b30b6ed03df629465c4a4b106ddef089c4474363530d3ed67cae",
+    "frames\/idle-stretch-14.png" : "0fab86eb1a2ac4c4bb2c1a71aa21aa12a814c8e920481008d36b8cb6d57464d4",
+    "frames\/idle-stretch-15.png" : "31419ac0ccdd9c96a05d672be959c9b931b512f13f94e0d2c90b69b5ad45ddee",
+    "frames\/inbox-zero-01.png" : "939404a99d7bba76032308d97bad280bd02296fad0742f666415e574bd8a4de7",
+    "frames\/inbox-zero-02.png" : "3c7ae1314796aa22140e3616da44c31ff01dd9ebe49856a60c24df730335dbea",
+    "frames\/inbox-zero-03.png" : "337f8f14d500d43d2428e4bdf36769d8e9c71a8767edb807cc27233923b5ceb0",
+    "frames\/inbox-zero-04.png" : "37fd7db5ba4d1b82045a2e2309d0ff0c9aa551c3cb14ee01c6cf7d489989a828",
+    "frames\/inbox-zero-05.png" : "32ead8dcf93599cf861ddf85579498f545b70064403fe02c686547ede1bbe69b",
+    "frames\/inbox-zero-06.png" : "2d623788a6c7e7a4a0510d7aef0e0433f111d77212b624b8471b2530a93c15c9",
+    "frames\/inbox-zero-07.png" : "3d8a2ccb175c4b23133b4e51ac660ce0dd2c83f312ebdbcc02f4fa5ebc9e9893",
+    "frames\/inbox-zero-08.png" : "e74f22c5442b4b12a9532aeab4d77f18ab7d3531bf7f03b5d4f2dd51f5d53a57",
+    "frames\/inbox-zero-09.png" : "8f0d14234b12c84930a96a2dc99487b7b515b79553736dcdab99ce321cc225a3",
+    "frames\/inbox-zero-10.png" : "ad9e560e8c59e8ad5beef124b82ab848fd4e80c8a62fc4781916e08350fbc668",
+    "frames\/inbox-zero-11.png" : "d157e7e100f9f765c715684fcc1a1aed72f87dc25a63b73b6f76757b5fc2df4b",
+    "frames\/inbox-zero-12.png" : "d54cf5e1da99ef50a2ce17d39cfeb07d0af429476f1f079c2bacaaa5111d9b4d",
+    "frames\/inbox-zero-13.png" : "4632e4fbb9aa94f3d4c598a4bd60291b652d2026a4b25e28e6780be873f735e8",
+    "frames\/inbox-zero-14.png" : "9c23bdf152cc2429a053a9601718281bab74dcbdbe9fa9ca57f5bd9022606fea",
+    "frames\/inbox-zero-15.png" : "f65fa99f1997d643221ff247a0f04800d06f64522bcc840d725cc2f191dd80ac",
+    "frames\/incident-end-00.png" : "6ecc99ccb47649bec251919bfd254229bb4e97999bd7d8d7c09b4b8bdbeebc74",
+    "frames\/incident-end-01.png" : "eb03cc5ac4b0dd3ab67cfa8e24b614858e3f0ed655335345f27fc663a83c0137",
+    "frames\/incident-end-02.png" : "28bb1d443c30541835de618253173081a374de4e1d45b48d7ff302bff426635f",
+    "frames\/incident-end-03.png" : "5041e78662529b23010b05f6480bc67f5b8371c0013facc044637c598ef56c09",
+    "frames\/incident-end-04.png" : "bc8a656ffa4fdf74473bbb5bcf6fb0ffbcede57cef73083bf7edf9b8199518d5",
+    "frames\/incident-end-05.png" : "b14498ba0f7fb3d564fc44dd86a380763e56b0cd81a76cf820ba67a369bfd9cb",
+    "frames\/incident-end-06.png" : "115282e35941eb5634186c773f3dd8024e4cd57c140735401ad80698305b0a8e",
+    "frames\/incident-end-07.png" : "9604e33c4d5188a6a9577c8de4b6d92a94703a022eed7fa62f5c052257c78005",
+    "frames\/incident-end-08.png" : "710d4cc75910fda7ffa12661d359c5c377a0be18bd8d6459304ecd50195d9977",
+    "frames\/incident-end-09.png" : "dc43c34454679310cae69af028a4bebfc8653c677199b5d063da98708791998b",
+    "frames\/incident-end-10.png" : "a97aa2d5b857922397b21a6160553f6d19acc7184f6f168ba6a1d6b7e790f21b",
+    "frames\/incident-end-11.png" : "7ef9afe79c3ef2e729327288197ec947316ccd6ab222971fccf7345421df5651",
+    "frames\/incident-end-12.png" : "23084bc72371c40747197be753fb1953745ee5f15c02bc72a8275b789c5cabd1",
+    "frames\/incident-end-13.png" : "507a880cac5b913603ae61855f20582452f6b02341d312b32d80bedd0291fa5e",
+    "frames\/incident-end-14.png" : "c6293eac0d2709650baf9a9278c70ebffdaabc0d4fc6b10d1cc5f5c0ad820fb9",
+    "frames\/incident-end-15.png" : "632f604e9dcc02b6fea7162a186d7eaae62194b3f6b83db365c29dd388d88888",
+    "frames\/incident-idle-00.png" : "9ce24aeefc73508dc57a3af5674d2bd21d304f0458cc6bcfa3f4c94268955ab5",
+    "frames\/incident-idle-01.png" : "1bdbd8698cdf7b6d5d5ce12aa6124630f8aeeb4ae0c63375f840ca06799628f2",
+    "frames\/incident-idle-02.png" : "7f1f32435e73cd1a0716104fee1b66f8f0ce8661b64d42d968e59d8ff8f07cf1",
+    "frames\/incident-idle-03.png" : "cf84d82a85e8791d84447f0ba4efc16b3c9d29b896ae82254a9c87a7330005e3",
+    "frames\/incident-start-01.png" : "bced6720ae6d85abb2719b9788af53e4ec41cc583547876cdc405e8da43992e9",
+    "frames\/incident-start-02.png" : "427b3b8b3df58a33384b2f4dcb25577a179c7d8f67063be0d4064e9cd191a826",
+    "frames\/incident-start-03.png" : "ac757a2f56c3e2b208374de4ac85a295acb4ebc14462118b927e0286cec5dd3d",
+    "frames\/incident-start-04.png" : "6bf971da73548496810d71d86845a319f25f6fca82be21915d9957a8d2ca498b",
+    "frames\/incident-start-05.png" : "4e6f4a6d453a532279883e1a54eacd6fb62ddc5aa23034276a13fa8798ffba35",
+    "frames\/incident-start-06.png" : "df2cba4e794af3e792d0c1a0bdc2a4714980fa9cacc681e36a2da1bb7a42b9bd",
+    "frames\/incident-start-07.png" : "28437b390d9e5538f23c7d97afbdbea1feda17587b9a54375b495c9842533eb3",
+    "frames\/incident-start-08.png" : "c1e39f7fa234592154849581380ef60564e3c79b581064debcb983c8a391faa3",
+    "frames\/incident-start-09.png" : "e3adb3a6078440ff3e32dcf8be0c81d1071dbbcbba70a336885101164b1532a1",
+    "frames\/incident-start-10.png" : "e4574ebb48d1481256245f3ed085ecd1ce6cf79882c95f259a3bc6f728fb7108",
+    "frames\/incident-start-11.png" : "11be84a0b84413d76530c6e351856e6ed007db8750415044103f106aa00a5c47",
+    "frames\/incident-start-12.png" : "6af6dc50fbbdbba10f203103ecdf3f2426c7a744cd99ec0d8bd4f8806158338d",
+    "frames\/incident-start-13.png" : "54e9b68071ad40923f54362ee6f737ed4280a04e8435b090882d936883664be0",
+    "frames\/incident-start-14.png" : "1de6ff6eb390a2281122214c552fbbfd30170a6cbb26983a648da056a42da832",
+    "frames\/incident-start-15.png" : "92d1ebe41e583c0d69ed5d08f71e2766e6882a5dd81017c730b250562a6ce277",
+    "frames\/item-cleared-01.png" : "83e9346db0dc9cf1556558a6d12e26afde0876514c5a9472b8ac66a004ef47c0",
+    "frames\/item-cleared-02.png" : "fbe598b90aa8821542216f5ead426357d1e62c5735aa4a3864e54e6e42412c05",
+    "frames\/item-cleared-03.png" : "9a776f9adb25213c9398f3f7331005079f6f51d17bc7879a39a913cc2b1b1c25",
+    "frames\/item-cleared-04.png" : "4aab2cf486322354e7c87581f378661cf7b4b4e5bcfb78f4d7a94d958a40ec64",
+    "frames\/item-cleared-05.png" : "829b24af75f35e16fd67c03165e07721694bed97efc77ddde38d699c1c3ec565",
+    "frames\/item-cleared-06.png" : "a0e4be2ee586fc8a6f77374241de10ab4fe9e134b7e2c0caf4101f7efaf01a36",
+    "frames\/item-cleared-07.png" : "19866c12a716f20e32bd56f4a15b9bc38c408840c15aa8ba60aceb6ff7cfc1cd",
+    "frames\/item-cleared-08.png" : "a66a102eb19d8c7f46be1b3b38658e300e4d45b12961cdb8844397035db1374e",
+    "frames\/item-cleared-09.png" : "71845f6db98729aedd75a227e5c9d4f4bf3c52b3ec2f01e9fa1481a4ae6609c5",
+    "frames\/item-cleared-10.png" : "5870a2a7c1932cff22e707597b7e1f494ba1ac31e33fcae3445f2fed5b74f5ca",
+    "frames\/item-cleared-11.png" : "51bf474d39b249b77f4e1b22e43b92b0446a6d7248dddf5baaec2dfbf86995ac",
+    "frames\/item-cleared-12.png" : "f6327f57fb29f6579ea21ad069ff4e540b54a94dc01984cc6a6d2508e9d0a415",
+    "frames\/item-cleared-13.png" : "7574f157d839873443c97df83b98a571f59240f7ad1842d39bac76a2b2dc9920",
+    "frames\/item-cleared-14.png" : "ff0ef09d1ebff842b576f289445d732ea87384b89d5295da8df7d75a51831dc6",
+    "frames\/item-cleared-15.png" : "ab7fba51753a4d03b270fab1e99cac454e1fa4f95f923ee8cdd30807b9874769",
+    "frames\/new-item-01.png" : "4223b09f3e68a953aed5d38e2eb27df5158215e05fb4ebea3735fcb406e97f4b",
+    "frames\/new-item-02.png" : "022f4c0f468c9d221ce56b199362c83c4206e3c9bc0cee663495d28f86002a17",
+    "frames\/new-item-03.png" : "c00d31816845cbd9a64248365efc39ff3c8cbc4634b578b34936e2a23d4518a2",
+    "frames\/new-item-04.png" : "b86e5c905d8e9c6f529d64cdf34c9875df01261ca41803c72f0feb583e752dab",
+    "frames\/new-item-05.png" : "b192f3284a63a56863c7a619cd9dc333560feff9d0cd19b9fb022de5aef93d03",
+    "frames\/new-item-06.png" : "d4ae3224c1b9a98f86575ebfa92b38f251729787c62abb5269a9491aeaf3f277",
+    "frames\/new-item-07.png" : "e679c28d2a316eba6e0b279bf86bafb0097e28935ba1b08390bbedf3bb4e330d",
+    "frames\/new-item-08.png" : "1047ddf8ae7252c5423c0e27686fc34660921f0fb5423396a4789494fefb6d7e",
+    "frames\/new-item-09.png" : "231da668761e91913dbf0c06b8caa0910897ae7e1b8d8237818e70019772d20f",
+    "frames\/new-item-10.png" : "2bacb1ef66d001e058f6ed4c9c625e7bf558b45141587834882886c5d19dff0c",
+    "frames\/new-item-11.png" : "c60452d9fc9aafa0c3cf35d79aa77f8e8871be3fd027b8af848dc8072df4e979",
+    "frames\/new-item-12.png" : "49bb7aea91e6ec3f2be80bd1e2d10c607425fd0bf4e54784d88df910bc9fd5ef",
+    "frames\/new-item-13.png" : "84d2055641271debfeb026c0e6ca0e366a4d1f99ad040b0169ec1a4a0be69815",
+    "frames\/new-item-14.png" : "0bbd8fbe62ec3a51bfd3fd53643ee9c13c296c488e47e034370c5b58af1ff88c",
+    "frames\/new-item-15.png" : "f9ef120fe2d84539ddbb389f02a7f4708ff7503949301d812df0d0ba440def2f",
+    "frames\/poke-01.png" : "34b994c5d1222ea2196d08334aa22c1176a94d7039fa858862a167f15a62e20f",
+    "frames\/poke-02.png" : "ac9e4664339bd1ee36157a3ae75416397a1b5adf995e00aa685e9c5850ca2dd0",
+    "frames\/poke-03.png" : "14ca0294d812a0900556132900d1fda12f0eb46957520c5fc95db4b7488ae88d",
+    "frames\/poke-04.png" : "e6ab9aabdf96315cd9e0484c07d9fc3b8db0fe226ab8b24f08ebc7bd210eef47",
+    "frames\/poke-05.png" : "dd318b3d9431cff447ec86d71a1d287b65e08cf2589ae05674e84e51c1f252c1",
+    "frames\/poke-06.png" : "4a985106f0c83679018277e5831b3117ef448b40c86e517b6755fa8df96c4ac6",
+    "frames\/poke-07.png" : "837b151f6b4015d125b15785ecb198ffc35695b211a559cd6a9ac170eab26fda",
+    "frames\/poke-08.png" : "30e5165c40e2b6d8b74e48b54b8e54ea035b419a3a06f662e00a201f7421a29d",
+    "frames\/poke-09.png" : "862b8393f11b9649831c3c0aa10e866770462ea9f61101e94f03fd5d2f243bca",
+    "frames\/poke-10.png" : "1a15f4884b0de8ac99fe10d44581b7389ada11c5cc3f3ce22f13388cec65d770",
+    "frames\/poke-11.png" : "b4284de09847f6e38f939087a1c664f6072a9eec04813782d50d0e192363af77",
+    "frames\/poke-12.png" : "43dd64f08305f7730323ca755d1b8ddbe6e659acc586d8e8e4a5febae08e0151",
+    "frames\/poke-13.png" : "3809804a615af36e2e420be8def5e56e233d74df6bdd9ecc8d97eafe2e259c32",
+    "frames\/poke-14.png" : "611beac8423ad2f5426509178f2b63376b75cb77a06463d56a023b08adc2e329",
+    "frames\/poke-15.png" : "bdb5b484708cec47ea244c914c0230531ed58b86edb0445b85e5180ddc39b8f2",
+    "frames\/poke-incident-00.png" : "b325b13a998408ffa8dfeeb7669334ce258ead689281fbf0bf9aa67a1a42332d",
+    "frames\/poke-incident-01.png" : "9265bbd00c0cf4942ba126a49e675a0cbf43a47be89cce552ae45a0a8f9dcd18",
+    "frames\/poke-incident-02.png" : "ff4e7c745e2b8dff8e6eac8db4c0b1b9c923409535b1e52d8661cac676352454",
+    "frames\/poke-incident-03.png" : "d93620306f4eccb556063ef80e8340a774d0a363442c579be6fae328a84e256d",
+    "frames\/poke-incident-04.png" : "459c3a02994d4ef0b39b5ab00058faa57512d5017d90a4100a34a24a631dc0d5",
+    "frames\/poke-incident-05.png" : "7323f9f9eb6f7c27e82c03fbca304078a3533838a92c8df95cee0b518110e1f2",
+    "frames\/poke-incident-06.png" : "5d343a042ced7e882252125d6e390410da38d3f8f8a104ec9b634bd4db4bb119",
+    "frames\/poke-incident-07.png" : "0a1adbf60726426628dbda1a437e933055708c1c390e5b5760465357a0cc71ed",
+    "frames\/poke-incident-08.png" : "bb8e0d33b775aae7387b9879eb89207c2b9e3db7fb19270db5fc57662d8e7a47",
+    "frames\/poke-incident-09.png" : "69019ad951ec6c321743636ae5f9e16bbef06f7a17b6f1fd41b9c57cd1db636a",
+    "frames\/poke-incident-10.png" : "2b067e7bf73434c959639bfc08980d943bac29f5f2c474e71cac5c9255423321",
+    "frames\/poke-incident-11.png" : "23f7fd4dc924274e0f366ab228b9d833b51da55457f01000e8f81a5d07fbad80",
+    "frames\/poke-incident-12.png" : "35a1eb5721bd03432092c04508387fe73f5c9c53ea0717711f9a8e0b084751fb",
+    "frames\/poke-incident-13.png" : "b137e49615a7950517fb86c82c6fa6711036d2e911ba446ab33d04e8aab04f2d",
+    "frames\/poke-incident-14.png" : "ce4c4e692b4f251456328b1a0e2d2ffad907dc8c0cd5fd503fe8b0bbcbe7b7b5",
+    "frames\/poke-incident-15.png" : "90b0762379f1a452732682cb1726eefef5f5b0fc09999688478805a63f3ad9bb",
+    "frames\/urgent-00.png" : "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
+    "frames\/urgent-01.png" : "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
+    "frames\/urgent-02.png" : "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"
+  },
+  "id" : "little-chris-v1",
+  "name" : "Little Chris",
+  "points" : {
+
+  },
+  "schemaVersion" : 2,
+  "states" : {
+    "attention" : {
+      "durationMs" : [
         350,
         600,
         350
       ],
-      "loop": false,
-      "staticFallback": "frames/idle-00.png"
-    },
-    "urgent": {
-      "frames": [
-        "frames/urgent-00.png",
-        "frames/urgent-01.png",
-        "frames/urgent-02.png"
+      "frames" : [
+        "frames\/attention-00.png",
+        "frames\/attention-01.png",
+        "frames\/attention-02.png"
       ],
-      "durationMs": [
+      "loop" : false,
+      "staticFallback" : "frames\/idle-00.png"
+    },
+    "doze" : {
+      "durationMs" : [
+        500,
+        500,
+        500,
+        500
+      ],
+      "frames" : [
+        "frames\/doze-00.png",
+        "frames\/doze-01.png",
+        "frames\/doze-02.png",
+        "frames\/doze-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/doze-00.png"
+    },
+    "drag" : {
+      "durationMs" : [
+        200,
+        200,
+        200,
+        200
+      ],
+      "frames" : [
+        "frames\/drag-00.png",
+        "frames\/drag-01.png",
+        "frames\/drag-02.png",
+        "frames\/drag-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/drag-00.png"
+    },
+    "drag-incident" : {
+      "durationMs" : [
+        200,
+        200,
+        200,
+        200
+      ],
+      "frames" : [
+        "frames\/drag-incident-00.png",
+        "frames\/drag-incident-01.png",
+        "frames\/drag-incident-02.png",
+        "frames\/drag-incident-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/drag-incident-00.png"
+    },
+    "idle" : {
+      "durationMs" : [
+        2000,
+        125,
+        125
+      ],
+      "frames" : [
+        "frames\/idle-00.png",
+        "frames\/idle-01.png",
+        "frames\/idle-02.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/idle-00.png"
+    },
+    "incident-idle" : {
+      "durationMs" : [
+        2000,
+        125,
+        125,
+        125
+      ],
+      "frames" : [
+        "frames\/incident-idle-00.png",
+        "frames\/incident-idle-01.png",
+        "frames\/incident-idle-02.png",
+        "frames\/incident-idle-03.png"
+      ],
+      "loop" : true,
+      "staticFallback" : "frames\/incident-idle-00.png"
+    },
+    "urgent" : {
+      "durationMs" : [
         300,
         900,
         500
       ],
-      "loop": false,
-      "staticFallback": "frames/urgent-02.png"
+      "frames" : [
+        "frames\/urgent-00.png",
+        "frames\/urgent-01.png",
+        "frames\/urgent-02.png"
+      ],
+      "loop" : false,
+      "staticFallback" : "frames\/urgent-02.png"
     }
-  },
-  "frameSha256": {
-    "frames/idle-00.png": "0272cd3c66e22fc9708696ccfc4fce28f0a1082c992a6b7dd8df2041f80da1f7",
-    "frames/idle-01.png": "0b4cf4549e521ad6a85ba49ed6355deaddd46d91a80cb2905ce6e6a3f9c5830f",
-    "frames/idle-02.png": "b82e0fae50fc62c0e9a32c0ff6b06d32479b06a3bfb20f47685d7415e075b018",
-    "frames/attention-00.png": "d75295d58c5da859de47c20f9771ff3ec147be5896267ef6f5941b0319925a56",
-    "frames/attention-01.png": "f27254e02dd018459c4e0648d58c1df92d5c64d366b4bdba158e22ebeac539ed",
-    "frames/attention-02.png": "862413592bddf5ad47578ee8fabad1a1902e006ffaaaea2fffdb5300cb4a9bd2",
-    "frames/urgent-00.png": "0a10116ac9adc400eb5a1be780c7539ad2346e9e622c4267b176ba2e6ef14f2a",
-    "frames/urgent-01.png": "965c5392351ade007d44bd29ead96ed94cbee16fd1d55e8b213b3688029cd14e",
-    "frames/urgent-02.png": "e77b436f53e89f206bffc833b83602158f66bd7b78106ea3ec1553db81faefe8"
   }
 }

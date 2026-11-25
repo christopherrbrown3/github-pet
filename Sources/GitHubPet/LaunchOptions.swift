@@ -16,6 +16,11 @@ import GitHubPetCore
 ///   --placeholder                 draw the native placeholder instead of the bundled pack
 ///   --placeholder-clips           #138 QA: add "PH" placeholder clips, held poses and hat to the pack
 ///   GITHUB_PET_PACK_DIR=<dir>     load this mascot pack instead of the bundled one
+///   --replay-clips <secs>         #138 dev: play the pack's clips in turn every <secs> s, without touching data;
+///                                 ignored by the production bundle ID
+///   --dump-incident-frames <dir>  #138 dev: what both skins show at every frame while an incident is
+///                                 active (overlay and helmet counts, contact sheets), then quit
+///                                 (in-memory preferences; ignored by the production bundle ID)
 struct LaunchOptions {
     var defaultsSuite: String?
     var resetSettings = false
@@ -24,6 +29,8 @@ struct LaunchOptions {
     var packDirectory: URL?
     var forcePlaceholder = false
     var placeholderClips = false
+    var replayClipsEvery: TimeInterval?
+    var dumpIncidentFrames: URL?
     var snapshotDirectory: URL?
     /// Explicit opt-in: offline simulated accounts, isolated defaults and manual polling.
     var simulatesMonitoringScope = false
@@ -32,6 +39,9 @@ struct LaunchOptions {
     var qaOutput: String?
     /// Added to the wall clock for every snooze, quiet-hours and freshness decision.
     var clockOffset: TimeInterval = 0
+
+    /// The shipping app's identifier: dev-only hooks stay off there.
+    static let productionBundleID = "dev.github-pet.GitHubPet"
 
     static func parse(arguments: [String] = CommandLine.arguments,
                       environment: [String: String] = ProcessInfo.processInfo.environment) -> LaunchOptions {
@@ -53,6 +63,10 @@ struct LaunchOptions {
             case "--reset-settings": options.resetSettings = true
             case "--placeholder": options.forcePlaceholder = true
             case "--placeholder-clips": options.placeholderClips = true
+            case "--dump-incident-frames":
+                if let dir = iterator.next() { options.dumpIncidentFrames = URL(fileURLWithPath: dir, isDirectory: true) }
+            case "--replay-clips":
+                options.replayClipsEvery = iterator.next().flatMap(TimeInterval.init).map { max($0, 2) }
             case "--render-snapshots":
                 if let dir = iterator.next() { options.snapshotDirectory = URL(fileURLWithPath: dir, isDirectory: true) }
             case "--simulate-monitoring-scope": options.simulatesMonitoringScope = true
@@ -68,6 +82,16 @@ struct LaunchOptions {
                 if let offset = startOffset(iterator.next()) { options.clockOffset = offset }
             default: break
             }
+        }
+        if Bundle.main.bundleIdentifier == Self.productionBundleID {
+            options.replayClipsEvery = nil
+            options.dumpIncidentFrames = nil
+        }
+        if options.dumpIncidentFrames != nil {
+            // Nothing of the user's: fixtures and an in-memory preferences domain.
+            options.forcedSource = "fixtures"
+            options.defaultsSuite = Self.dumpDefaultsSuite
+            options.resetSettings = true
         }
         // Snapshot evidence is shared, so it must never contain live GitHub data or touch the
         // user's preferences: force Demo fixtures and fresh settings in a throwaway suite,
@@ -107,6 +131,7 @@ struct LaunchOptions {
     }
 
     static let snapshotDefaultsSuite = "dev.github-pet.render-snapshots.\(ProcessInfo.processInfo.processIdentifier)"
+    static let dumpDefaultsSuite = "dev.github-pet.dump-clip-frames.\(ProcessInfo.processInfo.processIdentifier)"
 
     /// Test seam: an in-memory store for a normal (non-simulated) launch.
     var userDefaultsOverride: UserDefaults?
@@ -121,6 +146,9 @@ struct LaunchOptions {
         // render-snapshots.<pid>.plist behind on every run, even after removePersistentDomain.
         if snapshotDirectory != nil, defaultsSuite == Self.snapshotDefaultsSuite {
             return EphemeralDefaults.named(Self.snapshotDefaultsSuite)
+        }
+        if dumpIncidentFrames != nil, defaultsSuite == Self.dumpDefaultsSuite {
+            return EphemeralDefaults.named(Self.dumpDefaultsSuite)
         }
         if let defaultsSuite, !defaultsSuite.isEmpty, let suite = UserDefaults(suiteName: defaultsSuite) {
             return suite

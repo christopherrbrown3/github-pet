@@ -187,7 +187,7 @@ public struct EventClipQueue: Sendable {
         public var startedAt: Date
         public var endsAt: Date
 
-        init(event: InboxEvent, startedAt: Date, origin: Origin = .repository, kind: Kind? = nil,
+        public init(event: InboxEvent, startedAt: Date, origin: Origin = .repository, kind: Kind? = nil,
              duration: TimeInterval? = nil) {
             self.event = event
             self.origin = origin
@@ -331,10 +331,13 @@ public struct AttentionGesture: Equatable, Sendable {
 /// `mm_animation_frame`): reduced motion pins frame 0; one-shots hold the last frame.
 public enum FrameClock {
     public static let minimumDurationMs = 125
+    /// Clip and looping-state frames (#138 frame sequences) may be this short.
+    public static let minimumClipDurationMs = MascotPack.clipDurationRange.lowerBound
 
-    public static func frameIndex(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool) -> Int {
+    public static func frameIndex(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool,
+                                  minimumMs: Int = minimumDurationMs) -> Int {
         guard !reducedMotion, durationsMs.count > 1, elapsedMs >= 0 else { return 0 }
-        let durations = durationsMs.map { max($0, minimumDurationMs) }
+        let durations = durationsMs.map { max($0, minimumMs) }
         let total = durations.reduce(0, +)
         var t = elapsedMs
         if loop {
@@ -351,9 +354,10 @@ public enum FrameClock {
 
     /// #166: the first elapsed millisecond after `elapsedMs` at which `frameIndex` returns another
     /// frame, or nil once it never changes again (a single frame, reduced motion, a finished one-shot).
-    public static func nextChangeMs(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool) -> Int? {
+    public static func nextChangeMs(durationsMs: [Int], loop: Bool, elapsedMs: Int, reducedMotion: Bool,
+                                    minimumMs: Int = minimumDurationMs) -> Int? {
         guard !reducedMotion, durationsMs.count > 1 else { return nil }
-        let durations = durationsMs.map { max($0, minimumDurationMs) }
+        let durations = durationsMs.map { max($0, minimumMs) }
         let total = durations.reduce(0, +)
         let t = max(elapsedMs, 0)
         let cycleStart = loop ? t - t % total : 0
@@ -381,6 +385,8 @@ public struct MascotPose: Equatable, Sendable {
     public var clip: ClipFrame?
     /// Accessory overlays worn in this pose (drawn above the art, leaning with it).
     public var accessories: [MascotAccessoryID]
+    /// A rig clip (#138) blends in from these channels: whatever was showing when it started.
+    public var rigBlendFrom: [String: Double]?
 
     public init(state: MascotState, frame: Int?, clipElapsed: TimeInterval?, angle: Double = 0,
                 clip: ClipFrame? = nil, accessories: [MascotAccessoryID] = []) {
@@ -415,6 +421,15 @@ public enum MascotAnimator {
                             library: ClipLibrary = .empty, accessories: [MascotAccessoryID] = [],
                             durationsMs: (MascotState) -> [Int]) -> MascotPose {
         let worn = accessories.filter(library.accessories.contains)
+        // An incident is showing (the marker's accessories are passed in), whether or not the pack draws
+        // the hat as an overlay: a pack with an incident idle loop draws the helmet itself (#138).
+        let incident = !accessories.isEmpty
+        // Chris's incident rule (#138): with a drawn-helmet loop, the pet wears the helmet throughout an
+        // incident. The loop replaces idle, attention and urgent; one-shots that would show the pet
+        // without it are suppressed; the user's own reactions (drag, drop, poke, dizzy) and the incident
+        // clips still play.
+        let helmetLoop = incident && library.has(.incidentIdle)
+        func allowed(_ id: MascotClipID) -> Bool { !helmetLoop || IncidentRule.playsDuringIncident.contains(id) }
         func wearing(_ pose: MascotPose) -> MascotPose {
             var pose = pose
             if let clip = pose.clip, library.hidesAccessories.contains(clip.id) { return pose }
@@ -422,43 +437,53 @@ public enum MascotAnimator {
             return pose
         }
         let spring = stage.springAngle(at: now)
-        func clipPose(_ id: MascotClipID, since start: Date, loop: Bool, state: MascotState = mood,
+        func clipPose(_ requested: MascotClipID, since start: Date, loop: Bool, state: MascotState = mood,
                       angle: Double = 0) -> MascotPose? {
+            // During an incident a reaction plays its helmet variant when the pack draws one.
+            let variant = IncidentRule.variant(of: requested)
+            let id = helmetLoop && library.has(variant) ? variant : requested
             guard let durations = library.durationsMs[id] else { return nil }
             let elapsed = max(0, now.timeIntervalSince(start))
             let frame = FrameClock.frameIndex(durationsMs: durations, loop: loop, elapsedMs: Int(elapsed * 1000),
-                                              reducedMotion: false)
+                                              reducedMotion: false, minimumMs: FrameClock.minimumClipDurationMs)
             // Dizzy wobbles 0, −5°, +5°, −5°, 0 at its frame starts, eased like #29.
             var lean = angle
-            if id == .dizzy { lean = DizzyLean.angle(durationsMs: durations, elapsedMs: elapsed * 1000) }
+            if requested == .dizzy { lean = DizzyLean.angle(durationsMs: durations, elapsedMs: elapsed * 1000) }
             let limit = library.leanLimit
             return wearing(MascotPose(state: state, frame: nil, clipElapsed: loop ? nil : elapsed,
                                       angle: min(max(lean + spring, -limit), limit),
                                       clip: ClipFrame(id: id, frame: frame, elapsed: elapsed)))
         }
         if reducedMotion {
-            for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil)]
+            for (id, active) in [(MascotClipID.drag, stage.dragStart != nil), (.doze, stage.dozeStart != nil),
+                                 (.incidentIdle, helmetLoop)]
             where active && library.has(id) {
-                return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: id, frame: nil, elapsed: 0)))
+                let variant = IncidentRule.variant(of: id)
+                let shown = helmetLoop && library.has(variant) ? variant : id
+                return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil, clip: ClipFrame(id: shown, frame: nil, elapsed: 0)))
             }
             return wearing(MascotPose(state: mood, frame: nil, clipElapsed: nil))
         }
-        if let start = stage.dragStart, let pose = clipPose(.drag, since: start, loop: true, angle: stage.dragAngle) {
+        if let start = stage.dragStart, allowed(.drag), let pose = clipPose(.drag, since: start, loop: true, angle: stage.dragAngle) {
             return pose
         }
         let event = clip.flatMap { now >= $0.startedAt && now < $0.endsAt ? $0 : nil }
         if let scheduled = stage.scheduled, now >= scheduled.startedAt, now < scheduled.endsAt,
-           scheduled.priority > event.map(ClipPriority.of) ?? .min,
+           scheduled.priority > event.map(ClipPriority.of) ?? .min, allowed(scheduled.id),
            let pose = clipPose(scheduled.id, since: scheduled.startedAt, loop: false) {
             return pose
         }
         // Tier 1 by kind: incident-start/-end are only chosen when the pack has them; new-item
         // replaces the wave for repository batches only (an incident escalation keeps the wave).
-        if let event, let id = event.kind.clipID, event.kind != .newItem || event.origin == .repository,
+        if let event, let id = event.kind.clipID, event.kind != .newItem || event.origin == .repository, allowed(id),
            let pose = clipPose(id, since: event.startedAt, loop: false, state: .attention) {
             return pose
         }
-        if event == nil, mood == .idle, let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
+        if event == nil, mood == .idle, allowed(.doze), let start = stage.dozeStart, let pose = clipPose(.doze, since: start, loop: true) {
+            return pose
+        }
+        // During an incident the helmet loop stands in for every mood and for suppressed gestures (#138).
+        if helmetLoop, let pose = clipPose(.incidentIdle, since: idleEpoch, loop: true) {
             return pose
         }
         return wearing(legacyPose(mood: mood, clip: event, now: now, idleEpoch: idleEpoch, gesture: gesture,
@@ -471,12 +496,13 @@ public enum MascotAnimator {
     /// or nil while it holds (reduced motion, attention and urgent). The view schedules its next
     /// redraw here instead of polling the idle loop at a fixed rate.
     public static func nextIdleFrameChange(after date: Date, mood: MascotState, reducedMotion: Bool, idleEpoch: Date,
+                                           minimumMs: Int = FrameClock.minimumDurationMs,
                                            durationsMs: (MascotState) -> [Int]) -> Date? {
         guard mood == .idle else { return nil }
         // The same millisecond `legacyPose` reads, so the boundary lands on its frame change.
         let elapsedMs = Int(max(0, date.timeIntervalSince(idleEpoch)) * 1000)
         guard let next = FrameClock.nextChangeMs(durationsMs: durationsMs(.idle), loop: true, elapsedMs: elapsedMs,
-                                                 reducedMotion: reducedMotion) else { return nil }
+                                                 reducedMotion: reducedMotion, minimumMs: minimumMs) else { return nil }
         // Half a millisecond in, so rounding at the epoch's magnitude can't land on the old frame.
         return idleEpoch.addingTimeInterval((Double(next) + 0.5) / 1000)
     }

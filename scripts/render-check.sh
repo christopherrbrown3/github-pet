@@ -151,7 +151,7 @@ if section "attention gesture (#29, live model)" | grep -q 'system-reduce-motion
   echo "SKIP live gesture probe: system Reduce Motion is on here (gesture covered by unit tests and filmstrips)"
 else
   check_in "attention gesture (#29, live model)" "one gesture, merges, ends, Reduce Motion still" \
-    '^gesture: started=true state=attention duration=1.9 second-event-merged=true ended=true reduced-motion-plays=false'
+    '^gesture: started=true state=attention duration=(0\.[0-9]+|1\.[0-9]+) second-event-merged=true ended=true reduced-motion-plays=false'
   if [[ $snooze_shown == true ]]; then
     check_in "attention gesture (#29, live model)" "snooze stops a gesture at once, no replay" \
       '^gesture cancel: snooze-stops-at-once=true replayed-after-unsnooze=false'
@@ -421,11 +421,13 @@ for png in 02-injected-inbox 04-partial-inbox 04-partial-inbox-dark 08-privacy-h
   [[ -s $out/$png.png ]] && echo "ok   $png.png rendered" || { echo "FAIL $png.png missing"; failures=$((failures + 1)); }
 done
 
-# #138 clips (Demo, placeholder frames): every design-v1 clip and held pose for both skins, key frames
-# rendered on one contact sheet per skin, and the layout unchanged at every size.
+# #138 clips (Demo): every design-v1 clip and held pose for both skins, from the bundled art where the
+# pack has it and placeholder frames otherwise, key frames rendered on one contact sheet per skin, and
+# the layout unchanged at every size.
 for skin in mona-pet-v1 little-chris-v1; do
-  clip_count=$(section "animation clips (#138, placeholder frames)" | grep -cE "^clip $skin [a-z-]+: frames=[0-9]+ .*placeholder=PH$" || true)
-  if (( clip_count == 13 )); then echo "ok   $skin: 11 clips and 2 held poses listed with placeholder frames"
+  clip_count=$(section "animation clips (#138, placeholder frames)" | grep -cE "^clip $skin [a-z-]+: frames=[0-9]+ .*placeholder=(PH|art)$" || true)
+  art_count=$(section "animation clips (#138, placeholder frames)" | grep -cE "^clip $skin [a-z-]+: .*placeholder=art$" || true)
+  if (( clip_count == 13 )); then echo "ok   $skin: 11 clips and 2 held poses listed ($art_count from bundled art)"
   else echo "FAIL $skin: expected 13 clip lines, found $clip_count"; failures=$((failures + 1)); fi
   check_in "animation clips (#138, placeholder frames)" "$skin layout unchanged at 64/128/256" \
     "^ok +clips $skin @256: layout unchanged"

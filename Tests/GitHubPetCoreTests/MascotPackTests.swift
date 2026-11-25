@@ -109,8 +109,8 @@ private struct PackFixture {
 
     @Test func wrongSchemaIsRejected() throws {
         let fixture = try PackFixture()
-        try fixture.manifest { $0["schemaVersion"] = 3 }
-        #expect(fixture.errors() == [.unsupportedSchema(3)])
+        try fixture.manifest { $0["schemaVersion"] = 4 }
+        #expect(fixture.errors() == [.unsupportedSchema(4)])
     }
 
     @Test func missingRequiredStateIsRejected() throws {
@@ -499,8 +499,9 @@ private struct PackFixture {
         let directory = root.appendingPathComponent("assets/mascots/\(id)", isDirectory: true)
         let pack = try MascotPack.load(from: directory, expectedID: id).get()
         #expect(pack.manifest.name == "Little Chris")
-        #expect(pack.manifest.anchor == MascotPack.anchor && pack.imageData.count == 9)
-        #expect(pack.manifest.frameSha256?.count == 9)
+        #expect(pack.manifest.anchor == MascotPack.anchor)
+        // Nine v1 state frames, plus whatever v2 art the manifest declares (#138), all validated.
+        #expect(pack.imageData.count == pack.manifest.frameSha256?.count)
         for state in MascotState.allCases {
             #expect(pack.frameData(for: state).count == 3 && pack.staticFallbackData(for: state) != nil)
         }
@@ -519,7 +520,9 @@ private struct PackFixture {
         }
         #expect(pack.manifest.states["idle"]?.loop == true)
         #expect(pack.manifest.states["attention"]?.loop == false)
-        #expect(pack.manifest.frameSha256?.count == 12)
+        // The twelve v1 state frames, plus the v2 art the manifest declares (#138).
+        #expect(Set(MascotState.allCases.flatMap { pack.frameURLs(for: $0) }).count == 12)
+        #expect(pack.imageData.count == pack.manifest.frameSha256?.count)
         #expect(pack.artTopInset == 20, "the urgent pose's head starts 20 px below the canvas top")
     }
 }

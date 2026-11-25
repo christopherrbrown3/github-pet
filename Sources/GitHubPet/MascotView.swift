@@ -63,12 +63,15 @@ struct MascotView: View {
 
     static let gestureFPS = 30.0
     static let motionFPS = 8.0
+    /// Frame sequences (#138) change image about every 70 ms, so their clips draw at 60 fps (30 would
+    /// show each frame for 67 or 100 ms in turn); slower frame clips keep 30.
+    static let fastClipFPS = 60.0
 
     /// Pure, so tests can pin the idle choice: the gesture condition is the one 30 fps always used.
     static func redraw(pack: Bool, clip: EventClipQueue.Clip?, stage: ClipStage, markerBursting: Bool,
-                       dozeHasClip: Bool, now: Date, idle: IdleFrameSchedule) -> Redraw {
+                       dozeHasClip: Bool, now: Date, idle: IdleFrameSchedule, fastClips: Bool = false) -> Redraw {
         if clip != nil || stage.scheduled != nil || stage.dragStart != nil || markerBursting {
-            return .continuous(fps: gestureFPS)
+            return .continuous(fps: fastClips && (clip != nil || stage.scheduled != nil) ? fastClipFPS : gestureFPS)
         }
         let dozing = stage.dozeStart != nil && dozeHasClip
         if !pack || dozing || stage.springAngle(at: now) != 0 { return .continuous(fps: motionFPS) }
@@ -78,12 +81,20 @@ struct MascotView: View {
     private var redraw: Redraw {
         let now = model.clock()
         let pack = self.pack
-        let idle = IdleFrameSchedule(mood: model.mascotState, clockOffset: model.clockOffset,
-                                     durationsMs: pack?.manifest.states[MascotState.idle.rawValue]?.durationMs ?? [])
+        let library = packOverride.map { ClipLibrary(pack: $0) } ?? model.clipLibrary
+        // During an incident a pack with an incident idle loop (#138) idles on that loop's frames.
+        let incident = !model.accessories.isEmpty && library.has(.incidentIdle)
+        let idle = incident
+            // The helmet loop stands in for every mood during an incident, so it redraws like idle.
+            ? IdleFrameSchedule(mood: .idle, clockOffset: model.clockOffset,
+                                durationsMs: library.durationsMs[.incidentIdle] ?? [], minimumMs: FrameClock.minimumClipDurationMs)
+            : IdleFrameSchedule(mood: model.mascotState, clockOffset: model.clockOffset,
+                                durationsMs: pack?.manifest.states[MascotState.idle.rawValue]?.durationMs ?? [])
         return Self.redraw(pack: pack != nil, clip: model.activeClip, stage: model.clipStage,
                            markerBursting: model.markerPhase(at: now, reduced: false).time != nil,
                            dozeHasClip: (packOverride.map { ClipLibrary(pack: $0) } ?? model.clipLibrary).has(.doze),
-                           now: now, idle: idle)
+                           now: now, idle: idle,
+                           fastClips: library.hasFastClips)
     }
 
     /// Art and labels for one instant, from one pose, so the count never lags the frame it tracks
@@ -119,8 +130,10 @@ struct MascotView: View {
             // Engine effects (#138): world space, so they don't lean; never in reduced motion.
             if let pack, let clip = pose.clip, !reduced, drawsArt {
                 let path = pack.imagePath(for: pose)
+                let spray = pack.spray(clip: clip.id, elapsed: clip.elapsed)
                 ClipEffectsView(particles: ClipEffects.particles(clip: clip.id, elapsed: clip.elapsed, head: pack.head(for: path),
-                                                                 nozzle: pack.nozzle(for: path), hand: pack.hand(for: path)),
+                                                                 nozzle: spray?.nozzle ?? pack.nozzle(for: path), hand: pack.hand(for: path),
+                                                                 sprayWindow: spray?.window),
                                 side: layout.artSide)
                     .frame(width: layout.artSide, height: layout.artSide)
                     .offset(x: layout.artFrame.minX, y: layout.laneHeight)
@@ -190,6 +203,8 @@ struct IdleFrameSchedule: TimelineSchedule, Hashable {
     var mood: MascotState
     var clockOffset: TimeInterval
     var durationsMs: [Int]
+    /// The incident idle loop (#138) plays clip-length frames.
+    var minimumMs = FrameClock.minimumDurationMs
 
     func entries(from startDate: Date, mode: TimelineScheduleMode) -> AnyIterator<Date> {
         var next: Date? = startDate
@@ -202,7 +217,7 @@ struct IdleFrameSchedule: TimelineSchedule, Hashable {
     /// The next frame change after `date`, on the same clock and epoch `MascotView.pose` uses.
     func change(after date: Date) -> Date? {
         MascotAnimator.nextIdleFrameChange(after: date.addingTimeInterval(clockOffset), mood: mood, reducedMotion: false,
-                                           idleEpoch: .distantPast) { _ in durationsMs }
+                                           idleEpoch: .distantPast, minimumMs: minimumMs) { _ in durationsMs }
             .map { $0.addingTimeInterval(-clockOffset) }
     }
 }
