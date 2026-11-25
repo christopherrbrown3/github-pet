@@ -4,6 +4,18 @@ import Testing
 @testable import GitHubPetCore
 @testable import GitHubPet
 
+/// Owners never answer until released (no wall-clock timeout; the test's defer releases it).
+private final class StalledBrowsing: ScopeBrowsing, @unchecked Sendable {
+    private let gate = DispatchSemaphore(value: 0)
+    func release() { gate.signal() }
+    func owners(_ plan: ScopeOwnersPlan, budget: CommandBudget) -> ScopeOwnersResult {
+        gate.wait()
+        return ScopeOwnersResult(failure: .transport)
+    }
+    func repositories(_ plan: ScopeRepositoryPagePlan, budget: CommandBudget) -> ScopeRepositoryPage { fatalError("unused") }
+    func search(_ plan: ScopeRepositorySearchPlan, budget: CommandBudget) -> ScopeRepositoryPage { fatalError("unused") }
+}
+
 private final class FrozenBrowseClock: @unchecked Sendable {
     private let instant = ContinuousClock.now
     func now() -> ContinuousClock.Instant { instant }
@@ -50,6 +62,22 @@ private final class FrozenBrowseClock: @unchecked Sendable {
         browser.open(owner)
         await browser.settle(timeout: nil)
         return owner
+    }
+
+    @Test func cancellingAnUnboundedSettleEndsTheWait() async throws {
+        let app = model(); defer { app.cleanupScopeSimulation() }
+        try await settled(app)
+        let stalled = StalledBrowsing()
+        defer { stalled.release() }
+        let browser = ScopeBrowser(editor: app.scopeEditor, now: { Date(timeIntervalSince1970: 1_763_208_000) }) { _ in stalled }
+        browser.announce = { _ in }
+        browser.sync()
+        #expect(!browser.isIdle, "the stalled owners request is in flight")
+        let waiting = Task { @MainActor in await browser.settle(timeout: nil) }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        waiting.cancel()
+        await waiting.value  // returns only because cancellation ends the wait
+        #expect(!browser.isIdle, "it stopped waiting; the request is still held")
     }
 
     @Test func openingListsOwnersAndShowsYourAccountFirst() async throws {

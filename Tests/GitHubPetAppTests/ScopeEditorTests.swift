@@ -27,7 +27,7 @@ private final class ControlledDiscovery: ScopeAccessChecking, @unchecked Sendabl
     func discover(expectedAccount: ScopeAccount, budget: CommandBudget) -> ScopeDiscoveryResult {
         let gate = DispatchSemaphore(value: 0)
         lock.lock(); let index = gates.count; gates.append(gate); lock.unlock()
-        guard gate.wait(timeout: .now() + 10) == .success else { return .failed(.deadline) }
+        guard gate.wait(timeout: .now() + 300) == .success else { return .failed(.deadline) }
         let name = index == 0 ? "demo-old" : "demo-new"
         return ScopeDiscoveryResult(viewer: ScopeViewer(account: expectedAccount, login: "demo-user"),
             organizations: .init(suggestions: [name], completion: .exhausted, pages: 1),
@@ -54,7 +54,7 @@ private final class PagedDiscovery: ScopeAccessChecking, @unchecked Sendable {
         lock.lock(); let run = pages.count; pages.append(0); lock.unlock()
         let result = ScopeDiscovery.run(expectedAccount: expectedAccount, budget: budget) { plan in
             self.lock.lock(); self.pages[run] += 1; let number = self.pages[run]; self.lock.unlock()
-            if run == 0 && number == 1 { _ = self.firstPage.wait(timeout: .now() + 10) }
+            if run == 0 && number == 1 { _ = self.firstPage.wait(timeout: .now() + 300) }
             let name = "demo-\(run == 0 ? "old" : "new")-\(number)"
             var viewer: [String: Any] = ["id": expectedAccount.viewerID, "login": "demo-user"]
             let more: [String: Any] = ["hasNextPage": true, "endCursor": "cursor\(number)"]

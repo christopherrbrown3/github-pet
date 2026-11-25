@@ -406,8 +406,11 @@ final class ScopeBrowser: ObservableObject, Identifiable {
 
     /// Wait for offscreen renders and tests: every started request has delivered. Renders keep the
     /// default bound; tests pass nil and wait on the state alone, so runner load never decides a result.
+    /// Cancellation always ends the wait, so an unbounded settle can be stopped from outside.
     func settle(timeout: Duration? = .seconds(10)) async {
         let end = timeout.map { ContinuousClock.now.advanced(by: $0) }
-        while inFlight > 0 && end.map({ ContinuousClock.now < $0 }) != false { try? await Task.sleep(nanoseconds: 10_000_000) }
+        while inFlight > 0 && end.map({ ContinuousClock.now < $0 }) != false {
+            do { try await Task.sleep(nanoseconds: 10_000_000) } catch { return }
+        }
     }
 }

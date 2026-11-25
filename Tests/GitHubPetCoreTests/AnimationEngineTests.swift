@@ -742,9 +742,10 @@ private func repositoryRoot() -> URL {
         let seconds = Date().timeIntervalSince(started)
         print("96-image custom pack (debug build): \(pack.imageData.count) images, \(total) bytes, loaded in \(String(format: "%.2f", seconds)) s")
         #expect(pack.manifest.imagePaths.count == 96)
-        // Elapsed time is reported, not asserted (#171): debug builds on a loaded runner are far slower
-        // than the app, and the release-build time is measured separately (PR evidence). The time limit
-        // above is only the hang guard.
+        // Debug builds on a loaded runner are far slower than the app (70 s with 48 busy loops; a few
+        // seconds idle), and the release-build time is measured separately (PR evidence). The bound is
+        // generous so load never fails it; it only catches a pathological regression.
+        #expect(seconds < 300)
     }
 
     @Test func placeholderClipsCoverTheDesignListWithoutChangingTheLayout() throws {
