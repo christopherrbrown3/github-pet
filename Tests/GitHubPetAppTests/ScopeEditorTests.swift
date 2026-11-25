@@ -98,7 +98,7 @@ private func readChildPID(_ fd: Int32) -> Int32? {
 /// Drives the Settings editor through the real AppModel in the offline simulated launch.
 /// Budgets use a frozen clock; waits are handshakes on observable state (the bound only
 /// limits a broken run, it never decides an assertion).
-@Suite(.serialized) @MainActor struct ScopeEditorTests {
+@Suite(.serialized, .timeLimit(.minutes(5))) @MainActor struct ScopeEditorTests {
     private final class Spoken { var messages: [String] = [] }
     private func model(_ spoken: Spoken = Spoken()) -> AppModel {
         var options = LaunchOptions.parse(arguments: ["GitHubPet", "--simulate-monitoring-scope", "--placeholder"], environment: [:])
@@ -112,9 +112,9 @@ private func readChildPID(_ fd: Int32) -> Int32? {
         return app
     }
     private func wait(_ predicate: () -> Bool) async throws {
-        let end = ContinuousClock.now.advanced(by: .seconds(10))
-        while !predicate() && ContinuousClock.now < end { await Task.yield() }
-        try #require(predicate(), "bounded simulated completion")
+        // No wall-clock deadline (#171): starved CI runners outlast any fixed bound. The suite's
+        // time limit is the hang guard; the wait only ends when the observable state is reached.
+        while !predicate() { try await Task.sleep(nanoseconds: 1_000_000) }
     }
     private func settled(_ app: AppModel) async throws {
         try await wait { app.simulatedScopeQuiescent && !app.repositoryFetchInFlight && !app.scopeEditor.validationInFlight && !app.scopeEditor.discoveryInFlight }
@@ -332,6 +332,8 @@ private func readChildPID(_ fd: Int32) -> Int32? {
                 defer { access.releaseAll(); app.cleanupScopeSimulation() }
                 try await settled(app)
                 let editor = ScopeEditor(model: app, access: access)
+                let clock = FrozenBudgetClock()  // frozen (#171): the default real-clock budget expires on a starved runner
+                editor.budget = { CommandBudget(timeout: 20, now: { clock.now() }) }
                 editor.announce = { _ in }
                 editor.observeActive()
                 editor.loadSuggestions()
@@ -416,7 +418,9 @@ private func readChildPID(_ fd: Int32) -> Int32? {
         let access = RecordingGhAccess(ScopeGhAccess(
             locator: GhLocator(environment: [GhLocator.overrideVariable: script.path]), runner: ProcessCommandRunner()))
         let editor = ScopeEditor(model: app, access: access)
-        editor.budget = { CommandBudget(timeout: 10) } // real process: system clock
+        // A real process needs the system clock, so use the longest budget (it caps at 20 s); the child
+        // is cancelled long before it lapses, and the cap only matters if a starved runner outlasts it.
+        editor.budget = { CommandBudget(timeout: CommandBudget.maximumSeconds) }
         editor.announce = { _ in }
         editor.observeActive()
         editor.repositoryInput = "demo-b/pet"; editor.addRepository()
