@@ -497,7 +497,7 @@ private struct PackFixture {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let id = MascotSkin.littleChris.rawValue
         let directory = root.appendingPathComponent("assets/mascots/\(id)", isDirectory: true)
-        let pack = try MascotPack.load(from: directory, expectedID: id).get()
+        let pack = try BuiltInPackCache.load(from: directory, expectedID: id).get()
         #expect(pack.manifest.name == "Little Chris")
         #expect(pack.manifest.anchor == MascotPack.anchor)
         // Nine v1 state frames, plus whatever v2 art the manifest declares (#138), all validated.
@@ -512,7 +512,7 @@ private struct PackFixture {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let directory = root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)", isDirectory: true)
-        let pack = try MascotPack.load(from: directory).get()
+        let pack = try BuiltInPackCache.load(from: directory, expectedID: MascotPack.defaultPackID).get()
         #expect(pack.manifest.id == MascotPack.defaultPackID)
         for state in MascotState.allCases {
             #expect(!pack.frameURLs(for: state).isEmpty)

@@ -43,8 +43,10 @@ struct LaunchOptions {
     /// The shipping app's identifier: dev-only hooks stay off there.
     static let productionBundleID = "dev.github-pet.GitHubPet"
 
+    /// `bundleIdentifier` is a test seam: the dev-only hooks are dropped under `productionBundleID`.
     static func parse(arguments: [String] = CommandLine.arguments,
-                      environment: [String: String] = ProcessInfo.processInfo.environment) -> LaunchOptions {
+                      environment: [String: String] = ProcessInfo.processInfo.environment,
+                      bundleIdentifier: String? = Bundle.main.bundleIdentifier) -> LaunchOptions {
         var options = LaunchOptions()
         options.defaultsSuite = environment["GITHUB_PET_DEFAULTS_SUITE"]
         if let dir = environment["GITHUB_PET_PACK_DIR"], !dir.isEmpty {
@@ -83,7 +85,7 @@ struct LaunchOptions {
             default: break
             }
         }
-        if Bundle.main.bundleIdentifier == Self.productionBundleID {
+        if bundleIdentifier == Self.productionBundleID {
             options.replayClipsEvery = nil
             options.dumpIncidentFrames = nil
         }

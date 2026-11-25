@@ -52,7 +52,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     @Test func nearTouchCountTracksEveryPoseAtTheGap() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         // Design's full upright envelope (near-touch-measurements at ef98a48): 15.75/19.5/13 pt.
         let design: [(CGFloat, CGFloat)] = [(64, 15.75), (128, 19.5), (256, 13)]
         for (side, lane) in design {
@@ -187,7 +187,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     @Test func shippedPackEveryFrameIsClearAndWithinTwelvePoints() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         for state in MascotState.allCases {
             let art = try #require(pack.artProfiles[state])
             let poses = try #require(pack.poseProfiles[state])
@@ -224,7 +224,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     @Test func attentionOutlineCoversTheSwayEnvelope() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         let poses = try #require(pack.poseProfiles[.attention])
         let upright = try #require(ArtProfile.union(poses))
         let swept = try #require(pack.sweptAttentionProfile)
@@ -243,7 +243,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     @Test func leaningCountNeverCrossesTheExactlyRotatedArt() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         let gesture = try #require(pack.attentionGesture)
         let frames = Array(try #require(pack.poseOutlines[.attention]).dropFirst().prefix(gesture.frameCount))
         for side in [CGFloat(64), 128, 256] {
@@ -274,7 +274,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
     @Test func hoverDuringTheGestureClearsTheSweptLean() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         let swept = try #require(pack.sweptAttentionProfile)
         let poses = try #require(pack.poseProfiles[.attention])
         for side in [CGFloat(64), 128, 256] {
@@ -371,7 +371,7 @@ private func gap(_ a: CGRect, _ b: CGRect) -> CGFloat {
         // edge. Whatever the height, the app's full-then-compact choice must end clear.
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         for state in MascotState.allCases {
             let art = try #require(pack.artProfiles[state]), poses = try #require(pack.poseProfiles[state])
             for side in [CGFloat(64), 128, 256] {

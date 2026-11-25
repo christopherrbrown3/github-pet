@@ -11,7 +11,7 @@ import Testing
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         return Dictionary(uniqueKeysWithValues: MascotSkin.allCases.map {
-            ($0, MascotPack.load(from: root.appendingPathComponent("assets/mascots/\($0.rawValue)")))
+            ($0, BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\($0.rawValue)"), expectedID: $0.rawValue))
         })
     }()
     private static func pack(_ skin: MascotSkin) throws -> MascotPack { try packs[skin]!.get() }

@@ -600,8 +600,8 @@ private func repositoryRoot() -> URL {
         // The bundled packs load under the bundled budget (bounds rule included) and offer exactly
         // the clips and held poses their manifests declare (#138: only those inside the union ship).
         for skin in MascotSkin.allCases {
-            let bundled = try MascotPack.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
-                                              expectedID: skin.rawValue, budget: .bundled).get()
+            let bundled = try BuiltInPackCache.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
+                                                  expectedID: skin.rawValue).get()
             let declared = Set((bundled.manifest.clips ?? [:]).keys.map { MascotClipID($0) })
                 .union(MascotClipID.loopingStates.filter { bundled.manifest.heldSpec($0) != nil })
             #expect(Set(ClipLibrary(pack: bundled).durationsMs.keys) == declared)
@@ -758,8 +758,8 @@ private func repositoryRoot() -> URL {
 
     @Test func placeholderClipsCoverTheDesignListWithoutChangingTheLayout() throws {
         for skin in MascotSkin.allCases {
-            let original = try MascotPack.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
-                                               expectedID: skin.rawValue, budget: .bundled).get()
+            let original = try BuiltInPackCache.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
+                                                  expectedID: skin.rawValue).get()
             var placeholder = original.withPlaceholderClips()
             let library = ClipLibrary(pack: placeholder)
             for id in ClipCatalog.v1.ordered.map(\.id) + MascotClipID.heldStates {

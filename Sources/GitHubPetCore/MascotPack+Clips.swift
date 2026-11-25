@@ -196,7 +196,8 @@ extension MascotPack {
     /// included), the lean the layout has room for, and (bundled) the rule that every clip, held and
     /// hat pixel stays inside the three states' art. A custom pack drawing outside it is accepted with
     /// a taller lane and wider hover outline instead.
-    mutating func measureClips(enforcingBounds: Bool = true) -> [MascotPackError] {
+    /// `reusing`: outlines already measured for these paths, whose image data hasn't changed.
+    mutating func measureClips(enforcingBounds: Bool = true, reusing known: [String: ArtProfile] = [:]) -> [MascotPackError] {
         let v2Paths = manifest.v2ImagePaths
         guard !v2Paths.isEmpty else { return [] }
         let core = MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }
@@ -204,9 +205,21 @@ extension MascotPack {
         let baseTop = (MascotState.allCases.flatMap(poseContours) + leaningContours).flatMap { $0.compactMap { $0 } }.min() ?? 0
         var errors: [MascotPackError] = []
         extraOutlines = [:]
+        var unknown: [String] = []
         for path in manifest.imagePaths {
-            if let data = imageData[path], let outline = ArtProfile(png: data, alphaThreshold: 0) { extraOutlines[path] = outline }
+            if let outline = known[path] { extraOutlines[path] = outline } else { unknown.append(path) }
         }
+        // Each frame's outline is independent: decode and scan them in parallel (~480 frames in the
+        // bundled sequence packs, #138). GCD workers, so a caller on a Swift concurrency thread blocks none.
+        let images = unknown.map { imageData[$0] }
+        var outlines = [ArtProfile?](repeating: nil, count: unknown.count)
+        outlines.withUnsafeMutableBufferPointer { results in
+            let results = results
+            DispatchQueue.concurrentPerform(iterations: images.count) { index in
+                results[index] = images[index].flatMap { ArtProfile(png: $0, alphaThreshold: 0) }
+            }
+        }
+        for (path, outline) in zip(unknown, outlines) { extraOutlines[path] = outline }
         func inside(_ outline: ArtProfile, _ offset: CGPoint = .zero) -> Bool {
             guard let box = outline.bounds else { return true }
             let dx = Int(offset.x.rounded()), dy = Int(offset.y.rounded())
@@ -364,8 +377,12 @@ extension MascotPack {
             manifest.points = .init(head: [Int(head.x.rounded()), Int(head.y.rounded())], nozzle: [limit.minX + 12, 196])
             pack.placeholderClips.insert(AccessoryPolicy.firefighterHat)
         }
+        // A pack that already has every clip, held pose and the hat (the bundled sequences, #138) gains
+        // nothing: skip re-measuring ~480 frames.
+        if manifest == self.manifest { return pack }
         pack.manifest = manifest
-        _ = pack.measureClips()
+        // Only the placeholder hat's image is new; every other path keeps the bytes it was measured from.
+        _ = pack.measureClips(reusing: extraOutlines)
         return pack
     }
 

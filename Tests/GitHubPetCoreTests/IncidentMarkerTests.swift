@@ -174,7 +174,7 @@ private func incident(_ id: String, _ impact: IncidentImpact = .minor, name: Str
     private func layouts() throws -> [MascotLayout] {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let pack = try MascotPack.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)")).get()
+        let pack = try BuiltInPackCache.load(from: root.appendingPathComponent("assets/mascots/\(MascotPack.defaultPackID)"), expectedID: MascotPack.defaultPackID).get()
         return [64, 128, 256].flatMap { side in
             [MascotLayout(artSide: side, pack: pack), MascotLayout(artSide: side)]
         }

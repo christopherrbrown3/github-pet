@@ -15,9 +15,22 @@ import Testing
         for item in ["manifest.json", "frames"] {
             try fm.copyItem(at: source.appendingPathComponent(item), to: copy.appendingPathComponent(item))
         }
-        let first = try BuiltInPackCache.load(from: copy, expectedID: "little-chris-v1").get()
+        // Callers asking at once (parallel tests on a cold cache) share one verification.
+        let results = Locked<[MascotPack?]>(Array(repeating: nil, count: 4))
+        DispatchQueue.concurrentPerform(iterations: 4) { index in
+            let pack = try? BuiltInPackCache.load(from: copy, expectedID: "little-chris-v1").get()
+            results.withLock { $0[index] = pack }
+        }
+        let loaded = results.withLock { $0 }
+        let first = try #require(loaded[0])
+        #expect(loaded.allSatisfy { $0 == first })
         let again = try BuiltInPackCache.load(from: copy, expectedID: "little-chris-v1").get()
         #expect(first == again)
+        #expect(BuiltInPackCache.verifications(of: copy) == 1)
+        // The placeholder-clip variant is kept beside it, built from the verified pack.
+        let clips = try BuiltInPackCache.load(from: copy, expectedID: "little-chris-v1", placeholderClips: true).get()
+        #expect(clips.placeholderClips.contains(AccessoryPolicy.firefighterHat) && first.placeholderClips.isEmpty)
+        #expect(try BuiltInPackCache.load(from: copy, expectedID: "little-chris-v1", placeholderClips: true).get() == clips)
         // A frame that no longer matches its checksum is caught: the changed files are verified again.
         let frame = copy.appendingPathComponent(try #require(first.manifest.clips?["poke"]?.frames.last))
         var bytes = try Data(contentsOf: frame)
@@ -27,4 +40,11 @@ import Testing
             Issue.record("a changed frame was served from the cache")
         }
     }
+}
+
+private final class Locked<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
+    init(_ value: Value) { self.value = value }
+    func withLock<T>(_ body: (inout Value) -> T) -> T { lock.withLock { body(&value) } }
 }
