@@ -21,7 +21,7 @@ This is an independent Mona-inspired companion concept, not an official GitHub a
 
 ## App icon, painted (#88)
 
-Generated using the built-in `image_gen.imagegen` integration; the image model identifier is not exposed. Each output was resized to 1024 × 1024 with `sips`, preserving alpha. These are design explorations, not shipping assets.
+Generated using the built-in `image_gen.imagegen` integration; the image model identifier is not exposed. Each output was resized to 1024 × 1024 with `sips`, preserving alpha. `painted-b-inbox.png` is the source of the shipped app icon (see the clean-master section below); `painted-a-portrait.png` and `painted-c-envelope.png` are unshipped design explorations.
 
 Reference SHA-256: Mona probe `62eba55c827cfc1fdf355069a2239fc41afec370995b6ec38933cf8fdadb9fe2`; Mona idle frame `79bacd0b3040edaa3708f05f322390604dba871e2374b909102f18fd6b9ff7cb`; current icon `5a669b09b796028f75ab8f275341d179a33f87836dd394d374c36b596b989103`.
 

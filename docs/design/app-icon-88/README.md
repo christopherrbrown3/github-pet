@@ -35,14 +35,14 @@ Provenance of the painted source, its generation artifact ID and prompt intent a
 
 ## Directions
 
-- **A · Mona portrait. Approved default identity.** Mona's cat hood, peach face and tentacle skirt on a sky-to-cobalt gradient tile. Strongest at 16/32 px: the black head and peach face read on blue in light and dark contexts. Below 64 px the tentacles drop out and the head is enlarged.
+- **A · Mona portrait. Approved 2026-11-20, now superseded by the painted Direction B (see above).** Mona's cat hood, peach face and tentacle skirt on a sky-to-cobalt gradient tile. Strongest at 16/32 px: the black head and peach face read on blue in light and dark contexts. Below 64 px the tentacles drop out and the head is enlarged.
 - **B · Mona inbox peek (exploration, not adopted).** Mona rises from an indigo inbox tray on a warm cream tile, which says "notifications" more directly. At 16 px the tray and face are smaller, so it is less legible than A.
 - **C · Little Chris inbox peek (exploration, not adopted).** The same tray composition with Little Chris (hair, beard, navy hood). It shows how a skin-based variant could look. It is not proposed as the default identity.
 
 All three use the macOS icon grid (824 px continuous-corner tile in a 1024 canvas, soft drop shadow, a faint hairline rim so light tiles hold their edge on light backgrounds). No text, no badge, no GitHub Invertocat silhouette or GitHub wordmark. Mona appears as a colored character face rather than a solid silhouette.
 
-## Provenance
+## Vector directions provenance
 
-- Source: [`render_icons.swift`](render_icons.swift). Every shape is authored vector geometry in a 1024 design space, drawn with CoreGraphics. There are no raster inputs and no image-generation tools. Shapes were drawn by hand in code with reference to the `assets/mascots/mona-pet-v1` and `assets/mascots/little-chris-v1` frames for character traits only.
+- Source: [`render_icons.swift`](render_icons.swift). Every shape is authored vector geometry in a 1024 design space, drawn with CoreGraphics. For these vector directions A to C there are no raster inputs and no image-generation tools; the painted icon above is a separate, image-generated source. Shapes were drawn by hand in code with reference to the `assets/mascots/mona-pet-v1` and `assets/mascots/little-chris-v1` frames for character traits only.
 - Small sizes use a separate level of detail, chosen by pixel size. At 32 px and below, the whiskers, blush, highlights and tentacles drop out and the face is enlarged. The eyes and mouth are snapped to whole device pixels and mirrored about the centre: 2×3 px eyes and a 2 px mouth with upturned corners at 32 px, and 1×2 px eyes with no mouth at 16 px. This keeps them solid black instead of grey anti-aliasing. 64 px and up use the full drawing.
 - Rebuild from the repo root: `swift docs/design/app-icon-88/render_icons.swift`. Outputs are `renders/<direction>/icon-{16,32,64,128,256,512,1024}.png` and `renders/contact-{light,dark}.png`. Re-running produces byte-identical PNGs (SHA-256 compared on the iconset).
