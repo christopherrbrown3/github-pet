@@ -4,8 +4,9 @@
 //
 // Usage (from the repo root):
 //   swift docs/design/app-icon-88/render_icons.swift [output-dir] [iconset-dir]
-// Defaults: docs/design/app-icon-88/renders and assets/app-icon/AppIcon.iconset
-// (the production iconset of the approved Direction A).
+// Default output: docs/design/app-icon-88/renders. The vector Direction A iconset
+// is written only when an iconset-dir is passed; the production iconset is now
+// built from the painted master by build_painted_icon.swift.
 
 import CoreGraphics
 import Foundation
@@ -468,11 +469,11 @@ func contactSheet(background: RGBA) -> CGImage {
 
 writePNG(contactSheet(background: RGBA(0xF2F2F4)), outDir.appendingPathComponent("contact-light.png"))
 writePNG(contactSheet(background: RGBA(0x1E1E22)), outDir.appendingPathComponent("contact-dark.png"))
-// Production iconset for the approved direction (A). Detail level follows the
-// pixel size, so icon_16x16@2x uses the 32 px drawing.
+// Optional iconset of the vector Direction A (superseded by the painted icon).
+// Detail level follows the pixel size, so icon_16x16@2x uses the 32 px drawing.
+if CommandLine.arguments.count > 2 {
 let approved = directions.first { $0.id == "a-mona-portrait" }!
-let iconsetDir = URL(fileURLWithPath: CommandLine.arguments.count > 2
-                     ? CommandLine.arguments[2] : "assets/app-icon/AppIcon.iconset")
+let iconsetDir = URL(fileURLWithPath: CommandLine.arguments[2])
 try FileManager.default.createDirectory(at: iconsetDir, withIntermediateDirectories: true)
 for points in [16, 32, 128, 256, 512] {
     for scale in [1, 2] {
@@ -481,4 +482,5 @@ for points in [16, 32, 128, 256, 512] {
     }
 }
 print("wrote 10-image iconset into \(iconsetDir.path)")
+}
 print("rendered \(directions.count) directions × \(sizes.count) sizes into \(outDir.path)")
