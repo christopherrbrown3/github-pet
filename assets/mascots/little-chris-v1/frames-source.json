@@ -141,7 +141,8 @@
         9,
         10,
         11
-      ]
+      ],
+      "registerBy": "face"
     },
     {
       "name": "drag",
@@ -177,7 +178,56 @@
         150
       ],
       "loop": true,
-      "fit": true
+      "fit": true,
+      "registerBy": "face"
+    },
+    {
+      "name": "poke-incident",
+      "sheets": [
+        "sequences/poke-incident.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true,
+      "firstIsReference": false,
+      "registerBy": "face"
+    },
+    {
+      "name": "dizzy-incident",
+      "sheets": [
+        "sequences/dizzy-incident.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true,
+      "firstIsReference": false,
+      "registerBy": "face"
+    },
+    {
+      "name": "drop-incident",
+      "sheets": [
+        "sequences/drop-incident.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true,
+      "registerBy": "face"
+    },
+    {
+      "name": "drag-incident",
+      "sheets": [
+        "sequences/drag-incident.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        200
+      ],
+      "loop": true,
+      "fit": true,
+      "registerBy": "face"
     }
   ],
   "quantize": true,

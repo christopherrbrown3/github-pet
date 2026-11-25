@@ -42,6 +42,9 @@ struct Source: Decodable {
         /// Fit the whole clip inside the union: shift it sideways within the slack, then (if that is not
         /// enough) scale it uniformly about the ground anchor. Off by default: violations are reported.
         var fit: Bool?
+        /// "face": size the clip by the face instead of the first frame's height, for clips that start
+        /// wearing something that adds height (the helmet), so the pet underneath keeps its size.
+        var registerBy: String?
         /// Frames (0-based, after skips) that spray: their `nozzle` point is the metal pixel furthest
         /// down-left (the nozzle tip aimed at the ground), for the engine's mist.
         var nozzleFrames: [Int]?
@@ -440,7 +443,8 @@ func run() throws {
         let faces = cellImages.map { face($0, source.anchor) }
         let referenceHeight = Double(box(reference).map { $0.3 - $0.1 + 1 } ?? 1)
         let firstHeight = Double(cellImages.first.flatMap(box).map { $0.3 - $0.1 + 1 } ?? 1)
-        let clipScale = referenceHeight / firstHeight
+        let firstFaceWidth = faces.compactMap { $0 }.first?.width
+        let clipScale = clip.registerBy == "face" ? refFace.width / (firstFaceWidth ?? refFace.width) : referenceHeight / firstHeight
         let firstFace = faces.compactMap { $0 }.first?.width ?? refFace.width
         let raw = faces.map { $0.map { clipScale * firstFace / $0.width } }
         // A prop over the face (a helmet over the forehead) shrinks the face region and would blow that
