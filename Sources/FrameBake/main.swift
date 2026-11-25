@@ -440,9 +440,14 @@ func run() throws {
         let clipScale = referenceHeight / firstHeight
         let firstFace = faces.compactMap { $0 }.first?.width ?? refFace.width
         let raw = faces.map { $0.map { clipScale * firstFace / $0.width } }
+        // A prop over the face (a helmet over the forehead) shrinks the face region and would blow that
+        // frame up: keep every frame within 6% of the clip's median scale.
+        let known = raw.compactMap { $0 }.sorted()
+        let median = known.isEmpty ? clipScale : known[known.count / 2]
         let scales = raw.indices.map { i -> Double in
             let window = raw[max(0, i - 1)...min(raw.count - 1, i + 1)].compactMap { $0 }
-            return window.isEmpty ? 1 : window.sorted()[window.count / 2]
+            let local = window.isEmpty ? median : window.sorted()[window.count / 2]
+            return min(max(local, median * 0.94), median * 1.06)
         }
         var frames: [Pixels] = []
         for (i, cell) in cellImages.enumerated() {
