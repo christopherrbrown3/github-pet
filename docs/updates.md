@@ -145,5 +145,6 @@ its own empty channel with a fake signer.
 - First install still needs Open Anyway; automatic update does not replace that.
 - Anyone holding the production key can ship an update that installs without a Gatekeeper prompt.
 - Builds before this feature (beta 1-3) have no updater: update them by hand once.
-- The animated pets (#138) make the app about 6.2 MB bigger to download and 6.7 MB bigger on disk (the mascot
-  frames for both skins grow from 0.9 MB to 7.6 MB). An update downloads the whole app.
+- The Beta 8 download is about 8 MB larger than Beta 7 (about 15 MB against 7 MB): about 6 MB is the animated pets' frames (#138; the
+  mascot frames for both skins grow from 0.9 MB to 7.6 MB on disk), the rest the larger icon and binary. An update downloads the whole app.
+- The Beta 7 to Beta 8 in-app update is first exercised by the Beta 8 release itself.

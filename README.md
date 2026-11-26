@@ -180,12 +180,12 @@ verified with its signature before it's installed. [How updates work](docs/updat
   earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
 - **Search limits.** At most 30 items per category for each group of up to 50 selected entries; reaching that marks the result as partial. Large selections refresh more slowly.
-- **In-app updates work from Beta 4 onward.** Beta 5, Beta 6 and Beta 7 were delivered that way. Earlier
+- **In-app updates work from Beta 4 onward.** Beta 5, Beta 6 and Beta 7 were delivered that way; the Beta 7 to Beta 8 update is first exercised by this release. Earlier
   betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
 - **Not yet checked by hand:** keyboard and VoiceOver use of the Inbox (including Waiting on others), the
   update banner and the repository browser, Reduce Motion, hover, the
-  app icon in Finder and the Dock at small sizes, and some behaviour on every supported macOS version.
+  app icon in the Dock at small sizes, and some behaviour on every supported macOS version.
 
 Details and the rest of the known limits are in [Features](docs/features.md#known-limits).
 
