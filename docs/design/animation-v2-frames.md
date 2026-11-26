@@ -83,7 +83,7 @@ can draw a second hat.
 | + end-hold dedupe and idle-00 reuse | 16.2 MB |
 | **+ 256-colour palette quantization (shipped, 481 frames)** | **7.6 MB** (+6.7 MB) |
 
-PNGs don't compress further, so the app download grows by the files' 6.2 MB. At 64, 128 and 256 pt @2x the quantized frames can't be told apart from the originals. Frames stay
+PNGs don't compress further, so the app download grows by the files' 6.2 MB (the Beta 8 download is about 8 MB larger than Beta 7 in all; the rest is the larger icon and binary). At 64, 128 and 256 pt @2x the quantized frames can't be told apart from the originals. Frames stay
 256 px: the mascot is up to 256 pt (512 px at 2×), so smaller frames would blur at the larger sizes.
 
 ## 6. Dev and QA hooks

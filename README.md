@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/app-icon/AppIcon.iconset/icon_256x256@2x.png" alt="GitHub Pet app icon: a small octopus-cat in a black hood on a blue background" width="128" height="128">
+<img src="assets/app-icon/AppIcon.iconset/icon_256x256@2x.png" alt="GitHub Pet app icon: Mona, a black cat-eared octopus, peeking over the edge of a light-blue inbox tray on a blue background" width="128" height="128">
 
 # GitHub Pet
 
@@ -9,7 +9,7 @@
 Reviews, assigned issues and your pull requests in one calm Inbox, with a small pet on your desktop.
 Read-only, local and built on the GitHub CLI you already use.
 
-[**Download Beta 7**](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.7) ·
+[**Download Beta 8**](https://github.com/christopherrbrown3/github-pet/releases/tag/v0.1.0-beta.8) ·
 macOS 13 or later · Universal app (Apple Silicon and Intel) · Free
 
 <br>
@@ -86,8 +86,12 @@ Mac, and **View dismissed** lets you **Restore** it later.
 </table>
 
 An optional pet sits on your desktop with a badge counting the items that need you. It plays a short animation once for something
-genuinely new, never on every refresh. Pick **Mona** or **Little Chris** in Settings, resize it, or hide
-it: the Inbox keeps working either way, and with the pet hidden the menu-bar icon shows the same count.
+genuinely new, never on every refresh. It also reacts when you clear an item or reach inbox zero, when you
+click, drag or drop it, looks around now and then and dozes off after a quiet while. During a GitHub
+incident it puts on a small fire helmet and takes it off when the incident is over. Reduce Motion keeps it
+still. Pick **Mona** or **Little Chris** in Settings, resize it, or hide
+it: the Inbox keeps working either way, and with the pet hidden the menu-bar icon shows the same count
+beside the paw.
 
 ### Honest about what it knows
 
@@ -160,7 +164,7 @@ More detail on every feature: [Features](docs/features.md).
 
 ## Updates
 
-If you're on Beta 3 or earlier, install by hand once; Beta 4 and later get updates in the app. GitHub Pet checks for
+If you're on Beta 3 or earlier, install by hand once; Beta 4 and later get updates in the app, so Beta 7 updates to Beta 8 from inside the app. GitHub Pet checks for
 updates in the background about every 6 hours (turn it off in Settings; an earlier choice is kept). When one is
 available, the menu-bar icon shows a small dot and the Inbox shows **Update available**; it asks before installing.
 Choose **Check for Updates…** from the menu-bar menu any time. Each update is
@@ -176,12 +180,12 @@ verified with its signature before it's installed. [How updates work](docs/updat
   earlier beta are kept but have no effect until those features return.
 - **github.com only.** GitHub Enterprise Server isn't supported yet.
 - **Search limits.** At most 30 items per category for each group of up to 50 selected entries; reaching that marks the result as partial. Large selections refresh more slowly.
-- **In-app updates work from Beta 4 onward.** Beta 5 and Beta 6 were delivered that way. Earlier
+- **In-app updates work from Beta 4 onward.** Beta 5, Beta 6 and Beta 7 were delivered that way; the Beta 7 to Beta 8 update is first exercised by this release. Earlier
   betas install by hand.
 - **Intel.** The universal app's Intel half is checked in CI under Rosetta, not on Intel hardware.
 - **Not yet checked by hand:** keyboard and VoiceOver use of the Inbox (including Waiting on others), the
   update banner and the repository browser, Reduce Motion, hover, the
-  app icon in Finder and the Dock at small sizes, and some behaviour on every supported macOS version.
+  app icon in the Dock at small sizes, and some behaviour on every supported macOS version.
 
 Details and the rest of the known limits are in [Features](docs/features.md#known-limits).
 
@@ -194,7 +198,7 @@ scripts/package-zip.sh          # universal, ad-hoc signed app + ZIP in .build/d
 ```
 
 See the [development guide](docs/development.md). README images are offscreen renders of Demo data;
-see their provenance ([Beta 5](docs/screenshots/beta-5/README.md), [Beta 6](docs/screenshots/beta-6/README.md), [Beta 7](docs/screenshots/beta-7/README.md)).
+see their provenance ([Beta 5](docs/screenshots/beta-5/README.md), [Beta 6](docs/screenshots/beta-6/README.md), [Beta 7](docs/screenshots/beta-7/README.md), [Beta 8](docs/screenshots/beta-8/README.md)).
 
 ---
 
