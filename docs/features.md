@@ -156,7 +156,7 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 - **Actions alerts** cover only selected repositories, and only the default branch's latest commit.
   Changing coverage or the monitoring scope re-baselines quietly: items first seen then aren't
   announced. Actions items aren't remembered across a relaunch.
-- **Download size.** The animation frames make the app download about 8 MB larger than Beta 7 (about 6 MB animation frames, the rest the larger icon and binary; the universal ZIP is about 15 MB, against about 7 MB for Beta 7).
+- **Download size.** The Beta 8 download is about 8 MB larger than Beta 7 (about 15 MB against 7 MB): about 6 MB of animation frames, the rest the larger icon and binary.
 - **Not verified by hand yet:** refresh after a real sleep and wake, keyboard and VoiceOver use of the
   new Inbox, Reduce Motion, hover, the app icon in the Dock at small sizes, and every
   supported macOS version. The floating pet isn't keyboard focusable; use the
