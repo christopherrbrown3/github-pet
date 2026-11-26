@@ -7,7 +7,7 @@ import ImageIO
 extension MascotPackManifest {
     /// Held drag/doze states (v2 only; a v1 manifest's extra states are ignored as before).
     public func heldSpec(_ id: MascotClipID) -> StateSpec? {
-        guard isV2, MascotClipID.heldStates.contains(id) else { return nil }
+        guard isV2, MascotClipID.loopingStates.contains(id) else { return nil }
         return states[id.rawValue]
     }
 
@@ -19,7 +19,7 @@ extension MascotPackManifest {
     public var v2ImagePaths: [String] {
         guard isV2 else { return [] }
         var paths: [String] = []
-        for id in MascotClipID.heldStates { if let spec = states[id.rawValue] { paths += spec.frames + [spec.staticFallback] } }
+        for id in MascotClipID.loopingStates { if let spec = states[id.rawValue] { paths += spec.frames + [spec.staticFallback] } }
         for (_, spec) in (clips ?? [:]).sorted(by: { $0.key < $1.key }) { paths += spec.frames }
         for (_, spec) in (accessories ?? [:]).sorted(by: { $0.key < $1.key }) { paths.append(spec.image) }
         var seen: Set<String> = []
@@ -59,7 +59,9 @@ public struct ClipLibrary: Equatable, Sendable {
 
     public init(pack: MascotPack?) {
         guard let manifest = pack?.manifest, manifest.isV2 else { return }
-        for id in MascotClipID.heldStates { if let spec = manifest.heldSpec(id) { durationsMs[id] = spec.durationMs } }
+        for id in MascotClipID.loopingStates { if let spec = manifest.heldSpec(id) { durationsMs[id] = spec.durationMs } }
+        // The incident idle draws its own helmet.
+        if durationsMs[.incidentIdle] != nil { hidesAccessories.insert(.incidentIdle) }
         for (name, spec) in manifest.clips ?? [:] {
             durationsMs[MascotClipID(name)] = spec.durationMs
             if spec.accessories == .hide { hidesAccessories.insert(MascotClipID(name)) }
@@ -69,6 +71,11 @@ public struct ClipLibrary: Equatable, Sendable {
     }
 
     public func has(_ id: MascotClipID) -> Bool { durationsMs[id] != nil }
+
+    /// Whether any one-shot clip has frames shorter than a 30 fps redraw can time evenly (#138 sequences).
+    public var hasFastClips: Bool {
+        durationsMs.contains { id, durations in !MascotClipID.loopingStates.contains(id) && durations.count > 1 && (durations.min() ?? 1000) < 100 }
+    }
 
     /// A one-shot clip's length, or nil if the pack doesn't have it.
     public func duration(_ id: MascotClipID) -> TimeInterval? {
@@ -125,6 +132,25 @@ extension MascotPack {
     }
 
     /// The spray emitter for incident-end's frame, if the pack names one.
+    /// A frame clip's spray (#138 sequences): the span of its frames that name a nozzle, and the nozzle
+    /// of the current frame or, after it, the last one (puffs keep drifting from where the spray ended).
+    /// Nil when no frame of the clip names one.
+    public func spray(clip id: MascotClipID, elapsed: TimeInterval) -> (nozzle: CGPoint, window: ClosedRange<Double>)? {
+        guard let spec = manifest.clipSpec(id), let points = manifest.framePoints else { return nil }
+        var start = 0.0, first: Double?, last = 0.0, current: CGPoint?
+        for (path, ms) in zip(spec.frames, spec.durationMs) {
+            let end = start + Double(max(ms, FrameClock.minimumClipDurationMs)) / 1000
+            if let point = points[path]?.nozzle, point.count == 2 {
+                first = first ?? start
+                last = end
+                if start <= elapsed || current == nil { current = CGPoint(x: point[0], y: point[1]) }
+            }
+            start = end
+        }
+        guard let first, let current else { return nil }
+        return (current, first...last)
+    }
+
     public func nozzle(for path: String?) -> CGPoint? {
         let point = path.flatMap { manifest.framePoints?[$0]?.nozzle } ?? manifest.points?.nozzle
         guard let point, point.count == 2 else { return nil }
@@ -170,7 +196,8 @@ extension MascotPack {
     /// included), the lean the layout has room for, and (bundled) the rule that every clip, held and
     /// hat pixel stays inside the three states' art. A custom pack drawing outside it is accepted with
     /// a taller lane and wider hover outline instead.
-    mutating func measureClips(enforcingBounds: Bool = true) -> [MascotPackError] {
+    /// `reusing`: outlines already measured for these paths, whose image data hasn't changed.
+    mutating func measureClips(enforcingBounds: Bool = true, reusing known: [String: ArtProfile] = [:]) -> [MascotPackError] {
         let v2Paths = manifest.v2ImagePaths
         guard !v2Paths.isEmpty else { return [] }
         let core = MascotState.allCases.flatMap { poseOutlines[$0] ?? [] }
@@ -178,9 +205,21 @@ extension MascotPack {
         let baseTop = (MascotState.allCases.flatMap(poseContours) + leaningContours).flatMap { $0.compactMap { $0 } }.min() ?? 0
         var errors: [MascotPackError] = []
         extraOutlines = [:]
+        var unknown: [String] = []
         for path in manifest.imagePaths {
-            if let data = imageData[path], let outline = ArtProfile(png: data, alphaThreshold: 0) { extraOutlines[path] = outline }
+            if let outline = known[path] { extraOutlines[path] = outline } else { unknown.append(path) }
         }
+        // Each frame's outline is independent: decode and scan them in parallel (~480 frames in the
+        // bundled sequence packs, #138). GCD workers, so a caller on a Swift concurrency thread blocks none.
+        let images = unknown.map { imageData[$0] }
+        var outlines = [ArtProfile?](repeating: nil, count: unknown.count)
+        outlines.withUnsafeMutableBufferPointer { results in
+            let results = results
+            DispatchQueue.concurrentPerform(iterations: images.count) { index in
+                results[index] = images[index].flatMap { ArtProfile(png: $0, alphaThreshold: 0) }
+            }
+        }
+        for (path, outline) in zip(unknown, outlines) { extraOutlines[path] = outline }
         func inside(_ outline: ArtProfile, _ offset: CGPoint = .zero) -> Bool {
             guard let box = outline.bounds else { return true }
             let dx = Int(offset.x.rounded()), dy = Int(offset.y.rounded())
@@ -255,6 +294,28 @@ extension MascotPack {
             }
             lean = limit
         }
+        // The lane is set by the art under the count and DEMO, not only the highest row: step the lean
+        // down until its sweep needs no taller lane at any size (#138: a drag pose leaning under the count).
+        let head = MascotState.allCases.flatMap(poseContours)
+        let base = head + leaningContours + extraUprightContours
+        // A lane fits a set of poses when it fits each, so the sweep grows it exactly when its own lane
+        // is taller than the base's.
+        func lanes(_ contours: [[Int?]]) -> [CGFloat] {
+            stride(from: 64.0, through: 256, by: 16).map {
+                MascotLayout(artSide: $0, contours: contours, headContours: head, measuresTracking: false).laneHeight
+            }
+        }
+        let baseLanes = lanes(base)
+        func growsLane(_ extra: [[Int?]]) -> Bool {
+            extra.isEmpty ? false : zip(lanes(extra), baseLanes).contains { $0 > $1 }
+        }
+        // The extremes of the lean are what can reach under the count: test those, then sweep once.
+        func extremes(_ lean: Double) -> [[Int?]] {
+            pointSets.flatMap { points in
+                [-lean, lean].map { ArtProfile.rotatedContour(points, canvas: Self.canvasSize, from: $0, to: $0, pivot: pivot) }
+            }
+        }
+        while lean > 0, growsLane(extremes(lean)) { lean -= 0.5 }
         clipLeanLimit = lean
         let contours = sweep(lean)
         // The sweep's own sampling can still reach a row the scan missed; never let it grow the lane.
@@ -316,8 +377,12 @@ extension MascotPack {
             manifest.points = .init(head: [Int(head.x.rounded()), Int(head.y.rounded())], nozzle: [limit.minX + 12, 196])
             pack.placeholderClips.insert(AccessoryPolicy.firefighterHat)
         }
+        // A pack that already has every clip, held pose and the hat (the bundled sequences, #138) gains
+        // nothing: skip re-measuring ~480 frames.
+        if manifest == self.manifest { return pack }
         pack.manifest = manifest
-        _ = pack.measureClips()
+        // Only the placeholder hat's image is new; every other path keeps the bytes it was measured from.
+        _ = pack.measureClips(reusing: extraOutlines)
         return pack
     }
 

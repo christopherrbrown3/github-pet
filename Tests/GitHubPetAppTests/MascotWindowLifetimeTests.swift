@@ -75,6 +75,22 @@ private struct WriteGuard {
         #expect(weakPanel == nil, "the panel goes with its controller")
     }
 
+    /// #138 idle CPU: the mascot's hosting view keeps no SwiftUI size constraints (each idle frame change
+    /// re-ran them), and still fills the panel the controller sizes from the settings.
+    @Test func hostingViewFillsThePanelWithoutSizeConstraints() throws {
+        let (app, suite) = model()
+        defer { assertNothingWritten(suite) }
+        let controller = MascotWindowController(model: app)
+        defer { controller.panelWindow?.orderOut(nil) }
+        let container = try #require(controller.panelWindow?.contentView)
+        let hosting = try #require(container.subviews.first as? PassthroughHostingView<MascotView>)
+        #expect(hosting.sizingOptions.isEmpty)
+        container.layoutSubtreeIfNeeded()
+        let size = app.layout(app.settings.mascotSize).panelSize
+        #expect(container.bounds.size == size)
+        #expect(hosting.frame == container.bounds)
+    }
+
     /// A popover that macOS dismissed itself (click outside, Esc, a Space change) must not be
     /// re-shown by a later model change while the pointer is elsewhere.
     @Test func systemDismissedSummaryIsNotReopenedByALaterModelChange() async throws {

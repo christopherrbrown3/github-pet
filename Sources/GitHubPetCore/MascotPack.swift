@@ -13,6 +13,11 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public struct Canvas: Codable, Equatable, Sendable {
         public var width: Int
         public var height: Int
+
+        public init(width: Int, height: Int) {
+            self.width = width
+            self.height = height
+        }
     }
 
     public struct StateSpec: Codable, Equatable, Sendable {
@@ -20,6 +25,13 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
         public var durationMs: [Int]
         public var loop: Bool
         public var staticFallback: String
+
+        public init(frames: [String], durationMs: [Int], loop: Bool, staticFallback: String) {
+            self.frames = frames
+            self.durationMs = durationMs
+            self.loop = loop
+            self.staticFallback = staticFallback
+        }
     }
 
     /// A one-shot clip (v2): plays once and holds its last frame until it ends. No static fallback:
@@ -75,6 +87,22 @@ public struct MascotPackManifest: Codable, Equatable, Sendable {
     public var accessories: [String: AccessorySpec]?
     public var points: Points?
     public var framePoints: [String: Points]?
+
+    public init(schemaVersion: Int, id: String, name: String, canvas: Canvas, anchor: [Int], states: [String: StateSpec],
+                frameSha256: [String: String]? = nil, clips: [String: ClipSpec]? = nil, accessories: [String: AccessorySpec]? = nil,
+                points: Points? = nil, framePoints: [String: Points]? = nil) {
+        self.schemaVersion = schemaVersion
+        self.id = id
+        self.name = name
+        self.canvas = canvas
+        self.anchor = anchor
+        self.states = states
+        self.frameSha256 = frameSha256
+        self.clips = clips
+        self.accessories = accessories
+        self.points = points
+        self.framePoints = framePoints
+    }
 
     /// Whether the v2 additions apply (a v1 manifest ignores them).
     public var isV2: Bool { schemaVersion >= 2 }
@@ -263,11 +291,12 @@ public struct PackBudget: Equatable, Sendable {
     /// layout never changes. A custom pack that draws outside gets a taller lane instead.
     public var enforcesArtBounds: Bool
 
-    public static let custom = PackBudget(maxImages: 96, maxBytes: MascotPack.maxPackBytes,
+    public static let custom = PackBudget(maxImages: 256, maxBytes: MascotPack.maxPackBytes,
                                           maxImageBytes: MascotPack.maxImageBytes, maxSequenceFrames: MascotPack.maxFrames,
                                           enforcesArtBounds: false)
-    public static let bundled = PackBudget(maxImages: 64, maxBytes: 4 * 1024 * 1024, maxImageBytes: 96 * 1024,
-                                           maxSequenceFrames: 8, enforcesArtBounds: true)
+    // Frame sequences (#138): up to 16 frames for each of ~13 clips and loops per skin.
+    public static let bundled = PackBudget(maxImages: 256, maxBytes: 16 * 1024 * 1024, maxImageBytes: 96 * 1024,
+                                           maxSequenceFrames: 16, enforcesArtBounds: true)
 }
 
 public struct MascotPack: Equatable, Sendable {
@@ -279,10 +308,13 @@ public struct MascotPack: Equatable, Sendable {
     public static let canvasSize = 256
     /// The only supported ground anchor (schema v1), in canvas pixels.
     public static let anchor = [128, 232]
-    public static let maxFrames = 12
+    /// Frames per state or clip: a generated 4 × 4 sequence sheet is 16 (#138).
+    public static let maxFrames = 16
     /// Frames across all states (bundled packs use 9 and 12). Checked before any file is opened.
     public static let maxPackFrames = 24
     public static let durationRange = 125...2000
+    /// Clip frames (#138 frame sequences) play at about 14 fps: shorter than a state frame may be.
+    public static let clipDurationRange = 40...2000
     /// Read limits, enforced before decoding or hashing.
     public static let maxManifestBytes = 256 * 1024
     public static let maxImageBytes = 4 * 1024 * 1024
@@ -531,24 +563,26 @@ public struct MascotPack: Equatable, Sendable {
     /// v2 manifest rules that need no file access: names, frame counts, durations, loop flags, points.
     static func validateV2Structure(_ manifest: MascotPackManifest, budget: PackBudget) -> [MascotPackError] {
         var errors: [MascotPackError] = []
-        let core = Set(MascotState.allCases.map(\.rawValue)), held = Set(MascotClipID.heldStates.map(\.rawValue))
-        func sequence(_ name: String, frames: [String], durations: [Int]) -> Bool {
+        let core = Set(MascotState.allCases.map(\.rawValue)), held = Set(MascotClipID.loopingStates.map(\.rawValue))
+        func sequence(_ name: String, frames: [String], durations: [Int], range: ClosedRange<Int> = durationRange) -> Bool {
             let limit = min(maxFrames, budget.maxSequenceFrames)
             guard !frames.isEmpty, frames.count <= limit, durations.count <= limit else {
                 errors.append(.frameCount(name)); return false
             }
             if frames.count != durations.count { errors.append(.durationMismatch(name)) }
-            for duration in durations where !durationRange.contains(duration) { errors.append(.durationOutOfRange(name, duration)) }
+            for duration in durations where !range.contains(duration) { errors.append(.durationOutOfRange(name, duration)) }
             return true
         }
         for (name, spec) in manifest.states.sorted(by: { $0.key < $1.key }) where !core.contains(name) {
             guard held.contains(name) else { errors.append(.unknownState(name)); continue }
-            guard sequence(name, frames: spec.frames, durations: spec.durationMs) else { continue }
+            guard sequence(name, frames: spec.frames, durations: spec.durationMs, range: clipDurationRange) else { continue }
             if !spec.loop { errors.append(.wrongLoopFlag(name, expected: true)) }
         }
         for (name, spec) in (manifest.clips ?? [:]).sorted(by: { $0.key < $1.key }) {
-            guard let policy = ClipCatalog.v1[MascotClipID(name)] else { errors.append(.unknownClip(name)); continue }
-            guard sequence(name, frames: spec.frames, durations: spec.durationMs) else { continue }
+            // `<clip>-incident` helmet variants (#138) follow their clip's rules.
+            let id = MascotClipID(name)
+            guard let policy = ClipCatalog.v1[IncidentRule.base(of: id) ?? id] else { errors.append(.unknownClip(name)); continue }
+            guard sequence(name, frames: spec.frames, durations: spec.durationMs, range: clipDurationRange) else { continue }
             if spec.loop == true { errors.append(.wrongLoopFlag(name, expected: false)) }
             let total = saturatingSum(spec.durationMs)
             if total > policy.maxDurationMs { errors.append(.clipTooLong(name, total, policy.maxDurationMs)) }
@@ -709,6 +743,10 @@ public struct MascotPack: Equatable, Sendable {
 extension MascotLayout {
     /// Layout for a loaded pack (nil: the placeholder, labels above the art square).
     public init(artSide: CGFloat, pack: MascotPack?) {
-        self.init(artSide: artSide, contours: pack?.allContours ?? [], headContours: pack?.uprightContours ?? [])
+        // The count's slot is anchored on the head of the states' own poses (#138): a clip pose that reaches
+        // past the head (an envelope held up, a lean) must not move it.
+        let states = pack.map { pack in MascotState.allCases.flatMap(pack.poseContours) } ?? []
+        self.init(artSide: artSide, contours: pack?.allContours ?? [], headContours: states,
+                  trackingContours: pack.map { states + $0.leaningContours })
     }
 }

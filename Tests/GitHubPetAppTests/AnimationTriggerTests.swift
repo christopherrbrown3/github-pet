@@ -15,7 +15,27 @@ import Testing
     private static let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent()
 
-    private func model(_ clock: Clock, placeholderClips: Bool = true) -> AppModel {
+    /// The bundled Mona without her incident clips (#138 frame sequences ship them), for the fallback.
+    private static let withoutIncidentClips: URL = {
+        let fm = FileManager.default
+        let source = root.appendingPathComponent("assets/mascots/mona-pet-v1")
+        let copy = fm.temporaryDirectory.appendingPathComponent("animation-tests-mona-\(UUID().uuidString)/mona-pet-v1")
+        try? fm.createDirectory(at: copy, withIntermediateDirectories: true)
+        for directory in ["frames", "accessories"] {
+            try? fm.copyItem(at: source.appendingPathComponent(directory), to: copy.appendingPathComponent(directory))
+        }
+        if let data = try? Data(contentsOf: source.appendingPathComponent("manifest.json")),
+           var manifest = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            var clips = manifest["clips"] as? [String: Any] ?? [:]
+            clips["incident-start"] = nil
+            clips["incident-end"] = nil
+            manifest["clips"] = clips
+            try? JSONSerialization.data(withJSONObject: manifest).write(to: copy.appendingPathComponent("manifest.json"))
+        }
+        return copy.deletingLastPathComponent()
+    }()
+
+    private func model(_ clock: Clock, placeholderClips: Bool = true, packs: URL = root.appendingPathComponent("assets/mascots")) -> AppModel {
         var arguments = ["GitHubPet", "--fixtures"]
         if placeholderClips { arguments.append("--placeholder-clips") }
         var options = LaunchOptions.parse(arguments: arguments, environment: [:])
@@ -23,7 +43,7 @@ import Testing
         _ = NSApplication.shared
         return AppModel(options: options, runtime: AppModel.Runtime(
             now: { clock.now }, systemReducedMotion: { clock.reduced }, schedulesTimers: false,
-            mascotPackDirectory: { Self.root.appendingPathComponent("assets/mascots/\($0.rawValue)") }, clipSeed: 1))
+            mascotPackDirectory: { packs.appendingPathComponent($0.rawValue) }, clipSeed: 1))
     }
 
     /// Yields after each step so other main-actor suites running in parallel are never starved.
@@ -43,7 +63,10 @@ import Testing
     @Test func placeholderPackHasEveryClip() async {
         let app = model(Clock())
         for id in ClipCatalog.v1.ordered.map(\.id) + MascotClipID.heldStates { #expect(app.clipLibrary.has(id), "\(id)") }
-        #expect(model(Clock(), placeholderClips: false).clipLibrary == .empty, "the bundled packs ship no clips yet")
+        // Without placeholders the library is exactly what the bundled pack ships (#138).
+        let bundled = model(Clock(), placeholderClips: false)
+        #expect(bundled.mascotArtwork.pack != nil, "the bundled pack loads, not the placeholder")
+        #expect(bundled.clipLibrary == ClipLibrary(pack: bundled.mascotArtwork.pack))
     }
 
     @Test func hatGoesOnOnceAndComesOffOnlyOnAFreshOperationalReply() async {
@@ -69,8 +92,54 @@ import Testing
         #expect(app.activeClip == nil)
     }
 
-    @Test func withoutTheClipsAnIncidentWavesOnceAndNeverPlaysUrgent() async {
+    /// Chris (#138): "sometimes it replays putting the hat back on". incident-start plays once per
+    /// incident whatever happens while it is open, and incident-end once when it resolves.
+    @Test func incidentStartPlaysOncePerIncidentAndEndOnceAtResolution() async {
         let clock = Clock(), app = model(clock, placeholderClips: false)
+        await clearIncidents(app, clock)
+        var starts = 0, ends = 0, seen: Set<Date> = []
+        func observe() {
+            guard let clip = app.activeClip, !seen.contains(clip.startedAt) else { return }
+            if clip.kind == .incidentStart { starts += 1; seen.insert(clip.startedAt) }
+            if clip.kind == .incidentEnd { ends += 1; seen.insert(clip.startedAt) }
+        }
+        func step(_ seconds: TimeInterval, _ action: () -> Void) async {
+            action(); observe()
+            await advance(app, clock, by: seconds); observe()
+        }
+        await step(3) { app.injectServiceIncident(.minor) }
+        #expect(starts == 1)
+        // Mid-incident: polls, a second incident, escalation and back, a new inbox item (mood change),
+        // clicks after it, a fixture reload, a failed then recovered status fetch, stale status, the
+        // dev replay, and a long quiet spell (doze, then a click wakes).
+        await step(10) { app.setServiceFetchFails(false) }
+        await step(10) { app.injectServiceIncident(.minor) }
+        await step(10) { app.escalateServiceIncidentsOneLevel() }
+        await step(10) { app.deescalateServiceIncidentsOneLevel() }
+        await step(3) { app.injectEntitlementEvent() }
+        await step(3) { app.mascotClicked() }
+        await step(10) { app.replaySnapshot() }
+        await step(10) { app.setServiceFetchFails(true) }
+        await step(10) { app.setServiceFetchFails(false) }
+        await step(10) { app.markServiceStale() }
+        await step(10) { app.setServiceFetchFails(false) }
+        for _ in 0..<(2 * ClipCatalog.v1.ordered.count) { await step(3) { app.replayNextClip() } }
+        await step(20 * 60) {}
+        await step(3) { app.mascotClicked() }
+        await step(10) { app.setServiceFetchFails(false) }
+        #expect(starts == 1, "incident-start replayed mid-incident")
+        #expect(ends == 0)
+        await step(4) { app.resolveServiceIncidents() }
+        await step(10) { app.resolveServiceIncidents() }
+        await step(10) { app.setServiceFetchFails(false) }
+        #expect(starts == 1 && ends == 1)
+        // A new incident is a new start.
+        await step(3) { app.injectServiceIncident(.minor) }
+        #expect(starts == 2)
+    }
+
+    @Test func withoutTheClipsAnIncidentWavesOnceAndNeverPlaysUrgent() async {
+        let clock = Clock(), app = model(clock, placeholderClips: false, packs: Self.withoutIncidentClips)
         await clearIncidents(app, clock)
         app.injectServiceIncident(.critical)
         #expect(app.activeClip?.kind == .newItem && app.activeClip?.state == .attention, "the wave, never urgent")

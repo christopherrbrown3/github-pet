@@ -38,6 +38,7 @@ def read_png(path):
         raise ValueError(f'Not a PNG: {path}')
     pos, compressed = 8, bytearray()
     header_seen = idat_seen = idat_closed = end_seen = False
+    palette = alphas = None
     while pos < len(blob):
         if len(blob) - pos < 12:
             raise ValueError(f'Truncated PNG chunk: {path}')
@@ -55,14 +56,19 @@ def read_png(path):
             width, height, depth, color, compression, filtering, interlace = struct.unpack('>IIBBBBB', chunk)
             if not (0 < width <= MAX_EDGE and 0 < height <= MAX_EDGE and width * height <= MAX_PIXELS):
                 raise ValueError(f'PNG dimensions exceed supported limits: {path}')
-            if (depth, color, compression, filtering, interlace) != (8, 6, 0, 0, 0):
-                raise ValueError(f'Expected noninterlaced RGBA8: {path}')
+            # RGBA8, or 8-bit palette with tRNS (#138 quantized frames).
+            if (depth, compression, filtering, interlace) != (8, 0, 0, 0) or color not in (3, 6):
+                raise ValueError(f'Expected noninterlaced RGBA8 or 8-bit palette: {path}')
             header_seen = True
         elif kind == b'IDAT':
             if not header_seen or idat_closed:
                 raise ValueError(f'Invalid PNG data order: {path}')
             idat_seen = True
             compressed.extend(chunk)
+        elif kind == b'PLTE' and header_seen and not idat_seen:
+            palette = bytes(chunk)
+        elif kind == b'tRNS' and header_seen and not idat_seen:
+            alphas = bytes(chunk)
         elif kind == b'IEND':
             if not header_seen or not idat_seen or size != 0 or pos + 12 != len(blob):
                 raise ValueError(f'Invalid PNG end: {path}')
@@ -77,7 +83,10 @@ def read_png(path):
             break
     if not end_seen:
         raise ValueError(f'Missing PNG end: {path}')
-    stride = width * 4
+    if color == 3 and (palette is None or len(palette) % 3):
+        raise ValueError(f'Palette PNG without a valid PLTE: {path}')
+    bytes_per_pixel = 4 if color == 6 else 1
+    stride = width * bytes_per_pixel
     expected = height * (stride + 1)
     try:
         decoder = zlib.decompressobj()
@@ -92,9 +101,9 @@ def read_png(path):
         row = bytearray(raw[offset + 1:offset + 1 + stride])
         offset += stride + 1
         for x in range(stride):
-            left = row[x - 4] if x >= 4 else 0
+            left = row[x - bytes_per_pixel] if x >= bytes_per_pixel else 0
             above = previous[x]
-            upper_left = previous[x - 4] if x >= 4 else 0
+            upper_left = previous[x - bytes_per_pixel] if x >= bytes_per_pixel else 0
             if method == 0:
                 predictor = 0
             elif method == 1:
@@ -112,6 +121,14 @@ def read_png(path):
             row[x] = (row[x] + predictor) & 255
         pixels.extend(row)
         previous = row
+    if color == 3:
+        # Expand palette indices to RGBA (entries past tRNS are opaque).
+        entries = len(palette) // 3
+        rgba = [bytes((palette[3 * i], palette[3 * i + 1], palette[3 * i + 2],
+                       alphas[i] if alphas is not None and i < len(alphas) else 255)) for i in range(entries)]
+        if any(i >= entries for i in pixels):
+            raise ValueError(f'Palette index out of range: {path}')
+        pixels = bytearray(b''.join(rgba[i] for i in pixels))
     return width, height, pixels
 
 

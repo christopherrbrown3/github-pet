@@ -99,7 +99,7 @@ struct MascotArtworkLoader {
         let result: Result<MascotPack, MascotPackErrors>
         if let directory = builtInDirectory(skin) {
             // Bundled art has the tighter design budget (#138); custom packs keep #123's.
-            result = MascotPack.load(from: directory, expectedID: skin.rawValue, budget: .bundled).map(withClips)
+            result = BuiltInPackCache.load(from: directory, expectedID: skin.rawValue, placeholderClips: placeholderClips)
         } else {
             result = .failure(MascotPackErrors(errors: [.unreadableManifest]))
         }

@@ -145,3 +145,5 @@ its own empty channel with a fake signer.
 - First install still needs Open Anyway; automatic update does not replace that.
 - Anyone holding the production key can ship an update that installs without a Gatekeeper prompt.
 - Builds before this feature (beta 1-3) have no updater: update them by hand once.
+- The animated pets (#138) make the app about 6.2 MB bigger to download and 6.7 MB bigger on disk (the mascot
+  frames for both skins grow from 0.9 MB to 7.6 MB). An update downloads the whole app.

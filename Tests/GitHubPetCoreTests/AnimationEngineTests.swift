@@ -47,7 +47,7 @@ private func scheduler(idleGap: ClosedRange<TimeInterval> = 120...300, seed: UIn
         }
         let caps = Dictionary(uniqueKeysWithValues: ClipCatalog.v1.ordered.map { ($0.id, $0.maxDurationMs) })
         #expect(caps == [.incidentStart: 2200, .incidentEnd: 3200, .newItem: 1900, .itemCleared: 1500, .inboxZero: 2400,
-                         .drop: 600, .poke: 900, .dizzy: 1800, .idleLook: 2600, .idleStretch: 2600, .idleFidget: 2600])
+                         .drop: 1200, .poke: 1200, .dizzy: 1800, .idleLook: 2600, .idleStretch: 2600, .idleFidget: 2600])
         for policy in ClipCatalog.v1.ordered {
             #expect(policy.placeholder.durationMs.reduce(0, +) <= policy.maxDurationMs, "\(policy.id) placeholder fits its cap")
         }
@@ -597,11 +597,14 @@ private func repositoryRoot() -> URL {
         let pack = try fixture.load().get()
         #expect(ClipLibrary(pack: pack) == .empty)
         #expect(pack.extraUprightContours.isEmpty && pack.manifest.v2ImagePaths.isEmpty)
-        // The bundled packs are v1 and load under the bundled budget unchanged.
+        // The bundled packs load under the bundled budget (bounds rule included) and offer exactly
+        // the clips and held poses their manifests declare (#138: only those inside the union ship).
         for skin in MascotSkin.allCases {
-            let bundled = try MascotPack.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
-                                              expectedID: skin.rawValue, budget: .bundled).get()
-            #expect(ClipLibrary(pack: bundled) == .empty)
+            let bundled = try BuiltInPackCache.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
+                                                  expectedID: skin.rawValue).get()
+            let declared = Set((bundled.manifest.clips ?? [:]).keys.map { MascotClipID($0) })
+                .union(MascotClipID.loopingStates.filter { bundled.manifest.heldSpec($0) != nil })
+            #expect(Set(ClipLibrary(pack: bundled).durationsMs.keys) == declared)
             let total = bundled.imageData.values.reduce(0) { $0 + $1.count }
             #expect(bundled.imageData.count <= PackBudget.bundled.maxImages && total <= PackBudget.bundled.maxBytes)
         }
@@ -623,8 +626,8 @@ private func repositoryRoot() -> URL {
                 == [.wrongLoopFlag("poke", expected: false)])
         #expect(try errors { $0["clips"] = ["new-item": ["frames": ["frames/body.png", "frames/small.png"], "durationMs": [1000, 1000]]] }
                 == [.clipTooLong("new-item", 2000, 1900)], "new-item plays inside the 1.9 s wave")
-        #expect(try errors { $0["clips"] = ["poke": ["frames": Array(repeating: "frames/body.png", count: 13),
-                                                     "durationMs": Array(repeating: 125, count: 13)]] }
+        #expect(try errors { $0["clips"] = ["poke": ["frames": Array(repeating: "frames/body.png", count: 17),
+                                                     "durationMs": Array(repeating: 70, count: 17)]] }
                 == [.frameCount("poke")])
         #expect(try errors { $0["accessories"] = ["tiara": ["image": "frames/hat.png", "attach": "head"]] }
                 == [.unknownAccessory("tiara")])
@@ -665,14 +668,15 @@ private func repositoryRoot() -> URL {
         func overBudget(frames: Int) throws -> V2Fixture {
             let fixture = try V2Fixture()
             try fixture.manifest { json in
-                let ids: [MascotClipID] = [.incidentStart, .inboxZero, .dizzy, .idleLook, .idleStretch, .idleFidget]
+                // incident-end would also need nozzle points; the other ten clips.
+                let ids = ClipCatalog.v1.ordered.map(\.id).filter { $0 != .incidentEnd }
                 json["clips"] = Dictionary(uniqueKeysWithValues: ids.enumerated().map { index, id in
                     (id.rawValue, ["frames": (0..<frames).map { "frames/missing-\(index)-\($0).png" },
-                                   "durationMs": Array(repeating: 125, count: frames)] as [String: Any])
+                                   "durationMs": Array(repeating: 70, count: frames)] as [String: Any])
                 })
                 var states = json["states"] as! [String: [String: Any]]
-                for (index, key) in ["drag", "doze"].enumerated() {
-                    states[key]!["frames"] = (0..<frames).map { "frames/held-\(index)-\($0).png" }
+                for (index, key) in ["drag", "doze", "incident-idle"].enumerated() {
+                    states[key, default: ["loop": true]]["frames"] = (0..<frames).map { "frames/held-\(index)-\($0).png" }
                     states[key]!["durationMs"] = Array(repeating: 400, count: frames)
                     states[key]!["staticFallback"] = "frames/held-\(index)-0.png"
                 }
@@ -680,12 +684,17 @@ private func repositoryRoot() -> URL {
             }
             return fixture
         }
-        // body, small and hat, plus six clips and two held poses.
-        #expect(try overBudget(frames: 12).errors() == [.tooManyImages(3 + 8 * 12, limit: 96)])
-        #expect(try overBudget(frames: 8).errors(budget: .bundled) == [.tooManyImages(3 + 8 * 8, limit: 64)])
-        #expect(try overBudget(frames: 8).errors().allSatisfy { if case .missingFile = $0 { true } else { false } },
-                "67 images are within the custom budget")
-        // The bundled byte budget is 4 MiB; the custom one stays at #123's 16 MiB.
+        // body, small and hat, plus ten clips and three loops at 16 frames (#138 sequences): within both budgets.
+        func notMissing(_ errors: [MascotPackError]) -> [MascotPackError] {
+            errors.filter { if case .missingFile = $0 { false } else { true } }
+        }
+        #expect(try notMissing(overBudget(frames: 16).errors()) == [], "211 images are within the custom budget")
+        #expect(try notMissing(overBudget(frames: 16).errors(budget: .bundled)) == [])
+        // The count is still checked before any file is opened.
+        let small = PackBudget(maxImages: 64, maxBytes: 16 * 1024 * 1024, maxImageBytes: 96 * 1024, maxSequenceFrames: 16,
+                               enforcesArtBounds: true)
+        #expect(try overBudget(frames: 8).errors(budget: small) == [.tooManyImages(3 + 13 * 8, limit: 64)])
+        // Bundled and custom packs both allow 16 MiB.
         let heavy = try V2Fixture()
         var padded = art(body)
         padded.append(Data(count: 3 * 1024 * 1024))
@@ -695,12 +704,12 @@ private func repositoryRoot() -> URL {
         #expect(heavy.errors(budget: .bundled) == [.tooLarge("frames/body.png"), .tooLarge("frames/small.png")],
                 "bundled images are at most 96 KiB each")
         #expect(heavy.errors() == [])
-        // Bundled: at most 8 frames per state or clip; custom keeps 12.
+        // At most 16 frames per state or clip, bundled or custom (#138 sequences).
         let long = try V2Fixture()
-        try long.manifest { $0["clips"] = ["idle-look": ["frames": Array(repeating: "frames/body.png", count: 9),
-                                                         "durationMs": Array(repeating: 125, count: 9)]] }
+        try long.manifest { $0["clips"] = ["idle-look": ["frames": Array(repeating: "frames/body.png", count: 17),
+                                                         "durationMs": Array(repeating: 70, count: 17)]] }
         #expect(long.errors(budget: .bundled) == [.frameCount("idle-look")])
-        #expect(long.errors() == [])
+        #expect(long.errors() == [.frameCount("idle-look")])
         #expect(PackBudget.custom.maxBytes == 16 * 1024 * 1024 && MascotPack.maxImageBytes == 4 * 1024 * 1024)
     }
 
@@ -750,13 +759,14 @@ private func repositoryRoot() -> URL {
 
     @Test func placeholderClipsCoverTheDesignListWithoutChangingTheLayout() throws {
         for skin in MascotSkin.allCases {
-            let original = try MascotPack.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
-                                               expectedID: skin.rawValue, budget: .bundled).get()
+            let original = try BuiltInPackCache.load(from: repositoryRoot().appendingPathComponent("assets/mascots/\(skin.rawValue)"),
+                                                  expectedID: skin.rawValue).get()
             var placeholder = original.withPlaceholderClips()
             let library = ClipLibrary(pack: placeholder)
             for id in ClipCatalog.v1.ordered.map(\.id) + MascotClipID.heldStates {
                 #expect(library.has(id), "\(skin.rawValue) placeholder \(id)")
-                #expect(placeholder.placeholderClips.contains(id))
+                // Placeholders fill only what the bundled art does not have.
+                #expect(placeholder.placeholderClips.contains(id) == !ClipLibrary(pack: original).has(id))
             }
             #expect(library.accessories == [AccessoryPolicy.firefighterHat])
             #expect(placeholder.measureClips() == [], "the placeholder hat and frames stay inside the art")

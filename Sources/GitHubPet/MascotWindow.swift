@@ -99,14 +99,13 @@ final class MascotWindowController: NSObject, NSPopoverDelegate {
             WindowPresenter.shared.showInbox(model: self.model)
         }
         let hosting = PassthroughHostingView(rootView: MascotView(model: model))
-        hosting.translatesAutoresizingMaskIntoConstraints = false
+        // The panel's size is set here from the settings and the hosting view fills it, so neither SwiftUI's
+        // size constraints nor Auto Layout are needed. Without them an idle frame change no longer runs a
+        // constraint pass (#138: the helmet loop's faster blinks made that cost visible in idle CPU).
+        hosting.sizingOptions = []
+        hosting.frame = container.bounds
+        hosting.autoresizingMask = [.width, .height]
         container.addSubview(hosting)
-        NSLayoutConstraint.activate([
-            hosting.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            hosting.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            hosting.topAnchor.constraint(equalTo: container.topAnchor),
-            hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ])
         container.onClick = openInbox
         // #138 reactions: the Inbox opens first and is never delayed by a poke.
         container.onPointerClick = { [weak self] in self?.model.mascotClicked() }

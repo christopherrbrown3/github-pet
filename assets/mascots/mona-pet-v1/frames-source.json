@@ -1,0 +1,244 @@
+{
+  "id": "mona-pet-v1",
+  "reference": "frames/idle-00.png",
+  "anchor": {
+    "color": [
+      252,
+      232,
+      216
+    ],
+    "tolerance": 40
+  },
+  "clips": [
+    {
+      "name": "new-item",
+      "sheets": [
+        "sequences/new-item.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "item-cleared",
+      "sheets": [
+        "sequences/item-cleared.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "poke",
+      "sheets": [
+        "sequences/poke.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "dizzy",
+      "sheets": [
+        "sequences/dizzy.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "inbox-zero",
+      "sheets": [
+        "sequences/inbox-zero.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "idle-look",
+      "sheets": [
+        "sequences/idle-look.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "idle-stretch",
+      "sheets": [
+        "sequences/idle-stretch.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "idle-fidget",
+      "sheets": [
+        "sequences/idle-fidget.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "fit": true
+    },
+    {
+      "name": "drop",
+      "sheets": [
+        "sequences/drop.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true
+    },
+    {
+      "name": "incident-start",
+      "sheets": [
+        "sequences/incident-start.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "firstIsReference": true,
+      "accessories": "hide",
+      "fit": true
+    },
+    {
+      "name": "incident-end",
+      "sheets": [
+        "sequences/incident-end.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "accessories": "hide",
+      "fit": true,
+      "nozzleFrames": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "skip": [
+        11,
+        12
+      ],
+      "registerBy": "face"
+    },
+    {
+      "name": "drag",
+      "sheets": [
+        "sequences/drag.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        200
+      ],
+      "loop": true,
+      "fit": true
+    },
+    {
+      "name": "doze",
+      "sheets": [
+        "sequences/doze.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        500
+      ],
+      "loop": true,
+      "fit": true
+    },
+    {
+      "name": "incident-idle",
+      "sheets": [
+        "sequences/helmet-idle.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        2000,
+        125,
+        125,
+        125
+      ],
+      "loop": true,
+      "fit": true,
+      "registerBy": "face"
+    },
+    {
+      "name": "poke-incident",
+      "sheets": [
+        "sequences/poke-incident.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true,
+      "firstIsReference": false,
+      "registerBy": "face"
+    },
+    {
+      "name": "dizzy-incident",
+      "sheets": [
+        "sequences/dizzy-incident.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true,
+      "firstIsReference": false,
+      "registerBy": "face"
+    },
+    {
+      "name": "drop-incident",
+      "sheets": [
+        "sequences/drop-incident.png"
+      ],
+      "durationMs": [
+        70
+      ],
+      "fit": true,
+      "registerBy": "face"
+    },
+    {
+      "name": "drag-incident",
+      "sheets": [
+        "sequences/drag-incident.png"
+      ],
+      "cells": 4,
+      "durationMs": [
+        200
+      ],
+      "loop": true,
+      "fit": true,
+      "registerBy": "face"
+    }
+  ],
+  "quantize": true,
+  "dedupe": 0.004,
+  "union": [
+    47,
+    20,
+    217
+  ],
+  "accessories": false
+}
