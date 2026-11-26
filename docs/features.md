@@ -1,6 +1,6 @@
 # GitHub Pet features
 
-The detail behind the [README](../README.md). Everything here describes the Beta 7 app. GitHub Pet is
+The detail behind the [README](../README.md). Everything here describes the Beta 8 app. GitHub Pet is
 read-only: every item opens on github.com, and nothing is approved, merged or changed from the app.
 
 ## The Inbox
@@ -54,7 +54,7 @@ Error text from `gh` or GitHub is classified rather than shown, so it can't leak
 - **Two skins.** **Mona** (default) and **Little Chris**, chosen in Settings → Mascot. The choice is
   saved.
 - **Calm by default.** A short animation plays once for a genuinely new item, not on every refresh or
-  after a reconnect. **Reduce motion** (or macOS's own setting) keeps the pet still.
+  after a reconnect. **Reduce motion** (or macOS's own setting) plays nothing: the pet holds a still pose, and during an incident it holds the helmet's first frame.
 - **Reactions.** The pet reacts when you clear a row or reach inbox zero, when you click it (five quick
   clicks make it dizzy) and when you drag and drop it, looks around or stretches now and then, and dozes
   after 15 quiet minutes.
@@ -131,7 +131,7 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 
 ## Known limits
 
-- **In-app updates work from Beta 4 onward.** Beta 5 and Beta 6 were delivered that way. Earlier
+- **In-app updates work from Beta 4 onward.** Beta 5, Beta 6 and Beta 7 were delivered that way. Earlier
   betas install by hand.
 - **Intel.** The app is universal (Apple Silicon and Intel). The Intel half is checked in CI under
   Rosetta, not on Intel hardware.
@@ -156,6 +156,7 @@ are verified with an EdDSA signature before they're unpacked. See [Updates](upda
 - **Actions alerts** cover only selected repositories, and only the default branch's latest commit.
   Changing coverage or the monitoring scope re-baselines quietly: items first seen then aren't
   announced. Actions items aren't remembered across a relaunch.
+- **Download size.** The animation frames make the app download about 8 MB larger than Beta 7 (the universal ZIP is about 15 MB, against about 7 MB for Beta 7).
 - **Not verified by hand yet:** refresh after a real sleep and wake, keyboard and VoiceOver use of the
   new Inbox, Reduce Motion, hover, the app icon in Finder and the Dock at small sizes, and every
   supported macOS version. The floating pet isn't keyboard focusable; use the
